@@ -4,13 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Scopecraft Command is a toolset for managing Markdown-Driven Task Management (MDTM) files with TOML or YAML frontmatter. It provides both a Command Line Interface (CLI) and a Model Context Protocol (MCP) server.
+Scopecraft Command is a toolset for managing Markdown-Driven Task Management (MDTM) files with TOML or YAML frontmatter. It provides both a Command Line Interface (CLI) and a Model Context Protocol (MCP) server, both developed within this project.
 
 The system is designed to be versatile:
 - Works both with and without Roo Commander
 - Automatically detects project type and adapts accordingly
 - Supports the standardized MDTM format
 - Provides direct CRUD operations without requiring LLM processing
+- Offers the same core functionality through both CLI and MCP interfaces
 
 ## Session Guidelines for Claude
 
@@ -212,7 +213,7 @@ This creates the necessary directory structure based on the detected or specifie
 
 ## MCP Server Usage
 
-The Model Context Protocol (MCP) server provides the same functionality as the CLI but through an HTTP interface for LLMs.
+The Model Context Protocol (MCP) server provides the same functionality as the CLI but through an HTTP interface optimized for LLMs. This project maintains both implementations (CLI and MCP) in parallel, enabling flexible interaction with the task management system.
 
 ```bash
 # Start the MCP server on default port (3500)
@@ -221,7 +222,34 @@ scopecraft-command-mcp     # Full command
 
 # Start on a custom port
 sc-mcp --port 3501
+
+# Run with verbose mode for debugging
+sc-mcp --verbose
 ```
+
+### Using CLI vs MCP in Claude Code
+
+When working in Claude Code:
+
+1. **For Basic Task Operations**:
+   - You can use the MCP tools directly (e.g., `mcp__scopecraft-command-mcp__task_list`)
+   - These provide structured JSON responses that are easy to parse programmatically
+
+2. **For Testing/Development Scenarios**:
+   - Switch between CLI and MCP implementations to verify consistency
+   - Use CLI (`bun run dev:cli`) for more detailed console output during debugging
+   - Use MCP for testing AI integration capabilities
+
+3. **Error Handling During Development**:
+   - Since this project is under active development, when errors occur in either interface (CLI or MCP), report them clearly to the user
+   - Do not attempt to silently work around errors or switch interfaces automatically
+   - Explain the specific error and suggest potential fixes or alternative approaches
+   - If a command fails in one interface but works in another, document this discrepancy for the user
+
+4. **Choosing the Right Interface**:
+   - Use CLI for human-oriented interactions with detailed text output
+   - Use MCP for programmatic access and AI integration
+   - For bug investigation, try both interfaces to isolate whether the issue is in the core logic or the interface layer
 
 ### MCP MDTM Directory Structure Examples
 
@@ -230,7 +258,7 @@ The MCP server supports all MDTM directory structure features. Here are example 
 ```json
 // Create a feature overview
 {
-  "method": "task.create",
+  "method": "task_create",
   "params": {
     "id": "_overview",
     "title": "Authentication Feature",
@@ -242,7 +270,7 @@ The MCP server supports all MDTM directory structure features. Here are example 
 
 // Create a task within a feature
 {
-  "method": "task.create",
+  "method": "task_create",
   "params": {
     "title": "Login UI Component",
     "type": "🌟 Feature",
@@ -253,7 +281,7 @@ The MCP server supports all MDTM directory structure features. Here are example 
 
 // List tasks in a feature
 {
-  "method": "task.list",
+  "method": "task_list",
   "params": {
     "phase": "release-v1",
     "subdirectory": "FEATURE_Authentication"
@@ -262,7 +290,7 @@ The MCP server supports all MDTM directory structure features. Here are example 
 
 // List only overview files
 {
-  "method": "task.list",
+  "method": "task_list",
   "params": {
     "is_overview": true
   }
@@ -288,8 +316,12 @@ The MCP server supports all MDTM directory structure features. Here are example 
 ### Debugging Tips
 
 - Use `bun run dev:cli -- [command]` for development to see detailed logs
+- Use `bun run dev:mcp -- --verbose` for MCP server debugging
+- Compare behavior between CLI and MCP interfaces to isolate issues
 - Check existence of `.tasks/` or `.ruru/` directories to confirm project mode
 - Examine task files directly using a text editor to check for TOML issues
+- When reporting issues, specify whether the problem occurs in CLI, MCP, or both
+- For MCP-specific issues, check the server logs for JSON-RPC error messages
 
 ## MDTM Directory Structure Best Practices
 
