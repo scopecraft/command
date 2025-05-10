@@ -1,0 +1,66 @@
+{
+  "name": "@scopecraft/command",
+  "version": "0.2.0",
+  "description": "CLI and MCP server for managing Markdown-Driven Task Management (MDTM) files with or without Roo Commander",
+  "type": "module",
+  "bin": {
+    "scopecraft-command": "./dist/cli/cli.js",
+    "sc": "./dist/cli/cli.js",
+    "scopecraft-command-mcp": "./dist/mcp/cli.js",
+    "sc-mcp": "./dist/mcp/cli.js",
+    "scopecraft-command-mcp-sdk": "./dist/mcp/sdk-cli.js",
+    "sc-mcp-sdk": "./dist/mcp/sdk-cli.js",
+    "scopecraft-command-mcp-stdio": "./dist/mcp/stdio-cli.js",
+    "sc-mcp-stdio": "./dist/mcp/stdio-cli.js"
+  },
+  "scripts": {
+    "build": "bun build ./src/cli/cli.ts ./src/mcp/cli.ts ./src/mcp/sdk-cli.ts ./src/mcp/stdio-cli.ts --outdir ./dist --target node",
+    "start": "bun ./src/cli/cli.ts",
+    "start:mcp": "bun ./src/mcp/cli.ts",
+    "start:mcp:sdk": "bun ./src/mcp/sdk-cli.ts",
+    "start:mcp:stdio": "bun ./src/mcp/stdio-cli.ts",
+    "dev:cli": "bun ./src/cli/cli.ts",
+    "dev:mcp": "bun ./src/mcp/cli.ts",
+    "dev:mcp:sdk": "bun ./src/mcp/sdk-cli.ts",
+    "dev:mcp:stdio": "bun ./src/mcp/stdio-cli.ts",
+    "mcp:inspect": "bun x @modelcontextprotocol/inspector",
+    "mcp:debug": "bash -c 'bun run dev:mcp & sleep 2 && bun x @modelcontextprotocol/inspector'",
+    "mcp:debug:http": "bash -c 'bun run dev:mcp & sleep 2 && open \"http://localhost:6274/#/?server=http%3A%2F%2Flocalhost%3A3500&transport=httpsse\"'",
+    "mcp:debug:sdk": "bash -c 'bun run dev:mcp:sdk & sleep 2 && bun x @modelcontextprotocol/inspector'",
+    "mcp:debug:sdk:web": "bash -c 'bun run dev:mcp:sdk & sleep 2 && open \"http://localhost:6274/#/?server=http%3A%2F%2Flocalhost%3A3500%2Fmcp&transport=streamablehttp\"'",
+    "mcp:debug:stdio": "npx @modelcontextprotocol/inspector bun run src/mcp/stdio-cli.ts",
+    "lint": "eslint src --ext .ts",
+    "test": "bun test"
+  },
+  "keywords": [
+    "scopecraft",
+    "command",
+    "task",
+    "cli",
+    "mdtm",
+    "mcp",
+    "workflow"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@iarna/toml": "^3.0.0",
+    "@modelcontextprotocol/sdk": "^1.11.1",
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "express": "^5.1.0",
+    "fs-extra": "^11.2.0",
+    "inquirer": "^9.2.12"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/fs-extra": "^11.0.4",
+    "@types/inquirer": "^9.0.7",
+    "@types/jest": "^29.5.11",
+    "@types/node": "^20.10.5",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3"
+  }
+}

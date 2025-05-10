@@ -1,0 +1,10 @@
+dist/
+test-*/
+node_modules/
+.DS_Store
+.ruru/
+bun.lock
+mcp-server.log
+temp.md
+
+**/.claude/settings.local.json

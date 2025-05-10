@@ -1,0 +1,326 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Scopecraft Command is a toolset for managing Markdown-Driven Task Management (MDTM) files with TOML or YAML frontmatter. It provides both a Command Line Interface (CLI) and a Model Context Protocol (MCP) server.
+
+The system is designed to be versatile:
+- Works both with and without Roo Commander
+- Automatically detects project type and adapts accordingly
+- Supports the standardized MDTM format
+- Provides direct CRUD operations without requiring LLM processing
+
+## Session Guidelines for Claude
+
+When starting a new session with this project, Claude should automatically:
+
+1. Check the current active phases with `bun run dev:cli -- phases`
+2. List open tasks using `bun run dev:cli -- list --status "🟡 To Do"`
+3. Identify the next highest priority task with `bun run dev:cli -- next-task`
+4. Ask the user if they want to:
+   - Work on the suggested next task (highest priority)
+   - Choose a different task from the open tasks list
+   - Create a new task for the current phase
+   - Create a new phase
+   - Do something else entirely
+
+## Development Commands
+
+```bash
+# Install dependencies
+bun install
+
+# Build the project
+bun run build
+
+# Run CLI in dev mode
+bun run dev:cli -- [command]  # e.g. bun run dev:cli -- list
+
+# Run MCP server in dev mode
+bun run dev:mcp
+
+# Lint code
+bun run lint
+
+# Run tests
+bun run test
+
+# Link for development (creates scopecraft-command/sc and scopecraft-command-mcp/sc-mcp commands)
+bun link
+```
+
+## Architecture
+
+The project is organized into three main modules:
+
+1. **Core Module** (`src/core/`)
+   - `types.ts`: Data structures used throughout the application
+   - `task-parser.ts`: Parses and formats TOML+Markdown files
+   - `task-manager.ts`: CRUD operations for tasks and phases
+   - `formatters.ts`: Formats task/phase data for various outputs
+
+2. **CLI Module** (`src/cli/`)
+   - `cli.ts`: Main entry point, sets up commands
+   - `commands.ts`: Implements CLI commands by calling core functions
+
+3. **MCP Module** (`src/mcp/`)
+   - `types.ts`: MCP-specific types for method names and request/response formats
+   - `handlers.ts`: Implements MCP method handlers using core functions
+   - `server.ts`: HTTP server for processing MCP requests
+   - `cli.ts`: CLI entry point for starting the MCP server
+
+## Key Design Patterns
+
+- **Separation of Concerns**: Core logic is separate from interface concerns (CLI and MCP)
+- **Consistent Error Handling**: All functions return standardized `OperationResult<T>` type
+- **Type Safety**: Extensive use of TypeScript types
+- **Task Relationships**: Support for complex task relations (parent-child, dependencies, workflow sequencing)
+- **Phase Management**: Organization of tasks into phases
+
+## Task File Format
+
+Tasks are stored as Markdown files with TOML frontmatter:
+
+```md
++++
+id = "TASK-AUTH-001"
+title = "Implement Authentication"
+status = "🔵 In Progress"
+type = "🌟 Feature"
+priority = "🔼 High"
+// ...other metadata
++++
+
+## Description
+
+Implementation details here...
+```
+
+## Task Management Flow
+
+The task management flow follows these principles:
+
+1. **Phases** organize tasks into logical groups (e.g. "release-v1", "milestone-2")
+2. **Features & Areas** group related tasks using the MDTM directory structure
+3. **Tasks** represent individual units of work with metadata (status, priority, type, etc.)
+4. **Workflow** connects tasks through relationships (dependencies, sequential order)
+5. **Prioritization** determines which tasks should be completed first
+
+### Flow Steps
+
+1. **Phase Creation**: Create phases to organize related tasks
+2. **Feature/Area Creation**: Create subdirectories within phases for logical grouping of related tasks
+3. **Task Creation**: Create tasks within phases and features/areas
+4. **Task Prioritization**: Assign priorities to tasks (🔥 Highest, 🔼 High, ▶️ Medium, 🔽 Low)
+5. **Task Assignment**: Assign tasks to team members
+6. **Task Execution**: Work on tasks in priority order
+7. **Task Completion**: Mark tasks as done, triggering suggestions for the next task
+
+### Workflow Intelligence
+
+The system intelligently determines the next task based on:
+- Task priority (🔥 Highest > 🔼 High > ▶️ Medium > 🔽 Low)
+- Task dependencies (tasks that require other tasks to be completed first)
+- Phase order (tasks in earlier phases take precedence)
+- Explicit task sequences (tasks linked with previous_task/next_task relationships)
+
+### MDTM Directory Structure
+
+The system supports the MDTM directory structure for organizing tasks:
+
+- **Features**: Subdirectories with prefix `FEATURE_*` (e.g., `FEATURE_Authentication`)
+- **Areas**: Subdirectories with prefix `AREA_*` (e.g., `AREA_Refactoring`)
+- **Overview Files**: Special files named `_overview.md` that describe the feature/area
+- **Numbered Tasks**: Optionally, tasks can be named with sequence numbers (e.g., `001_login.md`)
+
+This structure allows for better organization of related tasks. Features typically represent functional parts of the product, while Areas represent cross-cutting concerns.
+
+## Common CLI Commands
+
+```bash
+# Basic commands
+sc list                                            # List all tasks (short alias)
+scopecraft-command list                            # List all tasks (full command)
+sc list --status "🟡 To Do"                        # List pending tasks
+sc list --phase "release-v1"                       # List tasks in a phase
+sc get TASK-ID                                     # Get details of a specific task
+sc create --id "TASK-ID" --title "Task title" --type "🌟 Feature" --priority "🔼 High" --phase "release-v1"  # Create a new task
+sc create --template "feature" --title "New Feature" --phase "release-v1"  # Create from template
+sc update TASK-ID --status "🔵 In Progress"        # Update a task
+sc delete TASK-ID                                  # Delete a task
+
+# Status shortcuts
+sc start TASK-ID     # Mark as In Progress
+sc complete TASK-ID  # Mark as Done
+sc block TASK-ID     # Mark as Blocked
+sc review TASK-ID    # Mark as In Review
+
+# Phase management
+sc phases            # List all phases
+sc phase-create --id "phase-1" --name "Planning Phase" --description "Initial planning stage"  # Create a phase
+
+# Template management
+sc list-templates    # List available templates
+
+# Workflow navigation
+sc next-task         # Find the next highest priority task
+sc next-task TASK-ID # Find the next task after completing the specified task
+sc mark-complete-next TASK-ID  # Mark a task as complete and show the next task
+
+# Task Content Management
+sc get TASK-ID --format full > task.md       # Export task to a file for editing
+sc update TASK-ID --file task.md             # Update task from edited file
+
+# Note for AI Assistants (Claude):
+# When working with tasks that need substantial content:
+# 1. Create the task using CLI commands to establish proper metadata
+# 2. Use direct file editing capabilities to update task content in-place
+# 3. Skip the export/edit/import workflow when possible for efficiency
+
+# MDTM Directory Structure Commands
+sc create --id "_overview" --title "Authentication Feature" --type "🌟 Feature" --phase "release-v1" --subdirectory "FEATURE_Authentication"  # Create a feature overview file
+sc create --title "Login UI" --type "🌟 Feature" --phase "release-v1" --subdirectory "FEATURE_Authentication"  # Create a task within a feature
+sc list --phase "release-v1" --subdirectory "FEATURE_Authentication"  # List tasks in a feature
+sc list --overview  # List only overview files
+sc update TASK-ID --subdirectory "FEATURE_UserProfiles"  # Move a task to a different feature
+
+# Note: When completing tasks in Claude Code, follow these steps:
+# 1. Update task content to mark checklist items as done [x]
+# 2. Add an Implementation Log section with details about the work completed
+# 3. Update the task status to "🟢 Done" when all checklist items are complete
+```
+
+## Initialization and Setup
+
+Before using the task management system, you need to initialize it:
+
+```bash
+# Initialize the task system (autodetects project type)
+sc init
+
+# Force specific project mode
+sc init --mode standalone  # Uses .tasks directory
+sc init --mode roo         # Uses .ruru directory (Roo Commander mode)
+```
+
+This creates the necessary directory structure based on the detected or specified project mode:
+- `.tasks/` (standalone mode) or `.ruru/tasks/` (Roo Commander mode) for tasks
+- `.tasks/config/` or `.ruru/config/` for configuration
+- `.tasks/templates/` or `.ruru/templates/` for templates
+
+## MCP Server Usage
+
+The Model Context Protocol (MCP) server provides the same functionality as the CLI but through an HTTP interface for LLMs.
+
+```bash
+# Start the MCP server on default port (3500)
+sc-mcp                     # Short alias
+scopecraft-command-mcp     # Full command
+
+# Start on a custom port
+sc-mcp --port 3501
+```
+
+### MCP MDTM Directory Structure Examples
+
+The MCP server supports all MDTM directory structure features. Here are example requests:
+
+```json
+// Create a feature overview
+{
+  "method": "task.create",
+  "params": {
+    "id": "_overview",
+    "title": "Authentication Feature",
+    "type": "🌟 Feature",
+    "phase": "release-v1",
+    "subdirectory": "FEATURE_Authentication"
+  }
+}
+
+// Create a task within a feature
+{
+  "method": "task.create",
+  "params": {
+    "title": "Login UI Component",
+    "type": "🌟 Feature",
+    "phase": "release-v1",
+    "subdirectory": "FEATURE_Authentication"
+  }
+}
+
+// List tasks in a feature
+{
+  "method": "task.list",
+  "params": {
+    "phase": "release-v1",
+    "subdirectory": "FEATURE_Authentication"
+  }
+}
+
+// List only overview files
+{
+  "method": "task.list",
+  "params": {
+    "is_overview": true
+  }
+}
+```
+
+## Troubleshooting Guide
+
+### Common Issues
+
+1. **Template Parsing Error**:
+   - Error: "Failed to parse TOML frontmatter: Missing required field: id"
+   - Known issue being tracked in TASK-02-TemplateParseError
+   - Workaround: Create tasks without using templates for now
+
+2. **Project Mode Detection**:
+   - If wrong mode is detected, use `sc init --mode <mode>` to force mode
+
+3. **Phase Listing Issue**:
+   - System directories like 'config', 'templates' might show up as phases
+   - Known issue being investigated
+
+### Debugging Tips
+
+- Use `bun run dev:cli -- [command]` for development to see detailed logs
+- Check existence of `.tasks/` or `.ruru/` directories to confirm project mode
+- Examine task files directly using a text editor to check for TOML issues
+
+## MDTM Directory Structure Best Practices
+
+When working with the MDTM directory structure, follow these best practices:
+
+1. **Feature Organization**:
+   - Create feature directories using the `FEATURE_` prefix for functional components
+   - Create area directories using the `AREA_` prefix for cross-cutting concerns
+   - Always create an `_overview.md` file to explain the purpose of the feature/area
+
+2. **Naming Conventions**:
+   - Use CamelCase for feature and area names (e.g., `FEATURE_UserAuthentication`)
+   - Use lowercase with dashes for task names within features
+   - For numbered tasks, use a three-digit prefix (e.g., `001_login-form.md`)
+
+3. **Task Relationships**:
+   - Tasks within the same feature should have related tags
+   - Consider using the parent-child relationship between the overview and its tasks
+   - Use dependencies to represent cross-feature relationships
+
+4. **Organization Example**:
+   ```
+   .tasks/
+     release-v1/
+       FEATURE_Authentication/
+         _overview.md
+         001_login-ui.md
+         002_login-logic.md
+       AREA_Performance/
+         _overview.md
+         001_frontend-optimization.md
+   ```
+
+When organizing tasks in Claude Code, first create the feature overview, then add individual tasks within that feature.
