@@ -86,6 +86,8 @@ The current version completely restructured the codebase into a modular system b
 - Improved error handling and type safety
 - Comprehensive documentation
 - Full Bun-based build and development workflow
+- Biome for linting and formatting
+- TypeScript strict type checking
 
 ## Implementation Details
 
@@ -137,7 +139,9 @@ The following features are planned or recommended for future development:
 7. **Docker Support**: Create Docker images for easy deployment
 8. **Documentation Generation**: Automatically generate API documentation
 
-## Testing
+## Testing and Code Quality
+
+### Testing
 
 The project includes test scripts for the different versions:
 
@@ -145,6 +149,24 @@ The project includes test scripts for the different versions:
 - `test-v3.sh`: Tests both the CLI and MCP server in the restructured system
 
 Tests can be run using Bun's test runner with the command `bun test`.
+
+### Code Quality Tools
+
+The project uses several tools to ensure code quality:
+
+1. **Biome** - For linting and formatting
+   - `bun run lint`: Run linting checks
+   - `bun run format`: Check code formatting without making changes
+   - `bun run format:fix`: Format code and apply changes
+   - `bun run check`: Run both linting and formatting checks
+
+2. **TypeScript** - For type checking
+   - `bun run typecheck`: Run TypeScript type checks
+
+3. **Continuous Integration**
+   - `bun run ci`: Run all checks and tests (typecheck, lint, test)
+
+The configuration for Biome is in `biome.json` in the project root.
 
 ## Credits and Attribution
 

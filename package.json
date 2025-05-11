@@ -29,7 +29,13 @@
     "mcp:debug:sdk": "bash -c 'bun run dev:mcp:sdk & sleep 2 && bun x @modelcontextprotocol/inspector'",
     "mcp:debug:sdk:web": "bash -c 'bun run dev:mcp:sdk & sleep 2 && open \"http://localhost:6274/#/?server=http%3A%2F%2Flocalhost%3A3500%2Fmcp&transport=streamablehttp\"'",
     "mcp:debug:stdio": "npx @modelcontextprotocol/inspector bun run src/mcp/stdio-cli.ts",
-    "lint": "eslint src --ext .ts",
+    "lint": "biome lint .",
+    "lint:eslint": "eslint src --ext .ts",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "check": "biome check .",
+    "typecheck": "tsc --noEmit",
+    "ci": "bun run typecheck && bun run lint && bun test",
     "test": "bun test",
     "tw": "bun ./src/scripts/task-worktree.ts",
     "tw-start": "bun ./src/scripts/task-worktree.ts start",
@@ -57,6 +63,7 @@
     "inquirer": "^9.2.12"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@types/express": "^5.0.1",
     "@types/fs-extra": "^11.0.4",
     "@types/inquirer": "^9.0.7",

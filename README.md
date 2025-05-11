@@ -204,6 +204,30 @@ bun run dev:cli -- list
 bun run dev:mcp
 ```
 
+### Code Quality Tools
+
+The project uses Biome for linting and formatting, and TypeScript for type checking.
+
+```bash
+# Typecheck the code
+bun run typecheck
+
+# Lint the code with Biome
+bun run lint
+
+# Check code formatting with Biome
+bun run format
+
+# Format code with Biome (applies changes)
+bun run format:fix
+
+# Check (lint + format) the code with Biome
+bun run check
+
+# Run all checks and tests (CI workflow)
+bun run ci
+```
+
 ### Project Structure
 
 ```
