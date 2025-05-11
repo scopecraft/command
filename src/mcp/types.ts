@@ -6,20 +6,20 @@ import { Task, Phase, TaskFilterOptions, TaskUpdateOptions } from '../core/types
 // MCP method names
 export enum McpMethod {
   // Task methods
-  TASK_LIST = 'task.list',
-  TASK_GET = 'task.get',
-  TASK_CREATE = 'task.create',
-  TASK_UPDATE = 'task.update',
-  TASK_DELETE = 'task.delete',
-  TASK_NEXT = 'task.next',
-  
+  TASK_LIST = 'task_list',
+  TASK_GET = 'task_get',
+  TASK_CREATE = 'task_create',
+  TASK_UPDATE = 'task_update',
+  TASK_DELETE = 'task_delete',
+  TASK_NEXT = 'task_next',
+
   // Phase methods
-  PHASE_LIST = 'phase.list',
-  PHASE_CREATE = 'phase.create',
-  
+  PHASE_LIST = 'phase_list',
+  PHASE_CREATE = 'phase_create',
+
   // Workflow methods
-  WORKFLOW_CURRENT = 'workflow.current',
-  WORKFLOW_MARK_COMPLETE_NEXT = 'workflow.markCompleteNext'
+  WORKFLOW_CURRENT = 'workflow_current',
+  WORKFLOW_MARK_COMPLETE_NEXT = 'workflow_mark_complete_next'
 }
 
 // Base request interface

@@ -31,7 +31,7 @@ import {
 } from '../core/index.js';
 
 /**
- * Handler for task.list method
+ * Handler for task_list method
  */
 export async function handleTaskList(params: TaskListParams) {
   return await listTasks({
@@ -44,14 +44,14 @@ export async function handleTaskList(params: TaskListParams) {
 }
 
 /**
- * Handler for task.get method
+ * Handler for task_get method
  */
 export async function handleTaskGet(params: TaskGetParams) {
   return await getTask(params.id, params.phase, params.subdirectory);
 }
 
 /**
- * Handler for task.create method
+ * Handler for task_create method
  */
 export async function handleTaskCreate(params: TaskCreateParams) {
   // Create the task object from the parameters
@@ -93,35 +93,35 @@ export async function handleTaskCreate(params: TaskCreateParams) {
 }
 
 /**
- * Handler for task.update method
+ * Handler for task_update method
  */
 export async function handleTaskUpdate(params: TaskUpdateParams) {
   return await updateTask(params.id, params.updates, params.phase, params.subdirectory);
 }
 
 /**
- * Handler for task.delete method
+ * Handler for task_delete method
  */
 export async function handleTaskDelete(params: TaskDeleteParams) {
   return await deleteTask(params.id, params.phase, params.subdirectory);
 }
 
 /**
- * Handler for task.next method
+ * Handler for task_next method
  */
 export async function handleTaskNext(params: TaskNextParams) {
   return await findNextTask(params.id);
 }
 
 /**
- * Handler for phase.list method
+ * Handler for phase_list method
  */
 export async function handlePhaseList(params: PhaseListParams) {
   return await listPhases();
 }
 
 /**
- * Handler for phase.create method
+ * Handler for phase_create method
  */
 export async function handlePhaseCreate(params: PhaseCreateParams) {
   const phase = {
@@ -137,7 +137,7 @@ export async function handlePhaseCreate(params: PhaseCreateParams) {
 }
 
 /**
- * Handler for workflow.current method
+ * Handler for workflow_current method
  */
 export async function handleWorkflowCurrent(params: WorkflowCurrentParams) {
   const inProgressResult = await listTasks({ status: '🔵 In Progress' });
@@ -161,7 +161,7 @@ export async function handleWorkflowCurrent(params: WorkflowCurrentParams) {
 }
 
 /**
- * Handler for workflow.markCompleteNext method
+ * Handler for workflow_mark_complete_next method
  */
 export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkCompleteNextParams) {
   // Get the next task before marking current as complete

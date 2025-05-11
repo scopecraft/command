@@ -179,16 +179,16 @@ export async function startHttpServer(port: number = DEFAULT_PORT, options: {
     
     if (options.verbose) {
       console.log('Available methods:');
-      console.log('- task.list');
-      console.log('- task.get');
-      console.log('- task.create');
-      console.log('- task.update');
-      console.log('- task.delete');
-      console.log('- task.next');
-      console.log('- phase.list');
-      console.log('- phase.create');
-      console.log('- workflow.current');
-      console.log('- workflow.markCompleteNext');
+      console.log('- task_list');
+      console.log('- task_get');
+      console.log('- task_create');
+      console.log('- task_update');
+      console.log('- task_delete');
+      console.log('- task_next');
+      console.log('- phase_list');
+      console.log('- phase_create');
+      console.log('- workflow_current');
+      console.log('- workflow_mark_complete_next');
     }
   });
 
