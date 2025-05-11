@@ -30,7 +30,11 @@
     "mcp:debug:sdk:web": "bash -c 'bun run dev:mcp:sdk & sleep 2 && open \"http://localhost:6274/#/?server=http%3A%2F%2Flocalhost%3A3500%2Fmcp&transport=streamablehttp\"'",
     "mcp:debug:stdio": "npx @modelcontextprotocol/inspector bun run src/mcp/stdio-cli.ts",
     "lint": "eslint src --ext .ts",
-    "test": "bun test"
+    "test": "bun test",
+    "tw": "bun ./src/scripts/task-worktree.ts",
+    "tw-start": "bun ./src/scripts/task-worktree.ts start",
+    "tw-finish": "bun ./src/scripts/task-worktree.ts finish",
+    "tw-list": "bun ./src/scripts/task-worktree.ts list"
   },
   "keywords": [
     "scopecraft",
