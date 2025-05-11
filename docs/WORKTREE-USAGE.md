@@ -85,9 +85,14 @@ git add .
 git commit -m "Implement error handling for MCP server and mark task as completed"
 git push -u origin TASK-MCP-ERROR-HANDLING
 
-# Remove the worktree when done
+# Remove the worktree when done (either of these options works)
+# Option 1: From the main repository
 cd /Users/davidpaquet/Projects/roo-task-cli
 bun run tw-finish TASK-MCP-ERROR-HANDLING
+
+# Option 2: Directly from the worktree (will auto-delegate to main repository)
+# While still in the worktree directory:
+bun run tw-finish
 
 # Create a PR using GitHub CLI (if installed)
 gh pr create --base main --head TASK-MCP-ERROR-HANDLING
