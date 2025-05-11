@@ -3,9 +3,15 @@ import path from 'path';
 import fs from 'fs';
 import { execSync } from 'child_process';
 import { Command } from 'commander';
-import { TaskManager } from '../core/task-manager';
-import { ProjectConfig } from '../core/project-config';
-import { TaskFormatter } from '../core/formatters';
+import {
+  listTasks,
+  getTask,
+  updateTask,
+  findNextTask,
+  projectConfig,
+  formatTasksList as formatTaskList,
+  formatTaskDetail as formatTask
+} from '../core/index.js';
 
 // Initialize command structure
 const program = new Command();
@@ -17,10 +23,7 @@ program
 const REPO_ROOT = execSync('git rev-parse --show-toplevel').toString().trim();
 const WORKTREES_DIR = path.resolve(path.dirname(REPO_ROOT), 'roo-task-cli.worktrees');
 
-// Initialize task manager
-const projectConfig = new ProjectConfig();
-const taskManager = new TaskManager(projectConfig);
-const formatter = new TaskFormatter();
+// No need to initialize task manager - using imported functions directly
 
 // Add commands
 program
@@ -47,14 +50,14 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
   
   // If no task ID provided, show available tasks and prompt
   if (!taskId) {
-    const tasks = await taskManager.listTasks({ status: '🟡 To Do' });
+    const tasks = await listTasks({ status: '🟡 To Do' });
     console.log('Available tasks:');
-    console.log(formatter.formatTaskList(tasks.data || []));
-    
-    const nextTask = await taskManager.getNextTask();
+    console.log(formatTaskList(tasks.data || []));
+
+    const nextTask = await findNextTask();
     console.log('\nRecommended next task:');
     if (nextTask.data) {
-      console.log(formatter.formatTask(nextTask.data));
+      console.log(formatTask(nextTask.data));
     } else {
       console.log('No next task found.');
     }
@@ -65,7 +68,7 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
   }
   
   // Get task details
-  const taskResult = await taskManager.getTask(taskId);
+  const taskResult = await getTask(taskId);
   if (!taskResult.success || !taskResult.data) {
     console.error(`Task ${taskId} not found.`);
     process.exit(1);
@@ -89,26 +92,34 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
     execSync(`git worktree add -b ${branchName} ${worktreeDir}`);
     
     // Mark task as in progress
-    await taskManager.updateTask(taskId, { status: '🔵 In Progress' });
+    await updateTask(taskId, { metadata: { status: '🔵 In Progress' } });
     
     console.log(`Worktree created at ${worktreeDir}`);
     
     if (launchClaude) {
+      console.log(`Installing dependencies in the worktree directory...`);
+
+      // Install dependencies in the worktree
+      execSync('bun install', {
+        stdio: 'inherit',
+        cwd: worktreeDir
+      });
+
       console.log(`Launching Claude in the worktree directory...`);
-      
+
       // Use Bun.spawn to change directory and launch Claude
       process.chdir(worktreeDir);
-      
+
       const claudeProcess = Bun.spawn(['claude'], {
         stdio: ['inherit', 'inherit', 'inherit'],
         cwd: worktreeDir,
       });
-      
+
       // Wait for Claude process to complete
       await claudeProcess.exited;
     } else {
       console.log(`To start working on this task with Claude, run:`);
-      console.log(`cd ${worktreeDir} && claude`);
+      console.log(`cd ${worktreeDir} && bun install && claude`);
       console.log(`Then use the slash command: /project:task-context ${taskId}`);
     }
     
@@ -134,12 +145,17 @@ async function finishWorktree(taskId?: string) {
   
   console.log(`Finishing worktree for task: ${taskId}`);
   
-  // Check for uncommitted changes
-  const hasChanges = execSync('git status --porcelain').toString().trim() !== '';
-  if (hasChanges) {
-    console.log('Warning: You have uncommitted changes.');
-    console.log('Please commit or stash your changes before finishing the worktree.');
-    process.exit(1);
+  // Check for uncommitted changes in the worktree
+  const worktreeDir = path.join(WORKTREES_DIR, taskId);
+  try {
+    const hasChanges = execSync(`cd "${worktreeDir}" && git status --porcelain`).toString().trim() !== '';
+    if (hasChanges) {
+      console.log('Warning: You have uncommitted changes in the worktree.');
+      console.log('Please commit or stash your changes before finishing the worktree.');
+      process.exit(1);
+    }
+  } catch (error) {
+    console.log('Could not check worktree status. Continuing anyway...');
   }
   
   // Check if branch exists
@@ -150,30 +166,34 @@ async function finishWorktree(taskId?: string) {
   }
   
   try {
-    // Get task details
-    const taskResult = await taskManager.getTask(taskId);
+    // Get task details - directly from the core functions
+    const taskResult = await getTask(taskId);
+    
     if (!taskResult.success || !taskResult.data) {
       console.error(`Task ${taskId} not found.`);
       process.exit(1);
     }
-    
+
     // Remove worktree
-    const worktreeDir = path.join(WORKTREES_DIR, taskId);
     execSync(`git worktree remove "${worktreeDir}"`);
-    
+
     // Ask what to do with the task
     console.log('Choose an action for the task:');
     console.log('1. Mark as Done');
     console.log('2. Mark as In Review');
     console.log('3. Leave task status unchanged');
+
+    // We should NOT update the task status in the main branch
+    // Instead, print instructions for updating it in the worktree before merging
+    console.log('Important: Task status should be updated in your branch before merging.');
+    console.log('Run these commands in your branch before creating a PR:');
+    console.log(`  git checkout ${taskId}`);
+    console.log(`  bun run dev:cli -- update ${taskId} --status "🟢 Done"`);
+    console.log(`  git commit -am "Mark task ${taskId} as completed"`);
+    console.log(`  git push origin ${taskId}`);
     
-    // In an interactive CLI we would prompt for input
-    // For now, we'll just mark it as Done
-    await taskManager.updateTask(taskId, { status: '🟢 Done' });
-    
-    console.log(`Worktree for task ${taskId} has been removed.`);
-    console.log(`Task ${taskId} has been marked as Done.`);
-    console.log(`\nTo create a PR for this branch, run:`);
+    console.log(`\nWorktree for task ${taskId} has been removed.`);
+    console.log(`\nTo create a PR for this branch after updating the task status, run:`);
     console.log(`git push -u origin ${taskId}`);
     console.log(`gh pr create --base main --head ${taskId}`);
     

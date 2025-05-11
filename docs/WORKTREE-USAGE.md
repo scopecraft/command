@@ -50,17 +50,20 @@ When Claude Code launches, use this slash command to get task context:
 ### Finish Working on a Task
 
 ```bash
-# Finish the current task (run from within the worktree)
-bun run tw-finish
-
-# Finish a specific task
+# Recommended: Finish the task from the main repository
+cd /Users/davidpaquet/Projects/roo-task-cli
 bun run tw-finish TASK-ID
+
+# Alternative: You can also run from within the worktree
+# The script will delegate to the main repository automatically
+cd /Users/davidpaquet/Projects/roo-task-cli.worktrees/TASK-ID
+bun run tw-finish
 ```
 
 This command will:
 1. Check for uncommitted changes
 2. Remove the worktree
-3. Mark the task as "Done"
+3. Provide instructions for updating the task status in your branch
 4. Provide instructions for creating a PR
 
 ## Options
@@ -71,18 +74,24 @@ The `start` command supports these options:
 ## Workflow Example
 
 ```bash
-# Start working on a task
+# Start working on a task (installs dependencies and launches Claude)
 bun run tw-start TASK-MCP-ERROR-HANDLING
 
-# Work on the task in Claude...
+# Work on the task in Claude using the task context command
+/project:task-context TASK-MCP-ERROR-HANDLING
 
-# When done, commit your changes
+# When done, update the task status in your branch
+cd /Users/davidpaquet/Projects/roo-task-cli.worktrees/TASK-MCP-ERROR-HANDLING
+bun run dev:cli -- update TASK-MCP-ERROR-HANDLING --status "🟢 Done"
+
+# Commit your changes in the worktree
 git add .
-git commit -m "Implement error handling for MCP server"
+git commit -m "Implement error handling for MCP server and mark task as completed"
 git push -u origin TASK-MCP-ERROR-HANDLING
 
-# Finish the task
-bun run tw-finish
+# Remove the worktree when done
+cd /Users/davidpaquet/Projects/roo-task-cli
+bun run tw-finish TASK-MCP-ERROR-HANDLING
 
 # Create a PR using GitHub CLI (if installed)
 gh pr create --base main --head TASK-MCP-ERROR-HANDLING
