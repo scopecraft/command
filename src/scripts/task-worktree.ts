@@ -130,9 +130,38 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
 
 // Finish command implementation
 async function finishWorktree(taskId?: string) {
-  // If no task ID provided, try to determine from current directory
+  // Check if we're running from a worktree
+  const isInWorktree = fs.existsSync('.git') && fs.readFileSync('.git', 'utf8').trim().startsWith('gitdir:');
+  let mainRepoPath = REPO_ROOT;
+  let currentDir = '';
+
+  // If we're in a worktree, we need to switch to the main repo
+  if (isInWorktree) {
+    currentDir = path.basename(process.cwd());
+    console.log(`Detected running from worktree directory: ${currentDir}`);
+
+    // If no task ID provided, use the current directory name as the task ID
+    if (!taskId) {
+      taskId = currentDir;
+      console.log(`Using current directory as task ID: ${taskId}`);
+    }
+
+    // Execute the finishWorktree command in the main repository
+    try {
+      console.log(`Delegating to main repository at: ${mainRepoPath}`);
+      // Call the same script but from the main repository
+      const result = execSync(`cd "${mainRepoPath}" && bun run tw-finish ${taskId}`).toString();
+      console.log(result);
+      return; // Exit after delegation
+    } catch (error) {
+      console.error('Failed to delegate to main repository:', error);
+      process.exit(1);
+    }
+  }
+
+  // Standard operation when run from main repository
   if (!taskId) {
-    const currentDir = path.basename(process.cwd());
+    currentDir = path.basename(process.cwd());
     // Simple check if we're in a worktree
     if (fs.existsSync('.git') && fs.existsSync(path.join(REPO_ROOT, '.git/worktrees', currentDir))) {
       taskId = currentDir;
@@ -141,9 +170,9 @@ async function finishWorktree(taskId?: string) {
       process.exit(1);
     }
   }
-  
+
   console.log(`Finishing worktree for task: ${taskId}`);
-  
+
   // Check for uncommitted changes in the worktree
   const worktreeDir = path.join(WORKTREES_DIR, taskId);
   try {
