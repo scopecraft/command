@@ -92,13 +92,17 @@ server.tool(
     assignee: z.string().optional(),
     tags: z.array(z.string()).optional(),
     phase: z.string().optional(),
+    subdirectory: z.string().optional(),
+    is_overview: z.boolean().optional(),
+    include_content: z.boolean().optional(),
+    include_completed: z.boolean().optional(),
     format: z.string().optional()
   },
   async (params) => {
     // Implementation...
   },
   {
-    description: "List tasks in the system with optional filtering",
+    description: "List tasks in the system with optional filtering. By default, task content is excluded and completed tasks are excluded to reduce response size and token usage. Use include_content=true to include full content and include_completed=true to include completed tasks.",
     annotations: {
       title: "List Tasks",
       readOnlyHint: true,

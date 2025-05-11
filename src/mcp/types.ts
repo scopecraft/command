@@ -19,7 +19,10 @@ export enum McpMethod {
 
   // Workflow methods
   WORKFLOW_CURRENT = 'workflow_current',
-  WORKFLOW_MARK_COMPLETE_NEXT = 'workflow_mark_complete_next'
+  WORKFLOW_MARK_COMPLETE_NEXT = 'workflow_mark_complete_next',
+
+  // Debug method (temporary)
+  DEBUG_CODE_PATH = 'debug_code_path'
 }
 
 // Base request interface
@@ -39,6 +42,8 @@ export interface McpResponse<T = any> {
 // Task list request params
 export interface TaskListParams extends TaskFilterOptions {
   format?: string;
+  include_content?: boolean; // Controls whether task content is included in the response (default: false)
+  include_completed?: boolean; // Controls whether completed tasks are included in the response (default: false)
 }
 
 // Task get request params
@@ -111,6 +116,11 @@ export interface WorkflowCurrentParams {
 export interface WorkflowMarkCompleteNextParams {
   id: string;
   format?: string;
+}
+
+// Debug code path params
+export interface DebugCodePathParams {
+  // No parameters needed
 }
 
 // MCP method handler type

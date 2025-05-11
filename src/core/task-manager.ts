@@ -102,6 +102,17 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
         if (options.subdirectory && task.metadata.subdirectory !== options.subdirectory) continue;
         if (options.is_overview !== undefined && task.metadata.is_overview !== options.is_overview) continue;
 
+        // Filter out completed tasks unless explicitly requested to include them
+        if (options.include_completed === false) {
+          const status = task.metadata.status || '';
+          if (status.includes('Done') ||
+              status.includes('🟢') ||
+              status.includes('Completed') ||
+              status.includes('Complete')) {
+            continue;
+          }
+        }
+
         // Filter by tags if provided
         if (options.tags && options.tags.length > 0) {
           const taskTags = task.metadata.tags || [];
@@ -112,6 +123,23 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
       } catch (error) {
         errors.push(`Skipping file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
+    }
+
+    // If include_content is explicitly set to false, remove content from tasks to reduce payload size
+    if (options.include_content === false) {
+      const compactTasks = tasks.map(task => ({
+        metadata: task.metadata,
+        filePath: task.filePath,
+        content: '' // Empty string instead of undefined to maintain the Task interface structure
+      }));
+
+      return {
+        success: true,
+        data: compactTasks,
+        message: errors.length > 0
+          ? `Listed ${compactTasks.length} tasks with ${errors.length} errors (content excluded)`
+          : `Listed ${compactTasks.length} tasks (content excluded)`
+      };
     }
 
     return {

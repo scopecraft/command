@@ -20,7 +20,7 @@ The following MCP tools (methods) are available:
 
 | Tool Name | Description |
 |-----------|-------------|
-| `task_list` | List tasks in the system with optional filtering based on status, type, assignee, tags, or phase. Returns an array of tasks matching the specified criteria. Results are sorted by priority by default. |
+| `task_list` | List tasks in the system with optional filtering based on status, type, assignee, tags, phase, or subdirectory. By default, task content is excluded and completed tasks are excluded to reduce response size (use `include_content: true` to include full content and `include_completed: true` to include completed tasks). Returns an array of tasks matching the specified criteria. Results are sorted by priority by default. |
 | `task_get` | Get detailed information about a specific task by its ID. Returns the complete task object including both metadata and content. |
 | `task_create` | Create a new task with the specified properties. Required fields are title and type. Other fields are optional with sensible defaults. Returns the created task object. |
 | `task_update` | Update a task's metadata or content. Requires the task ID and an updates object with metadata and/or content changes. Returns the updated task object. |

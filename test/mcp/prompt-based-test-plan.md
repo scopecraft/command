@@ -110,7 +110,7 @@ Expected result: Success response with the task created in the feature subdirect
 
 *Record the task ID for later tests.*
 
-#### 1.5 List All Tasks
+#### 1.5 List All Tasks (Default Behavior - Content and Completed Tasks Excluded)
 
 ```
 mcp__scopecraft-command-mcp__task_list
@@ -119,9 +119,60 @@ Parameters: {
 }
 ```
 
-Expected result: A list containing all 4 tasks created so far.
+Expected result: A list containing all 4 tasks created so far, but without their content. Verify that the response contains metadata but task content fields are empty strings.
 
-#### 1.6 List Tasks with Filter
+#### 1.6 List Tasks with Include Content
+
+```
+mcp__scopecraft-command-mcp__task_list
+Parameters: {
+  "phase": "test-mcp-{current_date}",
+  "include_content": true
+}
+```
+
+Expected result: A list containing all 4 tasks created so far, with their full content included.
+
+#### 1.7 List Completed Tasks
+
+First, mark one task as completed (if you haven't already done so in previous steps):
+
+```
+mcp__scopecraft-command-mcp__task_update
+Parameters: {
+  "id": "[ID from step 1.1 or any other suitable task]",
+  "updates": {
+    "metadata": {
+      "status": "🟢 Done"
+    }
+  }
+}
+```
+
+Then test that completed tasks are excluded by default:
+
+```
+mcp__scopecraft-command-mcp__task_list
+Parameters: {
+  "phase": "test-mcp-{current_date}"
+}
+```
+
+Expected result: A list containing only 3 tasks (the completed task should be excluded).
+
+Now test with include_completed parameter:
+
+```
+mcp__scopecraft-command-mcp__task_list
+Parameters: {
+  "phase": "test-mcp-{current_date}",
+  "include_completed": true
+}
+```
+
+Expected result: A list containing all 4 tasks including the completed one.
+
+#### 1.8 List Tasks with Filter
 
 ```
 mcp__scopecraft-command-mcp__task_list
@@ -131,9 +182,22 @@ Parameters: {
 }
 ```
 
-Expected result: A list containing only the 3 test tasks (not the feature overview).
+Expected result: A list containing only the test tasks (not the feature overview).
 
-#### 1.7 Get Specific Task
+#### 1.9 List Tasks with Combined Parameters
+
+```
+mcp__scopecraft-command-mcp__task_list
+Parameters: {
+  "phase": "test-mcp-{current_date}",
+  "include_content": true,
+  "include_completed": true
+}
+```
+
+Expected result: A list containing all tasks for the phase, including their full content and any completed tasks.
+
+#### 1.10 Get Specific Task
 
 ```
 mcp__scopecraft-command-mcp__task_get
@@ -144,7 +208,7 @@ Parameters: {
 
 Expected result: The full metadata task with all fields intact.
 
-#### 1.8 Update Task Metadata
+#### 1.11 Update Task Metadata
 
 ```
 mcp__scopecraft-command-mcp__task_update
@@ -161,7 +225,7 @@ Parameters: {
 
 Expected result: Updated task with new status and priority.
 
-#### 1.9 Update Task Content
+#### 1.12 Update Task Content
 
 ```
 mcp__scopecraft-command-mcp__task_update
@@ -175,7 +239,7 @@ Parameters: {
 
 Expected result: Updated task with new content while metadata remains unchanged.
 
-#### 1.10 Delete a Task
+#### 1.13 Delete a Task
 
 ```
 mcp__scopecraft-command-mcp__task_delete
@@ -186,7 +250,7 @@ Parameters: {
 
 Expected result: Success response indicating the task was deleted.
 
-#### 1.11 Verify Task Deletion
+#### 1.14 Verify Task Deletion
 
 ```
 mcp__scopecraft-command-mcp__task_list
@@ -385,6 +449,60 @@ After testing is complete:
    - Standalone mode: Delete `.tasks/test-mcp-{current_date}`
    - Roo Commander mode: Delete `.ruru/tasks/test-mcp-{current_date}`
 
+## 5. Token Optimization Tests
+
+The following tests specifically validate the optimizations made to the MCP task_list method to reduce token usage.
+
+#### 5.1 Response Size Comparison
+
+Run the following tests to compare response sizes:
+
+```
+// Get counts for tasks in the test phase
+mcp__scopecraft-command-mcp__task_list
+Parameters: {
+  "phase": "test-mcp-{current_date}"
+}
+```
+
+Note the number of tasks returned and approximate response size.
+
+```
+// Request with full content
+mcp__scopecraft-command-mcp__task_list
+Parameters: {
+  "phase": "test-mcp-{current_date}",
+  "include_content": true
+}
+```
+
+Note the approximate response size.
+
+```
+// Request with completed tasks
+mcp__scopecraft-command-mcp__task_list
+Parameters: {
+  "phase": "test-mcp-{current_date}",
+  "include_completed": true
+}
+```
+
+Note the number of tasks returned and approximate response size.
+
+```
+// Request with both content and completed tasks
+mcp__scopecraft-command-mcp__task_list
+Parameters: {
+  "phase": "test-mcp-{current_date}",
+  "include_content": true,
+  "include_completed": true
+}
+```
+
+Note the number of tasks returned and approximate response size.
+
+Expected result: The default response (no parameters) should be significantly smaller than responses with content included. All completed tasks should be excluded by default.
+
 ## Summary Report
 
 After completing all tests, prepare a summary report including:
@@ -393,6 +511,7 @@ After completing all tests, prepare a summary report including:
 2. Number of passed/failed tests
 3. List of any failed tests with brief descriptions
 4. Observations about MCP server functionality
-5. Recommendations for improvements or bug fixes
+5. Token optimization effectiveness (compare response sizes from section 5)
+6. Recommendations for improvements or bug fixes
 
 This structured approach will provide comprehensive testing of the MCP server's STDIO transport while maintaining isolation from production data.

@@ -51,6 +51,8 @@ export interface TaskFilterOptions {
   phase?: string;
   subdirectory?: string;
   is_overview?: boolean;
+  include_content?: boolean; // Controls whether task content is included in the response (default: true)
+  include_completed?: boolean; // Controls whether completed tasks are included in the response (default: true)
 }
 
 // Update options for task
