@@ -75,7 +75,7 @@ export async function startSdkServer(port: number = DEFAULT_PORT, options: {
 function registerTools(server: McpServer, verbose: boolean = false): void {
   // Task list tool
   server.tool(
-    "task.list",
+    "task_list",
     {
       status: z.string().optional(),
       type: z.string().optional(),
@@ -99,12 +99,20 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       } catch (error) {
         return formatError(error);
       }
+    },
+    {
+      description: "List tasks in the system with optional filtering based on status, type, assignee, tags, or phase. Returns an array of tasks matching the specified criteria. Results are sorted by priority by default.",
+      annotations: {
+        title: "List Tasks",
+        readOnlyHint: true,
+        idempotentHint: true
+      }
     }
   );
 
   // Task get tool
   server.tool(
-    "task.get",
+    "task_get",
     {
       id: z.string(),
       format: z.string().optional()
@@ -116,12 +124,20 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       } catch (error) {
         return formatError(error);
       }
+    },
+    {
+      description: "Get detailed information about a specific task by its ID. Returns the complete task object including both metadata and content.",
+      annotations: {
+        title: "Get Task",
+        readOnlyHint: true,
+        idempotentHint: true
+      }
     }
   );
 
   // Task create tool
   server.tool(
-    "task.create",
+    "task_create",
     {
       id: z.string().optional(),
       title: z.string(),
@@ -150,7 +166,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           updated_date: new Date().toISOString().split('T')[0],
           assigned_to: params.assignee || '',
         };
-        
+
         // Add optional fields
         if (params.phase) metadata.phase = params.phase;
         if (params.parent) metadata.parent_task = params.parent;
@@ -158,23 +174,31 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
         if (params.previous) metadata.previous_task = params.previous;
         if (params.next) metadata.next_task = params.next;
         if (params.tags) metadata.tags = params.tags;
-        
+
         const task: Task = {
           metadata,
           content: params.content || `## ${params.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`
         };
-        
+
         const result = await createTask(task);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
+      }
+    },
+    {
+      description: "Create a new task with the specified properties. Required fields are title and type. Other fields are optional with sensible defaults. Returns the created task object.",
+      annotations: {
+        title: "Create Task",
+        readOnlyHint: false,
+        idempotentHint: false
       }
     }
   );
 
   // Task update tool
   server.tool(
-    "task.update",
+    "task_update",
     {
       id: z.string(),
       updates: z.object({
@@ -188,18 +212,26 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
         if (!params.updates) {
           return formatError(new Error("No updates provided"));
         }
-        
+
         const result = await updateTask(params.id, params.updates);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
+      }
+    },
+    {
+      description: "Update a task's metadata or content. Requires the task ID and an updates object with metadata and/or content changes. Returns the updated task object.",
+      annotations: {
+        title: "Update Task",
+        readOnlyHint: false,
+        idempotentHint: false
       }
     }
   );
 
   // Task delete tool
   server.tool(
-    "task.delete",
+    "task_delete",
     {
       id: z.string()
     },
@@ -210,12 +242,21 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       } catch (error) {
         return formatError(error);
       }
+    },
+    {
+      description: "Delete a task by its ID. This operation permanently removes the task file from the system. Returns a success status.",
+      annotations: {
+        title: "Delete Task",
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true
+      }
     }
   );
 
   // Task next tool
   server.tool(
-    "task.next",
+    "task_next",
     {
       id: z.string().optional(),
       format: z.string().optional()
@@ -227,12 +268,20 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       } catch (error) {
         return formatError(error);
       }
+    },
+    {
+      description: "Find the next task to work on based on priority and dependencies. If an ID is provided, finds the next task after the specified one. Returns the next highest priority task that's ready to be started.",
+      annotations: {
+        title: "Find Next Task",
+        readOnlyHint: true,
+        idempotentHint: true
+      }
     }
   );
 
   // Phase list tool
   server.tool(
-    "phase.list",
+    "phase_list",
     {
       format: z.string().optional()
     },
@@ -243,12 +292,20 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       } catch (error) {
         return formatError(error);
       }
+    },
+    {
+      description: "List all phases in the system. Phases represent logical groupings of tasks such as releases, milestones, or sprints. Returns an array of phase objects.",
+      annotations: {
+        title: "List Phases",
+        readOnlyHint: true,
+        idempotentHint: true
+      }
     }
   );
 
   // Phase create tool
   server.tool(
-    "phase.create",
+    "phase_create",
     {
       id: z.string(),
       name: z.string(),
@@ -266,45 +323,61 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           order: params.order,
           tasks: []
         };
-        
+
         const result = await createPhase(phase);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
+      }
+    },
+    {
+      description: "Create a new phase with the specified properties. Required fields are id and name. A phase represents a logical grouping of tasks such as a release, milestone, or sprint. Returns the created phase object.",
+      annotations: {
+        title: "Create Phase",
+        readOnlyHint: false,
+        idempotentHint: false
       }
     }
   );
 
   // Workflow current tool
   server.tool(
-    "workflow.current",
+    "workflow_current",
     {
       format: z.string().optional()
     },
     async () => {
       try {
         const inProgressResult = await listTasks({ status: '🔵 In Progress' });
-        
+
         if (!inProgressResult.success) {
           return formatResponse(inProgressResult);
         }
-        
+
         if (inProgressResult.data && inProgressResult.data.length === 0) {
           // Try alternative status text
           const alternativeResult = await listTasks({ status: 'In Progress' });
           return formatResponse(alternativeResult);
         }
-        
+
         return formatResponse(inProgressResult);
       } catch (error) {
         return formatError(error);
+      }
+    },
+    {
+      description: "Get all tasks that are currently in progress (tasks with status '🔵 In Progress'). Returns an array of tasks that are actively being worked on.",
+      annotations: {
+        title: "Current Workflow",
+        readOnlyHint: true,
+        idempotentHint: true
       }
     }
   );
 
   // Workflow mark complete next tool
   server.tool(
-    "workflow.markCompleteNext",
+    "workflow_mark_complete_next",
     {
       id: z.string(),
       format: z.string().optional()
@@ -313,39 +386,47 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       try {
         // Get the next task before marking current as complete
         const nextTaskResult = await findNextTask(params.id);
-        
+
         // Mark current task as complete
         const updateResult = await updateTask(params.id, { metadata: { status: '🟢 Done' } });
-        
+
         if (!updateResult.success) {
           return formatResponse(updateResult);
         }
-        
+
         if (!nextTaskResult.success) {
           return {
-            content: [{ 
-              type: "text", 
-              text: JSON.stringify({ 
-                success: true, 
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                success: true,
                 data: { updated: updateResult.data, next: null },
                 message: `Task ${params.id} marked as Done. Error finding next task: ${nextTaskResult.error}`
-              }, null, 2) 
+              }, null, 2)
             }]
           };
         }
-        
+
         return {
-          content: [{ 
-            type: "text", 
-            text: JSON.stringify({ 
-              success: true, 
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: true,
               data: { updated: updateResult.data, next: nextTaskResult.data },
               message: updateResult.message
-            }, null, 2) 
+            }, null, 2)
           }]
         };
       } catch (error) {
         return formatError(error);
+      }
+    },
+    {
+      description: "Mark a task as complete and find the next task to work on. Requires the ID of the task to mark as complete. Updates the task's status to '🟢 Done' and returns both the updated task and the next suggested task.",
+      annotations: {
+        title: "Mark Complete & Find Next",
+        readOnlyHint: false,
+        idempotentHint: true
       }
     }
   );
@@ -556,16 +637,16 @@ async function startHttpServer(server: McpServer, port: number, verbose: boolean
     
     if (verbose) {
       console.log('Registered methods:');
-      console.log('- task.list');
-      console.log('- task.get');
-      console.log('- task.create');
-      console.log('- task.update');
-      console.log('- task.delete');
-      console.log('- task.next');
-      console.log('- phase.list');
-      console.log('- phase.create');
-      console.log('- workflow.current');
-      console.log('- workflow.markCompleteNext');
+      console.log('- task_list');
+      console.log('- task_get');
+      console.log('- task_create');
+      console.log('- task_update');
+      console.log('- task_delete');
+      console.log('- task_next');
+      console.log('- phase_list');
+      console.log('- phase_create');
+      console.log('- workflow_current');
+      console.log('- workflow_mark_complete_next');
     }
   });
 

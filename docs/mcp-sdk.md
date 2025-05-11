@@ -20,16 +20,16 @@ The following MCP tools (methods) are available:
 
 | Tool Name | Description |
 |-----------|-------------|
-| `task.list` | List tasks with optional filtering |
-| `task.get` | Get a specific task by ID |
-| `task.create` | Create a new task |
-| `task.update` | Update an existing task |
-| `task.delete` | Delete a task |
-| `task.next` | Find the next highest priority task |
-| `phase.list` | List all phases |
-| `phase.create` | Create a new phase |
-| `workflow.current` | Get the current in-progress tasks |
-| `workflow.markCompleteNext` | Mark a task as complete and get the next task |
+| `task_list` | List tasks in the system with optional filtering based on status, type, assignee, tags, or phase. Returns an array of tasks matching the specified criteria. Results are sorted by priority by default. |
+| `task_get` | Get detailed information about a specific task by its ID. Returns the complete task object including both metadata and content. |
+| `task_create` | Create a new task with the specified properties. Required fields are title and type. Other fields are optional with sensible defaults. Returns the created task object. |
+| `task_update` | Update a task's metadata or content. Requires the task ID and an updates object with metadata and/or content changes. Returns the updated task object. |
+| `task_delete` | Delete a task by its ID. This operation permanently removes the task file from the system. Returns a success status. |
+| `task_next` | Find the next task to work on based on priority and dependencies. If an ID is provided, finds the next task after the specified one. Returns the next highest priority task that's ready to be started. |
+| `phase_list` | List all phases in the system. Phases represent logical groupings of tasks such as releases, milestones, or sprints. Returns an array of phase objects. |
+| `phase_create` | Create a new phase with the specified properties. Required fields are id and name. A phase represents a logical grouping of tasks such as a release, milestone, or sprint. Returns the created phase object. |
+| `workflow_current` | Get all tasks that are currently in progress (tasks with status '🔵 In Progress'). Returns an array of tasks that are actively being worked on. |
+| `workflow_mark_complete_next` | Mark a task as complete and find the next task to work on. Requires the ID of the task to mark as complete. Updates the task's status to '🟢 Done' and returns both the updated task and the next suggested task. |
 
 ## Running the MCP Server
 
@@ -78,6 +78,47 @@ npx @modelcontextprotocol/inspector bun run src/mcp/stdio-cli.ts
 The MCP Inspector will spawn the server process and communicate with it via the STDIO transport.
 
 ## Technical Details
+
+### Tool Documentation
+
+All MCP tools are now documented with comprehensive descriptions and annotations that help AI assistants and other clients understand how to use them. Each tool includes:
+
+1. **Description** - A clear, concise explanation of what the tool does
+2. **Annotations** - Metadata about the tool's behavior:
+   - `title` - Human-readable name
+   - `readOnlyHint` - Whether the tool changes system state
+   - `destructiveHint` - Whether the tool performs destructive operations
+   - `idempotentHint` - Whether multiple identical calls have the same effect
+
+Example tool registration with documentation:
+
+```typescript
+server.tool(
+  "task_list",
+  {
+    status: z.string().optional(),
+    type: z.string().optional(),
+    // Other parameters...
+  },
+  async (params) => {
+    // Implementation...
+  },
+  {
+    description: "List tasks in the system with optional filtering based on status, type, assignee, tags, or phase.",
+    annotations: {
+      title: "List Tasks",
+      readOnlyHint: true,
+      idempotentHint: true
+    }
+  }
+);
+```
+
+These descriptions and annotations provide crucial context for AI assistants like Claude, enabling them to:
+- Discover available tools
+- Understand which parameters are required vs. optional
+- Know what kind of data to expect in responses
+- Make informed decisions about when to use each tool
 
 ### Transport Options
 
@@ -149,6 +190,7 @@ The MCP server implementation has been migrated from a custom HTTP server to the
 2. **Method Registration**: Tools are registered via the SDK's tool API instead of the custom method registry
 3. **Error Handling**: Uses the SDK's built-in error mechanisms
 4. **Schema Validation**: Uses Zod schemas for input validation
+5. **Tool Naming Convention**: Tool names now use underscores instead of dots (e.g., `task_list` instead of `task.list`) to comply with Claude Code's tool name pattern requirements
 
 ## Further Resources
 
