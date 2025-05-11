@@ -57,6 +57,12 @@ These high-level commands will make it easier for users to follow these conventi
   - [ ] Update README.md with new commands
   - [ ] Update feature management documentation
 
+- [ ] Update testing
+  - [ ] Update MCP test prompt in `/test/mcp/prompt-based-test-plan.md` to include feature/area command test scenarios
+  - [ ] Add test cases for feature creation, task addition, and listing
+  - [ ] Add test cases for area creation, task addition, and listing
+  - [ ] Add test cases for feature/area relationship validation
+
 ## Command Specifications
 
 ### Feature Management
@@ -130,6 +136,8 @@ roo-task epics [--phase <phase>]
 - [ ] All epic management commands are implemented and working correctly
 - [ ] Commands handle errors gracefully (e.g., when a feature doesn't exist)
 - [ ] Documentation is updated with the new commands
+- [ ] MCP test prompt includes scenarios for testing feature/area commands
 - [ ] Manual testing confirms the commands work as expected
 - [ ] Commands maintain backward compatibility with existing functionality
+- [ ] Both CLI and MCP interfaces support the new feature/area organization
 
