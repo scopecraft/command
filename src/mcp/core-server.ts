@@ -63,7 +63,7 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
 function registerTools(server: McpServer, verbose: boolean = false): void {
   // Task list tool
   server.tool(
-    "task.list",
+    "task_list",
     {
       status: z.string().optional(),
       type: z.string().optional(),
@@ -92,7 +92,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task get tool
   server.tool(
-    "task.get",
+    "task_get",
     {
       id: z.string(),
       format: z.string().optional()
@@ -109,7 +109,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task create tool
   server.tool(
-    "task.create",
+    "task_create",
     {
       id: z.string().optional(),
       title: z.string(),
@@ -118,6 +118,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       priority: z.string().optional(),
       assignee: z.string().optional(),
       phase: z.string().optional(),
+      subdirectory: z.string().optional(),
       parent: z.string().optional(),
       depends: z.array(z.string()).optional(),
       previous: z.string().optional(),
@@ -141,6 +142,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
         
         // Add optional fields
         if (params.phase) metadata.phase = params.phase;
+        if (params.subdirectory) metadata.subdirectory = params.subdirectory;
         if (params.parent) metadata.parent_task = params.parent;
         if (params.depends) metadata.depends_on = params.depends;
         if (params.previous) metadata.previous_task = params.previous;
@@ -152,7 +154,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           content: params.content || `## ${params.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`
         };
         
-        const result = await createTask(task);
+        const result = await createTask(task, params.subdirectory);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -162,7 +164,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task update tool
   server.tool(
-    "task.update",
+    "task_update",
     {
       id: z.string(),
       updates: z.object({
@@ -187,7 +189,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task delete tool
   server.tool(
-    "task.delete",
+    "task_delete",
     {
       id: z.string()
     },
@@ -203,7 +205,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task next tool
   server.tool(
-    "task.next",
+    "task_next",
     {
       id: z.string().optional(),
       format: z.string().optional()
@@ -220,7 +222,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Phase list tool
   server.tool(
-    "phase.list",
+    "phase_list",
     {
       format: z.string().optional()
     },
@@ -236,7 +238,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Phase create tool
   server.tool(
-    "phase.create",
+    "phase_create",
     {
       id: z.string(),
       name: z.string(),
@@ -265,7 +267,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Workflow current tool
   server.tool(
-    "workflow.current",
+    "workflow_current",
     {
       format: z.string().optional()
     },
@@ -292,7 +294,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Workflow mark complete next tool
   server.tool(
-    "workflow.markCompleteNext",
+    "workflow_mark_complete_next",
     {
       id: z.string(),
       format: z.string().optional()
