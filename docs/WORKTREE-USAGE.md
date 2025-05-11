@@ -42,10 +42,7 @@ This command will:
 3. Mark the task as "In Progress"
 4. Launch Claude Code in the worktree directory
 
-When Claude Code launches, use this slash command to get task context:
-```
-/project:task-context TASK-ID
-```
+Claude Code will automatically start with the task context loaded, as the slash command is passed as an argument to Claude.
 
 ### Finish Working on a Task
 
@@ -74,11 +71,10 @@ The `start` command supports these options:
 ## Workflow Example
 
 ```bash
-# Start working on a task (installs dependencies and launches Claude)
+# Start working on a task (installs dependencies and launches Claude with task context)
 bun run tw-start TASK-MCP-ERROR-HANDLING
 
-# Work on the task in Claude using the task context command
-/project:task-context TASK-MCP-ERROR-HANDLING
+# Work on the task in Claude (task context is automatically loaded)
 
 # When done, update the task status in your branch
 cd /Users/davidpaquet/Projects/roo-task-cli.worktrees/TASK-MCP-ERROR-HANDLING

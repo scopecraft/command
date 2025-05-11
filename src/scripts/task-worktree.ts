@@ -110,7 +110,7 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
       // Use Bun.spawn to change directory and launch Claude
       process.chdir(worktreeDir);
 
-      const claudeProcess = Bun.spawn(['claude'], {
+      const claudeProcess = Bun.spawn(['claude', `/project:task-context ${taskId}`], {
         stdio: ['inherit', 'inherit', 'inherit'],
         cwd: worktreeDir,
       });
@@ -119,8 +119,7 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
       await claudeProcess.exited;
     } else {
       console.log(`To start working on this task with Claude, run:`);
-      console.log(`cd ${worktreeDir} && bun install && claude`);
-      console.log(`Then use the slash command: /project:task-context ${taskId}`);
+      console.log(`cd ${worktreeDir} && bun install && claude "/project:task-context ${taskId}"`);
     }
     
   } catch (error) {
