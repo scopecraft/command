@@ -2,8 +2,8 @@
  * MCP method handlers
  * Each handler implements a specific MCP method
  */
-import { 
-  McpMethodRegistry, 
+import {
+  McpMethodRegistry,
   McpMethod,
   TaskListParams,
   TaskGetParams,
@@ -14,7 +14,8 @@ import {
   PhaseListParams,
   PhaseCreateParams,
   WorkflowCurrentParams,
-  WorkflowMarkCompleteNextParams
+  WorkflowMarkCompleteNextParams,
+  DebugCodePathParams
 } from './types.js';
 import {
   listTasks,
@@ -34,12 +35,19 @@ import {
  * Handler for task_list method
  */
 export async function handleTaskList(params: TaskListParams) {
+  // Pass all parameters to the core function, including the include_content parameter
+  // By default, set include_content to false for MCP to reduce token usage unless explicitly requested
+  // By default, also exclude completed tasks to further reduce response size
   return await listTasks({
     status: params.status,
     type: params.type,
     assignee: params.assignee,
     tags: params.tags,
-    phase: params.phase
+    phase: params.phase,
+    subdirectory: params.subdirectory,
+    is_overview: params.is_overview,
+    include_content: params.include_content ?? false, // Default to false for MCP to optimize token usage
+    include_completed: params.include_completed ?? false // Default to false to exclude completed tasks
   });
 }
 
@@ -190,6 +198,27 @@ export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkComplet
 }
 
 /**
+ * Handler for debug_code_path method
+ * This is a diagnostic handler to verify which version of the code is running
+ */
+export async function handleDebugCodePath(params: DebugCodePathParams) {
+  const version = '20250511-1625'; // Unique identifier for this specific version
+  return {
+    success: true,
+    data: {
+      version,
+      timestamp: new Date().toISOString(),
+      implemented_features: {
+        task_list_content_exclusion: true,
+        task_list_completed_exclusion: true
+      },
+      message: "Debug code path handler is responding - this is the updated MCP server"
+    },
+    message: `Debug code path handler is responding with version ${version}`
+  };
+}
+
+/**
  * Registry of all MCP method handlers
  */
 export const methodRegistry: McpMethodRegistry = {
@@ -202,5 +231,6 @@ export const methodRegistry: McpMethodRegistry = {
   [McpMethod.PHASE_LIST]: handlePhaseList,
   [McpMethod.PHASE_CREATE]: handlePhaseCreate,
   [McpMethod.WORKFLOW_CURRENT]: handleWorkflowCurrent,
-  [McpMethod.WORKFLOW_MARK_COMPLETE_NEXT]: handleWorkflowMarkCompleteNext
+  [McpMethod.WORKFLOW_MARK_COMPLETE_NEXT]: handleWorkflowMarkCompleteNext,
+  [McpMethod.DEBUG_CODE_PATH]: handleDebugCodePath
 };

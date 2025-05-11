@@ -26,11 +26,20 @@ When working in Claude Code:
 ### MCP Tool Examples
 
 ```
-// List tasks
+// List tasks (content and completed tasks excluded by default to reduce token usage)
 mcp__scopecraft-command-mcp__task_list
 
 // List tasks in a specific phase
 mcp__scopecraft-command-mcp__task_list { "phase": "release-v1" }
+
+// List tasks with full content included (uses more tokens)
+mcp__scopecraft-command-mcp__task_list { "include_content": true }
+
+// List completed tasks (default is to exclude them)
+mcp__scopecraft-command-mcp__task_list { "include_completed": true }
+
+// List all tasks including completed ones with full content (maximum response size)
+mcp__scopecraft-command-mcp__task_list { "include_content": true, "include_completed": true }
 
 // Get details of a specific task
 mcp__scopecraft-command-mcp__task_get { "id": "TASK-123" }

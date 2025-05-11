@@ -4,3 +4,10 @@ name = "Release V1"
 description = "First stable release of Roo Task CLI with both standalone and Roo Commander support, functioning as CLI and MCP"
 status = "🔵 In Progress"
 order = 2
+
+[[phases]]
+id = "test-mcp-20250511"
+name = "MCP Test Phase"
+description = "Phase for MCP testing - safe to delete after tests"
+status = "🟡 Pending"
+order = 2

@@ -16,7 +16,21 @@ echo "Starting MCP end-to-end tests..."
 echo "Results will be saved to: $RESULTS_FILE"
 
 # Run the Claude CLI command and save output to the results file
-claude -p "/project:e2e-mcp-test" --output-format stream-json --dangerously-skip-permission > "$RESULTS_FILE"
+claude -p "/project:e2e-mcp-test" --output-format stream-json \
+  --allowedTools \
+  "mcp__scopecraft-command-mcp__task_list" \
+  "mcp__scopecraft-command-mcp__task_get" \
+  "mcp__scopecraft-command-mcp__task_create" \
+  "mcp__scopecraft-command-mcp__task_update" \
+  "mcp__scopecraft-command-mcp__task_delete" \
+  "mcp__scopecraft-command-mcp__task_next" \
+  "mcp__scopecraft-command-mcp__phase_list" \
+  "mcp__scopecraft-command-mcp__phase_create" \
+  "mcp__scopecraft-command-mcp__workflow_current" \
+  "mcp__scopecraft-command-mcp__workflow_mark_complete_next" \
+  "Batch" \
+  "Read" \
+  "LS" > "$RESULTS_FILE"
 
 echo "Tests completed successfully!"
 echo "Results saved to: $RESULTS_FILE"
