@@ -13,13 +13,54 @@ The system is designed to be versatile:
 - Provides direct CRUD operations without requiring LLM processing
 - Offers the same core functionality through both CLI and MCP interfaces
 
+## Using MCP Tools in Claude Code
+
+**IMPORTANT: When working in Claude Code, always use MCP tools directly instead of CLI commands.**
+
+When working in Claude Code:
+
+- **PREFER MCP TOOLS**: Always use the MCP tools directly (e.g., `mcp__scopecraft-command-mcp__task_list`, `mcp__scopecraft-command-mcp__task_create`) for task operations
+- **WHEN TO USE CLI**: Only use CLI commands through Bash for debugging or when specifically requested by the user
+- **ERROR HANDLING**: If an MCP tool fails, report the error clearly and don't automatically fall back to CLI
+
+### MCP Tool Examples
+
+```
+// List tasks
+mcp__scopecraft-command-mcp__task_list
+
+// List tasks in a specific phase
+mcp__scopecraft-command-mcp__task_list { "phase": "release-v1" }
+
+// Get details of a specific task
+mcp__scopecraft-command-mcp__task_get { "id": "TASK-123" }
+
+// Create a new task
+mcp__scopecraft-command-mcp__task_create {
+  "title": "New Feature Task",
+  "type": "🌟 Feature",
+  "phase": "release-v1"
+}
+
+// Update a task status
+mcp__scopecraft-command-mcp__task_update {
+  "id": "TASK-123",
+  "updates": {
+    "status": "🔵 In Progress"
+  }
+}
+
+// Get next task recommendation
+mcp__scopecraft-command-mcp__task_next
+```
+
 ## Session Guidelines for Claude
 
 When starting a new session with this project, Claude should automatically:
 
-1. Check the current active phases with `bun run dev:cli -- phases`
-2. List open tasks using `bun run dev:cli -- list --status "🟡 To Do"`
-3. Identify the next highest priority task with `bun run dev:cli -- next-task`
+1. Check the current active phases with `mcp__scopecraft-command-mcp__phase_list`
+2. List open tasks using `mcp__scopecraft-command-mcp__task_list { "status": "🟡 To Do" }`
+3. Identify the next highest priority task with `mcp__scopecraft-command-mcp__task_next`
 4. Ask the user if they want to:
    - Work on the suggested next task (highest priority)
    - Choose a different task from the open tasks list
@@ -213,7 +254,7 @@ This creates the necessary directory structure based on the detected or specifie
 
 ## MCP Server Usage
 
-The Model Context Protocol (MCP) server provides the same functionality as the CLI but through an HTTP interface optimized for LLMs. This project maintains both implementations (CLI and MCP) in parallel, enabling flexible interaction with the task management system.
+The Model Context Protocol (MCP) server provides the same functionality as the CLI but through an HTTP interface optimized for LLMs. **This is the preferred interface when working in Claude Code.**
 
 ```bash
 # Start the MCP server on default port (3500)
@@ -227,29 +268,44 @@ sc-mcp --port 3501
 sc-mcp --verbose
 ```
 
-### Using CLI vs MCP in Claude Code
+### MCP Tool Naming Convention
 
-When working in Claude Code:
+MCP tools in Claude Code follow this naming pattern:
+```
+mcp__scopecraft-command-mcp__method_name
+```
 
-1. **For Basic Task Operations**:
-   - You can use the MCP tools directly (e.g., `mcp__scopecraft-command-mcp__task_list`)
-   - These provide structured JSON responses that are easy to parse programmatically
+For example:
+- `mcp__scopecraft-command-mcp__task_list` - List tasks
+- `mcp__scopecraft-command-mcp__task_create` - Create a task
+- `mcp__scopecraft-command-mcp__phase_list` - List phases
 
-2. **For Testing/Development Scenarios**:
-   - Switch between CLI and MCP implementations to verify consistency
-   - Use CLI (`bun run dev:cli`) for more detailed console output during debugging
-   - Use MCP for testing AI integration capabilities
+Always use these direct tool references rather than going through the CLI.
 
-3. **Error Handling During Development**:
-   - Since this project is under active development, when errors occur in either interface (CLI or MCP), report them clearly to the user
-   - Do not attempt to silently work around errors or switch interfaces automatically
-   - Explain the specific error and suggest potential fixes or alternative approaches
-   - If a command fails in one interface but works in another, document this discrepancy for the user
+### MCP and CLI Implementation Notes
 
-4. **Choosing the Right Interface**:
-   - Use CLI for human-oriented interactions with detailed text output
-   - Use MCP for programmatic access and AI integration
-   - For bug investigation, try both interfaces to isolate whether the issue is in the core logic or the interface layer
+Both interfaces provide the same core functionality but with different characteristics:
+
+1. **MCP Benefits**:
+   - Designed specifically for AI integration
+   - Structured JSON responses
+   - Consistent parameter naming
+   - Direct tool integration in Claude Code
+   - Better for programmatic access
+
+2. **CLI Benefits**:
+   - Human-friendly output format
+   - Designed for terminal usage
+   - More detailed error messages
+   - Useful for manual debugging
+   - Better for direct human interaction
+
+3. **Development Considerations**:
+   - Both implementations use the same core functions
+   - Features should be implemented consistently in both
+   - Error handling and validation should be equivalent
+   - When fixing bugs, verify in both interfaces
+   - When reporting issues, specify which interface exhibited the problem
 
 ### MCP MDTM Directory Structure Examples
 
@@ -356,3 +412,42 @@ When working with the MDTM directory structure, follow these best practices:
    ```
 
 When organizing tasks in Claude Code, first create the feature overview, then add individual tasks within that feature.
+
+## CLI and E2E Commands
+
+The `e2e` command is used for running end-to-end tests in the project. It provides a comprehensive testing approach that verifies the entire workflow of the Scopecraft Command system.
+
+### Key Features of the `e2e` Command:
+- Runs full end-to-end tests across CLI and MCP interfaces
+- Validates task creation, update, and management workflows
+- Ensures consistency between different project modes (standalone and Roo Commander)
+- Checks integration points between Core, CLI, and MCP modules
+
+### Usage Examples:
+```bash
+# Run all end-to-end tests
+sc e2e
+
+# Run e2e tests for a specific module
+sc e2e --module cli
+sc e2e --module mcp
+
+# Run tests with verbose output
+sc e2e --verbose
+
+# Run tests and generate a detailed report
+sc e2e --report
+```
+
+### Test Coverage:
+- Task CRUD operations
+- Phase management
+- MDTM directory structure validation
+- Interface consistency (CLI vs MCP)
+- Error handling scenarios
+- Performance and load testing
+
+### Best Practices:
+- Run e2e tests before major releases
+- Integrate e2e tests in CI/CD pipeline
+- Continuously expand test scenarios to cover new features
