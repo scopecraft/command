@@ -131,7 +131,7 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
 // Finish command implementation
 async function finishWorktree(taskId?: string) {
   // Check if we're running from a worktree
-  const isInWorktree = fs.existsSync('.git') && fs.readFileSync('.git', 'utf8').trim().startsWith('gitdir:');
+  const isInWorktree = fs.existsSync('.git') && fs.statSync('.git').isFile() && fs.readFileSync('.git', 'utf8').trim().startsWith('gitdir:');
   let mainRepoPath = REPO_ROOT;
   let currentDir = '';
 
@@ -175,15 +175,21 @@ async function finishWorktree(taskId?: string) {
 
   // Check for uncommitted changes in the worktree
   const worktreeDir = path.join(WORKTREES_DIR, taskId);
-  try {
-    const hasChanges = execSync(`cd "${worktreeDir}" && git status --porcelain`).toString().trim() !== '';
-    if (hasChanges) {
-      console.log('Warning: You have uncommitted changes in the worktree.');
-      console.log('Please commit or stash your changes before finishing the worktree.');
-      process.exit(1);
+
+  // Only check for changes if the worktree directory exists
+  if (fs.existsSync(worktreeDir)) {
+    try {
+      const hasChanges = execSync(`cd "${worktreeDir}" && git status --porcelain`).toString().trim() !== '';
+      if (hasChanges) {
+        console.log('Warning: You have uncommitted changes in the worktree.');
+        console.log('Please commit or stash your changes before finishing the worktree.');
+        process.exit(1);
+      }
+    } catch (error) {
+      console.log('Could not check worktree status. Continuing anyway...');
     }
-  } catch (error) {
-    console.log('Could not check worktree status. Continuing anyway...');
+  } else {
+    console.log(`Worktree directory ${worktreeDir} does not exist.`);
   }
   
   // Check if branch exists
@@ -202,8 +208,16 @@ async function finishWorktree(taskId?: string) {
       process.exit(1);
     }
 
-    // Remove worktree
-    execSync(`git worktree remove "${worktreeDir}"`);
+    let worktreeRemoved = false;
+
+    // Check if worktree exists before removing
+    if (fs.existsSync(worktreeDir)) {
+      // Remove worktree
+      execSync(`git worktree remove "${worktreeDir}"`);
+      worktreeRemoved = true;
+    } else {
+      console.log(`Worktree directory ${worktreeDir} does not exist. Skipping removal.`);
+    }
 
     // Ask what to do with the task
     console.log('Choose an action for the task:');
@@ -219,8 +233,11 @@ async function finishWorktree(taskId?: string) {
     console.log(`  bun run dev:cli -- update ${taskId} --status "🟢 Done"`);
     console.log(`  git commit -am "Mark task ${taskId} as completed"`);
     console.log(`  git push origin ${taskId}`);
-    
-    console.log(`\nWorktree for task ${taskId} has been removed.`);
+
+    if (worktreeRemoved) {
+      console.log(`\nWorktree for task ${taskId} has been removed.`);
+    }
+
     console.log(`\nTo create a PR for this branch after updating the task status, run:`);
     console.log(`git push -u origin ${taskId}`);
     console.log(`gh pr create --base main --head ${taskId}`);
