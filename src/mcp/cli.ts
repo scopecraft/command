@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * MCP server CLI
  * Command-line interface for starting the MCP server
@@ -10,7 +10,7 @@ import path from 'path';
 import { getTasksDirectory, ensureDirectoryExists, projectConfig, ProjectMode } from '../core/index.js';
 
 // Read package version from package.json
-let version = '0.2.0'; // Default
+let version = '0.3.0'; // Default
 try {
   const packageJson = JSON.parse(fs.readFileSync(
     path.join(process.cwd(), 'package.json'),
@@ -25,7 +25,7 @@ try {
 const program = new Command();
 
 program
-  .name('scopecraft-command-mcp')
+  .name('scopecraft-mcp')
   .description('MCP server for Markdown-Driven Task Management (MDTM)')
   .version(version)
   .option('-p, --port <port>', 'Port to listen on', value => parseInt(value, 10), 3500)

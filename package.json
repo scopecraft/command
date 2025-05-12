@@ -1,33 +1,32 @@
 {
-  "name": "@scopecraft/command",
-  "version": "0.2.0",
+  "name": "@scopecraft/cmd",
+  "version": "0.3.0",
   "description": "CLI and MCP server for managing Markdown-Driven Task Management (MDTM) files with or without Roo Commander",
   "type": "module",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "bin": {
-    "scopecraft-command": "./dist/cli/cli.js",
-    "sc": "./dist/cli/cli.js",
-    "scopecraft-command-mcp": "./dist/mcp/cli.js",
-    "sc-mcp": "./dist/mcp/cli.js",
-    "scopecraft-command-mcp-sdk": "./dist/mcp/sdk-cli.js",
-    "sc-mcp-sdk": "./dist/mcp/sdk-cli.js",
-    "scopecraft-command-mcp-stdio": "./dist/mcp/stdio-cli.js",
-    "sc-mcp-stdio": "./dist/mcp/stdio-cli.js"
+    "scopecraft": "dist/cli/cli.js",
+    "sc": "dist/cli/cli.js",
+    "scopecraft-mcp": "dist/mcp/cli.js",
+    "sc-mcp": "dist/mcp/cli.js",
+    "scopecraft-stdio": "dist/mcp/stdio-cli.js",
+    "sc-stdio": "dist/mcp/stdio-cli.js"
   },
   "scripts": {
-    "build": "bun build ./src/cli/cli.ts ./src/mcp/cli.ts ./src/mcp/sdk-cli.ts ./src/mcp/stdio-cli.ts --outdir ./dist --target node",
+    "build": "bun build ./src/cli/cli.ts ./src/mcp/cli.ts ./src/mcp/stdio-cli.ts --outdir ./dist --target node && chmod +x ./dist/cli/cli.js ./dist/mcp/cli.js ./dist/mcp/stdio-cli.js",
     "start": "bun ./src/cli/cli.ts",
     "start:mcp": "bun ./src/mcp/cli.ts",
-    "start:mcp:sdk": "bun ./src/mcp/sdk-cli.ts",
     "start:mcp:stdio": "bun ./src/mcp/stdio-cli.ts",
     "dev:cli": "bun ./src/cli/cli.ts",
     "dev:mcp": "bun ./src/mcp/cli.ts",
-    "dev:mcp:sdk": "bun ./src/mcp/sdk-cli.ts",
     "dev:mcp:stdio": "bun ./src/mcp/stdio-cli.ts",
     "mcp:inspect": "bun x @modelcontextprotocol/inspector",
     "mcp:debug": "bash -c 'bun run dev:mcp & sleep 2 && bun x @modelcontextprotocol/inspector'",
     "mcp:debug:http": "bash -c 'bun run dev:mcp & sleep 2 && open \"http://localhost:6274/#/?server=http%3A%2F%2Flocalhost%3A3500&transport=httpsse\"'",
-    "mcp:debug:sdk": "bash -c 'bun run dev:mcp:sdk & sleep 2 && bun x @modelcontextprotocol/inspector'",
-    "mcp:debug:sdk:web": "bash -c 'bun run dev:mcp:sdk & sleep 2 && open \"http://localhost:6274/#/?server=http%3A%2F%2Flocalhost%3A3500%2Fmcp&transport=streamablehttp\"'",
     "mcp:debug:stdio": "npx @modelcontextprotocol/inspector bun run src/mcp/stdio-cli.ts",
     "lint": "biome lint .",
     "lint:eslint": "eslint src --ext .ts",
@@ -40,7 +39,12 @@
     "tw": "bun ./src/scripts/task-worktree.ts",
     "tw-start": "bun ./src/scripts/task-worktree.ts start",
     "tw-finish": "bun ./src/scripts/task-worktree.ts finish",
-    "tw-list": "bun ./src/scripts/task-worktree.ts list"
+    "tw-list": "bun ./src/scripts/task-worktree.ts list",
+    "prepublishOnly": "bun run build",
+    "update-version": "bun scripts/update-cli-version.ts",
+    "version": "bun run update-version && git add src/cli/cli.ts src/mcp/cli.ts",
+    "publish:local": "mkdir -p ~/MCP/scopecraft && npm pack && cp scopecraft-cmd-*.tgz ~/MCP/scopecraft/",
+    "install:local": "./scripts/install-local.sh"
   },
   "keywords": [
     "scopecraft",
@@ -49,10 +53,27 @@
     "cli",
     "mdtm",
     "mcp",
-    "workflow"
+    "workflow",
+    "markdown",
+    "task-management"
   ],
-  "author": "",
+  "author": "Scopecraft Team",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scopecraft/command.git"
+  },
+  "homepage": "https://github.com/scopecraft/command#readme",
+  "bugs": {
+    "url": "https://github.com/scopecraft/command/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "preferGlobal": true,
   "dependencies": {
     "@iarna/toml": "^3.0.0",
     "@modelcontextprotocol/sdk": "^1.11.1",

@@ -20,16 +20,88 @@ The system supports the [MDTM directory structure](docs/mdtm-directory-structure
 
 ## Installation
 
+### Option 1: Install from NPM
+
+#### Global Installation
+
 ```bash
+# Install globally with npm
+npm install -g @scopecraft/cmd
+
+# Or with yarn
+yarn global add @scopecraft/cmd
+
+# Or with bun
+bun install -g @scopecraft/cmd
+```
+
+After global installation, the following commands will be available anywhere on your system:
+
+- `scopecraft` / `sc` - CLI for task management
+- `scopecraft-mcp` / `sc-mcp` - MCP server (HTTP/SSE with SDK implementation)
+- `scopecraft-stdio` / `sc-stdio` - MCP server with STDIO transport
+
+#### Using with npx (No Installation Required)
+
+You can run the commands directly without installation using npx:
+
+```bash
+# Run the CLI
+npx @scopecraft/cmd list
+npx @scopecraft/cmd create --title "New Task" --type "🌟 Feature"
+
+# Run the MCP server (using the -p flag to specify the package, then the binary name)
+npx -p @scopecraft/cmd scopecraft-mcp
+# Or with the shorter alias
+npx -p @scopecraft/cmd sc-mcp
+
+# Run the MCP server with STDIO transport
+npx -p @scopecraft/cmd scopecraft-stdio
+# Or with the shorter alias
+npx -p @scopecraft/cmd sc-stdio
+```
+
+Note: When using npx with additional binaries from the package, you need to use the `-p` flag to specify the package name, then provide the binary name to execute.
+
+### Option 2: Build from source
+
+```bash
+# Clone the repository
+git clone https://github.com/scopecraft/command.git
+cd command
+
 # Install dependencies
 bun install
 
 # Build the project
 bun run build
 
-# Link for development (creates scopecraft-command/sc and scopecraft-command-mcp/sc-mcp commands)
+# Link for development (creates scopecraft/sc and scopecraft-mcp/sc-mcp commands)
 bun link
 ```
+
+### Local Distribution Testing
+
+The project includes a streamlined workflow for testing the distributable package locally without publishing to npm. This is particularly useful for verifying integration with MCP clients like Claude Code.
+
+```bash
+# After committing changes to main, build and package the project:
+npm run publish:local      # Creates tarball in ~/MCP/scopecraft/
+
+# Install the package globally:
+npm run install:local      # Installs globally and verifies CLI commands
+
+# Verify installation:
+sc --version               # Should display current version
+sc-mcp --version           # Should match version in package.json
+sc-stdio --version         # Should match version in package.json
+```
+
+**Note for Claude Code users:** After running these commands, Claude Code will automatically detect the `scopecraft-cmd` MCP server, and tools will be available with the prefix `mcp__scopecraft-cmd__task_list`.
+
+**Troubleshooting:**
+- If the MCP tools aren't detected, check ~/.claude.json for proper configuration
+- If CLI commands aren't found, verify that npm's global bin directory is in your PATH
 
 ## CLI Usage
 
@@ -38,7 +110,7 @@ The CLI provides a comprehensive set of commands for managing tasks:
 ```bash
 # Basic commands
 sc list                   # Short alias
-scopecraft-command list   # Full command
+scopecraft list           # Full command
 sc get TASK-ID
 sc create --title "New task" --type "🌟 Feature"
 sc update TASK-ID --status "🔵 In Progress"
@@ -128,13 +200,10 @@ The MCP server provides an API that can be used by Roo Commander's LLM agents us
 ```bash
 # Start the MCP server on the default port (3500)
 sc-mcp                      # Short alias
-scopecraft-command-mcp      # Full command
+scopecraft-mcp              # Full command
 
 # Start on a custom port
 sc-mcp --port 3501
-
-# Start with the SDK implementation specifically (HTTP)
-sc-mcp-sdk
 
 # Start with the STDIO transport (useful for terminal-based operation)
 sc-mcp-stdio

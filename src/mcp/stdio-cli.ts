@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * STDIO MCP server CLI
  * Command-line interface for starting the MCP server with STDIO transport
@@ -25,8 +25,8 @@ try {
 const program = new Command();
 
 program
-  .name('scopecraft-command-mcp-stdio')
-  .description('MCP server for Markdown-Driven Task Management (MDTM) using STDIO transport')
+  .name('scopecraft-stdio')
+  .description('MCP server for MDTM files using STDIO transport')
   .version(version)
   .option('-v, --verbose', 'Enable verbose logging')
   .option('--mode <mode>', 'Force project mode (roo or standalone)')

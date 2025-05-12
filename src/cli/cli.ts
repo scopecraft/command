@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Main CLI entry point
  * Sets up commands and validates environment
@@ -26,7 +26,7 @@ import path from 'path';
 const program = new Command();
 
 // Read package version from package.json
-let version = '0.2.0'; // Default
+let version = '0.3.0'; // Default
 try {
   const packageJson = JSON.parse(fs.readFileSync(
     path.join(process.cwd(), 'package.json'), 
@@ -38,7 +38,7 @@ try {
 }
 
 program
-  .name('scopecraft-command')
+  .name('scopecraft')
   .description('CLI for managing Markdown-Driven Task Management (MDTM) files with TOML/YAML frontmatter')
   .version(version);
 
@@ -205,7 +205,7 @@ program
 function validateEnvironment() {
   if (!projectConfig.validateEnvironment()) {
     console.error('Error: Task directory structure not found in the current directory');
-    console.error('Please run "scopecraft-command init" or "sc init" first to set up the necessary structure');
+    console.error('Please run "scopecraft init" or "sc init" first to set up the necessary structure');
     process.exit(1);
   }
 
