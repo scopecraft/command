@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "../../ui/button";
 import type { Table } from "@tanstack/react-table";
-import type { Task } from "../../../lib/types/index";
+import type { Task } from "../../../lib/types";
 
 interface ColumnToggleProps<T> {
   table: Table<T>;

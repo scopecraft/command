@@ -1,5 +1,5 @@
 import { Button } from "../../ui/button";
-import type { Task } from "../../../lib/types/index";
+import type { Task } from "../../../lib/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useLocation } from "wouter";
 import { routes } from "../../../lib/routes";

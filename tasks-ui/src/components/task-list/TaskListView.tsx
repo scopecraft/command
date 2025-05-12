@@ -6,7 +6,7 @@ import { routes } from '../../lib/routes';
 import { DataTable } from './table/data-table';
 import { columns } from './table/columns';
 import { TaskFilters } from './filters';
-import type { TaskListFilter } from '../../lib/types/index';
+import type { TaskListFilter } from '../../lib/types';
 
 export function TaskListView() {
   const { tasks, loading, error } = useTaskContext();

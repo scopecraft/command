@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent } from "react";
 import { Button } from "../ui/button";
-import type { TaskListFilter } from "../../lib/types/index";
+import type { TaskListFilter } from "../../lib/types";
 
 interface FiltersProps {
   filters: TaskListFilter;
