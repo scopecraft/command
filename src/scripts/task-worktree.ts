@@ -25,6 +25,71 @@ const WORKTREES_DIR = path.resolve(path.dirname(REPO_ROOT), 'roo-task-cli.worktr
 
 // No need to initialize task manager - using imported functions directly
 
+// Helper function to launch Claude for task finishing
+async function launchClaudeFinish(taskId: string, mergePreference: string, worktreeDir: string) {
+  // Create context for Claude
+  const context = {
+    taskId,
+    mergePreference,
+    worktreeDir,
+    mainRepoPath: REPO_ROOT
+  };
+
+  // Launch Claude with the task-finish command
+  console.log(`Launching Claude to finish task ${taskId}...`);
+
+  try {
+    const claudeProcess = Bun.spawn([
+      'claude',
+      `/project:task-finish ${JSON.stringify(context)}`
+    ], {
+      stdio: ['inherit', 'inherit', 'inherit'],
+      cwd: worktreeDir,
+    });
+
+    // Wait for Claude process to complete
+    await claudeProcess.exited;
+
+    console.log(`Task ${taskId} finishing process completed.`);
+    return true;
+  } catch (error) {
+    console.error('Failed to launch Claude for task finishing:', error);
+    return false;
+  }
+}
+
+// Helper function to update task status
+async function updateTaskStatus(taskId: string, worktreeDir: string) {
+  const task = await getTask(taskId);
+
+  // Check if already completed
+  if (task.success && task.data?.metadata.status === '🟢 Done') {
+    console.log('Task already marked as completed');
+    return true;
+  }
+
+  // Update task
+  const result = await updateTask(taskId, {
+    metadata: {
+      status: '🟢 Done',
+      updated_date: new Date().toISOString().split('T')[0]
+    }
+  });
+
+  if (result.success) {
+    // Commit the task status update
+    try {
+      execSync(`cd "${worktreeDir}" && git add "${result.data.filePath}" && git commit -m "Mark task ${taskId} as completed"`, { stdio: 'inherit' });
+      return true;
+    } catch (error) {
+      console.error('Failed to commit task status update:', error);
+      return false;
+    }
+  }
+
+  return false;
+}
+
 // Add commands
 program
   .command('start')
@@ -35,8 +100,9 @@ program
 
 program
   .command('finish')
-  .description('Finish working on a task and clean up the worktree')
+  .description('Finish working on a task and merge changes')
   .argument('[taskId]', 'Optional task ID to finish')
+  .option('--merge <mode>', 'Merge mode: local or pr', 'ask')
   .action(finishWorktree);
 
 program
@@ -129,7 +195,7 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
 }
 
 // Finish command implementation
-async function finishWorktree(taskId?: string) {
+async function finishWorktree(taskId?: string, options?: { merge?: string }) {
   // Check if we're running from a worktree
   const isInWorktree = fs.existsSync('.git') && fs.statSync('.git').isFile() && fs.readFileSync('.git', 'utf8').trim().startsWith('gitdir:');
   let mainRepoPath = REPO_ROOT;
@@ -146,11 +212,17 @@ async function finishWorktree(taskId?: string) {
       console.log(`Using current directory as task ID: ${taskId}`);
     }
 
+    // Add merge option to delegation command if provided
+    let mergeOption = '';
+    if (options?.merge && options.merge !== 'ask') {
+      mergeOption = ` --merge ${options.merge}`;
+    }
+
     // Execute the finishWorktree command in the main repository
     try {
       console.log(`Delegating to main repository at: ${mainRepoPath}`);
       // Call the same script but from the main repository
-      const result = execSync(`cd "${mainRepoPath}" && bun run tw-finish ${taskId}`).toString();
+      const result = execSync(`cd "${mainRepoPath}" && bun run tw-finish ${taskId}${mergeOption}`).toString();
       console.log(result);
       return; // Exit after delegation
     } catch (error) {
@@ -208,39 +280,73 @@ async function finishWorktree(taskId?: string) {
       process.exit(1);
     }
 
+    // We'll leave worktree removal to a separate cleanup task or to Claude
+    // Don't remove the worktree here as Claude needs to run in it
     let worktreeRemoved = false;
-
-    // Check if worktree exists before removing
-    if (fs.existsSync(worktreeDir)) {
-      // Remove worktree
-      execSync(`git worktree remove "${worktreeDir}"`);
-      worktreeRemoved = true;
-    } else {
-      console.log(`Worktree directory ${worktreeDir} does not exist. Skipping removal.`);
+    if (!fs.existsSync(worktreeDir)) {
+      console.log(`Worktree directory ${worktreeDir} does not exist.`);
     }
 
-    // Ask what to do with the task
-    console.log('Choose an action for the task:');
-    console.log('1. Mark as Done');
-    console.log('2. Mark as In Review');
-    console.log('3. Leave task status unchanged');
+    // Get merge preference from options or prompt the user
+    let mergePreference = options?.merge || 'ask';
 
-    // We should NOT update the task status in the main branch
-    // Instead, print instructions for updating it in the worktree before merging
-    console.log('Important: Task status should be updated in your branch before merging.');
-    console.log('Run these commands in your branch before creating a PR:');
-    console.log(`  git checkout ${taskId}`);
-    console.log(`  bun run dev:cli -- update ${taskId} --status "🟢 Done"`);
-    console.log(`  git commit -am "Mark task ${taskId} as completed"`);
-    console.log(`  git push origin ${taskId}`);
+    // If mergePreference is ask, prompt user
+    if (mergePreference === 'ask') {
+      console.log('Choose a merge option:');
+      console.log('1. Local merge directly to main');
+      console.log('2. Create a pull request');
 
-    if (worktreeRemoved) {
-      console.log(`\nWorktree for task ${taskId} has been removed.`);
+      const response = await new Promise<string>(resolve => {
+        process.stdin.once('data', data => {
+          resolve(data.toString().trim());
+        });
+      });
+
+      mergePreference = response === '1' ? 'local' : 'pr';
     }
 
-    console.log(`\nTo create a PR for this branch after updating the task status, run:`);
-    console.log(`git push -u origin ${taskId}`);
-    console.log(`gh pr create --base main --head ${taskId}`);
+    console.log(`Selected merge option: ${mergePreference}`);
+
+    // Check if we need to mark the task as completed
+    console.log(`Checking task status...`);
+    const statusUpdated = await updateTaskStatus(taskId, worktreeDir);
+    if (statusUpdated) {
+      console.log(`Task ${taskId} has been marked as completed.`);
+    }
+
+    // Check if .claude directory exists
+    const claudeDirExists = fs.existsSync('.claude/commands/task-finish.md');
+    if (!claudeDirExists) {
+      console.log(`Warning: Claude command directory not found. Creating minimal structure...`);
+      fs.mkdirSync('.claude/commands', { recursive: true });
+      // We've already created the task-finish.md file earlier in this implementation
+    }
+
+    // Launch Claude to handle the merge process
+    console.log(`Starting automated task completion process...`);
+    const claudeSuccess = await launchClaudeFinish(taskId, mergePreference, worktreeDir);
+
+    // If Claude integration failed, provide fallback instructions
+    if (!claudeSuccess) {
+      console.log(`\nAutomated task completion failed. You can complete the task manually:`);
+
+      if (mergePreference === 'local') {
+        console.log(`\nTo merge directly to main, run:`);
+        console.log(`git checkout main`);
+        console.log(`git merge --no-ff ${taskId}`);
+        console.log(`git push origin main`);
+      } else {
+        console.log(`\nTo create a PR for this branch, run:`);
+        console.log(`git push -u origin ${taskId}`);
+        console.log(`gh pr create --base main --head ${taskId}`);
+      }
+
+      console.log(`\nTo remove the worktree when you're done, run:`);
+      console.log(`git worktree remove "${worktreeDir}"`);
+    }
+
+    // Claude will handle the worktree cleanup if successful
+    console.log(`\nThe worktree will be automatically removed by Claude after successful merge.`);
     
   } catch (error) {
     console.error('Error finishing worktree:', error);
