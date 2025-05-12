@@ -1119,7 +1119,8 @@ export async function listPhases(): Promise<OperationResult<Phase[]>> {
     }
     
     // Finally, gather tasks for each phase
-    const tasksResult = await listTasks();
+    // Include completed tasks to correctly determine phase status
+    const tasksResult = await listTasks({ include_completed: true });
     if (tasksResult.success && tasksResult.data) {
       const allTasks = tasksResult.data;
       
