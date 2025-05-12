@@ -35,9 +35,9 @@ import {
  * Handler for task_list method
  */
 export async function handleTaskList(params: TaskListParams) {
-  // Pass all parameters to the core function, including the include_content parameter
-  // By default, set include_content to false for MCP to reduce token usage unless explicitly requested
-  // By default, also exclude completed tasks to further reduce response size
+  // Pass all parameters to the core function
+  // The core implementation now defaults to excluding content and completed tasks
+  // Only when explicitly set to true will these be included
   return await listTasks({
     status: params.status,
     type: params.type,
@@ -46,8 +46,8 @@ export async function handleTaskList(params: TaskListParams) {
     phase: params.phase,
     subdirectory: params.subdirectory,
     is_overview: params.is_overview,
-    include_content: params.include_content ?? false, // Default to false for MCP to optimize token usage
-    include_completed: params.include_completed ?? false // Default to false to exclude completed tasks
+    include_content: params.include_content, // Only include content when explicitly set to true
+    include_completed: params.include_completed // Only include completed tasks when explicitly set to true
   });
 }
 

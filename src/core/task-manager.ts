@@ -102,8 +102,8 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
         if (options.subdirectory && task.metadata.subdirectory !== options.subdirectory) continue;
         if (options.is_overview !== undefined && task.metadata.is_overview !== options.is_overview) continue;
 
-        // Filter out completed tasks unless explicitly requested to include them
-        if (options.include_completed === false) {
+        // Filter out completed tasks by default, UNLESS explicitly requested to include them
+        if (options.include_completed !== true) {
           const status = task.metadata.status || '';
           if (status.includes('Done') ||
               status.includes('🟢') ||
@@ -125,8 +125,8 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
       }
     }
 
-    // If include_content is explicitly set to false, remove content from tasks to reduce payload size
-    if (options.include_content === false) {
+    // Remove content from tasks by default to reduce payload size, UNLESS explicitly requested to include it
+    if (options.include_content !== true) {
       const compactTasks = tasks.map(task => ({
         metadata: task.metadata,
         filePath: task.filePath,

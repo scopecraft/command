@@ -70,7 +70,11 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       assignee: z.string().optional(),
       tags: z.array(z.string()).optional(),
       phase: z.string().optional(),
-      format: z.string().optional()
+      format: z.string().optional(),
+      include_content: z.boolean().optional(),
+      include_completed: z.boolean().optional(),
+      subdirectory: z.string().optional(),
+      is_overview: z.boolean().optional()
     },
     async (params) => {
       const filterOptions: TaskFilterOptions = {
@@ -78,7 +82,11 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
         type: params.type,
         assignee: params.assignee,
         tags: params.tags,
-        phase: params.phase
+        phase: params.phase,
+        include_content: params.include_content,
+        include_completed: params.include_completed,
+        subdirectory: params.subdirectory,
+        is_overview: params.is_overview
       };
 
       try {
