@@ -10,6 +10,7 @@ export const mockTasks: Task[] = [
     priority: '🔼 High',
     created_date: '2025-05-10',
     updated_date: '2025-05-12',
+    assigned_to: '🧑‍💻 User:Alice',
     phase: 'phase-1',
     tags: ['ui', 'frontend'],
     content: '# Implement Task List View\n\nCreate a table view for displaying and filtering tasks.'
@@ -22,8 +23,10 @@ export const mockTasks: Task[] = [
     priority: '🔼 High',
     created_date: '2025-05-10',
     updated_date: '2025-05-12',
+    assigned_to: '🤖 AI',
     phase: 'phase-2',
     tags: ['ui', 'frontend'],
+    depends_on: ['TASK-001'],
     content: '# Create Task Detail View\n\nImplement a detailed view for viewing task information and content.'
   },
   {
@@ -34,8 +37,10 @@ export const mockTasks: Task[] = [
     priority: '▶️ Medium',
     created_date: '2025-05-11',
     updated_date: '2025-05-11',
+    assigned_to: '👥 Team:Frontend',
     phase: 'phase-2',
     tags: ['ui', 'frontend', 'form'],
+    depends_on: ['TASK-002'],
     content: '# Implement Task Form\n\nCreate a form for adding and editing tasks.'
   },
   {
@@ -46,6 +51,8 @@ export const mockTasks: Task[] = [
     priority: '🔼 High',
     created_date: '2025-05-12',
     updated_date: '2025-05-12',
+    due_date: '2025-05-25',
+    assigned_to: '🧑‍💻 User:Bob',
     phase: 'phase-2',
     tags: ['ui', 'frontend', 'filtering'],
     content: '# Add Task Filtering\n\nImplement filtering options for the task list view.'
@@ -72,6 +79,9 @@ export const mockTasks: Task[] = [
     updated_date: '2025-05-12',
     phase: 'phase-2',
     tags: ['bug', 'creation'],
+    depends_on: ['TASK-003', 'TASK-004'],
+    due_date: '2025-05-15',
+    assigned_to: '🧑‍💻 User:Alice',
     content: '# Fix Task Creation Bug\n\nFix bug where task creation fails with long titles.'
   },
   {
@@ -82,6 +92,7 @@ export const mockTasks: Task[] = [
     priority: '🔽 Low',
     created_date: '2025-05-12',
     updated_date: '2025-05-12',
+    assigned_to: '🤖 AI',
     phase: 'phase-3',
     tags: ['ui', 'markdown'],
     content: '# Add Markdown Preview\n\nImplement a preview mode for markdown content in the task form.'
@@ -106,6 +117,8 @@ export const mockTasks: Task[] = [
     priority: '▶️ Medium',
     created_date: '2025-05-11',
     updated_date: '2025-05-11',
+    assigned_to: '👥 Team:Security',
+    due_date: '2025-06-01',
     phase: 'phase-3',
     tags: ['auth', 'security'],
     content: '# Add User Authentication\n\nImplement user authentication and authorization.'
@@ -119,6 +132,7 @@ export const mockTasks: Task[] = [
     created_date: '2025-05-12',
     updated_date: '2025-05-12',
     phase: 'phase-3',
+    depends_on: ['TASK-007'],
     tags: ['ui', 'graph', 'dependencies'],
     content: '# Create Task Dependency Graph\n\nImplement a visual representation of task dependencies.'
   }

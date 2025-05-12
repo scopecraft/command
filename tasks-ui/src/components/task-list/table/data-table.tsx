@@ -4,15 +4,18 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   getFilteredRowModel,
+  getVisibilityState,
   flexRender,
   type ColumnDef,
   type SortingState,
   type ColumnFiltersState,
+  type VisibilityState,
   type Table,
 } from "@tanstack/react-table";
 import { useState } from "react";
 import { Button } from "../../ui/button";
 import { SortIndicator } from "./sort-indicator";
+import { ColumnToggle } from "./column-toggle";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -20,7 +23,7 @@ interface DataTableProps<TData, TValue> {
   onRowClick?: (row: TData) => void;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends object, TValue>({
   columns,
   data,
   onRowClick,
@@ -28,6 +31,11 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    // Hide these columns by default
+    created_date: false,
+    updated_date: false,
+  });
 
   const table = useReactTable({
     data,
@@ -39,10 +47,12 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
+    onColumnVisibilityChange: setColumnVisibility,
     state: {
       sorting,
       columnFilters,
       rowSelection,
+      columnVisibility,
     },
   });
 
@@ -112,9 +122,12 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+        <div className="flex items-center space-x-2">
+          <div className="text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          <ColumnToggle table={table} />
         </div>
         <div className="flex items-center space-x-2">
           <Button
