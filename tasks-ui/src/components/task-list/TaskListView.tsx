@@ -43,6 +43,11 @@ export function TaskListView() {
     return [...new Set(allTags)].sort();
   }, [tasks]);
 
+  // Extract all unique assignees from tasks
+  const assigneeOptions = useMemo(() => {
+    return [...new Set(tasks.map(task => task.assigned_to).filter(Boolean))].sort();
+  }, [tasks]);
+
   // Filter tasks based on current filters
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -51,6 +56,7 @@ export function TaskListView() {
       if (filters.type && task.type !== filters.type) return false;
       if (filters.searchTerm && !task.title.toLowerCase().includes(filters.searchTerm.toLowerCase())) return false;
       if (filters.tag && (!task.tags || !task.tags.includes(filters.tag))) return false;
+      if (filters.assignedTo && task.assigned_to !== filters.assignedTo) return false;
       return true;
     });
   }, [tasks, filters]);
@@ -97,6 +103,7 @@ export function TaskListView() {
         priorityOptions={priorityOptions}
         typeOptions={typeOptions}
         tagOptions={tagOptions}
+        assigneeOptions={assigneeOptions}
       />
       
       <DataTable 

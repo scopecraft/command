@@ -9,6 +9,7 @@ interface FiltersProps {
   priorityOptions: string[];
   typeOptions: string[];
   tagOptions?: string[];
+  assigneeOptions?: string[];
 }
 
 export function TaskFilters({
@@ -18,6 +19,7 @@ export function TaskFilters({
   priorityOptions,
   typeOptions,
   tagOptions = [],
+  assigneeOptions = [],
 }: FiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState(filters.searchTerm || "");
@@ -44,6 +46,10 @@ export function TaskFilters({
 
   const handleTagChange = (tag: string | undefined) => {
     onFilterChange({ ...filters, tag });
+  };
+
+  const handleAssigneeChange = (assignedTo: string | undefined) => {
+    onFilterChange({ ...filters, assignedTo });
   };
 
   const clearFilters = () => {
@@ -78,7 +84,7 @@ export function TaskFilters({
         >
           {isExpanded ? "Hide Filters" : "Show Filters"}
         </Button>
-        {(filters.status || filters.priority || filters.type || filters.searchTerm) && (
+        {(filters.status || filters.priority || filters.type || filters.searchTerm || filters.assignedTo || filters.tag) && (
           <Button
             variant="outline"
             size="sm"
@@ -90,7 +96,7 @@ export function TaskFilters({
       </div>
 
       {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border border-border rounded-md bg-card/50">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border border-border rounded-md bg-card/50">
           <div>
             <label className="text-sm font-medium">Status</label>
             <div className="mt-2 space-y-1">
@@ -174,6 +180,36 @@ export function TaskFilters({
               ))}
             </div>
           </div>
+
+          {assigneeOptions.length > 0 && (
+            <div>
+              <label className="text-sm font-medium">Assigned To</label>
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="assignee-all"
+                    checked={!filters.assignedTo}
+                    onChange={() => handleAssigneeChange(undefined)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="assignee-all" className="text-sm">All</label>
+                </div>
+                {assigneeOptions.map((assignee) => (
+                  <div key={assignee} className="flex items-center">
+                    <input
+                      type="radio"
+                      id={`assignee-${assignee}`}
+                      checked={filters.assignedTo === assignee}
+                      onChange={() => handleAssigneeChange(assignee)}
+                      className="mr-2"
+                    />
+                    <label htmlFor={`assignee-${assignee}`} className="text-sm font-mono">{assignee}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {tagOptions.length > 0 && (
             <div>
