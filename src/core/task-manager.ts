@@ -218,7 +218,8 @@ export async function getTask(id: string, phase?: string, subdirectory?: string)
     }
 
     // If not found anywhere specific, search in all directories
-    const result = await listTasks();
+    // Include completed tasks to ensure we find all tasks regardless of status
+    const result = await listTasks({ include_completed: true });
     if (!result.success || !result.data) {
       return {
         success: false,
