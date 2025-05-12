@@ -3,11 +3,12 @@ id = "TASK-MCP-WORKFLOW-METHODS"
 title = "Implement Missing MCP Workflow Methods"
 type = "🐞 Bug"
 status = "🟡 To Do"
-priority = "🔼 High"
+priority = "▶️ Medium"
 created_date = "2025-05-11"
-updated_date = "2025-05-11"
+updated_date = "2025-05-12"
 assigned_to = ""
 phase = "release-v1"
+subdirectory = "FEATURE_MCPIntegration"
 +++
 
 ## Description
