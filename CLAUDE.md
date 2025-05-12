@@ -19,9 +19,29 @@ The system is designed to be versatile:
 
 When working in Claude Code:
 
-- **PREFER MCP TOOLS**: Always use the MCP tools directly (e.g., `mcp__scopecraft-command-mcp__task_list`, `mcp__scopecraft-command-mcp__task_create`) for task operations
+- **PREFER MCP TOOLS**: Always use the MCP tools directly (e.g., `mcp__scopecraft-cmd__task_list`, `mcp__scopecraft-cmd__task_create`) for task operations
 - **WHEN TO USE CLI**: Only use CLI commands through Bash for debugging or when specifically requested by the user
 - **ERROR HANDLING**: If an MCP tool fails, report the error clearly and don't automatically fall back to CLI
+
+## Local Package Publishing Workflow
+
+After making changes to the codebase and merging to main, follow this workflow to update the local package:
+
+1. Build and package the project:
+   ```bash
+   npm run publish:local
+   ```
+   This creates a tarball in ~/MCP/scopecraft/
+
+2. Install the package globally:
+   ```bash
+   npm run install:local
+   ```
+   This installs the package globally and verifies CLI commands
+
+3. Verify MCP integration:
+   - Claude Code should automatically detect the `scopecraft-cmd` MCP server
+   - MCP tools should be accessed using the updated prefix: `mcp__scopecraft-cmd__task_list`
 
 ### MCP Tool Examples
 

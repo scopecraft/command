@@ -1,0 +1,35 @@
+# Source files
+src/
+test/
+scripts/
+docs/
+
+# Development files
+.git/
+.github/
+.gitignore
+.tasks/
+.ruru/
+.vscode/
+.idea/
+.DS_Store
+node_modules/
+
+# Config files
+biome.json
+tsconfig.json
+jest.config.js
+.eslintrc.js
+.eslintignore
+
+# Temporary files
+*.log
+*.swp
+.temp/
+tmp/
+
+# Editor specific files
+.editorconfig
+
+# Worktree files
+.worktrees/

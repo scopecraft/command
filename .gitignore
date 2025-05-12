@@ -8,4 +8,8 @@ mcp-server.log
 temp.md
 test/mcp/results/
 
+# NPM package files
+*.tgz
+npm-debug.log*
+
 **/.claude/settings.local.json
