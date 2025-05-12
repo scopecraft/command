@@ -4,6 +4,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ToastContainer } from './components/layout/Toast';
 import { TaskListView } from './components/task-list/TaskListView';
 import { TaskFormView } from './components/task-form/TaskFormView';
+import { TaskDetailView } from './components/task-detail/TaskDetailView';
 import { HomePage } from './components/pages/HomePage';
 import { routes } from './lib/routes';
 
@@ -16,9 +17,7 @@ function App() {
           <Route path={routes.home} component={HomePage} />
           <Route path={routes.taskList} component={TaskListView} />
           <Route path={routes.taskCreate} component={TaskFormView} />
-          <Route path={routes.taskDetail(':id')}>
-            {params => <div>Task detail view for: {params.id}</div>}
-          </Route>
+          <Route path={routes.taskDetail(':id')} component={TaskDetailView} />
           <Route path={routes.taskEdit(':id')}>
             {params => <TaskFormView taskId={params.id} />}
           </Route>
