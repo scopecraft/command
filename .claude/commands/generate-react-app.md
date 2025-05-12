@@ -146,4 +146,16 @@ The specific requirements for this React application are:
 
 $ARGUMENTS
 
-Incorporate these requirements into each phase of the planning process.
+## Confirmation Required
+
+After reading these instructions, please acknowledge that:
+
+1. You understand the phased approach (Research, UX Planning, Component Architecture, Implementation Plan, Final Summary)
+2. You will create all required tasks in the Scopecraft task system before proceeding
+3. You will work through each phase completely before moving to the next
+4. You are waiting for the user to provide specific requirements before applying this plan
+
+DO NOT begin implementation or create general todo lists until you have:
+1. Confirmed your understanding of this process
+2. Received the specific application requirements from the user
+3. Created the appropriate tasks in the Scopecraft system
