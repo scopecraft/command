@@ -4,7 +4,6 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   getFilteredRowModel,
-  getVisibilityState,
   flexRender,
   type ColumnDef,
   type SortingState,
