@@ -8,78 +8,8 @@
 
 import type { OperationResult, Task, Phase, Template } from '../types';
 
-// Mock data
-const mockTasks: Task[] = [
-  {
-    id: 'TASK-001',
-    title: 'Implement Task List View',
-    type: '📋 Task',
-    status: '🟡 To Do',
-    priority: '🔼 High',
-    created_date: '2025-05-12',
-    updated_date: '2025-05-12',
-    content: '# Implement Task List View\n\nCreate a table view for displaying and filtering tasks.'
-  },
-  {
-    id: 'TASK-002',
-    title: 'Create Task Detail View',
-    type: '📋 Task',
-    status: '🔵 In Progress',
-    priority: '🔼 High',
-    created_date: '2025-05-12',
-    updated_date: '2025-05-12',
-    content: '# Create Task Detail View\n\nImplement a detailed view for viewing task information and content.'
-  },
-  {
-    id: 'TASK-003',
-    title: 'Implement Task Form',
-    type: '📋 Task',
-    status: '🟡 To Do',
-    priority: '▶️ Medium',
-    created_date: '2025-05-12',
-    updated_date: '2025-05-12',
-    content: '# Implement Task Form\n\nCreate a form for adding and editing tasks.'
-  }
-];
-
-const mockPhases: Phase[] = [
-  {
-    id: 'phase-1',
-    name: 'Planning',
-    status: '🟢 Done',
-    order: 1
-  },
-  {
-    id: 'phase-2',
-    name: 'Implementation',
-    status: '🔵 In Progress',
-    order: 2
-  },
-  {
-    id: 'phase-3',
-    name: 'Testing',
-    status: '🟡 To Do',
-    order: 3
-  }
-];
-
-const mockTemplates: Template[] = [
-  {
-    id: 'template-1',
-    name: 'Task',
-    type: '📋 Task'
-  },
-  {
-    id: 'template-2',
-    name: 'Feature',
-    type: '🌟 Feature'
-  },
-  {
-    id: 'template-3',
-    name: 'Bug',
-    type: '🐛 Bug'
-  }
-];
+// Import mock data from separate file
+import { mockTasks, mockPhases, mockTemplates } from './mock-data';
 
 // Mock implementation of core functions
 export async function fetchTasks(): Promise<OperationResult<Task[]>> {

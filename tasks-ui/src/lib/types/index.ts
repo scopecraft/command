@@ -61,6 +61,9 @@ export interface TaskListFilter {
   searchTerm?: string;
   assignedTo?: string;
   subdirectory?: string;
+  tag?: string;
+  sortBy?: keyof Task;
+  sortDirection?: 'asc' | 'desc';
 }
 
 export interface UIState {
