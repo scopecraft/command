@@ -218,8 +218,11 @@ export async function getTask(id: string, phase?: string, subdirectory?: string)
     }
 
     // If not found anywhere specific, search in all directories
-    // Include completed tasks to ensure we find all tasks regardless of status
-    const result = await listTasks({ include_completed: true });
+    // Include completed tasks and content to ensure we find all tasks with full content
+    const result = await listTasks({
+      include_completed: true,
+      include_content: true
+    });
     if (!result.success || !result.data) {
       return {
         success: false,
