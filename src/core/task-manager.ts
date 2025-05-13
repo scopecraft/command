@@ -1241,3 +1241,252 @@ export async function createPhase(phase: Phase): Promise<OperationResult<Phase>>
     };
   }
 }
+
+/**
+ * Updates an existing phase
+ * @param id Phase ID to update
+ * @param updates Partial<Phase> with updated fields
+ * @returns Operation result with updated phase
+ */
+export async function updatePhase(id: string, updates: Partial<Phase>): Promise<OperationResult<Phase>> {
+  try {
+    // First, get the existing phase to ensure it exists
+    const phasesResult = await listPhases();
+    if (!phasesResult.success || !phasesResult.data) {
+      return {
+        success: false,
+        error: phasesResult.error || 'Failed to list phases'
+      };
+    }
+
+    const phases = phasesResult.data;
+    const existingPhase = phases.find(p => p.id === id);
+
+    if (!existingPhase) {
+      return {
+        success: false,
+        error: `Phase with ID ${id} not found`
+      };
+    }
+
+    const tasksDir = getTasksDirectory();
+    const oldPhaseDir = path.join(tasksDir, id);
+    
+    // Verify that the phase directory exists
+    if (!fs.existsSync(oldPhaseDir)) {
+      return {
+        success: false,
+        error: `Phase directory not found for ID ${id}`
+      };
+    }
+
+    // Create updated phase object
+    const updatedPhase: Phase = {
+      ...existingPhase,
+      ...updates
+    };
+
+    // Handle ID changes that require directory renaming
+    let needsDirRename = false;
+    if (updates.id && updates.id !== id) {
+      // Validate the new ID (ensure it can be used as a directory name)
+      if (!/^[a-zA-Z0-9_-]+$/.test(updates.id)) {
+        return {
+          success: false,
+          error: `Invalid phase ID format: ${updates.id}. Use only letters, numbers, underscores, and hyphens.`
+        };
+      }
+      
+      // Check if a phase with the new ID already exists
+      if (phases.some(p => p.id === updates.id)) {
+        return {
+          success: false,
+          error: `A phase with ID ${updates.id} already exists. Use a unique ID.`
+        };
+      }
+
+      // Mark for directory rename
+      needsDirRename = true;
+    }
+
+    // Update the phase in the config file
+    const phasesConfigPath = projectConfig.getPhasesConfigPath();
+    try {
+      let phasesConfig: any = { phases: [] };
+      
+      if (fs.existsSync(phasesConfigPath)) {
+        const phasesContent = fs.readFileSync(phasesConfigPath, 'utf-8');
+        phasesConfig = parseToml(phasesContent);
+        
+        if (!phasesConfig.phases) {
+          phasesConfig.phases = [];
+        }
+      } else {
+        // Create config directory if it doesn't exist
+        const configDir = projectConfig.getConfigDirectory();
+        if (!fs.existsSync(configDir)) {
+          fs.mkdirSync(configDir, { recursive: true });
+        }
+      }
+      
+      // Find the phase in the config
+      const existingPhaseIndex = phasesConfig.phases.findIndex((p: any) => p.id === id);
+      
+      if (existingPhaseIndex >= 0) {
+        // Update existing phase
+        const updatedPhaseConfig = {
+          id: updatedPhase.id,
+          name: updatedPhase.name,
+          description: updatedPhase.description || '',
+          status: updatedPhase.status || 'Unknown',
+          order: updatedPhase.order || phasesConfig.phases[existingPhaseIndex].order
+        };
+
+        // Remove the old phase entry (if ID changed)
+        if (needsDirRename) {
+          phasesConfig.phases.splice(existingPhaseIndex, 1);
+          // Add the updated phase with new ID
+          phasesConfig.phases.push(updatedPhaseConfig);
+        } else {
+          // Update the existing phase in place
+          phasesConfig.phases[existingPhaseIndex] = updatedPhaseConfig;
+        }
+        
+        // Write updated config
+        const updatedContent = stringifyToml(phasesConfig);
+        fs.writeFileSync(phasesConfigPath, updatedContent);
+      } else {
+        return {
+          success: false,
+          error: `Phase ${id} not found in configuration file`
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: `Error updating phase configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+
+    // Handle directory renaming if ID has changed
+    if (needsDirRename) {
+      try {
+        const newPhaseDir = path.join(tasksDir, updatedPhase.id);
+        
+        // Make sure the destination doesn't already exist
+        if (fs.existsSync(newPhaseDir)) {
+          return {
+            success: false,
+            error: `Cannot rename phase directory: destination ${newPhaseDir} already exists`
+          };
+        }
+        
+        // Create the new directory first
+        fs.mkdirSync(newPhaseDir, { recursive: true });
+        
+        // Now we need to move all files from old to new directory
+        const moveAllFiles = (srcDir: string, destDir: string) => {
+          const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+          
+          for (const entry of entries) {
+            const srcPath = path.join(srcDir, entry.name);
+            const destPath = path.join(destDir, entry.name);
+            
+            if (entry.isDirectory()) {
+              // Create the destination subdirectory
+              fs.mkdirSync(destPath, { recursive: true });
+              // Recursively move files from this subdirectory
+              moveAllFiles(srcPath, destPath);
+            } else {
+              // Move the file (copy + delete)
+              fs.copyFileSync(srcPath, destPath);
+            }
+          }
+        };
+        
+        // Move all files from old phase dir to new phase dir
+        moveAllFiles(oldPhaseDir, newPhaseDir);
+        
+        // Now update all task files to reference the new phase ID
+        const updateTaskPhaseReferences = async () => {
+          try {
+            // Get all tasks in the new directory (include content for updates)
+            const tasksResult = await listTasks({
+              phase: updatedPhase.id,
+              include_content: true,
+              include_completed: true
+            });
+            
+            if (tasksResult.success && tasksResult.data) {
+              const tasks = tasksResult.data;
+              for (const task of tasks) {
+                if (task.metadata.phase === id) {
+                  // Update the phase reference in task metadata
+                  task.metadata.phase = updatedPhase.id;
+                  task.metadata.updated_date = new Date().toISOString().split('T')[0];
+                  
+                  // Update the task file
+                  if (task.filePath) {
+                    const fileContent = formatTaskFile(task);
+                    fs.writeFileSync(task.filePath, fileContent);
+                  }
+                }
+              }
+            }
+            
+            return { success: true };
+          } catch (error) {
+            return {
+              success: false,
+              error: `Error updating task references: ${error instanceof Error ? error.message : 'Unknown error'}`
+            };
+          }
+        };
+        
+        // Update task references
+        const updateResult = await updateTaskPhaseReferences();
+        if (!updateResult.success) {
+          return {
+            success: false,
+            error: updateResult.error
+          };
+        }
+        
+        // Finally, remove the old directory after all content is moved and updated
+        const removeDir = (dir: string) => {
+          const entries = fs.readdirSync(dir, { withFileTypes: true });
+          
+          for (const entry of entries) {
+            const entryPath = path.join(dir, entry.name);
+            
+            if (entry.isDirectory()) {
+              removeDir(entryPath);
+            } else {
+              fs.unlinkSync(entryPath);
+            }
+          }
+          
+          fs.rmdirSync(dir);
+        };
+        
+        removeDir(oldPhaseDir);
+      } catch (error) {
+        return {
+          success: false,
+          error: `Error renaming phase directory: ${error instanceof Error ? error.message : 'Unknown error'}`
+        };
+      }
+    }
+    
+    return {
+      success: true,
+      data: updatedPhase,
+      message: `Phase ${id} updated successfully${needsDirRename ? ' with directory rename' : ''}`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error updating phase: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
