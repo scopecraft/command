@@ -85,28 +85,21 @@ export function TaskContent({ task }: TaskContentProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Editor */}
+        <div className="w-full">
+          {/* Full-width Editor */}
           <div className="border border-border rounded-md p-2">
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="w-full h-96 bg-background text-foreground p-2 font-mono text-sm resize-none focus:outline-none"
               placeholder="Enter task description using Markdown..."
+              rows={20}
             />
           </div>
 
-          {/* Preview */}
-          <div className="border border-border rounded-md p-4 overflow-auto h-96">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Preview</h3>
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-              >
-                {content}
-              </ReactMarkdown>
-            </div>
+          {/* Small note about markdown */}
+          <div className="mt-2 text-xs text-muted-foreground">
+            <span>Supports Markdown formatting</span>
           </div>
         </div>
       </div>
