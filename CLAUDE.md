@@ -410,6 +410,39 @@ For example:
 
 Always use these direct tool references rather than going through the CLI.
 
+### MCP Tool User Experience Guidelines
+
+When using MCP tools in Claude Code, follow these guidelines to improve the user experience:
+
+1. **Clear Summarization After Tool Use**:
+   - After using an MCP tool, always provide a clear human-readable summary of the results or changes made
+   - Example: "I've updated the task status to 'In Progress' and added two new checklist items to track the refactoring steps."
+
+2. **Before/After Comparisons for Content Updates**:
+   - When updating task content, summarize what changed
+   - Example: "I've updated the task description. Changes: Added detailed refactoring strategies, expanded testing approach, and added implementation checklist."
+
+3. **Progressive Disclosure of Complex Information**:
+   - Provide a high-level summary first, with details available if needed
+   - Avoid dumping all JSON data in your response
+
+4. **Visual Cues for Actions**:
+   - Use formatting to distinguish actions and their results
+   - Example: "📝 *Creating task...* ✅ Task created with ID TASK-123"
+
+5. **Confirmation for Important Changes**:
+   - Confirm with the user before making significant changes
+   - Example: "I'll update the task status to 'Completed'. This will remove it from the active tasks list. Should I proceed?"
+
+6. **Efficient Tool Usage**:
+   - For metadata-only updates, specify only the fields that need changing
+   - For content updates, consider whether Edit tool might be more efficient than task_update
+   - Get task details first only when necessary before making updates
+
+7. **Error Handling**:
+   - When an MCP tool fails, clearly explain the error and suggest possible solutions
+   - Don't automatically fall back to CLI commands when MCP tools fail
+
 ### MCP and CLI Implementation Notes
 
 Both interfaces provide the same core functionality but with different characteristics:

@@ -5,97 +5,62 @@ status = "🟡 To Do"
 type = "🌟 Feature"
 priority = "▶️ Medium"
 created_date = "2025-05-11"
-updated_date = "2025-05-11"
+updated_date = "2025-05-13"
 assigned_to = ""
 parent_task = ""
 depends_on = [ ]
-related_docs = [ "docs/mcp-sdk.md", "docs/mcp-tool-descriptions.md" ]
+related_docs = [
+  "docs/mcp-sdk.md",
+  "docs/mcp-tool-descriptions.md",
+  "docs/MCP_PROMPT_GUIDELINES.md"
+]
 tags = [ "mcp", "templates", "documentation", "feature" ]
 template_schema_doc = ".ruru/templates/toml-md/01_mdtm_feature.README.md"
 phase = "release-v1"
+subdirectory = "FEATURE_MCPIntegration"
 +++
 
 # Enhance MCP Template Access
 
 ## Description ✍️
 
-*   **What is this feature?** Provide MCP clients with access to task template information through two complementary approaches:
-    1. Basic template information in the `task_create` tool description
-    2. A dedicated `template_list` method for comprehensive template details
+*   **What is this feature?** Provide MCP clients with access to task template information and standardized prompt guidance:
+    1. Add a dedicated `template_list` method for comprehensive template details
+    2. Implement standardized prompt patterns following the MCP_PROMPT_GUIDELINES.md
 
-*   **Why is it needed?** Currently, template information is only available through the CLI (`sc list-templates`), but MCP clients have no way to discover available templates. This makes it difficult for AI assistants and other clients to create tasks using appropriate templates, especially when templates vary by project.
+*   **Why is it needed?** Currently, template information is only available through the CLI (`sc list-templates`), but MCP clients have no way to discover available templates. Additionally, we need consistent prompt patterns for template usage to improve the user experience.
 
 *   **Scope:**
-    - Update the `task_create` tool description to include basic template information
     - Add a new `template_list` MCP method for detailed template information
-    - Ensure the template parameter works with the task creation process
-    - Document both approaches for MCP clients
+    - Document template access for MCP clients
+    - Add prompt patterns for template operations based on MCP_PROMPT_GUIDELINES.md
 
 *   **Links:** Not applicable
 
 ## Acceptance Criteria ✅
 
-*   - [ ] MCP tool description for `task_create` includes a list of available templates
 *   - [ ] New `template_list` method returns comprehensive template details
-*   - [ ] Templates can be used when creating tasks via the MCP interface
-*   - [ ] Documentation explains both approaches for accessing template information
+*   - [ ] Documentation explains how to access and use templates via MCP
+*   - [ ] Template usage examples follow the MCP prompt guidelines for improved user experience
 *   - [ ] Implementation correctly works in both standalone and Roo Commander modes
 
 ## Implementation Notes / Sub-Tasks 📝
 
-*   - [ ] Identify how to modify MCP tool descriptions in `core-server.ts`
-*   - [ ] Create a function to retrieve available templates from the core module
-*   - [ ] Update the `task_create` tool description to include basic template info
-*   - [ ] Implement the `template_list` method for detailed template information
-*   - [ ] Update the task creation handler to support template-based creation
-*   - [ ] Test both approaches with various templates
+*   - [ ] Implement the `template_list` method in the MCP server
+*   - [ ] Create helper functions to retrieve template details from the core module
 *   - [ ] Update MCP documentation to explain template usage
+*   - [ ] Create standard prompt patterns for template-based task creation (following MCP_PROMPT_GUIDELINES.md)
 
 ## Implementation Approach
 
-The implementation will provide both quick reference and detailed template information:
-
-### 1. Enhanced Tool Description for Quick Reference
-
-Update the `task_create` tool registration in `core-server.ts`:
-
-```typescript
-import { listTemplates } from '../core/template-manager.js';
-
-// Get available templates for quick reference
-const templates = listTemplates();
-const templateHelp = templates.map(t => `${t.id} - ${t.type}`).join(', ');
-
-server.tool(
-  "task_create",
-  {
-    id: z.string().optional(),
-    title: z.string(),
-    type: z.string(),
-    status: z.string().optional(),
-    priority: z.string().optional(),
-    assignee: z.string().optional(),
-    phase: z.string().optional(),
-    template: z.string().optional(), // <-- Add template parameter
-    // ... other parameters
-  },
-  async (params) => {
-    // ... implementation (see below)
-  },
-  {
-    description: `Create a new task. Available templates: ${templateHelp}. For detailed template information, use template_list.`
-  }
-)
-```
-
-### 2. Dedicated Template List Method for Detailed Information
+### 1. Implement Template List Method
 
 Add a new method in `types.ts`:
 
 ```typescript
 export enum McpMethod {
   // Existing methods...
-
+  
   // Template methods
   TEMPLATE_LIST = 'template_list'
 }
@@ -121,7 +86,7 @@ export const methodRegistry: McpMethodRegistry = {
 }
 ```
 
-Add tool registration in `core-server.ts`:
+Register the tool in `core-server.ts`:
 
 ```typescript
 server.tool(
@@ -143,43 +108,50 @@ server.tool(
 )
 ```
 
-### 3. Update Task Creation to Support Templates
+### 2. Standard Prompt Patterns for Templates
 
-Update the task creation handler to support template-based creation:
+Create standard prompt patterns that follow the MCP_PROMPT_GUIDELINES.md:
 
-```typescript
-async (params) => {
-  try {
-    let task;
+```markdown
+## Template Usage Prompts
 
-    if (params.template) {
-      // Create from template
-      task = await createTaskFromTemplate(params.template, {
-        title: params.title,
-        id: params.id,
-        status: params.status,
-        priority: params.priority,
-        assignee: params.assignee,
-        phase: params.phase,
-        // ... other parameters
-      });
-    } else {
-      // Create directly as before
-      // ... existing implementation
-    }
+### Template Discovery Pattern
+```
+I'll find available templates for your task.
 
-    return formatResponse(result);
-  } catch (error) {
-    return formatError(error);
-  }
-}
+*Calling template_list...*
+✅ Available templates: feature, bug, documentation, chore, test
+
+What type of task would you like to create?
+```
+
+### Template Selection Confirmation Pattern
+```
+I'll use the "feature" template for creating your task. This will include:
+- Standard feature task metadata
+- Checklist for implementation
+- Areas for acceptance criteria
+
+Does this sound right for your "Authentication System" task?
+```
+
+### Template-Based Creation Acknowledgment Pattern
+```
+📝 *Creating task from feature template...*
+✅ Task "Authentication System" created with ID TASK-20250513T123456
+
+The template has added standard sections for:
+- Description
+- Implementation checklist
+- Acceptance criteria
+
+Would you like me to customize any of these sections further?
+```
 ```
 
 ## Review Notes 👀 (For Reviewer)
 
-*   This dual approach provides both quick access to basic template info and comprehensive details when needed
-*   The basic info in the tool description helps with simple task creation
-*   The dedicated method provides detailed information when templates are complex or nuanced
-*   This fully encapsulates the template functionality in the MCP server, matching the CLI capabilities
-
-
+*   This implementation provides a standard way for MCP clients to access template information
+*   The prompt patterns ensure a consistent and user-friendly experience when working with templates
+*   This builds on our existing MCP tools implementation by adding template-specific methods and patterns
+*   Follows the guidelines established in MCP_PROMPT_GUIDELINES.md for improved user experience
