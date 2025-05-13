@@ -3,7 +3,6 @@ import { useQueryParams } from '../../hooks/useQueryParams';
 import { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { Button } from '../ui/button';
-import { Breadcrumb } from '../ui/breadcrumb';
 import { routes } from '../../lib/routes';
 import { formatDate, hasDependencies } from '../../lib/utils/format';
 import { TaskRelationships } from './TaskRelationships';
@@ -76,13 +75,6 @@ export function TaskDetailView() {
 
   return (
     <div className="container mx-auto p-4">
-      <Breadcrumb
-        items={[
-          { label: 'Tasks', href: routes.taskList },
-          { label: task.title }
-        ]}
-      />
-
       <div className="mb-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Button
