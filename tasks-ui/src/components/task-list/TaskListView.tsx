@@ -28,9 +28,10 @@ export function TaskListViewInner() {
     const tag = getParam('tag');
     const searchTerm = getParam('search');
     const assignedTo = getParam('assignedTo');
+    const phase = getParam('phase');
 
     // Only update if we have query parameters
-    if (status || type || priority || tag || searchTerm || assignedTo) {
+    if (status || type || priority || tag || searchTerm || assignedTo || phase) {
       setFilters({
         ...(status ? { status } : {}),
         ...(type ? { type } : {}),
@@ -38,6 +39,7 @@ export function TaskListViewInner() {
         ...(tag ? { tag } : {}),
         ...(searchTerm ? { searchTerm } : {}),
         ...(assignedTo ? { assignedTo } : {}),
+        ...(phase ? { phase } : {}),
       });
     }
   }, [getParam]);
@@ -54,6 +56,7 @@ export function TaskListViewInner() {
       tag: newFilters.tag || null,
       search: newFilters.searchTerm || null,
       assignedTo: newFilters.assignedTo || null,
+      phase: newFilters.phase || null,
     };
 
     // Clear all params if we have no filters
@@ -96,6 +99,11 @@ export function TaskListViewInner() {
     return [...new Set(tasks.map(task => task.assigned_to).filter(Boolean))].sort();
   }, [tasks]);
 
+  // Extract all unique phases from tasks
+  const phaseOptions = useMemo(() => {
+    return [...new Set(tasks.map(task => task.phase).filter(Boolean))].sort();
+  }, [tasks]);
+
   // Filter tasks based on current filters
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -105,6 +113,7 @@ export function TaskListViewInner() {
       if (filters.searchTerm && !task.title.toLowerCase().includes(filters.searchTerm.toLowerCase())) return false;
       if (filters.tag && (!task.tags || !task.tags.includes(filters.tag))) return false;
       if (filters.assignedTo && task.assigned_to !== filters.assignedTo) return false;
+      if (filters.phase && task.phase !== filters.phase) return false;
       return true;
     });
   }, [tasks, filters]);
@@ -152,6 +161,7 @@ export function TaskListViewInner() {
         typeOptions={typeOptions}
         tagOptions={tagOptions}
         assigneeOptions={assigneeOptions}
+        phaseOptions={phaseOptions}
       />
       
       <DataTable 

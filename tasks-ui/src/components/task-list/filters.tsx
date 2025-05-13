@@ -10,6 +10,7 @@ interface FiltersProps {
   typeOptions: string[];
   tagOptions?: string[];
   assigneeOptions?: string[];
+  phaseOptions?: string[];
 }
 
 export function TaskFilters({
@@ -20,6 +21,7 @@ export function TaskFilters({
   typeOptions,
   tagOptions = [],
   assigneeOptions = [],
+  phaseOptions = [],
 }: FiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState(filters.searchTerm || "");
@@ -50,6 +52,10 @@ export function TaskFilters({
 
   const handleAssigneeChange = (assignedTo: string | undefined) => {
     onFilterChange({ ...filters, assignedTo });
+  };
+
+  const handlePhaseChange = (phase: string | undefined) => {
+    onFilterChange({ ...filters, phase });
   };
 
   const clearFilters = () => {
@@ -84,7 +90,7 @@ export function TaskFilters({
         >
           {isExpanded ? "Hide Filters" : "Show Filters"}
         </Button>
-        {(filters.status || filters.priority || filters.type || filters.searchTerm || filters.assignedTo || filters.tag) && (
+        {(filters.status || filters.priority || filters.type || filters.searchTerm || filters.assignedTo || filters.tag || filters.phase) && (
           <Button
             variant="outline"
             size="sm"
@@ -235,6 +241,36 @@ export function TaskFilters({
                       className="mr-2"
                     />
                     <label htmlFor={`tag-${tag}`} className="text-sm">{tag}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {phaseOptions.length > 0 && (
+            <div>
+              <label className="text-sm font-medium">Phase</label>
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="phase-all"
+                    checked={!filters.phase}
+                    onChange={() => handlePhaseChange(undefined)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="phase-all" className="text-sm">All</label>
+                </div>
+                {phaseOptions.map((phase) => (
+                  <div key={phase} className="flex items-center">
+                    <input
+                      type="radio"
+                      id={`phase-${phase}`}
+                      checked={filters.phase === phase}
+                      onChange={() => handlePhaseChange(phase)}
+                      className="mr-2"
+                    />
+                    <label htmlFor={`phase-${phase}`} className="text-sm">{phase}</label>
                   </div>
                 ))}
               </div>

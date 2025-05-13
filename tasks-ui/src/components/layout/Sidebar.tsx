@@ -10,12 +10,11 @@ export function Sidebar() {
   const { phases, currentPhase, loading, setCurrentPhase } = usePhaseContext();
   const [, navigate] = useLocation();
   
-  // Handle click on hard-coded phase buttons with URL navigation
+  // Handle phase selection and navigate to task list with phase filter
   const handlePhaseClick = (phaseId: string) => {
-    console.log('Clicked phase:', phaseId);
+    console.log('Selected phase:', phaseId);
     setCurrentPhase(phaseId);
-    // In a real app, we'd add a phase parameter to the URL
-    // For now we just navigate to the task list view
+    // Navigate to tasks view with phase filter in URL
     navigate('/tasks?phase=' + phaseId);
   };
 
@@ -88,13 +87,12 @@ export function Sidebar() {
           variant="outline" 
           className="w-full"
           onClick={() => {
-            // In a complete implementation, this would open a modal to create a new phase
-            // For now, we'll just refresh the phases list
+            // Clear current phase selection and navigate to all tasks
             setCurrentPhase(null);
             navigate('/tasks');
           }}
         >
-          + New Phase
+          All Tasks
         </Button>
       </div>
     </aside>
