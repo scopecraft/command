@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useTaskContext } from '../../context/TaskContext';
 import { Button } from '../ui/button';
 import { routes } from '../../lib/routes';
+import { useQueryParams } from '../../hooks/useQueryParams';
 import { DataTable } from './table/data-table';
 import { columns } from './table/columns';
 import { TaskFilters } from './filters';
@@ -12,9 +13,54 @@ export function TaskListView() {
   const { tasks, loading, error } = useTaskContext();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [, navigate] = useLocation();
-  
+  const { getParam, setParams, clearParams } = useQueryParams();
+
   // State for filters
   const [filters, setFilters] = useState<TaskListFilter>({});
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const status = getParam('status');
+    const type = getParam('type');
+    const priority = getParam('priority');
+    const tag = getParam('tag');
+    const searchTerm = getParam('search');
+    const assignedTo = getParam('assignedTo');
+
+    // Only update if we have query parameters
+    if (status || type || priority || tag || searchTerm || assignedTo) {
+      setFilters({
+        ...(status ? { status } : {}),
+        ...(type ? { type } : {}),
+        ...(priority ? { priority } : {}),
+        ...(tag ? { tag } : {}),
+        ...(searchTerm ? { searchTerm } : {}),
+        ...(assignedTo ? { assignedTo } : {}),
+      });
+    }
+  }, [getParam]);
+
+  // Handle filter changes and update URL
+  const handleFilterChange = (newFilters: TaskListFilter) => {
+    setFilters(newFilters);
+
+    // Update URL parameters
+    const params: Record<string, string | null> = {
+      status: newFilters.status || null,
+      type: newFilters.type || null,
+      priority: newFilters.priority || null,
+      tag: newFilters.tag || null,
+      search: newFilters.searchTerm || null,
+      assignedTo: newFilters.assignedTo || null,
+    };
+
+    // Clear all params if we have no filters
+    if (Object.values(newFilters).every(val => !val)) {
+      clearParams();
+    } else {
+      setParams(params);
+    }
+  };
 
   // Extract unique values for filter options
   const statusOptions = useMemo(() =>
@@ -98,7 +144,7 @@ export function TaskListView() {
       
       <TaskFilters
         filters={filters}
-        onFilterChange={setFilters}
+        onFilterChange={handleFilterChange}
         statusOptions={statusOptions}
         priorityOptions={priorityOptions}
         typeOptions={typeOptions}

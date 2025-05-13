@@ -1,7 +1,9 @@
 import { useParams, useLocation } from 'wouter';
+import { useQueryParams } from '../../hooks/useQueryParams';
 import { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { Button } from '../ui/button';
+import { Breadcrumb } from '../ui/breadcrumb';
 import { routes } from '../../lib/routes';
 import { formatDate, hasDependencies } from '../../lib/utils/format';
 import { TaskRelationships } from './TaskRelationships';
@@ -12,6 +14,7 @@ export function TaskDetailView() {
   const { id } = useParams<{ id: string }>();
   const { tasks, loading, error } = useTaskContext();
   const [, navigate] = useLocation();
+  const { getParams } = useQueryParams();
   const [task, setTask] = useState(tasks.find(t => t.id === id));
 
   // Update task when tasks list changes
@@ -25,7 +28,16 @@ export function TaskDetailView() {
   };
 
   const handleBackClick = () => {
-    navigate(routes.taskList);
+    // Preserve filter parameters when going back to the list
+    const params = getParams();
+    const queryString = params.toString();
+
+    // Navigate back to the task list with any existing query parameters
+    if (queryString) {
+      navigate(`${routes.taskList}?${queryString}`);
+    } else {
+      navigate(routes.taskList);
+    }
   };
 
   if (loading) {
@@ -64,11 +76,18 @@ export function TaskDetailView() {
 
   return (
     <div className="container mx-auto p-4">
+      <Breadcrumb
+        items={[
+          { label: 'Tasks', href: routes.taskList },
+          { label: task.title }
+        ]}
+      />
+
       <div className="mb-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleBackClick}
           >
             Back
