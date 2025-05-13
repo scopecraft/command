@@ -182,8 +182,39 @@ export async function handleCreateCommand(options: {
       // Apply template
       const taskContent = applyTemplate(templateContent, values);
 
-      // Parse the generated content into a task
-      task = parseTaskFile(taskContent);
+      try {
+        // Parse the generated content into a task
+        task = parseTaskFile(taskContent);
+      } catch (error) {
+        // If parsing failed due to missing ID, create task manually
+        if (error instanceof Error && error.message.includes('Missing required field: id')) {
+          task = {
+            metadata: {
+              id: id,
+              title: options.title,
+              type: options.type,
+              status: options.status || '🟡 To Do',
+              priority: options.priority || '▶️ Medium',
+              created_date: today,
+              updated_date: today,
+              assigned_to: options.assignee || ''
+            },
+            content: options.content || `## ${options.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`
+          };
+          
+          // Add optional relationship fields
+          if (options.phase) task.metadata.phase = options.phase;
+          if (options.subdirectory) task.metadata.subdirectory = options.subdirectory;
+          if (options.parent) task.metadata.parent_task = options.parent;
+          if (options.depends) task.metadata.depends_on = options.depends;
+          if (options.previous) task.metadata.previous_task = options.previous;
+          if (options.next) task.metadata.next_task = options.next;
+          if (options.tags) task.metadata.tags = options.tags;
+        } else {
+          // Re-throw other errors
+          throw error;
+        }
+      }
 
       // Ensure core metadata is correct (in case template didn't apply everything)
       task.metadata.id = id;

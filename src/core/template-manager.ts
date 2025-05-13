@@ -4,6 +4,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { parse, stringify } from '@iarna/toml';
 import { projectConfig } from './project-config.js';
 
 /**
@@ -218,94 +219,90 @@ export function getTemplate(templateId: string): string | null {
  * @returns Processed template content
  */
 export function applyTemplate(templateContent: string, values: Record<string, any>): string {
-  let content = templateContent;
-
-  // Apply values to placeholders in TOML frontmatter
-  for (const [key, value] of Object.entries(values)) {
-    if (key === 'content') {
-      continue; // Skip content, handle it separately
+  // We need to prevent duplicate fields that can cause TOML parsing errors
+  // Extract the TOML frontmatter
+  const frontmatterRegex = /^\+\+\+\s*\n([\s\S]*?)\n\+\+\+\s*\n([\s\S]*)$/;
+  const match = templateContent.match(frontmatterRegex);
+  
+  if (!match) {
+    throw new Error('Invalid template format: missing or malformed TOML frontmatter');
+  }
+  
+  const [, tomlContent, markdownContent] = match;
+  
+  // Parse the existing TOML to get a clean object
+  let metadata: Record<string, any> = {};
+  try {
+    // Try to parse the existing TOML (if it's valid)
+    try {
+      metadata = parse(tomlContent) as Record<string, any>;
+    } catch (error) {
+      // If parsing fails, we'll just start with an empty object
+      console.warn(`Warning: Template has invalid TOML, starting fresh: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    // For scalar values
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      // Create a more robust regex that handles empty values and preserves comments
-      const regex = new RegExp(`(${key}\\s*=\\s*)("[^"]*"|'[^']*'|[^#\\n\\r]*)(.*)`, 'g');
-
-      // Prepare value for TOML
-      let tomlValue: string;
-      if (typeof value === 'string') {
-        tomlValue = `"${value}"`;
+    
+    // Ensure required fields are present in values
+    const requiredFields = ['id', 'title', 'type'];
+    for (const field of requiredFields) {
+      if (!values[field] && !metadata[field]) {
+        console.warn(`Warning: Required field '${field}' is not set in template or values`);
+      }
+    }
+    
+    // Apply all values from the input
+    for (const [key, value] of Object.entries(values)) {
+      if (key === 'content') {
+        continue; // Skip content, handle it separately
+      }
+      
+      // Skip undefined or null values
+      if (value === undefined || value === null) {
+        continue;
+      }
+      
+      // Set the value in our metadata object
+      metadata[key] = value;
+    }
+    
+    // Ensure ID is set (critical field)
+    if (values.id) {
+      metadata.id = values.id;
+    }
+    
+    // Convert the metadata back to TOML
+    const newTomlContent = stringify(metadata);
+    
+    // Rebuild the template with the new TOML and keep the markdown part
+    let newContent = `+++\n${newTomlContent}+++\n\n${markdownContent}`;
+    
+    // Replace title in Markdown (if specified)
+    if (values.title) {
+      // Replace title placeholder in Markdown body
+      newContent = newContent.replace(/# \[Title\]/, `# ${values.title}`);
+      newContent = newContent.replace(/<< CONCISE BUG SUMMARY >>/, values.title);
+    }
+    
+    // Apply custom content if provided
+    if (values.content) {
+      // Find the end of TOML frontmatter and the first empty line after the title
+      const endOfFrontmatter = newContent.indexOf('+++', 3) + 3;
+      
+      // Rest of content after frontmatter
+      const afterContent = newContent.substring(endOfFrontmatter);
+      
+      // Split after first heading
+      const parts = afterContent.split('\n\n', 2);
+      if (parts.length > 1) {
+        // Keep title heading and replace content
+        newContent = newContent.substring(0, endOfFrontmatter) + parts[0] + '\n\n' + values.content;
       } else {
-        tomlValue = String(value);
-      }
-
-      // Replace in TOML frontmatter
-      content = content.replace(regex, `$1${tomlValue}$3`);
-
-      // If the key wasn't found (no replacement occurred), add it to the frontmatter
-      if (!content.includes(`${key} = ${tomlValue}`)) {
-        // Find the end of TOML frontmatter marker
-        const endOfFrontmatter = content.indexOf('+++', 3);
-        if (endOfFrontmatter !== -1) {
-          // Insert the key-value pair right before the end of frontmatter
-          content =
-            content.substring(0, endOfFrontmatter) +
-            `${key} = ${tomlValue}\n` +
-            content.substring(endOfFrontmatter);
-        }
+        // Just append content
+        newContent = newContent.substring(0, endOfFrontmatter) + '\n\n' + values.content;
       }
     }
-
-    // For array values
-    if (Array.isArray(value)) {
-      const regex = new RegExp(`(${key}\\s*=\\s*)\\[.*?\\](.*)`, 'g');
-
-      // Prepare array for TOML
-      const tomlArray = `[${value.map(item => typeof item === 'string' ? `"${item}"` : item).join(', ')}]`;
-
-      // Replace in TOML frontmatter
-      content = content.replace(regex, `$1${tomlArray}$2`);
-
-      // If the key wasn't found, add it to the frontmatter
-      if (!content.includes(`${key} = ${tomlArray}`)) {
-        const endOfFrontmatter = content.indexOf('+++', 3);
-        if (endOfFrontmatter !== -1) {
-          content =
-            content.substring(0, endOfFrontmatter) +
-            `${key} = ${tomlArray}\n` +
-            content.substring(endOfFrontmatter);
-        }
-      }
-    }
+    
+    return newContent;
+  } catch (error) {
+    throw new Error(`Failed to apply template: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
-
-  // Replace title in Markdown (if specified)
-  if (values.title) {
-    // Replace title placeholder in Markdown body
-    content = content.replace(/# \[Title\]/, `# ${values.title}`);
-  }
-
-  // Apply custom content if provided
-  if (values.content) {
-    // Find the end of TOML frontmatter
-    const endOfFrontmatter = content.indexOf('+++', 3) + 3;
-
-    // Split content at Markdown breakpoint (usually after first heading)
-    let beforeContent = content.substring(0, endOfFrontmatter);
-
-    // Rest of content after frontmatter
-    const afterContent = content.substring(endOfFrontmatter);
-
-    // Split after first heading
-    const parts = afterContent.split('\n\n', 2);
-    if (parts.length > 1) {
-      // Keep title heading and replace content
-      content = beforeContent + parts[0] + '\n\n' + values.content;
-    } else {
-      // Just append content
-      content = beforeContent + '\n\n' + values.content;
-    }
-  }
-
-  return content;
 }
