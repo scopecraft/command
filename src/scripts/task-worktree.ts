@@ -295,12 +295,8 @@ async function finishWorktree(taskId?: string, options?: { merge?: string }) {
 
     console.log(`Selected merge option: ${mergePreference}`);
 
-    // Check if we need to mark the task as completed
-    console.log(`Checking task status...`);
-    const statusUpdated = await updateTaskStatus(taskId, worktreeDir);
-    if (statusUpdated) {
-      console.log(`Task ${taskId} has been marked as completed.`);
-    }
+    // Let Claude handle the task status update after merging to avoid merge conflicts
+    console.log(`Task status will be updated by Claude after merging to avoid conflicts...`);
 
     // Check if .claude directory exists
     const claudeDirExists = fs.existsSync('.claude/commands/task-finish.md');
