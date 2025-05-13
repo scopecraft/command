@@ -38,12 +38,13 @@ async function launchClaudeFinish(taskId: string, mergePreference: string, workt
   console.log(`Launching Claude to finish task ${taskId}...`);
 
   try {
+    // Launch Claude from the main repository instead of the worktree
     const claudeProcess = Bun.spawn([
       'claude',
       `/project:task-finish ${JSON.stringify(context)}`
     ], {
       stdio: ['inherit', 'inherit', 'inherit'],
-      cwd: worktreeDir,
+      // No cwd specified - will run from current directory (main repository)
     });
 
     // Wait for Claude process to complete
