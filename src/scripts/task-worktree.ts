@@ -78,7 +78,10 @@ async function updateTaskStatus(taskId: string, worktreeDir: string) {
   if (result.success) {
     // Commit the task status update
     try {
-      execSync(`cd "${worktreeDir}" && git add "${result.data.filePath}" && git commit -m "Mark task ${taskId} as completed"`, { stdio: 'inherit' });
+      // Get the relative path from worktree to the task file
+      const relativeFilePath = path.relative(REPO_ROOT, result.data.filePath);
+      // Add and commit the task status update
+      execSync(`cd "${worktreeDir}" && git add "${relativeFilePath}" && git commit -m "Mark task ${taskId} as completed"`, { stdio: 'inherit' });
       return true;
     } catch (error) {
       console.error('Failed to commit task status update:', error);
