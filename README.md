@@ -191,6 +191,23 @@ sc phases
 
 # Create a new phase
 sc phase-create --id "phase-1" --name "Planning Phase" --description "Initial planning stage"
+
+# Update a phase
+sc phase-update phase-1 --name "Updated Phase Name" --description "New description" --status "🔵 In Progress"
+
+# Change phase ID (rename)
+sc phase-update phase-1 --new-id "planning-phase"
+
+# Delete a phase
+sc phase-delete phase-1
+# Force delete a phase with tasks
+sc phase-delete phase-1 --force
+
+# Phase status shortcuts
+sc phase-start phase-1      # Mark as In Progress
+sc phase-complete phase-1   # Mark as Completed
+sc phase-block phase-1      # Mark as Blocked
+sc phase-pending phase-1    # Mark as Pending
 ```
 
 ## MCP Server Usage
@@ -225,6 +242,8 @@ The MCP server supports the following methods:
 | `task.next` | Find the next task | `id`, `format` |
 | `phase.list` | List all phases | `format` |
 | `phase.create` | Create a new phase | `id`, `name`, `description`, `status`, `order` |
+| `phase.update` | Update an existing phase | `id`, `updates: { id, name, description, status, order }` |
+| `phase.delete` | Delete a phase | `id`, `force` |
 | `workflow.current` | Show tasks in progress | `format` |
 | `workflow.markCompleteNext` | Complete task and find next | `id`, `format` |
 
