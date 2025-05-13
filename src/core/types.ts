@@ -37,7 +37,8 @@ export interface Phase {
   id: string;
   name: string;
   description?: string;
-  tasks: string[];
+  tasks?: string[]; // Optional list of task IDs
+  task_count?: number; // Count of tasks in the phase
   status?: string;
   order?: number;
 }

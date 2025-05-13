@@ -1,66 +1,43 @@
-# Enhanced Feature and Area Support in CLI and MCP
+# Refactor task-manager.ts into Modular Architecture (Initial Phase)
 
-This PR adds comprehensive support for MDTM feature and area directories within both the CLI and MCP interfaces, improving how features and areas are created, managed, and displayed.
+## Overview
 
-## Features Added
+This PR begins the refactoring of the large monolithic `task-manager.ts` file (over 2700 lines) into smaller, more maintainable modules following the single responsibility principle. The refactoring improves code organization and maintainability while preserving the existing functionality.
 
-1. **Core Functionality**
-   - Added data structures for Feature and Area in `types.ts`
-   - Implemented feature management functions in `task-manager.ts`:
-     - `listFeatures()`, `getFeature()`, `createFeature()`, `updateFeature()`, `deleteFeature()`
-   - Implemented area management functions:
-     - `listAreas()`, `getArea()`, `createArea()`, `updateArea()`, `deleteArea()`
-   - Added task movement functionality with `moveTask()`
-   - Enhanced overview file handling
+## Changes
 
-2. **MCP Interface**
-   - Added new MCP methods for feature management:
-     - `feature_list`, `feature_get`, `feature_create`, `feature_update`, `feature_delete`
-   - Added new MCP methods for area management:
-     - `area_list`, `area_get`, `area_create`, `area_update`, `area_delete`
-   - Added `task_move` method for moving tasks between features/areas
-   - Created detailed MCP tool descriptions in `docs/mcp-feature-area-tool-descriptions.md`
+- Created modular structure in `src/core/task-manager/` directory:
+  - `directory-utils.ts` - Directory operations
+  - `utils.ts` - Shared utility functions
+  - `task-crud.ts` - Task CRUD operations 
+  - `task-relationships.ts` - Relationship management
+  - `task-workflow.ts` - Next task finder and workflow operations
+  - `phase-crud.ts` - Phase operations
+  - `index.ts` - Re-exports all functions
 
-3. **Advanced Features**
-   - Progress calculation for features and areas based on task completion
-   - Automatic status determination based on contained tasks
-   - Support for renaming features and areas (including moving tasks)
-   - Hierarchical representation of tasks within features
+- Updated the original `task-manager.ts` to import and re-export from these new modules
+- Fixed a bug in `formatPhasesList` related to task count
+- Updated the Phase interface to support task_count property
 
-## Benefits
+## Issues Identified
 
-- Better organization of related tasks using MDTM directory structure
-- Enhanced support for overview files with proper handling and display
-- Improved workflows for moving tasks between features or areas
-- Ability to track progress and status at the feature/area level
-- Better compatibility with MDTM specification
-
-## Implementation Notes
-
-The implementation follows existing architecture patterns with a clear separation of concerns:
-- Core functionality in `src/core/`
-- MCP handlers in `src/mcp/`
-
-All methods maintain a consistent interface pattern, following the existing CRUD operations model used by tasks and phases. Feature and area functions are designed to be used seamlessly with the existing task system.
-
-## Documentation
-
-- Created comprehensive MCP tool descriptions in `docs/mcp-feature-area-tool-descriptions.md`
-- Updated debug_code_path handler to include new feature capabilities
+- **Task Status Update Bug**: During testing, we found that task status updates don't persist when using either the task update or start commands. The same commands work correctly on the main branch but not in the refactored code. This suggests an issue in our task update implementation.
 
 ## Testing
 
-Testing can be performed by:
-1. Using MCP tools to create features and areas
-2. Adding tasks to features/areas
-3. Moving tasks between features
-4. Testing that progress calculation works correctly 
-5. Verifying that feature/area status is correctly determined
+- Manually tested functionality:
+  - Task operations (list, get, create)
+  - Phase operations (list, create, update, delete)
+  - Workflow operations (findNextTask)
+  - Verified the application builds successfully
 
 ## Next Steps
 
-Future work could include:
-- More advanced UI representation of feature hierarchies 
-- Support for nesting features within areas
-- Additional filtering and sorting options for feature/area listings
-- Enhanced bulk operations for tasks within features
+Before proceeding with further refactoring:
+
+1. Investigate and fix the task status update bug
+2. Once fixed, continue with:
+   - Implementing feature/area operations in separate modules
+   - Adding unit tests for each module
+   - Implementing integration tests
+   - Removing the original task-manager.ts file after all imports are updated

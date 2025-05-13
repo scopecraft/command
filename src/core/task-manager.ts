@@ -3,6 +3,23 @@
  * Handles all CRUD operations for tasks, features, and areas
  */
 import fs from 'fs';
+import { 
+  getTasksDirectory, 
+  getPhasesDirectory, 
+  ensureDirectoryExists, 
+  getAllFiles,
+  listTasks,
+  getTask,
+  createTask,
+  updateTask,
+  deleteTask,
+  updateRelationships,
+  findNextTask,
+  listPhases,
+  createPhase,
+  updatePhase,
+  deletePhase
+} from './task-manager/index.js';
 import path from 'path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
 import {
@@ -22,38 +39,23 @@ import {
 import { parseTaskFile, formatTaskFile, generateTaskId } from './task-parser.js';
 import { projectConfig } from './project-config.js';
 
-/**
- * Gets the tasks directory path
- * @returns Path to the tasks directory
- */
-export function getTasksDirectory(): string {
-  return projectConfig.getTasksDirectory();
-}
+// Re-export utilities from the task-manager module
+export { getTasksDirectory, getPhasesDirectory, ensureDirectoryExists };
+
+// Re-export task CRUD operations from the task-manager module
+export { listTasks, getTask, createTask, updateTask, deleteTask, updateRelationships };
+
+// Re-export phase CRUD operations from the task-manager module
+export { listPhases, createPhase, updatePhase, deletePhase };
+
+// Re-export workflow operations from the task-manager module
+export { findNextTask };
 
 /**
- * Gets the phases directory path
- * @returns Path to the phases directory
+ * @deprecated Moved to task-manager/task-crud.js
  */
-export function getPhasesDirectory(): string {
-  return projectConfig.getPhasesDirectory();
-}
-
-/**
- * Ensure directory exists
- * @param dirPath Path to the directory to ensure
- */
-export function ensureDirectoryExists(dirPath: string): void {
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-}
-
-/**
- * Lists all tasks with optional filtering
- * @param options Filter options
- * @returns Operation result with array of tasks
- */
-export async function listTasks(options: TaskFilterOptions = {}): Promise<OperationResult<Task[]>> {
+/*
+async function listTasks(options: TaskFilterOptions = {}): Promise<OperationResult<Task[]>> {
   try {
     const tasksDir = getTasksDirectory();
 
@@ -63,18 +65,6 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
         error: `Tasks directory not found: ${tasksDir}`
       };
     }
-
-    // Get all task files recursively
-    const getAllFiles = (dir: string): string[] => {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-      return entries.flatMap(entry => {
-        const fullPath = path.join(dir, entry.name);
-        return entry.isDirectory()
-          ? getAllFiles(fullPath)
-          : entry.name.endsWith('.md') ? [fullPath] : [];
-      });
-    };
 
     const filePaths = getAllFiles(tasksDir);
     const tasks: Task[] = [];
@@ -160,15 +150,13 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
     };
   }
 }
+*/
 
 /**
- * Gets a task by ID, optionally with phase and subdirectory information
- * @param id Task ID
- * @param phase Optional phase to look in
- * @param subdirectory Optional subdirectory to look in
- * @returns Operation result with task if found
+ * @deprecated Moved to task-manager/task-crud.js
  */
-export async function getTask(id: string, phase?: string, subdirectory?: string): Promise<OperationResult<Task>> {
+/*
+async function getTask(id: string, phase?: string, subdirectory?: string): Promise<OperationResult<Task>> {
   try {
     // If phase and subdirectory are provided, try direct path lookup first
     if (phase && subdirectory) {
@@ -269,14 +257,13 @@ export async function getTask(id: string, phase?: string, subdirectory?: string)
     };
   }
 }
+*/
 
 /**
- * Creates a new task
- * @param task Task object to create
- * @param subdirectory Optional subdirectory within phase (e.g., "FEATURE_Login")
- * @returns Operation result with the created task
+ * @deprecated Moved to task-manager/task-crud.js
  */
-export async function createTask(task: Task, subdirectory?: string): Promise<OperationResult<Task>> {
+/*
+async function createTask(task: Task, subdirectory?: string): Promise<OperationResult<Task>> {
   try {
     const tasksDir = getTasksDirectory();
 
@@ -344,13 +331,13 @@ export async function createTask(task: Task, subdirectory?: string): Promise<Ope
     };
   }
 }
+*/
 
 /**
- * Update relationships between tasks
- * @param task Task to update relationships for
- * @returns Operation result
+ * @deprecated Moved to task-manager/task-relationships.js
  */
-export async function updateRelationships(task: Task): Promise<OperationResult<void>> {
+/*
+async function updateRelationships(task: Task): Promise<OperationResult<void>> {
   const errors: string[] = [];
   
   // Update parent task if specified
@@ -429,16 +416,13 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
     ? { success: false, error: errors.join('; ') }
     : { success: true };
 }
+*/
 
 /**
- * Updates an existing task
- * @param id Task ID
- * @param updates Updates to apply
- * @param phase Optional phase to look in (for task lookup)
- * @param subdirectory Optional subdirectory to look in (for task lookup)
- * @returns Operation result with updated task
+ * @deprecated Moved to task-manager/task-crud.js
  */
-export async function updateTask(
+/*
+async function updateTask(
   id: string,
   updates: TaskUpdateOptions,
   phase?: string,
@@ -644,15 +628,13 @@ export async function updateTask(
     };
   }
 }
+*/
 
 /**
- * Deletes a task
- * @param id Task ID
- * @param phase Optional phase to look in
- * @param subdirectory Optional subdirectory to look in
- * @returns Operation result
+ * @deprecated Moved to task-manager/task-crud.js
  */
-export async function deleteTask(id: string, phase?: string, subdirectory?: string): Promise<OperationResult<void>> {
+/*
+async function deleteTask(id: string, phase?: string, subdirectory?: string): Promise<OperationResult<void>> {
   try {
     const taskResult = await getTask(id, phase, subdirectory);
 
@@ -781,13 +763,13 @@ export async function deleteTask(id: string, phase?: string, subdirectory?: stri
     };
   }
 }
+*/
 
 /**
- * Find the next task based on dependencies and workflow sequence
- * @param taskId Current task ID (optional)
- * @returns Operation result with next task if found
+ * @deprecated Moved to task-manager/task-workflow.js
  */
-export async function findNextTask(taskId?: string): Promise<OperationResult<Task | null>> {
+/*
+async function findNextTask(taskId?: string): Promise<OperationResult<Task | null>> {
   try {
     if (!taskId) {
       // If no task ID provided, find the first task that has no dependencies or previous task
@@ -1043,12 +1025,13 @@ export async function findNextTask(taskId?: string): Promise<OperationResult<Tas
     };
   }
 }
+*/
 
 /**
- * Lists all phases
- * @returns Operation result with array of phases
+ * @deprecated Moved to task-manager/phase-crud.js
  */
-export async function listPhases(): Promise<OperationResult<Phase[]>> {
+/*
+async function listPhases(): Promise<OperationResult<Phase[]>> {
   try {
     const tasksDir = getTasksDirectory();
     if (!fs.existsSync(tasksDir)) {
@@ -1165,13 +1148,13 @@ export async function listPhases(): Promise<OperationResult<Phase[]>> {
     };
   }
 }
+*/
 
 /**
- * Creates a new phase
- * @param phase Phase object
- * @returns Operation result with created phase
+ * @deprecated Moved to task-manager/phase-crud.js
  */
-export async function createPhase(phase: Phase): Promise<OperationResult<Phase>> {
+/*
+async function createPhase(phase: Phase): Promise<OperationResult<Phase>> {
   try {
     const tasksDir = getTasksDirectory();
     
@@ -1247,14 +1230,13 @@ export async function createPhase(phase: Phase): Promise<OperationResult<Phase>>
     };
   }
 }
+*/
 
 /**
- * Updates an existing phase
- * @param id Phase ID to update
- * @param updates Partial<Phase> with updated fields
- * @returns Operation result with updated phase
+ * @deprecated Moved to task-manager/phase-crud.js
  */
-export async function updatePhase(id: string, updates: Partial<Phase>): Promise<OperationResult<Phase>> {
+/*
+async function updatePhase(id: string, updates: Partial<Phase>): Promise<OperationResult<Phase>> {
   try {
     // First, get the existing phase to ensure it exists
     const phasesResult = await listPhases();
@@ -1496,14 +1478,13 @@ export async function updatePhase(id: string, updates: Partial<Phase>): Promise<
     };
   }
 }
+*/
 
 /**
- * Deletes a phase
- * @param id Phase ID to delete
- * @param options Options for deletion
- * @returns Operation result
+ * @deprecated Moved to task-manager/phase-crud.js
  */
-export async function deletePhase(id: string, options: { force?: boolean } = {}): Promise<OperationResult<void>> {
+/*
+async function deletePhase(id: string, options: { force?: boolean } = {}): Promise<OperationResult<void>> {
   try {
     // First, get the existing phase to ensure it exists
     const phasesResult = await listPhases();
@@ -1603,6 +1584,7 @@ export async function deletePhase(id: string, options: { force?: boolean } = {})
     };
   }
 }
+*/
 
 /**
  * Lists all features in the project with optional filtering

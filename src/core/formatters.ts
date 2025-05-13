@@ -113,9 +113,9 @@ export function formatPhasesList(phases: Phase[], format: OutputFormat): string 
   
   const rows = phases.map(phase => {
     const id = phase.id.padEnd(17);
-    const name = phase.name.substring(0, 18).padEnd(18);
+    const name = (phase.name || phase.id).substring(0, 18).padEnd(18);
     const status = (phase.status || '').padEnd(15);
-    const taskCount = (phase.tasks.length.toString()).padEnd(8);
+    const taskCount = ((phase.task_count || 0).toString()).padEnd(8);
     const description = phase.description || '';
     
     return `${id}| ${name}| ${status}| ${taskCount}| ${description}`;
