@@ -42,6 +42,48 @@ export interface Phase {
   order?: number;
 }
 
+// Feature object representing a feature directory structure
+export interface Feature {
+  id: string; // Directory name (e.g., "FEATURE_Authentication")
+  name: string; // Clean name (e.g., "Authentication")
+  title: string; // Display title from overview
+  description?: string; // Description from overview
+  phase?: string; // Phase this feature belongs to
+  tasks: string[]; // List of task IDs in this feature
+  status?: string; // Computed status based on tasks
+  progress?: number; // Progress percentage (0-100)
+  overview?: Task; // Reference to the overview task
+}
+
+// Area object representing an area directory structure
+export interface Area {
+  id: string; // Directory name (e.g., "AREA_Performance")
+  name: string; // Clean name (e.g., "Performance")
+  title: string; // Display title from overview
+  description?: string; // Description from overview
+  phase?: string; // Phase this area belongs to
+  tasks: string[]; // List of task IDs in this area
+  status?: string; // Computed status based on tasks
+  progress?: number; // Progress percentage (0-100)
+  overview?: Task; // Reference to the overview task
+}
+
+// Filter options for feature listing
+export interface FeatureFilterOptions {
+  phase?: string;
+  status?: string;
+  include_tasks?: boolean; // Whether to include task details
+  include_progress?: boolean; // Whether to include progress calculation
+}
+
+// Filter options for area listing
+export interface AreaFilterOptions {
+  phase?: string;
+  status?: string;
+  include_tasks?: boolean; // Whether to include task details
+  include_progress?: boolean; // Whether to include progress calculation
+}
+
 // Filter options for task listing
 export interface TaskFilterOptions {
   status?: string;
@@ -59,6 +101,22 @@ export interface TaskFilterOptions {
 export interface TaskUpdateOptions {
   metadata?: Partial<TaskMetadata>;
   content?: string;
+}
+
+// Update options for feature
+export interface FeatureUpdateOptions {
+  name?: string;
+  title?: string;
+  description?: string;
+  status?: string;
+}
+
+// Update options for area
+export interface AreaUpdateOptions {
+  name?: string;
+  title?: string;
+  description?: string;
+  status?: string;
 }
 
 // Output formats for various displays
