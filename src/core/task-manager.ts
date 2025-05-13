@@ -1,6 +1,6 @@
 /**
  * Core task management functionality
- * Handles all CRUD operations for tasks
+ * Handles all CRUD operations for tasks, features, and areas
  */
 import fs from 'fs';
 import path from 'path';
@@ -11,7 +11,13 @@ import {
   TaskFilterOptions,
   TaskUpdateOptions,
   OperationResult,
-  Phase
+  Phase,
+  Feature,
+  Area,
+  FeatureFilterOptions,
+  AreaFilterOptions,
+  FeatureUpdateOptions,
+  AreaUpdateOptions
 } from './types.js';
 import { parseTaskFile, formatTaskFile, generateTaskId } from './task-parser.js';
 import { projectConfig } from './project-config.js';
@@ -1594,6 +1600,1145 @@ export async function deletePhase(id: string, options: { force?: boolean } = {})
     return {
       success: false,
       error: `Error deleting phase: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Lists all features in the project with optional filtering
+ * @param options Filter options for features
+ * @returns Operation result with array of features
+ */
+export async function listFeatures(options: FeatureFilterOptions = {}): Promise<OperationResult<Feature[]>> {
+  try {
+    const tasksDir = getTasksDirectory();
+
+    if (!fs.existsSync(tasksDir)) {
+      return {
+        success: false,
+        error: `Tasks directory not found: ${tasksDir}`
+      };
+    }
+
+    const features: Feature[] = [];
+    const errors: string[] = [];
+
+    // Function to recursively scan directories for FEATURE_ prefixed directories
+    const scanDirectories = async (dir: string, phase?: string): Promise<void> => {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const fullPath = path.join(dir, entry.name);
+          const dirBasename = path.basename(fullPath);
+          
+          // If this is a phase directory, recurse with phase name
+          if (!dirBasename.startsWith('FEATURE_') && !dirBasename.startsWith('AREA_')) {
+            await scanDirectories(fullPath, dirBasename);
+            continue;
+          }
+          
+          // If this is a feature directory (starts with FEATURE_)
+          if (dirBasename.startsWith('FEATURE_')) {
+            try {
+              // Look for _overview.md file in the feature directory
+              const overviewPath = path.join(fullPath, '_overview.md');
+              let overview: Task | undefined;
+              let title = dirBasename.replace('FEATURE_', '');
+              let description = '';
+              let status = '';
+              
+              if (fs.existsSync(overviewPath)) {
+                const content = fs.readFileSync(overviewPath, 'utf-8');
+                overview = parseTaskFile(content);
+                overview.filePath = overviewPath;
+                title = overview.metadata.title || title;
+                
+                // Extract description from content (first paragraph after title)
+                if (overview.content) {
+                  const contentLines = overview.content.split('\n');
+                  const descriptionStart = contentLines.findIndex(line => line.startsWith('# ')) + 1;
+                  if (descriptionStart > 0) {
+                    for (let i = descriptionStart; i < contentLines.length; i++) {
+                      if (contentLines[i].trim() !== '' && !contentLines[i].startsWith('#')) {
+                        description = contentLines[i].trim();
+                        break;
+                      }
+                    }
+                  }
+                }
+                
+                status = overview.metadata.status || '';
+              }
+              
+              // List all tasks in this feature directory
+              const taskFiles = fs.readdirSync(fullPath)
+                .filter(file => file.endsWith('.md') && file !== '_overview.md')
+                .map(file => {
+                  try {
+                    const taskPath = path.join(fullPath, file);
+                    const content = fs.readFileSync(taskPath, 'utf-8');
+                    const task = parseTaskFile(content);
+                    return task.metadata.id;
+                  } catch (err) {
+                    return null;
+                  }
+                })
+                .filter(id => id !== null) as string[];
+              
+              // Calculate progress based on task status
+              let completedTasks = 0;
+              let totalTasks = taskFiles.length;
+              
+              if (options.include_progress) {
+                // Get detailed task information to calculate progress
+                const tasksResult = await listTasks({
+                  phase: phase,
+                  subdirectory: dirBasename,
+                  include_completed: true,
+                  include_content: false
+                });
+                
+                if (tasksResult.success && tasksResult.data) {
+                  totalTasks = tasksResult.data.length;
+                  completedTasks = tasksResult.data.filter(task => {
+                    const status = task.metadata.status || '';
+                    return status.includes('Done') || 
+                           status.includes('🟢') || 
+                           status.includes('Completed') || 
+                           status.includes('Complete');
+                  }).length;
+                }
+              }
+              
+              const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+              
+              // Calculate overall feature status based on tasks
+              if (status === '') {
+                if (totalTasks === 0) {
+                  status = '🟡 To Do';
+                } else if (completedTasks === totalTasks) {
+                  status = '🟢 Done';
+                } else if (completedTasks > 0) {
+                  status = '🔵 In Progress';
+                } else {
+                  status = '🟡 To Do';
+                }
+              }
+              
+              // Create feature object
+              const feature: Feature = {
+                id: dirBasename,
+                name: dirBasename.replace('FEATURE_', ''),
+                title,
+                description,
+                phase,
+                tasks: taskFiles,
+                status,
+                progress,
+                overview
+              };
+              
+              // Apply filters
+              if (options.phase && phase !== options.phase) continue;
+              if (options.status && status !== options.status) continue;
+              
+              // Remove task details if not requested
+              if (!options.include_tasks) {
+                delete feature.overview;
+              }
+              
+              features.push(feature);
+            } catch (error) {
+              errors.push(`Error processing feature ${dirBasename}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+          }
+        }
+      }
+    };
+    
+    // Start scanning from tasks directory
+    await scanDirectories(tasksDir);
+    
+    return {
+      success: true,
+      data: features,
+      message: `Found ${features.length} features ${errors.length > 0 ? `with ${errors.length} errors` : ''}`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error listing features: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Gets a specific feature by ID (directory name)
+ * @param id Feature ID (e.g., "FEATURE_Authentication")
+ * @param phase Optional phase to look in
+ * @returns Operation result with feature if found
+ */
+export async function getFeature(id: string, phase?: string): Promise<OperationResult<Feature>> {
+  try {
+    const features = await listFeatures({
+      phase,
+      include_tasks: true,
+      include_progress: true
+    });
+    
+    if (!features.success || !features.data) {
+      return {
+        success: false,
+        error: features.error || 'Failed to list features'
+      };
+    }
+    
+    const feature = features.data.find(f => f.id === (id.startsWith('FEATURE_') ? id : `FEATURE_${id}`));
+    
+    if (!feature) {
+      return {
+        success: false,
+        error: `Feature ${id} not found`
+      };
+    }
+    
+    return {
+      success: true,
+      data: feature,
+      message: `Feature ${id} found`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error getting feature: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Creates a new feature with an _overview.md file
+ * @param name Feature name (will be prefixed with FEATURE_ if not already)
+ * @param title Feature title
+ * @param phase Phase to create the feature in
+ * @param type Feature type (default: "🌟 Feature")
+ * @param status Initial status (default: "🟡 To Do")
+ * @param description Optional description
+ * @param assignee Optional assignee
+ * @param tags Optional tags
+ * @returns Operation result with created feature
+ */
+export async function createFeature(
+  name: string,
+  title: string,
+  phase: string,
+  type: string = '🌟 Feature',
+  status: string = '🟡 To Do',
+  description?: string,
+  assignee?: string,
+  tags?: string[]
+): Promise<OperationResult<Feature>> {
+  try {
+    const tasksDir = getTasksDirectory();
+    
+    if (!fs.existsSync(tasksDir)) {
+      return {
+        success: false,
+        error: `Tasks directory not found: ${tasksDir}`
+      };
+    }
+    
+    // Ensure phase directory exists
+    const phaseDir = path.join(tasksDir, phase);
+    if (!fs.existsSync(phaseDir)) {
+      return {
+        success: false,
+        error: `Phase directory not found: ${phase}`
+      };
+    }
+    
+    // Format feature directory name
+    const cleanName = name.replace(/\s+/g, '');
+    const featureId = cleanName.startsWith('FEATURE_') ? cleanName : `FEATURE_${cleanName}`;
+    
+    // Create feature directory
+    const featureDir = path.join(phaseDir, featureId);
+    if (fs.existsSync(featureDir)) {
+      return {
+        success: false,
+        error: `Feature directory already exists: ${featureId}`
+      };
+    }
+    
+    ensureDirectoryExists(featureDir);
+    
+    // Create overview task
+    const overviewTask: Task = {
+      metadata: {
+        id: '_overview',
+        title,
+        type,
+        status,
+        priority: '▶️ Medium',
+        created_date: new Date().toISOString().split('T')[0],
+        updated_date: new Date().toISOString().split('T')[0],
+        assigned_to: assignee || '',
+        phase,
+        subdirectory: featureId,
+        is_overview: true,
+        tags: tags || []
+      },
+      content: `# ${title}\n\n${description || 'Overview of this feature.'}\n\n## Tasks\n\n- [ ] Task 1`
+    };
+    
+    // Save overview file
+    const overviewPath = path.join(featureDir, '_overview.md');
+    fs.writeFileSync(overviewPath, formatTaskFile(overviewTask));
+    
+    // Get created feature
+    const result = await getFeature(featureId, phase);
+    
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        error: result.error || 'Failed to retrieve created feature'
+      };
+    }
+    
+    return {
+      success: true,
+      data: result.data,
+      message: `Feature ${featureId} created successfully`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error creating feature: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Updates a feature's metadata via its _overview.md file
+ * @param id Feature ID (e.g., "FEATURE_Authentication")
+ * @param updates Update options
+ * @param phase Optional phase to look in
+ * @returns Operation result with updated feature
+ */
+export async function updateFeature(
+  id: string,
+  updates: FeatureUpdateOptions,
+  phase?: string
+): Promise<OperationResult<Feature>> {
+  try {
+    // Get the feature first
+    const feature = await getFeature(id, phase);
+    
+    if (!feature.success || !feature.data) {
+      return {
+        success: false,
+        error: feature.error || `Feature ${id} not found`
+      };
+    }
+    
+    const featureData = feature.data;
+    const featurePhase = featureData.phase || phase;
+    
+    if (!featurePhase) {
+      return {
+        success: false,
+        error: 'Cannot update feature: phase not found'
+      };
+    }
+    
+    // Feature should have an overview task, if not, we can't update
+    if (!featureData.overview) {
+      return {
+        success: false,
+        error: `Feature ${id} does not have an overview file`
+      };
+    }
+    
+    // Update overview task
+    const overviewTask = featureData.overview;
+    let updateNeeded = false;
+    
+    if (updates.title) {
+      overviewTask.metadata.title = updates.title;
+      updateNeeded = true;
+    }
+    
+    if (updates.status) {
+      overviewTask.metadata.status = updates.status;
+      updateNeeded = true;
+    }
+    
+    if (updates.description) {
+      // Update description in content
+      const contentLines = overviewTask.content.split('\n');
+      const titleIndex = contentLines.findIndex(line => line.startsWith('# '));
+      
+      if (titleIndex >= 0) {
+        const newContent = [
+          ...contentLines.slice(0, titleIndex + 1),
+          '',
+          updates.description,
+          '',
+          ...contentLines.slice(titleIndex + 1).filter(line => {
+            // Skip existing description lines
+            return line.startsWith('#') || line.trim() === '' || line.includes('- [');
+          })
+        ];
+        
+        overviewTask.content = newContent.join('\n');
+        updateNeeded = true;
+      }
+    }
+    
+    // If name changed, need to rename directory
+    if (updates.name && updates.name !== featureData.name) {
+      const tasksDir = getTasksDirectory();
+      const oldFeaturePath = path.join(tasksDir, featurePhase, featureData.id);
+      const newFeatureName = updates.name.replace(/\s+/g, '');
+      const newFeatureId = newFeatureName.startsWith('FEATURE_') ? newFeatureName : `FEATURE_${newFeatureName}`;
+      const newFeaturePath = path.join(tasksDir, featurePhase, newFeatureId);
+      
+      if (fs.existsSync(newFeaturePath)) {
+        return {
+          success: false,
+          error: `Cannot rename feature: target directory already exists: ${newFeatureId}`
+        };
+      }
+      
+      // Update path in metadata
+      overviewTask.metadata.subdirectory = newFeatureId;
+      updateNeeded = true;
+      
+      // Update all task files in the feature to point to new subdirectory
+      const tasksResult = await listTasks({
+        phase: featurePhase,
+        subdirectory: featureData.id,
+        include_completed: true,
+        include_content: true
+      });
+      
+      if (tasksResult.success && tasksResult.data) {
+        for (const task of tasksResult.data) {
+          if (task.metadata.id === '_overview') continue; // Skip overview, we're updating it separately
+          
+          task.metadata.subdirectory = newFeatureId;
+          if (task.filePath) {
+            const taskFilename = path.basename(task.filePath);
+            // Will be written after directory is renamed
+            fs.writeFileSync(task.filePath, formatTaskFile(task));
+          }
+        }
+      }
+      
+      // Write updated overview file to old location first
+      if (overviewTask.filePath) {
+        fs.writeFileSync(overviewTask.filePath, formatTaskFile(overviewTask));
+      }
+      
+      // Rename directory
+      fs.renameSync(oldFeaturePath, newFeaturePath);
+      
+      return await getFeature(newFeatureId, featurePhase);
+    }
+    
+    // Just update the overview file
+    if (updateNeeded && overviewTask.filePath) {
+      fs.writeFileSync(overviewTask.filePath, formatTaskFile(overviewTask));
+    }
+    
+    // Get updated feature
+    return await getFeature(id, featurePhase);
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error updating feature: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Deletes a feature (directory and all tasks within it)
+ * @param id Feature ID (e.g., "FEATURE_Authentication")
+ * @param phase Optional phase to look in
+ * @param force Whether to force deletion even if feature contains tasks
+ * @returns Operation result
+ */
+export async function deleteFeature(id: string, phase?: string, force: boolean = false): Promise<OperationResult<void>> {
+  try {
+    // Get the feature first
+    const feature = await getFeature(id, phase);
+    
+    if (!feature.success || !feature.data) {
+      return {
+        success: false,
+        error: feature.error || `Feature ${id} not found`
+      };
+    }
+    
+    const featureData = feature.data;
+    const featurePhase = featureData.phase || phase;
+    
+    if (!featurePhase) {
+      return {
+        success: false,
+        error: 'Cannot delete feature: phase not found'
+      };
+    }
+    
+    // Check if feature has tasks (excluding overview)
+    if (!force && featureData.tasks.length > 0) {
+      return {
+        success: false,
+        error: `Feature ${id} contains ${featureData.tasks.length} tasks. Use force option to delete.`
+      };
+    }
+    
+    // Delete the feature directory
+    const tasksDir = getTasksDirectory();
+    const featurePath = path.join(tasksDir, featurePhase, featureData.id);
+    
+    if (fs.existsSync(featurePath)) {
+      // Recursively delete directory
+      const deleteDir = (dirPath: string) => {
+        if (fs.existsSync(dirPath)) {
+          fs.readdirSync(dirPath).forEach((file) => {
+            const curPath = path.join(dirPath, file);
+            if (fs.lstatSync(curPath).isDirectory()) {
+              deleteDir(curPath);
+            } else {
+              fs.unlinkSync(curPath);
+            }
+          });
+          fs.rmdirSync(dirPath);
+        }
+      };
+      
+      deleteDir(featurePath);
+      
+      return {
+        success: true,
+        message: `Feature ${id} deleted successfully`
+      };
+    } else {
+      return {
+        success: false,
+        error: `Feature directory not found: ${featurePath}`
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error deleting feature: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Lists all areas in the project with optional filtering
+ * @param options Filter options for areas
+ * @returns Operation result with array of areas
+ */
+export async function listAreas(options: AreaFilterOptions = {}): Promise<OperationResult<Area[]>> {
+  try {
+    const tasksDir = getTasksDirectory();
+
+    if (!fs.existsSync(tasksDir)) {
+      return {
+        success: false,
+        error: `Tasks directory not found: ${tasksDir}`
+      };
+    }
+
+    const areas: Area[] = [];
+    const errors: string[] = [];
+
+    // Function to recursively scan directories for AREA_ prefixed directories
+    const scanDirectories = async (dir: string, phase?: string): Promise<void> => {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const fullPath = path.join(dir, entry.name);
+          const dirBasename = path.basename(fullPath);
+          
+          // If this is a phase directory, recurse with phase name
+          if (!dirBasename.startsWith('FEATURE_') && !dirBasename.startsWith('AREA_')) {
+            await scanDirectories(fullPath, dirBasename);
+            continue;
+          }
+          
+          // If this is an area directory (starts with AREA_)
+          if (dirBasename.startsWith('AREA_')) {
+            try {
+              // Look for _overview.md file in the area directory
+              const overviewPath = path.join(fullPath, '_overview.md');
+              let overview: Task | undefined;
+              let title = dirBasename.replace('AREA_', '');
+              let description = '';
+              let status = '';
+              
+              if (fs.existsSync(overviewPath)) {
+                const content = fs.readFileSync(overviewPath, 'utf-8');
+                overview = parseTaskFile(content);
+                overview.filePath = overviewPath;
+                title = overview.metadata.title || title;
+                
+                // Extract description from content (first paragraph after title)
+                if (overview.content) {
+                  const contentLines = overview.content.split('\n');
+                  const descriptionStart = contentLines.findIndex(line => line.startsWith('# ')) + 1;
+                  if (descriptionStart > 0) {
+                    for (let i = descriptionStart; i < contentLines.length; i++) {
+                      if (contentLines[i].trim() !== '' && !contentLines[i].startsWith('#')) {
+                        description = contentLines[i].trim();
+                        break;
+                      }
+                    }
+                  }
+                }
+                
+                status = overview.metadata.status || '';
+              }
+              
+              // List all tasks in this area directory
+              const taskFiles = fs.readdirSync(fullPath)
+                .filter(file => file.endsWith('.md') && file !== '_overview.md')
+                .map(file => {
+                  try {
+                    const taskPath = path.join(fullPath, file);
+                    const content = fs.readFileSync(taskPath, 'utf-8');
+                    const task = parseTaskFile(content);
+                    return task.metadata.id;
+                  } catch (err) {
+                    return null;
+                  }
+                })
+                .filter(id => id !== null) as string[];
+              
+              // Calculate progress based on task status
+              let completedTasks = 0;
+              let totalTasks = taskFiles.length;
+              
+              if (options.include_progress) {
+                // Get detailed task information to calculate progress
+                const tasksResult = await listTasks({
+                  phase: phase,
+                  subdirectory: dirBasename,
+                  include_completed: true,
+                  include_content: false
+                });
+                
+                if (tasksResult.success && tasksResult.data) {
+                  totalTasks = tasksResult.data.length;
+                  completedTasks = tasksResult.data.filter(task => {
+                    const status = task.metadata.status || '';
+                    return status.includes('Done') || 
+                           status.includes('🟢') || 
+                           status.includes('Completed') || 
+                           status.includes('Complete');
+                  }).length;
+                }
+              }
+              
+              const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+              
+              // Calculate overall area status based on tasks
+              if (status === '') {
+                if (totalTasks === 0) {
+                  status = '🟡 To Do';
+                } else if (completedTasks === totalTasks) {
+                  status = '🟢 Done';
+                } else if (completedTasks > 0) {
+                  status = '🔵 In Progress';
+                } else {
+                  status = '🟡 To Do';
+                }
+              }
+              
+              // Create area object
+              const area: Area = {
+                id: dirBasename,
+                name: dirBasename.replace('AREA_', ''),
+                title,
+                description,
+                phase,
+                tasks: taskFiles,
+                status,
+                progress,
+                overview
+              };
+              
+              // Apply filters
+              if (options.phase && phase !== options.phase) continue;
+              if (options.status && status !== options.status) continue;
+              
+              // Remove task details if not requested
+              if (!options.include_tasks) {
+                delete area.overview;
+              }
+              
+              areas.push(area);
+            } catch (error) {
+              errors.push(`Error processing area ${dirBasename}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+          }
+        }
+      }
+    };
+    
+    // Start scanning from tasks directory
+    await scanDirectories(tasksDir);
+    
+    return {
+      success: true,
+      data: areas,
+      message: `Found ${areas.length} areas ${errors.length > 0 ? `with ${errors.length} errors` : ''}`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error listing areas: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Gets a specific area by ID (directory name)
+ * @param id Area ID (e.g., "AREA_Performance")
+ * @param phase Optional phase to look in
+ * @returns Operation result with area if found
+ */
+export async function getArea(id: string, phase?: string): Promise<OperationResult<Area>> {
+  try {
+    const areas = await listAreas({
+      phase,
+      include_tasks: true,
+      include_progress: true
+    });
+    
+    if (!areas.success || !areas.data) {
+      return {
+        success: false,
+        error: areas.error || 'Failed to list areas'
+      };
+    }
+    
+    const area = areas.data.find(a => a.id === (id.startsWith('AREA_') ? id : `AREA_${id}`));
+    
+    if (!area) {
+      return {
+        success: false,
+        error: `Area ${id} not found`
+      };
+    }
+    
+    return {
+      success: true,
+      data: area,
+      message: `Area ${id} found`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error getting area: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Creates a new area with an _overview.md file
+ * @param name Area name (will be prefixed with AREA_ if not already)
+ * @param title Area title
+ * @param phase Phase to create the area in
+ * @param type Area type (default: "🧹 Chore")
+ * @param status Initial status (default: "🟡 To Do")
+ * @param description Optional description
+ * @param assignee Optional assignee
+ * @param tags Optional tags
+ * @returns Operation result with created area
+ */
+export async function createArea(
+  name: string,
+  title: string,
+  phase: string,
+  type: string = '🧹 Chore',
+  status: string = '🟡 To Do',
+  description?: string,
+  assignee?: string,
+  tags?: string[]
+): Promise<OperationResult<Area>> {
+  try {
+    const tasksDir = getTasksDirectory();
+    
+    if (!fs.existsSync(tasksDir)) {
+      return {
+        success: false,
+        error: `Tasks directory not found: ${tasksDir}`
+      };
+    }
+    
+    // Ensure phase directory exists
+    const phaseDir = path.join(tasksDir, phase);
+    if (!fs.existsSync(phaseDir)) {
+      return {
+        success: false,
+        error: `Phase directory not found: ${phase}`
+      };
+    }
+    
+    // Format area directory name
+    const cleanName = name.replace(/\s+/g, '');
+    const areaId = cleanName.startsWith('AREA_') ? cleanName : `AREA_${cleanName}`;
+    
+    // Create area directory
+    const areaDir = path.join(phaseDir, areaId);
+    if (fs.existsSync(areaDir)) {
+      return {
+        success: false,
+        error: `Area directory already exists: ${areaId}`
+      };
+    }
+    
+    ensureDirectoryExists(areaDir);
+    
+    // Create overview task
+    const overviewTask: Task = {
+      metadata: {
+        id: '_overview',
+        title,
+        type,
+        status,
+        priority: '▶️ Medium',
+        created_date: new Date().toISOString().split('T')[0],
+        updated_date: new Date().toISOString().split('T')[0],
+        assigned_to: assignee || '',
+        phase,
+        subdirectory: areaId,
+        is_overview: true,
+        tags: tags || []
+      },
+      content: `# ${title}\n\n${description || 'Overview of this cross-cutting area.'}\n\n## Tasks\n\n- [ ] Task 1`
+    };
+    
+    // Save overview file
+    const overviewPath = path.join(areaDir, '_overview.md');
+    fs.writeFileSync(overviewPath, formatTaskFile(overviewTask));
+    
+    // Get created area
+    const result = await getArea(areaId, phase);
+    
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        error: result.error || 'Failed to retrieve created area'
+      };
+    }
+    
+    return {
+      success: true,
+      data: result.data,
+      message: `Area ${areaId} created successfully`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error creating area: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Updates an area's metadata via its _overview.md file
+ * @param id Area ID (e.g., "AREA_Performance")
+ * @param updates Update options
+ * @param phase Optional phase to look in
+ * @returns Operation result with updated area
+ */
+export async function updateArea(
+  id: string,
+  updates: AreaUpdateOptions,
+  phase?: string
+): Promise<OperationResult<Area>> {
+  try {
+    // Get the area first
+    const area = await getArea(id, phase);
+    
+    if (!area.success || !area.data) {
+      return {
+        success: false,
+        error: area.error || `Area ${id} not found`
+      };
+    }
+    
+    const areaData = area.data;
+    const areaPhase = areaData.phase || phase;
+    
+    if (!areaPhase) {
+      return {
+        success: false,
+        error: 'Cannot update area: phase not found'
+      };
+    }
+    
+    // Area should have an overview task, if not, we can't update
+    if (!areaData.overview) {
+      return {
+        success: false,
+        error: `Area ${id} does not have an overview file`
+      };
+    }
+    
+    // Update overview task
+    const overviewTask = areaData.overview;
+    let updateNeeded = false;
+    
+    if (updates.title) {
+      overviewTask.metadata.title = updates.title;
+      updateNeeded = true;
+    }
+    
+    if (updates.status) {
+      overviewTask.metadata.status = updates.status;
+      updateNeeded = true;
+    }
+    
+    if (updates.description) {
+      // Update description in content
+      const contentLines = overviewTask.content.split('\n');
+      const titleIndex = contentLines.findIndex(line => line.startsWith('# '));
+      
+      if (titleIndex >= 0) {
+        const newContent = [
+          ...contentLines.slice(0, titleIndex + 1),
+          '',
+          updates.description,
+          '',
+          ...contentLines.slice(titleIndex + 1).filter(line => {
+            // Skip existing description lines
+            return line.startsWith('#') || line.trim() === '' || line.includes('- [');
+          })
+        ];
+        
+        overviewTask.content = newContent.join('\n');
+        updateNeeded = true;
+      }
+    }
+    
+    // If name changed, need to rename directory
+    if (updates.name && updates.name !== areaData.name) {
+      const tasksDir = getTasksDirectory();
+      const oldAreaPath = path.join(tasksDir, areaPhase, areaData.id);
+      const newAreaName = updates.name.replace(/\s+/g, '');
+      const newAreaId = newAreaName.startsWith('AREA_') ? newAreaName : `AREA_${newAreaName}`;
+      const newAreaPath = path.join(tasksDir, areaPhase, newAreaId);
+      
+      if (fs.existsSync(newAreaPath)) {
+        return {
+          success: false,
+          error: `Cannot rename area: target directory already exists: ${newAreaId}`
+        };
+      }
+      
+      // Update path in metadata
+      overviewTask.metadata.subdirectory = newAreaId;
+      updateNeeded = true;
+      
+      // Update all task files in the area to point to new subdirectory
+      const tasksResult = await listTasks({
+        phase: areaPhase,
+        subdirectory: areaData.id,
+        include_completed: true,
+        include_content: true
+      });
+      
+      if (tasksResult.success && tasksResult.data) {
+        for (const task of tasksResult.data) {
+          if (task.metadata.id === '_overview') continue; // Skip overview, we're updating it separately
+          
+          task.metadata.subdirectory = newAreaId;
+          if (task.filePath) {
+            const taskFilename = path.basename(task.filePath);
+            // Will be written after directory is renamed
+            fs.writeFileSync(task.filePath, formatTaskFile(task));
+          }
+        }
+      }
+      
+      // Write updated overview file to old location first
+      if (overviewTask.filePath) {
+        fs.writeFileSync(overviewTask.filePath, formatTaskFile(overviewTask));
+      }
+      
+      // Rename directory
+      fs.renameSync(oldAreaPath, newAreaPath);
+      
+      return await getArea(newAreaId, areaPhase);
+    }
+    
+    // Just update the overview file
+    if (updateNeeded && overviewTask.filePath) {
+      fs.writeFileSync(overviewTask.filePath, formatTaskFile(overviewTask));
+    }
+    
+    // Get updated area
+    return await getArea(id, areaPhase);
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error updating area: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Deletes an area (directory and all tasks within it)
+ * @param id Area ID (e.g., "AREA_Performance")
+ * @param phase Optional phase to look in
+ * @param force Whether to force deletion even if area contains tasks
+ * @returns Operation result
+ */
+export async function deleteArea(id: string, phase?: string, force: boolean = false): Promise<OperationResult<void>> {
+  try {
+    // Get the area first
+    const area = await getArea(id, phase);
+    
+    if (!area.success || !area.data) {
+      return {
+        success: false,
+        error: area.error || `Area ${id} not found`
+      };
+    }
+    
+    const areaData = area.data;
+    const areaPhase = areaData.phase || phase;
+    
+    if (!areaPhase) {
+      return {
+        success: false,
+        error: 'Cannot delete area: phase not found'
+      };
+    }
+    
+    // Check if area has tasks (excluding overview)
+    if (!force && areaData.tasks.length > 0) {
+      return {
+        success: false,
+        error: `Area ${id} contains ${areaData.tasks.length} tasks. Use force option to delete.`
+      };
+    }
+    
+    // Delete the area directory
+    const tasksDir = getTasksDirectory();
+    const areaPath = path.join(tasksDir, areaPhase, areaData.id);
+    
+    if (fs.existsSync(areaPath)) {
+      // Recursively delete directory
+      const deleteDir = (dirPath: string) => {
+        if (fs.existsSync(dirPath)) {
+          fs.readdirSync(dirPath).forEach((file) => {
+            const curPath = path.join(dirPath, file);
+            if (fs.lstatSync(curPath).isDirectory()) {
+              deleteDir(curPath);
+            } else {
+              fs.unlinkSync(curPath);
+            }
+          });
+          fs.rmdirSync(dirPath);
+        }
+      };
+      
+      deleteDir(areaPath);
+      
+      return {
+        success: true,
+        message: `Area ${id} deleted successfully`
+      };
+    } else {
+      return {
+        success: false,
+        error: `Area directory not found: ${areaPath}`
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error deleting area: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Moves a task to a different feature or area
+ * @param id Task ID to move
+ * @param options Move options (targetSubdirectory, targetPhase, searchPhase, searchSubdirectory)
+ * @returns Operation result with moved task
+ */
+export async function moveTask(id: string, options: {
+  targetSubdirectory: string;
+  targetPhase?: string;
+  searchPhase?: string;
+  searchSubdirectory?: string;
+}): Promise<OperationResult<Task>> {
+  try {
+    // Get the task first
+    const task = await getTask(id);
+    
+    if (!task.success || !task.data) {
+      return {
+        success: false,
+        error: task.error || `Task ${id} not found`
+      };
+    }
+    
+    const taskData = task.data;
+    const currentPhase = taskData.metadata.phase;
+    const currentSubdir = taskData.metadata.subdirectory;
+    const targetPhase = options.targetPhase || currentPhase;
+    
+    if (!targetPhase) {
+      return {
+        success: false,
+        error: 'Cannot move task: phase not found'
+      };
+    }
+    
+    // Update task metadata
+    taskData.metadata.subdirectory = options.targetSubdirectory;
+    if (options.targetPhase) {
+      taskData.metadata.phase = options.targetPhase;
+    }
+    
+    // Get current and target file paths
+    const tasksDir = getTasksDirectory();
+    const taskFilename = `${id}.md`;
+    
+    // Delete old file
+    if (taskData.filePath && fs.existsSync(taskData.filePath)) {
+      fs.unlinkSync(taskData.filePath);
+    }
+    
+    // Create target file
+    const targetPath = currentSubdir 
+      ? path.join(tasksDir, targetPhase, options.targetSubdirectory, taskFilename)
+      : path.join(tasksDir, targetPhase, taskFilename);
+    
+    // Ensure target directory exists
+    ensureDirectoryExists(path.dirname(targetPath));
+    
+    // Write task to new location
+    fs.writeFileSync(targetPath, formatTaskFile(taskData));
+    
+    // Get updated task
+    return await getTask(id, targetPhase, options.targetSubdirectory);
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error moving task: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
   }
 }

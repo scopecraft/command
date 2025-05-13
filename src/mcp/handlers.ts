@@ -10,7 +10,18 @@ import {
   TaskCreateParams,
   TaskUpdateParams,
   TaskDeleteParams,
+  TaskMoveParams,
   TaskNextParams,
+  FeatureListParams,
+  FeatureGetParams,
+  FeatureCreateParams,
+  FeatureUpdateParams,
+  FeatureDeleteParams,
+  AreaListParams,
+  AreaGetParams,
+  AreaCreateParams,
+  AreaUpdateParams,
+  AreaDeleteParams,
   PhaseListParams,
   PhaseCreateParams,
   PhaseUpdateParams,
@@ -25,7 +36,18 @@ import {
   createTask,
   updateTask,
   deleteTask,
+  moveTask,
   findNextTask,
+  listFeatures,
+  getFeature,
+  createFeature,
+  updateFeature,
+  deleteFeature,
+  listAreas,
+  getArea,
+  createArea,
+  updateArea,
+  deleteArea,
   listPhases,
   createPhase,
   updatePhase,
@@ -220,7 +242,7 @@ export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkComplet
  * This is a diagnostic handler to verify which version of the code is running
  */
 export async function handleDebugCodePath(params: DebugCodePathParams) {
-  const version = '20250513-1825'; // Unique identifier for this specific version
+  const version = '20250513-2110'; // Unique identifier for this specific version
   return {
     success: true,
     data: {
@@ -231,12 +253,134 @@ export async function handleDebugCodePath(params: DebugCodePathParams) {
         task_list_completed_exclusion: true,
         phase_management_complete: true,
         phase_update: true,
-        phase_delete: true
+        phase_delete: true,
+        feature_management_complete: true,
+        area_management_complete: true,
+        feature_mcp_tools_complete: true,
+        area_mcp_tools_complete: true,
+        task_move: true,
+        overview_file_support: true
       },
-      message: "Debug code path handler is responding - this is the updated MCP server"
+      documentation: {
+        feature_area_tools: 'docs/mcp-tool-descriptions.md'
+      },
+      message: "Debug code path handler is responding - this is the updated MCP server with complete feature/area management"
     },
     message: `Debug code path handler is responding with version ${version}`
   };
+}
+
+/**
+ * Handler for task_move method
+ */
+export async function handleTaskMove(params: TaskMoveParams) {
+  return await moveTask(params.id, params.target_subdirectory, params.phase);
+}
+
+/**
+ * Handler for feature_list method
+ */
+export async function handleFeatureList(params: FeatureListParams) {
+  return await listFeatures({
+    phase: params.phase,
+    status: params.status,
+    include_tasks: params.include_tasks,
+    include_progress: params.include_progress !== false // Default to true
+  });
+}
+
+/**
+ * Handler for feature_get method
+ */
+export async function handleFeatureGet(params: FeatureGetParams) {
+  return await getFeature(params.id, params.phase);
+}
+
+/**
+ * Handler for feature_create method
+ */
+export async function handleFeatureCreate(params: FeatureCreateParams) {
+  return await createFeature(
+    params.name,
+    params.title,
+    params.phase,
+    params.type || '🌟 Feature',
+    params.status || '🟡 To Do',
+    params.description,
+    params.assignee,
+    params.tags
+  );
+}
+
+/**
+ * Handler for feature_update method
+ */
+export async function handleFeatureUpdate(params: FeatureUpdateParams) {
+  return await updateFeature(
+    params.id,
+    params.updates,
+    params.phase
+  );
+}
+
+/**
+ * Handler for feature_delete method
+ */
+export async function handleFeatureDelete(params: FeatureDeleteParams) {
+  return await deleteFeature(params.id, params.phase, params.force);
+}
+
+/**
+ * Handler for area_list method
+ */
+export async function handleAreaList(params: AreaListParams) {
+  return await listAreas({
+    phase: params.phase,
+    status: params.status,
+    include_tasks: params.include_tasks,
+    include_progress: params.include_progress !== false // Default to true
+  });
+}
+
+/**
+ * Handler for area_get method
+ */
+export async function handleAreaGet(params: AreaGetParams) {
+  return await getArea(params.id, params.phase);
+}
+
+/**
+ * Handler for area_create method
+ */
+export async function handleAreaCreate(params: AreaCreateParams) {
+  return await createArea(
+    params.name,
+    params.title,
+    params.phase,
+    params.type || '🧹 Chore',
+    params.status || '🟡 To Do',
+    params.description,
+    params.assignee,
+    params.tags
+  );
+}
+
+/**
+ * Handler for area_update method
+ */
+export async function handleAreaUpdate(params: AreaUpdateParams) {
+  return await updateArea(
+    params.id,
+    params.updates,
+    params.phase
+  );
+}
+
+/**
+ * Handler for area_delete method
+ */
+export async function handleAreaDelete(params: AreaDeleteParams) {
+  return await deleteArea(params.id, params.phase, params.force);
 }
 
 /**
@@ -249,6 +393,17 @@ export const methodRegistry: McpMethodRegistry = {
   [McpMethod.TASK_UPDATE]: handleTaskUpdate,
   [McpMethod.TASK_DELETE]: handleTaskDelete,
   [McpMethod.TASK_NEXT]: handleTaskNext,
+  [McpMethod.TASK_MOVE]: handleTaskMove,
+  [McpMethod.FEATURE_LIST]: handleFeatureList,
+  [McpMethod.FEATURE_GET]: handleFeatureGet,
+  [McpMethod.FEATURE_CREATE]: handleFeatureCreate,
+  [McpMethod.FEATURE_UPDATE]: handleFeatureUpdate,
+  [McpMethod.FEATURE_DELETE]: handleFeatureDelete,
+  [McpMethod.AREA_LIST]: handleAreaList,
+  [McpMethod.AREA_GET]: handleAreaGet,
+  [McpMethod.AREA_CREATE]: handleAreaCreate,
+  [McpMethod.AREA_UPDATE]: handleAreaUpdate,
+  [McpMethod.AREA_DELETE]: handleAreaDelete,
   [McpMethod.PHASE_LIST]: handlePhaseList,
   [McpMethod.PHASE_CREATE]: handlePhaseCreate,
   [McpMethod.PHASE_UPDATE]: handlePhaseUpdate,

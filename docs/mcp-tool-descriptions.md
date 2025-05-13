@@ -1,165 +1,534 @@
-# MCP Tool Descriptions Guide
+# MCP Tool Descriptions
 
-This document provides guidelines for implementing descriptive help text for MCP tools in the Scopecraft Command project, as part of the TASK-MCP-TOOL-DESCRIPTIONS enhancement.
+This document provides detailed descriptions of all MCP tools available in the Scopecraft Command MCP server. Each tool is documented with its parameters, return values, and example usage.
 
-## Purpose
+## Task Management Tools
 
-Adding comprehensive descriptions to MCP tools serves several critical purposes:
-- Improves discoverability for users and AI assistants
-- Clarifies required and optional parameters
-- Provides usage examples
-- Ensures consistent usage patterns
+### task_list
 
-## Documentation Structure
+Lists tasks with optional filtering.
 
-Each MCP tool should include the following documentation components:
+**Parameters:**
+- `status` (optional): Filter by task status (e.g., "🟡 To Do", "🔵 In Progress", etc.)
+- `type` (optional): Filter by task type (e.g., "🌟 Feature", "🐞 Bug", etc.)
+- `assignee` (optional): Filter by assigned user
+- `tags` (optional): Array of tags to filter by
+- `phase` (optional): Filter by phase
+- `format` (optional): Output format
+- `include_content` (optional): Whether to include task content (default: false)
+- `include_completed` (optional): Whether to include completed tasks (default: false)
+- `subdirectory` (optional): Filter by subdirectory
+- `is_overview` (optional): Filter for overview files only
 
-### 1. Core Description
-- A clear, one-line summary of what the tool does
-- Should be concise yet descriptive
-
-### 2. Parameter Documentation
-For each parameter, include:
-- Description of the parameter's purpose
-- Whether it's required or optional
-- Default value (if applicable)
-- Valid value formats or ranges
-
-### 3. Return Value Documentation
-- Format of the returned data
-- Key fields in the response
-
-### 4. Usage Examples
-- Practical examples showing how to use the tool
-- Examples for common use cases
-- Examples for both basic and advanced usage
-
-### 5. Additional Notes
-- Common errors and troubleshooting tips
-- Important caveats or limitations
-- Related tools or alternative approaches
-
-## Implementation Guidelines
-
-When implementing tool descriptions in the SDK server:
-
-1. Use the official MCP annotations standard
-2. Provide comprehensive descriptions for all parameters
-3. Include clear examples
-4. Indicate read-only vs. state-modifying tools appropriately
-
-## Standard Tool Description Template
-
-Here's a template for documenting each MCP tool:
-
-```typescript
-server.tool(
-  "tool_name",
-  {
-    // Parameter definitions with zod validation
-    param1: z.string().optional(),
-    param2: z.number(),
-    // ...more parameters
-  },
-  async (params) => {
-    // Implementation...
-  },
-  {
-    description: "Brief description of what the tool does",
-    annotations: {
-      title: "Human-Readable Tool Name",
-      readOnlyHint: true, // Set to false for state-modifying operations
-      destructiveHint: false, // Set to true if can destroy/delete data
-      idempotentHint: true, // Set to true if repeated calls don't change result
-      openWorldHint: false // Set to true if interacts with external systems
-    }
+**Example:**
+```json
+{
+  "method": "task_list",
+  "params": {
+    "status": "🟡 To Do",
+    "phase": "release-v1",
+    "include_content": false
   }
-);
+}
 ```
 
-## Example Implementations
+### task_get
 
-Below are examples of well-documented MCP tools:
+Gets details of a specific task.
 
-### Example 1: task_list Tool
+**Parameters:**
+- `id` (required): Task ID
+- `format` (optional): Output format
 
-```typescript
-server.tool(
-  "task_list",
-  {
-    status: z.string().optional(),
-    type: z.string().optional(),
-    assignee: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    phase: z.string().optional(),
-    subdirectory: z.string().optional(),
-    is_overview: z.boolean().optional(),
-    include_content: z.boolean().optional(),
-    include_completed: z.boolean().optional(),
-    format: z.string().optional()
-  },
-  async (params) => {
-    // Implementation...
-  },
-  {
-    description: "List tasks in the system with optional filtering. By default, task content is excluded and completed tasks are excluded to reduce response size and token usage. Use include_content=true to include full content and include_completed=true to include completed tasks.",
-    annotations: {
-      title: "List Tasks",
-      readOnlyHint: true,
-      idempotentHint: true
-    }
+**Example:**
+```json
+{
+  "method": "task_get",
+  "params": {
+    "id": "TASK-001"
   }
-);
+}
 ```
 
-### Example 2: task_update Tool
+### task_create
 
-```typescript
-server.tool(
-  "task_update",
-  {
-    id: z.string(),
-    updates: z.object({
-      metadata: z.record(z.any()).optional(),
-      content: z.string().optional()
-    }).optional()
-  },
-  async (params) => {
-    // Implementation...
-  },
-  {
-    description: "Update a task's metadata or content by ID",
-    annotations: {
-      title: "Update Task",
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false
-    }
+Creates a new task.
+
+**Parameters:**
+- `id` (optional): Task ID (generated if not provided)
+- `title` (required): Task title
+- `type` (required): Task type
+- `status` (optional): Task status (default: "🟡 To Do")
+- `priority` (optional): Task priority (default: "▶️ Medium")
+- `assignee` (optional): Assigned user
+- `phase` (optional): Phase
+- `subdirectory` (optional): Subdirectory
+- `parent` (optional): Parent task ID
+- `depends` (optional): Array of task IDs this task depends on
+- `previous` (optional): Previous task ID
+- `next` (optional): Next task ID
+- `tags` (optional): Array of tags
+- `content` (optional): Task content
+
+**Example:**
+```json
+{
+  "method": "task_create",
+  "params": {
+    "title": "New Feature Task",
+    "type": "🌟 Feature",
+    "phase": "release-v1",
+    "priority": "🔼 High"
   }
-);
+}
 ```
 
-## Implementation Checklist
+### task_update
 
-When implementing descriptions for each tool, ensure:
+Updates an existing task.
 
-- [ ] All tools have a clear description
-- [ ] All parameters are documented properly
-- [ ] Return value format is documented
-- [ ] Appropriate examples are provided
-- [ ] Annotations reflect actual tool behavior
-- [ ] Description is concise but comprehensive
-- [ ] Consistent style across all tools
+**Parameters:**
+- `id` (required): Task ID
+- `updates` (required): Object with metadata and/or content to update
 
-## Testing
+**Example:**
+```json
+{
+  "method": "task_update",
+  "params": {
+    "id": "TASK-001",
+    "updates": {
+      "metadata": {
+        "status": "🔵 In Progress"
+      }
+    }
+  }
+}
+```
 
-After implementation, test with Claude Code to verify:
-- Tool discoverability has improved
-- AI can correctly identify required and optional parameters
-- AI can use the tools correctly based on descriptions alone
+### task_delete
 
-## Related Documentation
+Deletes a task.
 
-- [MCP SDK Documentation](https://modelcontextprotocol.io/docs/concepts/tools)
-- [MDTM Standard](./specs/mdtm_standard.md)
-- [MDTM Workflow](./specs/mdtm_workflow-init.md)
+**Parameters:**
+- `id` (required): Task ID
+
+**Example:**
+```json
+{
+  "method": "task_delete",
+  "params": {
+    "id": "TASK-001"
+  }
+}
+```
+
+### task_next
+
+Finds the next task to work on.
+
+**Parameters:**
+- `id` (optional): Current task ID to find the next task after
+- `format` (optional): Output format
+
+**Example:**
+```json
+{
+  "method": "task_next",
+  "params": {}
+}
+```
+
+### task_move
+
+Moves a task to a different feature/area subdirectory.
+
+**Parameters:**
+- `id` (required): Task ID
+- `target_subdirectory` (required): Target subdirectory to move the task to
+- `target_phase` (optional): Target phase (if moving between phases)
+- `search_phase` (optional): Source phase to search for the task
+- `search_subdirectory` (optional): Source subdirectory to search for the task
+
+**Example:**
+```json
+{
+  "method": "task_move",
+  "params": {
+    "id": "TASK-001",
+    "target_subdirectory": "FEATURE_UserProfile"
+  }
+}
+```
+
+## Feature Management Tools
+
+### feature_list
+
+Lists features with optional filtering.
+
+**Parameters:**
+- `phase` (optional): Filter by phase
+- `status` (optional): Filter by feature status
+- `format` (optional): Output format
+- `include_tasks` (optional): Whether to include tasks in features (default: false)
+- `include_progress` (optional): Whether to include progress percentage (default: true)
+
+**Example:**
+```json
+{
+  "method": "feature_list",
+  "params": {
+    "phase": "release-v1",
+    "include_tasks": true
+  }
+}
+```
+
+### feature_get
+
+Gets details of a specific feature.
+
+**Parameters:**
+- `id` (required): Feature ID (directory name)
+- `phase` (optional): Phase to look in
+- `format` (optional): Output format
+
+**Example:**
+```json
+{
+  "method": "feature_get",
+  "params": {
+    "id": "FEATURE_Authentication"
+  }
+}
+```
+
+### feature_create
+
+Creates a new feature with an overview file.
+
+**Parameters:**
+- `name` (required): Feature name (will be prefixed with FEATURE_)
+- `title` (required): Feature title for the overview
+- `phase` (required): Phase to create the feature in
+- `type` (optional): Feature type (default: "🌟 Feature")
+- `status` (optional): Initial status (default: "🟡 To Do")
+- `description` (optional): Feature description
+- `assignee` (optional): Assigned user
+- `tags` (optional): Array of tags
+
+**Example:**
+```json
+{
+  "method": "feature_create",
+  "params": {
+    "name": "Authentication",
+    "title": "User Authentication",
+    "phase": "release-v1",
+    "description": "Implement user authentication including login, logout, and password reset"
+  }
+}
+```
+
+### feature_update
+
+Updates an existing feature.
+
+**Parameters:**
+- `id` (required): Feature ID (directory name)
+- `updates` (required): Object with properties to update
+  - `name` (optional): New name
+  - `title` (optional): New title
+  - `description` (optional): New description
+  - `status` (optional): New status
+- `phase` (optional): Phase to look in
+
+**Example:**
+```json
+{
+  "method": "feature_update",
+  "params": {
+    "id": "FEATURE_Authentication",
+    "updates": {
+      "title": "Updated Authentication Feature",
+      "status": "🔵 In Progress"
+    }
+  }
+}
+```
+
+### feature_delete
+
+Deletes a feature.
+
+**Parameters:**
+- `id` (required): Feature ID (directory name)
+- `phase` (optional): Phase to look in
+- `force` (optional): Whether to force delete if the feature contains tasks
+
+**Example:**
+```json
+{
+  "method": "feature_delete",
+  "params": {
+    "id": "FEATURE_Authentication",
+    "force": true
+  }
+}
+```
+
+## Area Management Tools
+
+### area_list
+
+Lists areas with optional filtering.
+
+**Parameters:**
+- `phase` (optional): Filter by phase
+- `status` (optional): Filter by area status
+- `format` (optional): Output format
+- `include_tasks` (optional): Whether to include tasks in areas (default: false)
+- `include_progress` (optional): Whether to include progress percentage (default: true)
+
+**Example:**
+```json
+{
+  "method": "area_list",
+  "params": {
+    "phase": "release-v1",
+    "include_tasks": true
+  }
+}
+```
+
+### area_get
+
+Gets details of a specific area.
+
+**Parameters:**
+- `id` (required): Area ID (directory name)
+- `phase` (optional): Phase to look in
+- `format` (optional): Output format
+
+**Example:**
+```json
+{
+  "method": "area_get",
+  "params": {
+    "id": "AREA_Performance"
+  }
+}
+```
+
+### area_create
+
+Creates a new area with an overview file.
+
+**Parameters:**
+- `name` (required): Area name (will be prefixed with AREA_)
+- `title` (required): Area title for the overview
+- `phase` (required): Phase to create the area in
+- `type` (optional): Area type (default: "🧹 Chore")
+- `status` (optional): Initial status (default: "🟡 To Do")
+- `description` (optional): Area description
+- `assignee` (optional): Assigned user
+- `tags` (optional): Array of tags
+
+**Example:**
+```json
+{
+  "method": "area_create",
+  "params": {
+    "name": "Performance",
+    "title": "Performance Optimization",
+    "phase": "release-v1",
+    "description": "Optimize application performance across all modules"
+  }
+}
+```
+
+### area_update
+
+Updates an existing area.
+
+**Parameters:**
+- `id` (required): Area ID (directory name)
+- `updates` (required): Object with properties to update
+  - `name` (optional): New name
+  - `title` (optional): New title
+  - `description` (optional): New description
+  - `status` (optional): New status
+- `phase` (optional): Phase to look in
+
+**Example:**
+```json
+{
+  "method": "area_update",
+  "params": {
+    "id": "AREA_Performance",
+    "updates": {
+      "title": "Updated Performance Area",
+      "status": "🔵 In Progress"
+    }
+  }
+}
+```
+
+### area_delete
+
+Deletes an area.
+
+**Parameters:**
+- `id` (required): Area ID (directory name)
+- `phase` (optional): Phase to look in
+- `force` (optional): Whether to force delete if the area contains tasks
+
+**Example:**
+```json
+{
+  "method": "area_delete",
+  "params": {
+    "id": "AREA_Performance",
+    "force": true
+  }
+}
+```
+
+## Phase Management Tools
+
+### phase_list
+
+Lists all phases.
+
+**Parameters:**
+- `format` (optional): Output format
+
+**Example:**
+```json
+{
+  "method": "phase_list",
+  "params": {}
+}
+```
+
+### phase_create
+
+Creates a new phase.
+
+**Parameters:**
+- `id` (required): Phase ID
+- `name` (required): Phase name
+- `description` (optional): Phase description
+- `status` (optional): Initial status (default: "🟡 Pending")
+- `order` (optional): Phase order
+
+**Example:**
+```json
+{
+  "method": "phase_create",
+  "params": {
+    "id": "release-v2",
+    "name": "Release v2.0",
+    "description": "Second major release"
+  }
+}
+```
+
+### phase_update
+
+Updates an existing phase.
+
+**Parameters:**
+- `id` (required): Phase ID
+- `updates` (required): Object with properties to update
+  - `id` (optional): New ID (rename)
+  - `name` (optional): New name
+  - `description` (optional): New description
+  - `status` (optional): New status
+  - `order` (optional): New order
+
+**Example:**
+```json
+{
+  "method": "phase_update",
+  "params": {
+    "id": "release-v2",
+    "updates": {
+      "name": "Release 2.0",
+      "status": "🔵 In Progress"
+    }
+  }
+}
+```
+
+### phase_delete
+
+Deletes a phase.
+
+**Parameters:**
+- `id` (required): Phase ID
+- `force` (optional): Whether to force delete if the phase contains tasks
+
+**Example:**
+```json
+{
+  "method": "phase_delete",
+  "params": {
+    "id": "release-v2",
+    "force": true
+  }
+}
+```
+
+## Workflow Tools
+
+### workflow_current
+
+Shows tasks currently in progress.
+
+**Parameters:**
+- `format` (optional): Output format
+
+**Example:**
+```json
+{
+  "method": "workflow_current",
+  "params": {}
+}
+```
+
+### workflow_mark_complete_next
+
+Marks a task as complete and suggests the next task.
+
+**Parameters:**
+- `id` (required): Task ID to mark as complete
+- `format` (optional): Output format
+
+**Example:**
+```json
+{
+  "method": "workflow_mark_complete_next",
+  "params": {
+    "id": "TASK-001"
+  }
+}
+```
+
+## Debugging Tools
+
+### debug_code_path
+
+Returns diagnostic information about the MCP server.
+
+**Parameters:**
+- None
+
+**Example:**
+```json
+{
+  "method": "debug_code_path",
+  "params": {}
+}
+```

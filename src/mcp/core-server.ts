@@ -15,6 +15,17 @@ import {
   updateTask,
   deleteTask,
   findNextTask,
+  moveTask,
+  listFeatures,
+  getFeature,
+  createFeature,
+  updateFeature,
+  deleteFeature,
+  listAreas,
+  getArea,
+  createArea,
+  updateArea,
+  deleteArea,
   listPhases,
   createPhase,
   updatePhase,
@@ -22,6 +33,10 @@ import {
   Task,
   TaskMetadata,
   TaskFilterOptions,
+  FeatureFilterOptions,
+  AreaFilterOptions,
+  FeatureUpdateOptions,
+  AreaUpdateOptions,
   generateTaskId
 } from '../core/index.js';
 
@@ -384,6 +399,281 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
             }, null, 2) 
           }]
         };
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Task move tool
+  server.tool(
+    "task_move",
+    {
+      id: z.string(),
+      target_subdirectory: z.string(),
+      target_phase: z.string().optional(),
+      search_phase: z.string().optional(),
+      search_subdirectory: z.string().optional()
+    },
+    async (params) => {
+      try {
+        const result = await moveTask(params.id, {
+          targetSubdirectory: params.target_subdirectory,
+          targetPhase: params.target_phase,
+          searchPhase: params.search_phase,
+          searchSubdirectory: params.search_subdirectory
+        });
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Feature list tool
+  server.tool(
+    "feature_list",
+    {
+      phase: z.string().optional(),
+      status: z.string().optional(),
+      format: z.string().optional(),
+      include_tasks: z.boolean().optional(),
+      include_progress: z.boolean().optional()
+    },
+    async (params) => {
+      try {
+        const filterOptions: FeatureFilterOptions = {
+          phase: params.phase,
+          status: params.status,
+          include_tasks: params.include_tasks,
+          include_progress: params.include_progress !== false // Default to true
+        };
+        
+        const result = await listFeatures(filterOptions);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Feature get tool
+  server.tool(
+    "feature_get",
+    {
+      id: z.string(),
+      phase: z.string().optional(),
+      format: z.string().optional()
+    },
+    async (params) => {
+      try {
+        const result = await getFeature(params.id, params.phase);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Feature create tool
+  server.tool(
+    "feature_create",
+    {
+      name: z.string(),
+      title: z.string(),
+      phase: z.string(),
+      type: z.string().optional(),
+      status: z.string().optional(),
+      description: z.string().optional(),
+      assignee: z.string().optional(),
+      tags: z.array(z.string()).optional()
+    },
+    async (params) => {
+      try {
+        const result = await createFeature(
+          params.name,
+          params.title,
+          params.phase,
+          params.type || '🌟 Feature',
+          params.status || '🟡 To Do',
+          params.description,
+          params.assignee,
+          params.tags
+        );
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Feature update tool
+  server.tool(
+    "feature_update",
+    {
+      id: z.string(),
+      updates: z.object({
+        name: z.string().optional(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        status: z.string().optional()
+      }),
+      phase: z.string().optional()
+    },
+    async (params) => {
+      try {
+        const updateOptions: FeatureUpdateOptions = {
+          name: params.updates.name,
+          title: params.updates.title,
+          description: params.updates.description,
+          status: params.updates.status
+        };
+        
+        const result = await updateFeature(params.id, updateOptions, params.phase);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Feature delete tool
+  server.tool(
+    "feature_delete",
+    {
+      id: z.string(),
+      phase: z.string().optional(),
+      force: z.boolean().optional()
+    },
+    async (params) => {
+      try {
+        const result = await deleteFeature(params.id, params.phase, params.force);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Area list tool
+  server.tool(
+    "area_list",
+    {
+      phase: z.string().optional(),
+      status: z.string().optional(),
+      format: z.string().optional(),
+      include_tasks: z.boolean().optional(),
+      include_progress: z.boolean().optional()
+    },
+    async (params) => {
+      try {
+        const filterOptions: AreaFilterOptions = {
+          phase: params.phase,
+          status: params.status,
+          include_tasks: params.include_tasks,
+          include_progress: params.include_progress !== false // Default to true
+        };
+        
+        const result = await listAreas(filterOptions);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Area get tool
+  server.tool(
+    "area_get",
+    {
+      id: z.string(),
+      phase: z.string().optional(),
+      format: z.string().optional()
+    },
+    async (params) => {
+      try {
+        const result = await getArea(params.id, params.phase);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Area create tool
+  server.tool(
+    "area_create",
+    {
+      name: z.string(),
+      title: z.string(),
+      phase: z.string(),
+      type: z.string().optional(),
+      status: z.string().optional(),
+      description: z.string().optional(),
+      assignee: z.string().optional(),
+      tags: z.array(z.string()).optional()
+    },
+    async (params) => {
+      try {
+        const result = await createArea(
+          params.name,
+          params.title,
+          params.phase,
+          params.type || '🧹 Chore',
+          params.status || '🟡 To Do',
+          params.description,
+          params.assignee,
+          params.tags
+        );
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Area update tool
+  server.tool(
+    "area_update",
+    {
+      id: z.string(),
+      updates: z.object({
+        name: z.string().optional(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        status: z.string().optional()
+      }),
+      phase: z.string().optional()
+    },
+    async (params) => {
+      try {
+        const updateOptions: AreaUpdateOptions = {
+          name: params.updates.name,
+          title: params.updates.title,
+          description: params.updates.description,
+          status: params.updates.status
+        };
+        
+        const result = await updateArea(params.id, updateOptions, params.phase);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Area delete tool
+  server.tool(
+    "area_delete",
+    {
+      id: z.string(),
+      phase: z.string().optional(),
+      force: z.boolean().optional()
+    },
+    async (params) => {
+      try {
+        const result = await deleteArea(params.id, params.phase, params.force);
+        return formatResponse(result);
       } catch (error) {
         return formatError(error);
       }

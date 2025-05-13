@@ -13,8 +13,21 @@ import {
   createPhase,
   updatePhase,
   deletePhase,
+  listFeatures,
+  getFeature,
+  createFeature,
+  updateFeature,
+  deleteFeature,
+  listAreas,
+  getArea,
+  createArea,
+  updateArea,
+  deleteArea,
+  moveTask,
   Task,
   Phase,
+  Feature,
+  Area,
   formatTasksList,
   formatTaskDetail,
   formatPhasesList,
@@ -735,5 +748,376 @@ export async function handleListTemplatesCommand(): Promise<void> {
 
 // Import here to avoid circular dependencies
 import fs from 'fs';
+
+/**
+ * Handles the 'feature list' command
+ */
+export async function handleFeatureListCommand(options: {
+  phase?: string,
+  format?: string,
+  include_tasks?: boolean,
+  include_progress?: boolean
+}): Promise<void> {
+  try {
+    const result = await listFeatures({
+      phase: options.phase,
+      include_tasks: options.include_tasks === true,
+      include_progress: options.include_progress !== false
+    });
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    if (result.data.length === 0) {
+      console.log('No features found matching the criteria');
+      return;
+    }
+
+    // Format output based on options
+    if (options.format === 'json') {
+      console.log(JSON.stringify(result.data, null, 2));
+      return;
+    }
+
+    console.log(`Found ${result.data.length} features:`);
+    console.log('-----------------');
+
+    for (const feature of result.data) {
+      console.log(`${feature.id} - ${feature.title}`);
+      if (feature.description) console.log(`  Description: ${feature.description}`);
+      if (feature.status) console.log(`  Status: ${feature.status}`);
+      if (feature.progress !== undefined) console.log(`  Progress: ${feature.progress}%`);
+      if (feature.phase) console.log(`  Phase: ${feature.phase}`);
+      if (options.include_tasks && feature.tasks) {
+        console.log(`  Tasks: ${feature.tasks.length}`);
+        feature.tasks.forEach(taskId => console.log(`    - ${taskId}`));
+      }
+      console.log(); // Empty line between features
+    }
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'feature get' command
+ */
+export async function handleFeatureGetCommand(id: string, options: {
+  phase?: string,
+  format?: string
+}): Promise<void> {
+  try {
+    if (!id) {
+      console.error('Error: Feature ID is required');
+      process.exit(1);
+    }
+
+    const result = await getFeature(id, options.phase);
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    const feature = result.data;
+
+    // Format output based on options
+    if (options.format === 'json') {
+      console.log(JSON.stringify(feature, null, 2));
+      return;
+    }
+
+    console.log(`Feature: ${feature.id}`);
+    console.log('-----------------');
+    console.log(`Title: ${feature.title}`);
+    if (feature.description) console.log(`Description: ${feature.description}`);
+    if (feature.status) console.log(`Status: ${feature.status}`);
+    if (feature.progress !== undefined) console.log(`Progress: ${feature.progress}%`);
+    if (feature.phase) console.log(`Phase: ${feature.phase}`);
+    if (feature.tasks) {
+      console.log(`Tasks: ${feature.tasks.length}`);
+      feature.tasks.forEach(taskId => console.log(`  - ${taskId}`));
+    }
+
+    // Show overview content if available
+    if (feature.overview && feature.overview.content) {
+      console.log('\nOverview:');
+      console.log('-----------------');
+      console.log(feature.overview.content);
+    }
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'feature delete' command
+ */
+export async function handleFeatureDeleteCommand(id: string, options: {
+  phase?: string,
+  force?: boolean
+}): Promise<void> {
+  try {
+    if (!id) {
+      console.error('Error: Feature ID is required');
+      process.exit(1);
+    }
+
+    const result = await deleteFeature(id, options.phase, options.force);
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    console.log(result.message || `Feature ${id} deleted successfully`);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'feature update' command
+ */
+export async function handleFeatureUpdateCommand(id: string, updates: {
+  title?: string,
+  description?: string,
+  status?: string,
+  new_id?: string
+}): Promise<void> {
+  try {
+    if (!id) {
+      console.error('Error: Feature ID is required');
+      process.exit(1);
+    }
+
+    const result = await updateFeature(id, {
+      title: updates.title,
+      description: updates.description,
+      status: updates.status,
+      newId: updates.new_id
+    });
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    console.log(result.message || `Feature ${id} updated successfully`);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'area list' command
+ */
+export async function handleAreaListCommand(options: {
+  phase?: string,
+  format?: string,
+  include_tasks?: boolean,
+  include_progress?: boolean
+}): Promise<void> {
+  try {
+    const result = await listAreas({
+      phase: options.phase,
+      include_tasks: options.include_tasks === true,
+      include_progress: options.include_progress !== false
+    });
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    if (result.data.length === 0) {
+      console.log('No areas found matching the criteria');
+      return;
+    }
+
+    // Format output based on options
+    if (options.format === 'json') {
+      console.log(JSON.stringify(result.data, null, 2));
+      return;
+    }
+
+    console.log(`Found ${result.data.length} areas:`);
+    console.log('-----------------');
+
+    for (const area of result.data) {
+      console.log(`${area.id} - ${area.title}`);
+      if (area.description) console.log(`  Description: ${area.description}`);
+      if (area.status) console.log(`  Status: ${area.status}`);
+      if (area.progress !== undefined) console.log(`  Progress: ${area.progress}%`);
+      if (area.phase) console.log(`  Phase: ${area.phase}`);
+      if (options.include_tasks && area.tasks) {
+        console.log(`  Tasks: ${area.tasks.length}`);
+        area.tasks.forEach(taskId => console.log(`    - ${taskId}`));
+      }
+      console.log(); // Empty line between areas
+    }
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'area get' command
+ */
+export async function handleAreaGetCommand(id: string, options: {
+  phase?: string,
+  format?: string
+}): Promise<void> {
+  try {
+    if (!id) {
+      console.error('Error: Area ID is required');
+      process.exit(1);
+    }
+
+    const result = await getArea(id, options.phase);
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    const area = result.data;
+
+    // Format output based on options
+    if (options.format === 'json') {
+      console.log(JSON.stringify(area, null, 2));
+      return;
+    }
+
+    console.log(`Area: ${area.id}`);
+    console.log('-----------------');
+    console.log(`Title: ${area.title}`);
+    if (area.description) console.log(`Description: ${area.description}`);
+    if (area.status) console.log(`Status: ${area.status}`);
+    if (area.progress !== undefined) console.log(`Progress: ${area.progress}%`);
+    if (area.phase) console.log(`Phase: ${area.phase}`);
+    if (area.tasks) {
+      console.log(`Tasks: ${area.tasks.length}`);
+      area.tasks.forEach(taskId => console.log(`  - ${taskId}`));
+    }
+
+    // Show overview content if available
+    if (area.overview && area.overview.content) {
+      console.log('\nOverview:');
+      console.log('-----------------');
+      console.log(area.overview.content);
+    }
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'area delete' command
+ */
+export async function handleAreaDeleteCommand(id: string, options: {
+  phase?: string,
+  force?: boolean
+}): Promise<void> {
+  try {
+    if (!id) {
+      console.error('Error: Area ID is required');
+      process.exit(1);
+    }
+
+    const result = await deleteArea(id, options.phase, options.force);
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    console.log(result.message || `Area ${id} deleted successfully`);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'area update' command
+ */
+export async function handleAreaUpdateCommand(id: string, updates: {
+  title?: string,
+  description?: string,
+  status?: string,
+  new_id?: string
+}): Promise<void> {
+  try {
+    if (!id) {
+      console.error('Error: Area ID is required');
+      process.exit(1);
+    }
+
+    const result = await updateArea(id, {
+      title: updates.title,
+      description: updates.description,
+      status: updates.status,
+      newId: updates.new_id
+    });
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    console.log(result.message || `Area ${id} updated successfully`);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'task move' command
+ */
+export async function handleTaskMoveCommand(id: string, options: {
+  phase?: string,
+  subdirectory?: string,
+  search_phase?: string,
+  search_subdirectory?: string
+}): Promise<void> {
+  try {
+    if (!id) {
+      console.error('Error: Task ID is required');
+      process.exit(1);
+    }
+
+    if (!options.subdirectory) {
+      console.error('Error: Target subdirectory is required');
+      process.exit(1);
+    }
+
+    const result = await moveTask(id, {
+      targetSubdirectory: options.subdirectory,
+      targetPhase: options.phase,
+      searchPhase: options.search_phase,
+      searchSubdirectory: options.search_subdirectory
+    });
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    console.log(result.message || `Task ${id} moved successfully to ${options.subdirectory}`);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
 import path from 'path';
 import { parseTaskFile, TaskMetadata } from '../core/index.js';
