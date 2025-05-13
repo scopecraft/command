@@ -187,6 +187,8 @@ export async function startHttpServer(port: number = DEFAULT_PORT, options: {
       console.log('- task_next');
       console.log('- phase_list');
       console.log('- phase_create');
+      console.log('- phase_update');
+      console.log('- phase_delete');
       console.log('- workflow_current');
       console.log('- workflow_mark_complete_next');
     }

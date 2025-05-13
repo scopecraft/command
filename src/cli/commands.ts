@@ -11,6 +11,8 @@ import {
   findNextTask,
   listPhases,
   createPhase,
+  updatePhase,
+  deletePhase,
   Task,
   Phase,
   formatTasksList,
@@ -550,6 +552,72 @@ export async function handlePhaseCreateCommand(options: {
     };
     
     const result = await createPhase(phase);
+    
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+    
+    console.log(result.message);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'phase-update' command
+ */
+export async function handlePhaseUpdateCommand(id: string, options: {
+  newId?: string,
+  name?: string,
+  description?: string,
+  status?: string,
+  order?: number
+}): Promise<void> {
+  try {
+    // Prepare updates object
+    const updates: Partial<Phase> = {};
+    
+    // Handle ID change through newId option
+    if (options.newId) {
+      updates.id = options.newId;
+    }
+    
+    // Add other optional updates
+    if (options.name) updates.name = options.name;
+    if (options.description !== undefined) updates.description = options.description;
+    if (options.status) updates.status = options.status;
+    if (options.order !== undefined) updates.order = options.order;
+    
+    // Verify we have at least one update
+    if (Object.keys(updates).length === 0) {
+      console.log('No updates specified');
+      return;
+    }
+    
+    const result = await updatePhase(id, updates);
+    
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+    
+    console.log(result.message);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'phase-delete' command
+ */
+export async function handlePhaseDeleteCommand(id: string, options: {
+  force?: boolean
+}): Promise<void> {
+  try {
+    const result = await deletePhase(id, { force: options.force });
     
     if (!result.success) {
       console.error(`Error: ${result.error}`);

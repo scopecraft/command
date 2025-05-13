@@ -17,6 +17,8 @@ import {
   findNextTask,
   listPhases,
   createPhase,
+  updatePhase,
+  deletePhase,
   Task,
   TaskMetadata,
   TaskFilterOptions,
@@ -266,6 +268,46 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
         };
         
         const result = await createPhase(phase);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Phase update tool
+  server.tool(
+    "phase_update",
+    {
+      id: z.string(),
+      updates: z.object({
+        id: z.string().optional(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        status: z.string().optional(),
+        order: z.number().optional()
+      })
+    },
+    async (params) => {
+      try {
+        const result = await updatePhase(params.id, params.updates);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Phase delete tool
+  server.tool(
+    "phase_delete",
+    {
+      id: z.string(),
+      force: z.boolean().optional()
+    },
+    async (params) => {
+      try {
+        const result = await deletePhase(params.id, { force: params.force });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);

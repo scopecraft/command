@@ -14,6 +14,8 @@ import {
   handleMarkCompleteNextCommand,
   handlePhasesCommand,
   handlePhaseCreateCommand,
+  handlePhaseUpdateCommand,
+  handlePhaseDeleteCommand,
   handleCurrentTaskCommand,
   handleInitCommand,
   handleListTemplatesCommand
@@ -26,7 +28,7 @@ import path from 'path';
 const program = new Command();
 
 // Read package version from package.json
-let version = '0.4.0'; // Default
+let version = '0.4.2'; // Default
 try {
   const packageJson = JSON.parse(fs.readFileSync(
     path.join(process.cwd(), 'package.json'), 
@@ -170,6 +172,51 @@ program
   .option('--status <status>', 'Phase status (default: "🟡 Pending")')
   .option('--order <order>', 'Phase order (number)', parseInt)
   .action(handlePhaseCreateCommand);
+
+program
+  .command('phase-update <id>')
+  .description('Update an existing phase')
+  .option('--new-id <newId>', 'New phase ID (use this to rename the phase)')
+  .option('--name <name>', 'New phase name')
+  .option('--description <description>', 'New phase description')
+  .option('--status <status>', 'New phase status')
+  .option('--order <order>', 'New phase order (number)', parseInt)
+  .action(handlePhaseUpdateCommand);
+
+program
+  .command('phase-delete <id>')
+  .description('Delete a phase')
+  .option('-f, --force', 'Force deletion of phase with tasks')
+  .action(handlePhaseDeleteCommand);
+
+// Phase status shortcut commands
+program
+  .command('phase-start <id>')
+  .description('Mark a phase as "In Progress"')
+  .action(async (id) => {
+    await handlePhaseUpdateCommand(id, { status: '🔵 In Progress' });
+  });
+
+program
+  .command('phase-complete <id>')
+  .description('Mark a phase as "Completed"')
+  .action(async (id) => {
+    await handlePhaseUpdateCommand(id, { status: '🟢 Completed' });
+  });
+
+program
+  .command('phase-block <id>')
+  .description('Mark a phase as "Blocked"')
+  .action(async (id) => {
+    await handlePhaseUpdateCommand(id, { status: '⚪ Blocked' });
+  });
+
+program
+  .command('phase-pending <id>')
+  .description('Mark a phase as "Pending"')
+  .action(async (id) => {
+    await handlePhaseUpdateCommand(id, { status: '🟡 Pending' });
+  });
 
 // Next task command
 program

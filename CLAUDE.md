@@ -81,6 +81,45 @@ mcp__scopecraft-command-mcp__task_update {
 
 // Get next task recommendation
 mcp__scopecraft-command-mcp__task_next
+
+// List all phases
+mcp__scopecraft-command-mcp__phase_list
+
+// Create a new phase
+mcp__scopecraft-command-mcp__phase_create {
+  "id": "phase-1",
+  "name": "Planning Phase",
+  "description": "Initial planning phase",
+  "status": "🟡 Pending"
+}
+
+// Update a phase
+mcp__scopecraft-command-mcp__phase_update {
+  "id": "phase-1",
+  "updates": {
+    "name": "Updated Phase Name",
+    "status": "🔵 In Progress"
+  }
+}
+
+// Rename a phase (change ID)
+mcp__scopecraft-command-mcp__phase_update {
+  "id": "phase-1",
+  "updates": {
+    "id": "planning-phase"
+  }
+}
+
+// Delete a phase
+mcp__scopecraft-command-mcp__phase_delete {
+  "id": "phase-1"
+}
+
+// Force delete a phase with tasks
+mcp__scopecraft-command-mcp__phase_delete {
+  "id": "phase-1",
+  "force": true
+}
 ```
 
 ## Session Guidelines for Claude
@@ -231,6 +270,14 @@ sc review TASK-ID    # Mark as In Review
 # Phase management
 sc phases            # List all phases
 sc phase-create --id "phase-1" --name "Planning Phase" --description "Initial planning stage"  # Create a phase
+sc phase-update phase-1 --name "Updated Name" --status "🔵 In Progress"  # Update a phase
+sc phase-update phase-1 --new-id "planning-phase"  # Rename a phase
+sc phase-delete phase-1  # Delete a phase
+sc phase-delete phase-1 --force  # Force delete a phase with tasks
+sc phase-start phase-1   # Mark phase as In Progress
+sc phase-complete phase-1  # Mark phase as Completed
+sc phase-block phase-1  # Mark phase as Blocked
+sc phase-pending phase-1  # Mark phase as Pending
 
 # Template management
 sc list-templates    # List available templates
