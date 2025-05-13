@@ -5,39 +5,37 @@ type = "🌟 Feature"
 status = "🟡 To Do"
 priority = "🔼 High"
 created_date = "2025-05-11"
-updated_date = "2025-05-11"
+updated_date = "2025-05-13"
 assigned_to = ""
 is_overview = true
 phase = "release-v1"
 subdirectory = "AREA_Documentation"
-subtasks = [
-  "TASK-20250510T140859",
-  "TASK-MCP-UPDATE-DOCS"
-]
+subtasks = [ "TASK-MDTM-FEATURE-COMMANDS", "TASK-20250513T132917" ]
 +++
 
-# Documentation Area
+# MDTM Standard Feature
 
 ## Description
 
-This area focuses on improving the documentation for the task management system. The goal is to provide comprehensive, clear, and accurate documentation for both CLI and MCP interfaces, as well as integration guides.
+This feature area focuses on implementing and enhancing support for the Markdown-Driven Task Management (MDTM) standard, ensuring the system fully complies with MDTM specifications and provides intuitive tools for working with MDTM files.
 
 ## Key Components
 
-- MCP tool descriptions and usage examples
-- CLI command documentation
-- Integration guides for Roo Commander and Cursor IDE
-- Task update approaches and best practices
+- Feature and area directory structure support
+- Task organization within features and areas
+- Overview file handling and integration
+- CLI and MCP commands for MDTM operations
 
 ## Current Tasks
 
-1. **Comprehensive Documentation and Integration Guides** (TASK-20250510T140859) - Create complete CLI and integration documentation
-2. **Improve Task Update Documentation in MCP** (TASK-MCP-UPDATE-DOCS) - Clarify task update approaches in MCP
+1. **Implement MDTM Feature Management Commands** (TASK-MDTM-FEATURE-COMMANDS) - Add support for creating and managing features within the CLI
+2. **Enhance Feature and Area Support in CLI and MCP** (TASK-20250513T132917) - Improve feature/area support with better overview handling, hierarchical display, and dedicated management commands
 
 ## Success Criteria
 
-- Documentation is comprehensive and accurate
-- Integration guides are clear and actionable
-- MCP tool descriptions match actual functionality
-- Users can easily understand how to use both interfaces
+- Full support for MDTM directory structure
+- Intuitive commands for managing features and areas
+- Proper handling of overview files
+- Hierarchical task management
+- Documentation aligned with MDTM standard
 
