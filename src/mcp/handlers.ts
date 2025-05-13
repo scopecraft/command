@@ -13,6 +13,8 @@ import {
   TaskNextParams,
   PhaseListParams,
   PhaseCreateParams,
+  PhaseUpdateParams,
+  PhaseDeleteParams,
   WorkflowCurrentParams,
   WorkflowMarkCompleteNextParams,
   DebugCodePathParams
@@ -26,6 +28,8 @@ import {
   findNextTask,
   listPhases,
   createPhase,
+  updatePhase,
+  deletePhase,
   Task,
   TaskMetadata,
   generateTaskId
@@ -145,6 +149,20 @@ export async function handlePhaseCreate(params: PhaseCreateParams) {
 }
 
 /**
+ * Handler for phase_update method
+ */
+export async function handlePhaseUpdate(params: PhaseUpdateParams) {
+  return await updatePhase(params.id, params.updates);
+}
+
+/**
+ * Handler for phase_delete method
+ */
+export async function handlePhaseDelete(params: PhaseDeleteParams) {
+  return await deletePhase(params.id, { force: params.force });
+}
+
+/**
  * Handler for workflow_current method
  */
 export async function handleWorkflowCurrent(params: WorkflowCurrentParams) {
@@ -202,7 +220,7 @@ export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkComplet
  * This is a diagnostic handler to verify which version of the code is running
  */
 export async function handleDebugCodePath(params: DebugCodePathParams) {
-  const version = '20250511-1625'; // Unique identifier for this specific version
+  const version = '20250513-1825'; // Unique identifier for this specific version
   return {
     success: true,
     data: {
@@ -210,7 +228,10 @@ export async function handleDebugCodePath(params: DebugCodePathParams) {
       timestamp: new Date().toISOString(),
       implemented_features: {
         task_list_content_exclusion: true,
-        task_list_completed_exclusion: true
+        task_list_completed_exclusion: true,
+        phase_management_complete: true,
+        phase_update: true,
+        phase_delete: true
       },
       message: "Debug code path handler is responding - this is the updated MCP server"
     },
@@ -230,6 +251,8 @@ export const methodRegistry: McpMethodRegistry = {
   [McpMethod.TASK_NEXT]: handleTaskNext,
   [McpMethod.PHASE_LIST]: handlePhaseList,
   [McpMethod.PHASE_CREATE]: handlePhaseCreate,
+  [McpMethod.PHASE_UPDATE]: handlePhaseUpdate,
+  [McpMethod.PHASE_DELETE]: handlePhaseDelete,
   [McpMethod.WORKFLOW_CURRENT]: handleWorkflowCurrent,
   [McpMethod.WORKFLOW_MARK_COMPLETE_NEXT]: handleWorkflowMarkCompleteNext,
   [McpMethod.DEBUG_CODE_PATH]: handleDebugCodePath

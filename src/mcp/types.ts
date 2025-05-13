@@ -16,6 +16,8 @@ export enum McpMethod {
   // Phase methods
   PHASE_LIST = 'phase_list',
   PHASE_CREATE = 'phase_create',
+  PHASE_UPDATE = 'phase_update',
+  PHASE_DELETE = 'phase_delete',
 
   // Workflow methods
   WORKFLOW_CURRENT = 'workflow_current',
@@ -105,6 +107,24 @@ export interface PhaseCreateParams {
   description?: string;
   status?: string;
   order?: number;
+}
+
+// Phase update request params
+export interface PhaseUpdateParams {
+  id: string;
+  updates: {
+    id?: string;
+    name?: string;
+    description?: string;
+    status?: string;
+    order?: number;
+  };
+}
+
+// Phase delete request params
+export interface PhaseDeleteParams {
+  id: string;
+  force?: boolean;
 }
 
 // Workflow current request params
