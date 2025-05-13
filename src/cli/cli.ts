@@ -28,7 +28,7 @@ import path from 'path';
 const program = new Command();
 
 // Read package version from package.json
-let version = '0.4.0'; // Default
+let version = '0.4.2'; // Default
 try {
   const packageJson = JSON.parse(fs.readFileSync(
     path.join(process.cwd(), 'package.json'), 
