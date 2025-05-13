@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run typecheck to catch import errors
+echo "Running TypeScript type check..."
+npm run typecheck
+
+# Run import checker to catch runtime import issues
+echo "Running import checker..."
+npm run check-imports
