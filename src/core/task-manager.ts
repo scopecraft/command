@@ -1624,7 +1624,7 @@ export async function listFeatures(options: FeatureFilterOptions = {}): Promise<
     const errors: string[] = [];
 
     // Function to recursively scan directories for FEATURE_ prefixed directories
-    const scanDirectories = (dir: string, phase?: string): void => {
+    const scanDirectories = async (dir: string, phase?: string): Promise<void> => {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       
       for (const entry of entries) {
@@ -1634,7 +1634,7 @@ export async function listFeatures(options: FeatureFilterOptions = {}): Promise<
           
           // If this is a phase directory, recurse with phase name
           if (!dirBasename.startsWith('FEATURE_') && !dirBasename.startsWith('AREA_')) {
-            scanDirectories(fullPath, dirBasename);
+            await scanDirectories(fullPath, dirBasename);
             continue;
           }
           
@@ -1758,7 +1758,7 @@ export async function listFeatures(options: FeatureFilterOptions = {}): Promise<
     };
     
     // Start scanning from tasks directory
-    scanDirectories(tasksDir);
+    await scanDirectories(tasksDir);
     
     return {
       success: true,
@@ -2158,7 +2158,7 @@ export async function listAreas(options: AreaFilterOptions = {}): Promise<Operat
     const errors: string[] = [];
 
     // Function to recursively scan directories for AREA_ prefixed directories
-    const scanDirectories = (dir: string, phase?: string): void => {
+    const scanDirectories = async (dir: string, phase?: string): Promise<void> => {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       
       for (const entry of entries) {
@@ -2168,7 +2168,7 @@ export async function listAreas(options: AreaFilterOptions = {}): Promise<Operat
           
           // If this is a phase directory, recurse with phase name
           if (!dirBasename.startsWith('FEATURE_') && !dirBasename.startsWith('AREA_')) {
-            scanDirectories(fullPath, dirBasename);
+            await scanDirectories(fullPath, dirBasename);
             continue;
           }
           
@@ -2292,7 +2292,7 @@ export async function listAreas(options: AreaFilterOptions = {}): Promise<Operat
     };
     
     // Start scanning from tasks directory
-    scanDirectories(tasksDir);
+    await scanDirectories(tasksDir);
     
     return {
       success: true,
@@ -2675,11 +2675,15 @@ export async function deleteArea(id: string, phase?: string, force: boolean = fa
 /**
  * Moves a task to a different feature or area
  * @param id Task ID to move
- * @param targetSubdirectory Target subdirectory (e.g., "FEATURE_NewFeature")
- * @param phase Optional phase (if different from current)
+ * @param options Move options (targetSubdirectory, targetPhase, searchPhase, searchSubdirectory)
  * @returns Operation result with moved task
  */
-export async function moveTask(id: string, targetSubdirectory: string, phase?: string): Promise<OperationResult<Task>> {
+export async function moveTask(id: string, options: {
+  targetSubdirectory: string;
+  targetPhase?: string;
+  searchPhase?: string;
+  searchSubdirectory?: string;
+}): Promise<OperationResult<Task>> {
   try {
     // Get the task first
     const task = await getTask(id);
@@ -2694,7 +2698,7 @@ export async function moveTask(id: string, targetSubdirectory: string, phase?: s
     const taskData = task.data;
     const currentPhase = taskData.metadata.phase;
     const currentSubdir = taskData.metadata.subdirectory;
-    const targetPhase = phase || currentPhase;
+    const targetPhase = options.targetPhase || currentPhase;
     
     if (!targetPhase) {
       return {
@@ -2704,9 +2708,9 @@ export async function moveTask(id: string, targetSubdirectory: string, phase?: s
     }
     
     // Update task metadata
-    taskData.metadata.subdirectory = targetSubdirectory;
-    if (phase) {
-      taskData.metadata.phase = phase;
+    taskData.metadata.subdirectory = options.targetSubdirectory;
+    if (options.targetPhase) {
+      taskData.metadata.phase = options.targetPhase;
     }
     
     // Get current and target file paths
@@ -2720,7 +2724,7 @@ export async function moveTask(id: string, targetSubdirectory: string, phase?: s
     
     // Create target file
     const targetPath = currentSubdir 
-      ? path.join(tasksDir, targetPhase, targetSubdirectory, taskFilename)
+      ? path.join(tasksDir, targetPhase, options.targetSubdirectory, taskFilename)
       : path.join(tasksDir, targetPhase, taskFilename);
     
     // Ensure target directory exists
@@ -2730,7 +2734,7 @@ export async function moveTask(id: string, targetSubdirectory: string, phase?: s
     fs.writeFileSync(targetPath, formatTaskFile(taskData));
     
     // Get updated task
-    return await getTask(id, targetPhase, targetSubdirectory);
+    return await getTask(id, targetPhase, options.targetSubdirectory);
   } catch (error) {
     return {
       success: false,

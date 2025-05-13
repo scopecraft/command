@@ -242,7 +242,7 @@ export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkComplet
  * This is a diagnostic handler to verify which version of the code is running
  */
 export async function handleDebugCodePath(params: DebugCodePathParams) {
-  const version = '20250513-1940'; // Unique identifier for this specific version
+  const version = '20250513-2110'; // Unique identifier for this specific version
   return {
     success: true,
     data: {
@@ -256,13 +256,15 @@ export async function handleDebugCodePath(params: DebugCodePathParams) {
         phase_delete: true,
         feature_management_complete: true,
         area_management_complete: true,
+        feature_mcp_tools_complete: true,
+        area_mcp_tools_complete: true,
         task_move: true,
         overview_file_support: true
       },
       documentation: {
-        feature_area_tools: 'docs/mcp-feature-area-tool-descriptions.md'
+        feature_area_tools: 'docs/mcp-tool-descriptions.md'
       },
-      message: "Debug code path handler is responding - this is the updated MCP server with feature/area management"
+      message: "Debug code path handler is responding - this is the updated MCP server with complete feature/area management"
     },
     message: `Debug code path handler is responding with version ${version}`
   };

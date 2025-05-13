@@ -17,7 +17,16 @@ import {
   handlePhaseDeleteCommand,
   handleCurrentTaskCommand,
   handleInitCommand,
-  handleListTemplatesCommand
+  handleListTemplatesCommand,
+  handleFeatureListCommand,
+  handleFeatureGetCommand,
+  handleFeatureUpdateCommand,
+  handleFeatureDeleteCommand,
+  handleAreaListCommand,
+  handleAreaGetCommand,
+  handleAreaUpdateCommand,
+  handleAreaDeleteCommand,
+  handleTaskMoveCommand
 } from './commands.js';
 
 /**
@@ -134,6 +143,16 @@ export function setupTaskCommands(program: Command): void {
     .action(async (id) => {
       await handleUpdateCommand(id, { status: '🟣 Review' });
     });
+    
+  // task move command
+  taskCommand
+    .command('move <id>')
+    .description('Move a task to a different feature or area subdirectory')
+    .requiredOption('--subdirectory <subdirectory>', 'Target subdirectory to move the task to')
+    .option('--phase <phase>', 'Target phase (if moving between phases)')
+    .option('--search-phase <searchPhase>', 'Source phase to search for the task')
+    .option('--search-subdirectory <searchSubdirectory>', 'Source subdirectory to search for the task')
+    .action(handleTaskMoveCommand);
 
   // Add task group to root program
   program.addCommand(taskCommand);
@@ -426,16 +445,37 @@ export function setupFeatureAreaCommands(program: Command): void {
     .command('list')
     .description('List all features (FEATURE_ subdirectories)')
     .option('-p, --phase <phase>', 'Filter by phase')
-    .option('-f, --format <format>', 'Output format: table, json, minimal', 'table')
-    .action(async (options) => {
-      // List only overview files in FEATURE_ subdirectories
-      await handleListCommand({
-        phase: options.phase,
-        overview: true,
-        format: options.format,
-        subdirectory: 'FEATURE_' // This will match any subdirectory starting with FEATURE_
-      });
-    });
+    .option('-f, --format <format>', 'Output format: table, json', 'table')
+    .option('-t, --include-tasks', 'Include tasks in output')
+    .option('-r, --include-progress', 'Include progress calculations')
+    .action(handleFeatureListCommand);
+
+  // feature get command
+  featureCommand
+    .command('get <id>')
+    .description('Get details of a feature')
+    .option('-p, --phase <phase>', 'Phase to look in')
+    .option('-f, --format <format>', 'Output format: default, json', 'default')
+    .action(handleFeatureGetCommand);
+    
+  // feature update command
+  featureCommand
+    .command('update <id>')
+    .description('Update a feature')
+    .option('--title <title>', 'New feature title')
+    .option('--description <description>', 'New feature description')
+    .option('--status <status>', 'New feature status')
+    .option('--new-id <newId>', 'New feature ID (will rename directory)')
+    .option('-p, --phase <phase>', 'Phase to look in')
+    .action(handleFeatureUpdateCommand);
+    
+  // feature delete command
+  featureCommand
+    .command('delete <id>')
+    .description('Delete a feature')
+    .option('-p, --phase <phase>', 'Phase to look in')
+    .option('-f, --force', 'Force deletion even if feature contains tasks')
+    .action(handleFeatureDeleteCommand);
 
   // Add feature group to root program
   program.addCommand(featureCommand);
@@ -482,16 +522,37 @@ export function setupFeatureAreaCommands(program: Command): void {
     .command('list')
     .description('List all areas (AREA_ subdirectories)')
     .option('-p, --phase <phase>', 'Filter by phase')
-    .option('-f, --format <format>', 'Output format: table, json, minimal', 'table')
-    .action(async (options) => {
-      // List only overview files in AREA_ subdirectories
-      await handleListCommand({
-        phase: options.phase,
-        overview: true,
-        format: options.format,
-        subdirectory: 'AREA_' // This will match any subdirectory starting with AREA_
-      });
-    });
+    .option('-f, --format <format>', 'Output format: table, json', 'table')
+    .option('-t, --include-tasks', 'Include tasks in output')
+    .option('-r, --include-progress', 'Include progress calculations')
+    .action(handleAreaListCommand);
+
+  // area get command
+  areaCommand
+    .command('get <id>')
+    .description('Get details of an area')
+    .option('-p, --phase <phase>', 'Phase to look in')
+    .option('-f, --format <format>', 'Output format: default, json', 'default')
+    .action(handleAreaGetCommand);
+    
+  // area update command
+  areaCommand
+    .command('update <id>')
+    .description('Update an area')
+    .option('--title <title>', 'New area title')
+    .option('--description <description>', 'New area description')
+    .option('--status <status>', 'New area status')
+    .option('--new-id <newId>', 'New area ID (will rename directory)')
+    .option('-p, --phase <phase>', 'Phase to look in')
+    .action(handleAreaUpdateCommand);
+    
+  // area delete command
+  areaCommand
+    .command('delete <id>')
+    .description('Delete an area')
+    .option('-p, --phase <phase>', 'Phase to look in')
+    .option('-f, --force', 'Force deletion even if area contains tasks')
+    .action(handleAreaDeleteCommand);
 
   // Add area group to root program
   program.addCommand(areaCommand);
