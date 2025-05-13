@@ -1,7 +1,7 @@
 +++
 id = "003_cli_commands"
 title = "Add CLI Commands for Phase Management"
-status = "🟡 To Do"
+status = "🔵 In Progress"
 type = "🌟 Feature"
 priority = "🔼 High"
 created_date = "2025-05-10"
