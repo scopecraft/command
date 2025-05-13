@@ -51,6 +51,27 @@ export { listPhases, createPhase, updatePhase, deletePhase };
 // Re-export workflow operations from the task-manager module
 export { findNextTask };
 
+// Re-export feature CRUD operations from the task-manager module
+export { 
+  listFeatures, 
+  getFeature, 
+  createFeature, 
+  updateFeature, 
+  deleteFeature 
+};
+
+// Re-export area CRUD operations from the task-manager module
+export { 
+  listAreas, 
+  getArea, 
+  createArea, 
+  updateArea, 
+  deleteArea 
+};
+
+// Re-export task movement operations from the task-manager module
+export { moveTask };
+
 /**
  * @deprecated Moved to task-manager/task-crud.js
  */
