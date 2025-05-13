@@ -316,6 +316,34 @@ bun run check
 bun run ci
 ```
 
+### Entity-Command Pattern
+
+The CLI follows an intuitive entity-command pattern, where commands are organized by entity type followed by operation. This structure makes the commands more predictable and easier to discover.
+
+```
+<entity> <command> [options]
+```
+
+Entity types include:
+- `task` - Task management operations
+- `phase` - Phase management operations
+- `feature` - Feature directory operations (FEATURE_* directories)
+- `area` - Area directory operations (AREA_* directories)
+- `workflow` - Task workflow and sequence operations
+- `template` - Template management operations
+
+Backward compatibility with legacy command format is maintained, so both formats work:
+
+```bash
+# New entity-command format
+sc task list                         # List tasks
+sc phase create --id "phase-1" ...   # Create a phase
+
+# Legacy format (still supported)
+sc list                              # List tasks
+sc phase-create --id "phase-1" ...   # Create a phase
+```
+
 ### Project Structure
 
 ```
@@ -328,7 +356,8 @@ src/
 │   └── index.ts        # Core module exports
 ├── cli/                # Command-line interface
 │   ├── cli.ts          # CLI entry point
-│   └── commands.ts     # CLI command handlers
+│   ├── commands.ts     # CLI command handlers
+│   └── entity-commands.ts # Entity-command pattern implementation
 └── mcp/                # MCP server
     ├── cli.ts          # MCP CLI entry point
     ├── handlers.ts     # MCP method handlers
