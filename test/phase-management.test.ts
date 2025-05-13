@@ -212,4 +212,102 @@ order = 2
       expect(result.error).to.include('already exists');
     });
   });
+  
+  describe('deletePhase', () => {
+    it('should successfully delete a phase with no tasks', async () => {
+      // Arrange
+      const phaseId = 'phase-1';
+      
+      // Stub listPhases to return a phase with no tasks
+      const listPhasesStub = sandbox.stub().resolves({
+        success: true,
+        data: [
+          {
+            id: 'phase-1',
+            name: 'Phase 1',
+            description: 'Test phase 1',
+            status: '🟡 Planned',
+            tasks: []
+          }
+        ]
+      });
+      
+      // Replace the originals with stubs in module imports
+      const taskManager = require('../src/core/task-manager');
+      sandbox.stub(taskManager, 'listPhases').get(() => listPhasesStub);
+      
+      // Add stubs for directory removal
+      const rmdirStub = sandbox.stub(fs, 'rmdirSync');
+      const unlinkStub = sandbox.stub(fs, 'unlinkSync');
+      
+      // Act
+      const result = await taskManager.deletePhase(phaseId);
+      
+      // Assert
+      expect(result.success).to.be.true;
+      expect(result.message).to.include('deleted successfully');
+      expect(rmdirStub.called).to.be.true;
+    });
+    
+    it('should return error when trying to delete a phase with tasks without force option', async () => {
+      // Arrange
+      const phaseId = 'phase-1';
+      const listPhasesStub = sandbox.stub().resolves({
+        success: true,
+        data: [
+          {
+            id: 'phase-1',
+            name: 'Phase 1',
+            description: 'Test phase 1',
+            status: '🟡 Planned',
+            tasks: ['task-1', 'task-2']
+          }
+        ]
+      });
+      
+      // Replace the originals with stubs in module imports
+      const taskManager = require('../src/core/task-manager');
+      sandbox.stub(taskManager, 'listPhases').get(() => listPhasesStub);
+      
+      // Act
+      const result = await taskManager.deletePhase(phaseId);
+      
+      // Assert
+      expect(result.success).to.be.false;
+      expect(result.error).to.include('has 2 tasks');
+      expect(result.error).to.include('--force');
+    });
+    
+    it('should successfully delete a phase with tasks when force option is used', async () => {
+      // Arrange
+      const phaseId = 'phase-1';
+      const listPhasesStub = sandbox.stub().resolves({
+        success: true,
+        data: [
+          {
+            id: 'phase-1',
+            name: 'Phase 1',
+            description: 'Test phase 1',
+            status: '🟡 Planned',
+            tasks: ['task-1', 'task-2']
+          }
+        ]
+      });
+      
+      // Replace the originals with stubs in module imports
+      const taskManager = require('../src/core/task-manager');
+      sandbox.stub(taskManager, 'listPhases').get(() => listPhasesStub);
+      
+      // Add stubs for directory removal
+      const rmdirStub = sandbox.stub(fs, 'rmdirSync');
+      const unlinkStub = sandbox.stub(fs, 'unlinkSync');
+      
+      // Act
+      const result = await taskManager.deletePhase(phaseId, { force: true });
+      
+      // Assert
+      expect(result.success).to.be.true;
+      expect(result.message).to.include('deleted successfully');
+    });
+  });
 });

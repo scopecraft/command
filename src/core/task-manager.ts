@@ -1490,3 +1490,110 @@ export async function updatePhase(id: string, updates: Partial<Phase>): Promise<
     };
   }
 }
+
+/**
+ * Deletes a phase
+ * @param id Phase ID to delete
+ * @param options Options for deletion
+ * @returns Operation result
+ */
+export async function deletePhase(id: string, options: { force?: boolean } = {}): Promise<OperationResult<void>> {
+  try {
+    // First, get the existing phase to ensure it exists
+    const phasesResult = await listPhases();
+    if (!phasesResult.success || !phasesResult.data) {
+      return {
+        success: false,
+        error: phasesResult.error || 'Failed to list phases'
+      };
+    }
+
+    const phases = phasesResult.data;
+    const existingPhase = phases.find(p => p.id === id);
+
+    if (!existingPhase) {
+      return {
+        success: false,
+        error: `Phase with ID ${id} not found`
+      };
+    }
+
+    const tasksDir = getTasksDirectory();
+    const phaseDir = path.join(tasksDir, id);
+    
+    // Verify that the phase directory exists
+    if (!fs.existsSync(phaseDir)) {
+      return {
+        success: false,
+        error: `Phase directory not found for ID ${id}`
+      };
+    }
+
+    // Check if phase has tasks
+    if (existingPhase.tasks && existingPhase.tasks.length > 0 && !options.force) {
+      return {
+        success: false,
+        error: `Phase ${id} has ${existingPhase.tasks.length} tasks. Use --force to delete the phase and all its tasks.`
+      };
+    }
+
+    // Remove phase from config file
+    const phasesConfigPath = projectConfig.getPhasesConfigPath();
+    try {
+      if (fs.existsSync(phasesConfigPath)) {
+        const phasesContent = fs.readFileSync(phasesConfigPath, 'utf-8');
+        const phasesConfig = parseToml(phasesContent);
+        
+        if (phasesConfig.phases) {
+          // Find the phase in the config
+          const existingPhaseIndex = phasesConfig.phases.findIndex((p: any) => p.id === id);
+          
+          if (existingPhaseIndex >= 0) {
+            // Remove the phase
+            phasesConfig.phases.splice(existingPhaseIndex, 1);
+            
+            // Write updated config
+            const updatedContent = stringifyToml(phasesConfig);
+            fs.writeFileSync(phasesConfigPath, updatedContent);
+          }
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: `Error updating phase configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+
+    // Delete the phase directory and all its contents
+    const removeDir = (dir: string) => {
+      if (!fs.existsSync(dir)) return;
+      
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const entryPath = path.join(dir, entry.name);
+        
+        if (entry.isDirectory()) {
+          removeDir(entryPath);
+        } else {
+          fs.unlinkSync(entryPath);
+        }
+      }
+      
+      fs.rmdirSync(dir);
+    };
+    
+    removeDir(phaseDir);
+
+    return {
+      success: true,
+      message: `Phase ${id} deleted successfully`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error deleting phase: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
