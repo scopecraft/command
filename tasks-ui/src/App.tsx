@@ -6,6 +6,7 @@ import { TaskListView } from './components/task-list/TaskListView';
 import { TaskFormView } from './components/task-form/TaskFormView';
 import { TaskDetailView } from './components/task-detail/TaskDetailView';
 import { HomePage } from './components/pages/HomePage';
+import { GraphPage } from './components/pages/GraphPage';
 import { routes } from './lib/routes';
 
 // Main App component with routing
@@ -21,6 +22,7 @@ function App() {
           <Route path={routes.taskEdit(':id')}>
             {params => <TaskFormView taskId={params.id} />}
           </Route>
+          <Route path={routes.graph} component={GraphPage} />
           {/* Fallback route */}
           <Route>
             <div className="p-4 text-center">

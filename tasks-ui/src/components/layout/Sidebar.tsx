@@ -1,8 +1,9 @@
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { useUIContext } from '../../context/UIContext';
 import { usePhaseContext } from '../../context/PhaseContext';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
+import { routes } from '../../lib/routes';
 
 export function Sidebar() {
   const { ui } = useUIContext();
@@ -22,6 +23,34 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 h-full bg-card border-r border-border flex flex-col">
+      <div className="p-4 border-b border-border">
+        <h2 className="text-sm font-medium text-muted-foreground">Views</h2>
+      </div>
+      <div className="p-2 border-b border-border">
+        <ul className="space-y-1">
+          <li>
+            <Link href={routes.taskList}>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-left"
+              >
+                <span className="truncate">Task List</span>
+              </Button>
+            </Link>
+          </li>
+          <li>
+            <Link href={routes.graph}>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-left"
+              >
+                <span className="truncate">Relationship Graph</span>
+              </Button>
+            </Link>
+          </li>
+        </ul>
+      </div>
+
       <div className="p-4 border-b border-border">
         <h2 className="text-sm font-medium text-muted-foreground">Phases</h2>
       </div>
@@ -81,7 +110,12 @@ export function Sidebar() {
           </ul>
         )} */}
       </div>
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border flex flex-col gap-2">
+        <Link href={routes.taskCreate}>
+          <Button variant="default" className="w-full">
+            + Create Task
+          </Button>
+        </Link>
         <Button variant="outline" className="w-full">
           + New Phase
         </Button>

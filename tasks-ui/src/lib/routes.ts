@@ -5,6 +5,7 @@ export const routes = {
   taskCreate: '/tasks/create',
   taskDetail: (id: string) => `/tasks/${id}`,
   taskEdit: (id: string) => `/tasks/${id}/edit`,
+  graph: '/graph',
 };
 
 // Get route path by name

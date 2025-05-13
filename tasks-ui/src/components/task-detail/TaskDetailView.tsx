@@ -1,4 +1,4 @@
-import { useParams, useLocation } from 'wouter';
+import { useLocation, useRoute } from 'wouter';
 import { useQueryParams } from '../../hooks/useQueryParams';
 import { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
@@ -8,9 +8,12 @@ import { formatDate, hasDependencies } from '../../lib/utils/format';
 import { TaskRelationships } from './TaskRelationships';
 import { TaskMetadata } from './TaskMetadata';
 import { TaskContent } from './TaskContent';
+import { ErrorBoundary } from '../layout/ErrorBoundary';
+import { TaskDetailFallback } from './TaskDetailFallback';
 
-export function TaskDetailView() {
-  const { id } = useParams<{ id: string }>();
+export function TaskDetailViewInner() {
+  const [, params] = useRoute<{ id: string }>(routes.taskDetail(':id'));
+  const id = params?.id;
   const { tasks, loading, error } = useTaskContext();
   const [, navigate] = useLocation();
   const { getParams } = useQueryParams();
@@ -90,13 +93,13 @@ export function TaskDetailView() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column - Task metadata */}
-        <div className="space-y-6">
+        {/* On mobile, show content before metadata for better UX */}
+        <div className="order-2 lg:order-1 space-y-6">
           <TaskMetadata task={task} />
         </div>
 
-        {/* Middle column - Task content */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* Content column - larger on desktop, shown first on mobile */}
+        <div className="lg:col-span-2 order-1 lg:order-2 space-y-6 mb-6 lg:mb-0">
           <TaskContent task={task} />
         </div>
       </div>
@@ -112,5 +115,17 @@ export function TaskDetailView() {
         </div>
       )}
     </div>
+  );
+}
+
+export function TaskDetailView() {
+  const [, params] = useRoute<{ id: string }>(routes.taskDetail(':id'));
+  const id = params?.id;
+  const { refreshTasks } = useTaskContext();
+
+  return (
+    <ErrorBoundary fallback={<TaskDetailFallback taskId={id} onRetry={refreshTasks} />}>
+      <TaskDetailViewInner />
+    </ErrorBoundary>
   );
 }

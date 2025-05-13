@@ -57,15 +57,15 @@ export function DataTable<TData extends object, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="border border-border rounded-md overflow-hidden">
-        <table className="w-full">
+      <div className="border border-border rounded-md overflow-x-auto">
+        <table className="w-full min-w-[800px]">
           <thead className="bg-card">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-border">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="text-left p-3 text-sm font-medium"
+                    className="text-left p-3 text-sm font-medium whitespace-nowrap"
                     onClick={header.column.getCanSort()
                       ? header.column.getToggleSortingHandler()
                       : undefined
@@ -120,7 +120,7 @@ export function DataTable<TData extends object, TValue>({
         </table>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-2">
           <div className="text-sm text-muted-foreground">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
@@ -128,16 +128,18 @@ export function DataTable<TData extends object, TValue>({
           </div>
           <ColumnToggle table={table} />
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 self-end sm:self-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
+            className="px-2 sm:px-4"
           >
-            Previous
+            <span className="sm:hidden">←</span>
+            <span className="hidden sm:inline">Previous</span>
           </Button>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </div>
@@ -146,8 +148,10 @@ export function DataTable<TData extends object, TValue>({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
+            className="px-2 sm:px-4"
           >
-            Next
+            <span className="sm:hidden">→</span>
+            <span className="hidden sm:inline">Next</span>
           </Button>
         </div>
       </div>

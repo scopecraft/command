@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useTaskContext } from '../../context/TaskContext';
+import { useToast } from '../../hooks/useToast';
 import { Button } from '../ui/button';
 import { routes } from '../../lib/routes';
 
 export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
-  const { tasks, createTask } = useTaskContext();
+  const { tasks, createTask, updateTask, loading } = useTaskContext();
   const [, navigate] = useLocation();
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState('🟡 To Do');
@@ -13,6 +14,8 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
   const [priority, setPriority] = useState('▶️ Medium');
   const [content, setContent] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const toast = useToast();
   
   // Load task data when in edit mode
   useEffect(() => {
@@ -25,37 +28,60 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
         setType(task.type);
         setPriority(task.priority || '▶️ Medium');
         setContent(task.content?.split('\n').slice(1).join('\n').trim() || '');
+      } else if (!loading) {
+        // Task not found and not still loading
+        toast.error(`Task with ID ${taskId} not found`);
+        navigate(routes.taskList);
       }
     }
-  }, [taskId, tasks]);
+  }, [taskId, tasks, loading, navigate, toast]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted');
-    
-    const taskData = {
-      title,
-      status,
-      type,
-      priority,
-      content: `# ${title}\n\n${content}`
-    };
+    setSubmitting(true);
     
     try {
-      await createTask(taskData as any);
-      alert('Task created successfully!');
+      const taskData = {
+        id: isEditMode ? taskId : undefined,
+        title,
+        status,
+        type,
+        priority,
+        content: `# ${title}\n\n${content}`
+      };
       
-      // Navigate to task list
-      navigate(routes.taskList);
+      let result;
+      if (isEditMode && taskId) {
+        result = await updateTask(taskData as any);
+      } else {
+        result = await createTask(taskData as any);
+      }
+      
+      if (result.success) {
+        toast.success(`Task ${isEditMode ? 'updated' : 'created'} successfully!`);
+        navigate(isEditMode ? routes.taskDetail(taskId!) : routes.taskList);
+      } else {
+        toast.error(result.message || `Failed to ${isEditMode ? 'update' : 'create'} task`);
+      }
     } catch (error) {
       console.error('Failed to save task:', error);
-      alert('Failed to save task. See console for details.');
+      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} task: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSubmitting(false);
     }
   };
   
   const handleCancel = () => {
-    navigate(routes.taskList);
+    if (isEditMode && taskId) {
+      navigate(routes.taskDetail(taskId));
+    } else {
+      navigate(routes.taskList);
+    }
   };
+  
+  if (loading && isEditMode) {
+    return <div className="container mx-auto p-4 text-center">Loading task data...</div>;
+  }
   
   return (
     <div className="container mx-auto p-4">
@@ -73,11 +99,12 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
             className="w-full rounded-md bg-input px-3 py-2 text-sm"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            disabled={submitting}
             required
           />
         </div>
         
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="grid gap-2">
             <label htmlFor="type" className="text-sm font-medium">
               Type
@@ -87,6 +114,7 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
               className="rounded-md bg-input px-3 py-2 text-sm"
               value={type}
               onChange={(e) => setType(e.target.value)}
+              disabled={submitting}
             >
               <option value="📋 Task">📋 Task</option>
               <option value="🌟 Feature">🌟 Feature</option>
@@ -103,6 +131,7 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
               className="rounded-md bg-input px-3 py-2 text-sm"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
+              disabled={submitting}
             >
               <option value="🟡 To Do">🟡 To Do</option>
               <option value="🔵 In Progress">🔵 In Progress</option>
@@ -119,6 +148,7 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
               className="rounded-md bg-input px-3 py-2 text-sm"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
+              disabled={submitting}
             >
               <option value="🔽 Low">🔽 Low</option>
               <option value="▶️ Medium">▶️ Medium</option>
@@ -137,15 +167,16 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
             className="min-h-32 w-full rounded-md bg-input px-3 py-2 text-sm"
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            disabled={submitting}
           />
         </div>
         
         <div className="flex gap-2 justify-end">
-          <Button type="button" variant="outline" onClick={handleCancel}>
+          <Button type="button" variant="outline" onClick={handleCancel} disabled={submitting}>
             Cancel
           </Button>
-          <Button type="submit">
-            {isEditMode ? 'Update Task' : 'Create Task'}
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Saving...' : (isEditMode ? 'Update Task' : 'Create Task')}
           </Button>
         </div>
       </form>

@@ -7,9 +7,11 @@ import { useQueryParams } from '../../hooks/useQueryParams';
 import { DataTable } from './table/data-table';
 import { columns } from './table/columns';
 import { TaskFilters } from './filters';
+import { ErrorBoundary } from '../layout/ErrorBoundary';
+import { TaskListFallback } from './TaskListFallback';
 import type { TaskListFilter } from '../../lib/types';
 
-export function TaskListView() {
+export function TaskListViewInner() {
   const { tasks, loading, error } = useTaskContext();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [, navigate] = useLocation();
@@ -158,5 +160,14 @@ export function TaskListView() {
         onRowClick={(row) => handleTaskSelect(row.id)}
       />
     </div>
+  );
+}
+
+export function TaskListView() {
+  const { refreshTasks } = useTaskContext();
+  return (
+    <ErrorBoundary fallback={<TaskListFallback onRetry={refreshTasks} />}>
+      <TaskListViewInner />
+    </ErrorBoundary>
   );
 }
