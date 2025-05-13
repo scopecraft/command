@@ -7,22 +7,25 @@ import { getTask, updateTask } from './task-crud.js';
 /**
  * Moves a task to a different subdirectory
  * @param id Task ID to move
- * @param targetSubdirectory Target subdirectory (e.g. "FEATURE_Authentication")
- * @param searchPhase Optional phase to look in
- * @param searchSubdirectory Optional subdirectory to look in
- * @param targetPhase Optional target phase (defaults to current phase)
+ * @param options Movement options
+ * @param options.targetSubdirectory Target subdirectory (e.g. "FEATURE_Authentication")
+ * @param options.targetPhase Optional target phase (defaults to current phase)
+ * @param options.searchPhase Optional phase to look in
+ * @param options.searchSubdirectory Optional subdirectory to look in
  * @returns Operation result
  */
 export async function moveTask(
   id: string, 
-  targetSubdirectory: string,
-  searchPhase?: string,
-  searchSubdirectory?: string,
-  targetPhase?: string
+  options: {
+    targetSubdirectory: string;
+    targetPhase?: string;
+    searchPhase?: string;
+    searchSubdirectory?: string;
+  }
 ): Promise<OperationResult<void>> {
   try {
     // Get the task
-    const taskResult = await getTask(id, searchPhase, searchSubdirectory);
+    const taskResult = await getTask(id, options.searchPhase, options.searchSubdirectory);
 
     if (!taskResult.success || !taskResult.data) {
       return {
@@ -37,9 +40,7 @@ export async function moveTask(
     const currentPhase = task.metadata.phase;
     
     // Set target phase to current if not specified
-    if (!targetPhase) {
-      targetPhase = currentPhase;
-    }
+    const targetPhase = options.targetPhase || currentPhase;
     
     // Update the task using the task-crud updateTask function
     // This will handle file movement, path updates, etc.
@@ -47,10 +48,10 @@ export async function moveTask(
       id, 
       {
         phase: targetPhase,
-        subdirectory: targetSubdirectory
+        subdirectory: options.targetSubdirectory
       },
-      searchPhase,
-      searchSubdirectory
+      options.searchPhase,
+      options.searchSubdirectory
     );
     
     if (!updateResult.success) {
@@ -62,7 +63,7 @@ export async function moveTask(
     
     return {
       success: true,
-      message: `Task ${id} moved to ${targetSubdirectory} in phase ${targetPhase}`
+      message: `Task ${id} moved to ${options.targetSubdirectory} in phase ${targetPhase}`
     };
   } catch (error) {
     return {
