@@ -250,7 +250,17 @@ This structure allows for better organization of related tasks. Features typical
 ## Common CLI Commands
 
 ```bash
-# Basic commands
+# Basic commands (new entity-command format)
+sc task list                                       # List all tasks
+sc task list --status "🟡 To Do"                   # List pending tasks
+sc task list --phase "release-v1"                  # List tasks in a phase
+sc task get TASK-ID                                # Get details of a specific task
+sc task create --id "TASK-ID" --title "Task title" --type "🌟 Feature" --priority "🔼 High" --phase "release-v1"  # Create a new task
+sc task create --template "feature" --title "New Feature" --phase "release-v1"  # Create from template
+sc task update TASK-ID --status "🔵 In Progress"   # Update a task
+sc task delete TASK-ID                             # Delete a task
+
+# Basic commands (legacy format - still supported)
 sc list                                            # List all tasks (short alias)
 scopecraft-command list                            # List all tasks (full command)
 sc list --status "🟡 To Do"                        # List pending tasks
@@ -261,13 +271,31 @@ sc create --template "feature" --title "New Feature" --phase "release-v1"  # Cre
 sc update TASK-ID --status "🔵 In Progress"        # Update a task
 sc delete TASK-ID                                  # Delete a task
 
-# Status shortcuts
+# Status shortcuts (new format)
+sc task start TASK-ID     # Mark as In Progress
+sc task complete TASK-ID  # Mark as Done
+sc task block TASK-ID     # Mark as Blocked
+sc task review TASK-ID    # Mark as In Review
+
+# Status shortcuts (legacy format - still supported)
 sc start TASK-ID     # Mark as In Progress
 sc complete TASK-ID  # Mark as Done
 sc block TASK-ID     # Mark as Blocked
 sc review TASK-ID    # Mark as In Review
 
-# Phase management
+# Phase management (new format)
+sc phase list              # List all phases
+sc phase create --id "phase-1" --name "Planning Phase" --description "Initial planning stage"  # Create a phase
+sc phase update phase-1 --name "Updated Name" --status "🔵 In Progress"  # Update a phase
+sc phase update phase-1 --new-id "planning-phase"  # Rename a phase
+sc phase delete phase-1    # Delete a phase
+sc phase delete phase-1 --force  # Force delete a phase with tasks
+sc phase start phase-1     # Mark phase as In Progress
+sc phase complete phase-1  # Mark phase as Completed
+sc phase block phase-1     # Mark phase as Blocked
+sc phase pending phase-1   # Mark phase as Pending
+
+# Phase management (legacy format - still supported)
 sc phases            # List all phases
 sc phase-create --id "phase-1" --name "Planning Phase" --description "Initial planning stage"  # Create a phase
 sc phase-update phase-1 --name "Updated Name" --status "🔵 In Progress"  # Update a phase
@@ -279,12 +307,26 @@ sc phase-complete phase-1  # Mark phase as Completed
 sc phase-block phase-1  # Mark phase as Blocked
 sc phase-pending phase-1  # Mark phase as Pending
 
-# Template management
-sc list-templates    # List available templates
+# Feature and Area management (new)
+sc feature create --name "Authentication" --title "Auth System" --phase "release-v1"  # Create a feature
+sc feature list                                    # List all features
+sc area create --name "Performance" --title "Performance Opt" --phase "release-v1"  # Create an area
+sc area list                                       # List all areas
 
-# Workflow navigation
+# Template management
+sc template list          # List available templates (new format)
+sc list-templates         # List available templates (legacy format)
+
+# Workflow navigation (new format)
+sc workflow next          # Find the next highest priority task
+sc workflow next TASK-ID  # Find the next task after completing the specified task
+sc workflow current       # Show tasks currently in progress
+sc workflow mark-complete-next TASK-ID  # Mark a task as complete and show the next task
+
+# Workflow navigation (legacy format - still supported)
 sc next-task         # Find the next highest priority task
 sc next-task TASK-ID # Find the next task after completing the specified task
+sc current-task      # Show tasks currently in progress
 sc mark-complete-next TASK-ID  # Mark a task as complete and show the next task
 
 # Task Content Management
@@ -297,7 +339,17 @@ sc update TASK-ID --file task.md             # Update task from edited file
 # 2. Use direct file editing capabilities to update task content in-place
 # 3. Skip the export/edit/import workflow when possible for efficiency
 
-# MDTM Directory Structure Commands
+# MDTM Directory Structure Commands (new format)
+sc feature create --name "Authentication" --title "Authentication Feature" --phase "release-v1"  # Create a feature with overview file
+sc area create --name "Performance" --title "Performance Optimization" --phase "release-v1"  # Create an area with overview file
+sc task create --title "Login UI" --type "🌟 Feature" --phase "release-v1" --subdirectory "FEATURE_Authentication"  # Create a task within a feature
+sc task list --phase "release-v1" --subdirectory "FEATURE_Authentication"  # List tasks in a feature
+sc task list --overview  # List only overview files
+sc feature list  # List all features (overview files in FEATURE_* directories)
+sc area list  # List all areas (overview files in AREA_* directories)
+sc task update TASK-ID --subdirectory "FEATURE_UserProfiles"  # Move a task to a different feature
+
+# MDTM Directory Structure Commands (legacy format - still supported)
 sc create --id "_overview" --title "Authentication Feature" --type "🌟 Feature" --phase "release-v1" --subdirectory "FEATURE_Authentication"  # Create a feature overview file
 sc create --title "Login UI" --type "🌟 Feature" --phase "release-v1" --subdirectory "FEATURE_Authentication"  # Create a task within a feature
 sc list --phase "release-v1" --subdirectory "FEATURE_Authentication"  # List tasks in a feature
@@ -498,6 +550,7 @@ The `e2e` command is used for running end-to-end tests in the project. It provid
 - Validates task creation, update, and management workflows
 - Ensures consistency between different project modes (standalone and Roo Commander)
 - Checks integration points between Core, CLI, and MCP modules
+- Tests both new entity-command format and legacy format commands
 
 ### Usage Examples:
 ```bash
@@ -511,6 +564,12 @@ sc e2e --module mcp
 # Run tests with verbose output
 sc e2e --verbose
 
+# Run tests specifically for entity-command pattern
+sc e2e --module cli --tag entity-command
+
+# Run tests for backward compatibility
+sc e2e --module cli --tag backward-compat
+
 # Run tests and generate a detailed report
 sc e2e --report
 ```
@@ -520,10 +579,54 @@ sc e2e --report
 - Phase management
 - MDTM directory structure validation
 - Interface consistency (CLI vs MCP)
+- Command format consistency (entity-command vs. legacy format)
 - Error handling scenarios
 - Performance and load testing
+
+### Entity-Command Pattern Testing:
+- Verify both new format commands (e.g., `sc task list`) and legacy format commands (e.g., `sc list`) work correctly
+- Test all entity command groups: task, phase, feature, area, workflow, template
+- Ensure nested command help works for each entity group
+- Check that feature/area commands correctly handle the MDTM directory structure
+- Confirm that workflow commands maintain proper task relationships
+
+### E2E Testing Prompt for Entity-Command Pattern
+
+```
+Verify that both new entity-command format and legacy format commands work correctly.
+
+Test cases to cover:
+1. Task commands: list, get, create, update, delete
+   - New format: sc task list, sc task get, etc.
+   - Legacy format: sc list, sc get, etc.
+
+2. Phase commands: list, create, update, delete
+   - New format: sc phase list, sc phase create, etc.
+   - Legacy format: sc phases, sc phase-create, etc.
+
+3. Feature/Area commands
+   - sc feature create/list
+   - sc area create/list
+
+4. Workflow commands
+   - New format: sc workflow next, sc workflow current, sc workflow mark-complete-next
+   - Legacy format: sc next-task, sc current-task, sc mark-complete-next
+
+5. Template commands
+   - New format: sc template list
+   - Legacy format: sc list-templates
+
+For each test case:
+1. Execute both the new format and legacy format commands
+2. Verify they produce identical output for the same input
+3. Check that help text for each command is clear and consistent
+4. Confirm entity command groups properly handle --help flag
+
+Report any discrepancies or issues encountered during testing.
+```
 
 ### Best Practices:
 - Run e2e tests before major releases
 - Integrate e2e tests in CI/CD pipeline
 - Continuously expand test scenarios to cover new features
+- Test both new entity-command format and legacy commands when adding new features
