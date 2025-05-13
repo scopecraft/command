@@ -56,7 +56,7 @@ git push -u origin ${taskId}
 gh pr create --base main --head ${taskId} --title "Task ${taskId}: ${TASK_TITLE}" --body "Completes task ${taskId}"
 ```
 
-### 3. Update task status and implementation log after merge (local merge only)
+### 3. Update task status after merge (local merge only)
 
 For local merge only:
 
@@ -89,28 +89,13 @@ if ! grep -q "status = \"🟢 Done\"" "${TASK_FILE}"; then
   sed -i '' 's/updated_date = ".*"/updated_date = "'${TODAY}'"/' "${TASK_FILE}"
   
   echo "Updated task status to completed"
+  
+  # Commit and push the task status update
+  echo "Committing task status update..."
+  git add "${TASK_FILE}"
+  git commit -m "Mark task ${taskId} as completed"
+  git push origin main
 fi
-
-# Generate implementation log based on the merge
-echo "Generating implementation log..."
-IMPLEMENTATION_LOG=$(echo -e "## Implementation Log\n\n### Changes:\n$(git show --name-status HEAD | grep -v "^Merge" | sed 's/^M/- Modified: /g' | sed 's/^A/- Added: /g' | sed 's/^D/- Deleted: /g')\n\n### Commits:\n$(git log --pretty=format:"- %h: %s" HEAD~5..HEAD | grep ${taskId})")
-
-# Check if Implementation Log section already exists
-if grep -q "## Implementation Log" "${TASK_FILE}"; then
-  # Update existing implementation log
-  echo "Updating existing implementation log..."
-  sed -i '' '/## Implementation Log/,/## /c\\## Implementation Log\n\n'"${IMPLEMENTATION_LOG}"'\n\n## ' "${TASK_FILE}"
-else
-  # Append implementation log to file
-  echo "Adding new implementation log..."
-  echo -e "\n${IMPLEMENTATION_LOG}" >> "${TASK_FILE}"
-fi
-
-# Commit and push the task status and implementation log update
-echo "Committing task status update..."
-git add "${TASK_FILE}"
-git commit -m "Update status and implementation log for task ${taskId}"
-git push origin main
 ```
 
 ### 4. Clean up
@@ -139,7 +124,7 @@ echo "Pull request created. Worktree will be removed after PR is merged."
 
 For local merge:
 ```bash
-echo "Task ${taskId} has been merged to main, documentation updated, and worktree removed."
+echo "Task ${taskId} has been merged to main, marked as completed, and worktree removed."
 ```
 
 For PR:
