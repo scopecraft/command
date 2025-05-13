@@ -75,14 +75,12 @@ export function PhaseProvider({ children }: { children: ReactNode }) {
   const selectPhase = (phaseId: string | null) => {
     if (!phaseId) {
       setCurrentPhase(null);
-      toast.info('No phase selected');
       return;
     }
 
     const phase = phases.find(p => p.id === phaseId);
     if (phase) {
       setCurrentPhase(phase);
-      toast.info(`Phase "${phase.name}" selected`);
     } else {
       toast.error(`Phase with ID ${phaseId} not found`);
     }
