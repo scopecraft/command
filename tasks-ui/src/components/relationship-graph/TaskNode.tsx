@@ -61,7 +61,7 @@ function TaskNodeComponent({ data, selected }: NodeProps<TaskNodeData>) {
   
   return (
     <div className={cn(
-      'px-3 py-2 min-w-48 max-w-60 rounded-md shadow-md border relative',
+      'px-3 py-2 min-w-48 max-w-60 rounded-md shadow-md border relative z-10',
       getStatusColor(),
       selected ? 'ring-2 ring-primary ring-offset-background' : '',
     )}>

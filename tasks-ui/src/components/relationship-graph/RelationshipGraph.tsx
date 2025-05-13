@@ -36,22 +36,31 @@ export function RelationshipGraph() {
     taskNode: TaskNode 
   }), []);
   
-  // Create nodes from tasks - using default positions initially
-  const initialNodes: Node[] = useMemo(() => tasks.map(task => ({
-    id: task.id,
-    type: 'taskNode',
-    data: { task },
-    position: { x: 0, y: 0 }, // The positions will be calculated by ELK layout
-  })), [tasks]);
+  // Filter out completed tasks and create nodes from remaining tasks
+  const initialNodes: Node[] = useMemo(() => {
+    // Filter out tasks with status "🟢 Done"
+    const activeTasks = tasks.filter(task => task.status !== '🟢 Done');
+    
+    return activeTasks.map(task => ({
+      id: task.id,
+      type: 'taskNode',
+      data: { task },
+      position: { x: 0, y: 0 }, // The positions will be calculated by ELK layout
+    }));
+  }, [tasks]);
   
   // Create edges from task relationships
   const initialEdges: Edge[] = useMemo(() => {
     const edges: Edge[] = [];
     
-    // Process all relationship types
-    tasks.forEach(task => {
-      // Parent-child relationships
-      if (task.parent_task) {
+    // Filter out completed tasks
+    const activeTasks = tasks.filter(task => task.status !== '🟢 Done');
+    const activeTaskIds = new Set(activeTasks.map(task => task.id));
+    
+    // Process all relationship types for active tasks only
+    activeTasks.forEach(task => {
+      // Parent-child relationships - only if both parent and child are active
+      if (task.parent_task && activeTaskIds.has(task.parent_task)) {
         edges.push({
           id: `${task.parent_task}-parent-${task.id}`,
           source: task.parent_task,
@@ -67,27 +76,29 @@ export function RelationshipGraph() {
         });
       }
       
-      // Dependencies
+      // Dependencies - only if both dependency and dependent are active
       if (task.depends_on) {
         task.depends_on.forEach(dependencyId => {
-          edges.push({
-            id: `${dependencyId}-depends-${task.id}`,
-            source: dependencyId,
-            target: task.id,
-            label: 'depends on',
-            type: 'default',
-            style: { stroke: '#f97316' },
-            animated: true,
-            markerEnd: { type: MarkerType.Arrow },
-            data: { 
-              type: 'depends-on' as TaskRelationship['type'],
-            }
-          });
+          if (activeTaskIds.has(dependencyId)) {
+            edges.push({
+              id: `${dependencyId}-depends-${task.id}`,
+              source: dependencyId,
+              target: task.id,
+              label: 'depends on',
+              type: 'default',
+              style: { stroke: '#f97316' },
+              animated: true,
+              markerEnd: { type: MarkerType.Arrow },
+              data: { 
+                type: 'depends-on' as TaskRelationship['type'],
+              }
+            });
+          }
         });
       }
       
-      // Previous-next task relationships
-      if (task.previous_task) {
+      // Previous-next task relationships - only if both previous and next are active
+      if (task.previous_task && activeTaskIds.has(task.previous_task)) {
         edges.push({
           id: `${task.previous_task}-next-${task.id}`,
           source: task.previous_task,
@@ -115,29 +126,37 @@ export function RelationshipGraph() {
   // Initialize the ELK layouter
   const elk = useMemo(() => new ELK(), []);
   
-  // Apply the ELK layout whenever nodes or edges change
+  // Apply the ELK layout only when tasks or nodes change initially, not during interactions
   useEffect(() => {
-    if (!tasks.length) return;
+    if (!tasks.length || nodes.length === 0) return;
     
+    // Only calculate layout initially and not during normal interactions
+    // This prevents continuous recalculation that causes jitter
     const applyLayout = async () => {
       setLoading(true);
       
       try {
-        // Prepare the graph for ELK
+        // Prepare the graph for ELK with more aggressive spacing
         const elkGraph = {
           id: 'root',
           layoutOptions: {
             'elk.algorithm': 'layered',
             'elk.direction': 'DOWN',
-            'elk.spacing.nodeNode': '80',
-            'elk.layered.spacing.nodeNodeBetweenLayers': '100',
-            'elk.padding': '[50, 50, 50, 50]',
-            'elk.aspectRatio': '1.6',
+            'elk.spacing.nodeNode': '180',  // Much more horizontal spacing between nodes
+            'elk.layered.spacing.nodeNodeBetweenLayers': '150', // More vertical spacing between layers
+            'elk.padding': '[120, 120, 120, 120]', // More padding around the entire graph
+            'elk.aspectRatio': '2.0', // Even wider aspect ratio for better horizontal distribution
+            'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX', // Better node placement for complex graphs
+            'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP', // Minimize edge crossings
+            'elk.edgeRouting': 'ORTHOGONAL', // More structured edge routing
+            'elk.layered.considerModelOrder': 'true', // Preserve ordering of nodes
+            'elk.layered.cycleBreaking.strategy': 'DEPTH_FIRST', // Better handling of cycles
+            'elk.partitioning.activate': 'true', // Partition the graph for better layout
           },
           children: nodes.map(node => ({
             id: node.id,
-            width: 180, // Default width of task nodes
-            height: 80,  // Default height of task nodes
+            width: 200, // Larger width to avoid text overflow
+            height: 100, // Larger height for better spacing
           })),
           edges: edges.map(edge => ({
             id: edge.id,
@@ -149,15 +168,16 @@ export function RelationshipGraph() {
         // Calculate the layout
         const elkLayout = await elk.layout(elkGraph);
         
-        // Apply the layout to the nodes
+        // Apply the layout to the nodes only once
         setNodes(nodes.map(node => {
           const elkNode = elkLayout.children?.find(n => n.id === node.id);
           if (elkNode) {
             return {
               ...node,
+              // Add random jitter to avoid perfect overlaps
               position: {
-                x: elkNode.x || 0,
-                y: elkNode.y || 0,
+                x: (elkNode.x || 0) + Math.random() * 20 - 10,
+                y: (elkNode.y || 0) + Math.random() * 20 - 10,
               },
             };
           }
@@ -170,8 +190,11 @@ export function RelationshipGraph() {
       }
     };
     
+    // Only apply layout on initial load and not during interactions
     applyLayout();
-  }, [tasks, elk, edges, nodes]);
+    
+    // Do not include edges or nodes in the dependency array to prevent continuous recalculation
+  }, [tasks, elk]);
   
   // Keep track of dragging state to prevent opening task on drag end
   const [isDragging, setIsDragging] = useState(false);
@@ -285,11 +308,20 @@ export function RelationshipGraph() {
   return (
     <div className="w-full h-full flex flex-col">
       <div className="p-4 border-b bg-card">
-        <h1 className="text-lg font-semibold">Task Relationship Graph</h1>
-        <p className="text-sm text-muted-foreground">
-          Visualize and manage relationships between tasks
-        </p>
-        {loading && <span className="text-sm text-muted-foreground ml-2">Calculating layout...</span>}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-lg font-semibold">Task Relationship Graph</h1>
+            <p className="text-sm text-muted-foreground">
+              Visualize and manage relationships between tasks
+            </p>
+            {loading && <span className="text-sm text-muted-foreground">Calculating layout...</span>}
+          </div>
+          <div className="text-sm">
+            <span className="bg-green-500/20 text-green-700 dark:text-green-300 px-2 py-1 rounded-md border border-green-500/30">
+              Showing active tasks only
+            </span>
+          </div>
+        </div>
       </div>
       
       <div className="flex-1">
@@ -305,7 +337,7 @@ export function RelationshipGraph() {
           onNodeDragStop={onNodeDragStop}
           nodeTypes={nodeTypes}
           fitView
-          fitViewOptions={{ padding: 0.3 }}
+          fitViewOptions={{ padding: 0.5 }}
           minZoom={0.1}
           maxZoom={2}
           attributionPosition="bottom-right"
