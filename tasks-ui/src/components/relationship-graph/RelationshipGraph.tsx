@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import ReactFlow, {
   Controls,
@@ -24,6 +24,7 @@ import { GraphContextMenu } from './GraphContextMenu';
 import { Button } from '../ui/button';
 import { useToast } from '../../hooks/useToast';
 import type { Task, TaskRelationship } from '../../lib/types';
+import ELK from 'elkjs/lib/elk.bundled.js';
 
 export function RelationshipGraph() {
   const { tasks, updateTask } = useTaskContext();
@@ -35,16 +36,12 @@ export function RelationshipGraph() {
     taskNode: TaskNode 
   }), []);
   
-  // Create nodes from tasks
+  // Create nodes from tasks - using default positions initially
   const initialNodes: Node[] = useMemo(() => tasks.map(task => ({
     id: task.id,
     type: 'taskNode',
     data: { task },
-    position: { 
-      // Use hash of task id for initial positions to ensure consistency
-      x: parseInt(task.id.substring(task.id.length - 4), 16) % 800, 
-      y: parseInt(task.id.substring(0, 4), 16) % 600 
-    },
+    position: { x: 0, y: 0 }, // The positions will be calculated by ELK layout
   })), [tasks]);
   
   // Create edges from task relationships
@@ -113,6 +110,68 @@ export function RelationshipGraph() {
   // Use React Flow hooks for managing nodes and edges
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [loading, setLoading] = useState(false);
+  
+  // Initialize the ELK layouter
+  const elk = useMemo(() => new ELK(), []);
+  
+  // Apply the ELK layout whenever nodes or edges change
+  useEffect(() => {
+    if (!tasks.length) return;
+    
+    const applyLayout = async () => {
+      setLoading(true);
+      
+      try {
+        // Prepare the graph for ELK
+        const elkGraph = {
+          id: 'root',
+          layoutOptions: {
+            'elk.algorithm': 'layered',
+            'elk.direction': 'DOWN',
+            'elk.spacing.nodeNode': '80',
+            'elk.layered.spacing.nodeNodeBetweenLayers': '100',
+            'elk.padding': '[50, 50, 50, 50]',
+            'elk.aspectRatio': '1.6',
+          },
+          children: nodes.map(node => ({
+            id: node.id,
+            width: 180, // Default width of task nodes
+            height: 80,  // Default height of task nodes
+          })),
+          edges: edges.map(edge => ({
+            id: edge.id,
+            sources: [edge.source],
+            targets: [edge.target],
+          })),
+        };
+        
+        // Calculate the layout
+        const elkLayout = await elk.layout(elkGraph);
+        
+        // Apply the layout to the nodes
+        setNodes(nodes.map(node => {
+          const elkNode = elkLayout.children?.find(n => n.id === node.id);
+          if (elkNode) {
+            return {
+              ...node,
+              position: {
+                x: elkNode.x || 0,
+                y: elkNode.y || 0,
+              },
+            };
+          }
+          return node;
+        }));
+      } catch (error) {
+        console.error('Error calculating layout:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    applyLayout();
+  }, [tasks, elk, edges, nodes]);
   
   // Keep track of dragging state to prevent opening task on drag end
   const [isDragging, setIsDragging] = useState(false);
@@ -230,6 +289,7 @@ export function RelationshipGraph() {
         <p className="text-sm text-muted-foreground">
           Visualize and manage relationships between tasks
         </p>
+        {loading && <span className="text-sm text-muted-foreground ml-2">Calculating layout...</span>}
       </div>
       
       <div className="flex-1">
@@ -245,6 +305,9 @@ export function RelationshipGraph() {
           onNodeDragStop={onNodeDragStop}
           nodeTypes={nodeTypes}
           fitView
+          fitViewOptions={{ padding: 0.3 }}
+          minZoom={0.1}
+          maxZoom={2}
           attributionPosition="bottom-right"
           onPaneClick={closeContextMenu}
         >

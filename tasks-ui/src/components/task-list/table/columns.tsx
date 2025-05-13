@@ -1,11 +1,9 @@
-import { useState } from "react";
 import { Button } from "../../ui/button";
 import type { Task } from "../../../lib/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useLocation } from "wouter";
 import { routes } from "../../../lib/routes";
 import { formatDate, hasDependencies } from "../../../lib/utils/format";
-import { QuickEditMenu } from "../quick-edit/QuickEditMenu";
 
 // Define the columns for the task table
 export const columns: ColumnDef<Task>[] = [
@@ -146,17 +144,6 @@ export const columns: ColumnDef<Task>[] = [
       const task = row.original;
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const [, navigate] = useLocation();
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const [showQuickEdit, setShowQuickEdit] = useState(false);
-
-      const handleQuickEdit = (e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent row click
-        setShowQuickEdit(true);
-      };
-
-      const handleCloseQuickEdit = () => {
-        setShowQuickEdit(false);
-      };
 
       return (
         <div className="flex justify-end gap-2 relative">
@@ -173,13 +160,6 @@ export const columns: ColumnDef<Task>[] = [
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleQuickEdit}
-          >
-            Quick Edit
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             onClick={(e) => {
               e.stopPropagation(); // Prevent row click
               navigate(routes.taskEdit(task.id));
@@ -187,13 +167,6 @@ export const columns: ColumnDef<Task>[] = [
           >
             Edit
           </Button>
-
-          {showQuickEdit && (
-            <QuickEditMenu
-              task={task}
-              onClose={handleCloseQuickEdit}
-            />
-          )}
         </div>
       );
     },

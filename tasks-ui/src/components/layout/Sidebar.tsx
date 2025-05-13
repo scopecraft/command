@@ -55,40 +55,8 @@ export function Sidebar() {
         <h2 className="text-sm font-medium text-muted-foreground">Phases</h2>
       </div>
       <div className="flex-1 overflow-y-auto p-2">
-        {/* Static phase buttons that match our mock data */}
-        <ul className="space-y-1">
-          <li>
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left"
-              onClick={() => handlePhaseClick('phase-1')}
-            >
-              <span className="truncate">Planning</span>
-            </Button>
-          </li>
-          <li>
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left"
-              onClick={() => handlePhaseClick('phase-2')}
-            >
-              <span className="truncate">Implementation</span>
-            </Button>
-          </li>
-          <li>
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left"
-              onClick={() => handlePhaseClick('phase-3')}
-            >
-              <span className="truncate">Testing</span>
-            </Button>
-          </li>
-        </ul>
-        
-        {/* Keep the dynamic phase list commented out for now */}
-        {/* {loading ? (
-          <div className="text-sm text-muted-foreground p-2">Loading...</div>
+        {loading ? (
+          <div className="text-sm text-muted-foreground p-2">Loading phases...</div>
         ) : phases.length === 0 ? (
           <div className="text-sm text-muted-foreground p-2">No phases found</div>
         ) : (
@@ -101,14 +69,14 @@ export function Sidebar() {
                     'w-full justify-start text-left',
                     currentPhase?.id === phase.id && 'bg-accent'
                   )}
-                  onClick={() => setCurrentPhase(phase.id)}
+                  onClick={() => handlePhaseClick(phase.id)}
                 >
                   <span className="truncate">{phase.name}</span>
                 </Button>
               </li>
             ))}
           </ul>
-        )} */}
+        )}
       </div>
       <div className="p-4 border-t border-border flex flex-col gap-2">
         <Link href={routes.taskCreate}>
@@ -116,7 +84,16 @@ export function Sidebar() {
             + Create Task
           </Button>
         </Link>
-        <Button variant="outline" className="w-full">
+        <Button 
+          variant="outline" 
+          className="w-full"
+          onClick={() => {
+            // In a complete implementation, this would open a modal to create a new phase
+            // For now, we'll just refresh the phases list
+            setCurrentPhase(null);
+            navigate('/tasks');
+          }}
+        >
           + New Phase
         </Button>
       </div>

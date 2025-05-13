@@ -32,7 +32,7 @@ export function ColumnToggle<T extends Task>({ table }: ColumnToggleProps<T>) {
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-card z-10 border border-border">
+        <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-background z-10 border border-border">
           <div className="py-1 px-2">
             {toggleableColumns.map(column => {
               return (
