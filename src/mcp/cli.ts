@@ -10,7 +10,7 @@ import path from 'path';
 import { getTasksDirectory, ensureDirectoryExists, projectConfig, ProjectMode } from '../core/index.js';
 
 // Read package version from package.json
-let version = '0.4.2'; // Default
+let version = '0.5.0'; // Default
 try {
   const packageJson = JSON.parse(fs.readFileSync(
     path.join(process.cwd(), 'package.json'),

@@ -1,6 +1,6 @@
 {
   "name": "@scopecraft/cmd",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "description": "CLI and MCP server for managing Markdown-Driven Task Management (MDTM) files with or without Roo Commander",
   "type": "module",
   "files": [
@@ -49,6 +49,7 @@
     "update-version": "bun scripts/update-cli-version.ts",
     "version": "bun run update-version && git add src/cli/cli.ts src/mcp/cli.ts",
     "publish:local": "mkdir -p ~/MCP/scopecraft && npm pack && cp scopecraft-cmd-*.tgz ~/MCP/scopecraft/",
+    "publish:npm": "npm publish",
     "install:local": "./scripts/install-local.sh"
   },
   "keywords": [

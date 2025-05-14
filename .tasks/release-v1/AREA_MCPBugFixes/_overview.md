@@ -17,28 +17,35 @@ subtasks = [
 ]
 +++
 
-# MCP Bug Fixes Area
+# Advanced Phase Management
 
 ## Description
 
-This area focuses on identifying and fixing bugs in the MCP server implementation. The goal is to ensure the MCP server is stable, reliable, and provides consistent behavior across different interfaces.
+This feature implements a complete set of phase management capabilities, enabling users to create, update, delete, and archive phases with proper handling of tasks and directory structures. The goal is to provide a robust set of tools for organizing and managing project phases throughout their lifecycle.
 
 ## Key Components
 
-- Error handling and logging improvements
-- Bug fixes for MCP implementation issues
-- Edge case handling and validation
+- Phase update operations (renaming, status changes, metadata updates)
+- Phase archiving functionality
+- CLI commands for phase management
+- MCP methods for programmatic phase operations
+- Named filters for efficient task listing
+- Comprehensive documentation
 
 ## Current Tasks
 
-1. **Fix Subdirectory Handling in MCP SDK Implementation** (TASK-MCP-SUBDIRECTORY-BUG) - Fix bug with subdirectory parameter handling
-2. **Enhance MCP Error Handling for Non-existent Resources** (TASK-MCP-ERROR-HANDLING) - Improve error handling for missing resources
-3. **Fix Error Logging in MCP List Operations** (TASK-MCP-LOGGING-FIX) - Fix incorrect error counts in list operations
+1. **Implement Phase Update Operation** (001_update_phase) ✅ - Core functionality to update phase properties
+2. **Implement Phase Archive Operation** (002_archive_phase) - Mark phases as complete while preserving content
+3. **Add CLI Commands for Phase Management** (003_cli_commands) ✅ - User interface for phase operations
+4. **Add MCP Methods for Phase Operations** (004_mcp_methods) ✅ - Programmatic interface for phase management
+5. **Implement Named Filters for Task Listing** (005_named_filters) - Simplified common queries
+6. **Update Documentation for Phase Management** (006_documentation) - Comprehensive guidance
 
 ## Success Criteria
 
-- All MCP server implementations provide consistent behavior
-- Error messages are clear and helpful
-- Edge cases are properly handled
-- No unexplained failures or incorrect behaviors
-
+- Complete CRUD operations for phases
+- Proper handling of phase content during updates and archiving
+- Consistent interface through both CLI and MCP
+- Efficient filtering capabilities for tasks
+- Clear documentation for all operations
+- Seamless integration with MDTM directory structure
