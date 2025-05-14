@@ -250,7 +250,11 @@ export async function createTask(task: Task, subdirectory?: string): Promise<Ope
       await updateRelationships(task);
     }
 
-    return { success: true, data: task };
+    return { 
+      success: true, 
+      data: task,
+      message: `Task ${task.metadata.id} created successfully` 
+    };
   } catch (error) {
     return {
       success: false,
