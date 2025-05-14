@@ -1,0 +1,438 @@
+import fs from 'fs';
+import path from 'path';
+import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
+import {
+  Task,
+  TaskMetadata,
+  TaskFilterOptions,
+  TaskUpdateOptions,
+  OperationResult
+} from '../types.js';
+import { parseTaskFile, formatTaskFile, generateTaskId } from '../task-parser.js';
+import { projectConfig } from '../project-config.js';
+import { getTasksDirectory, getPhasesDirectory, ensureDirectoryExists, getAllFiles } from './index.js';
+import { updateRelationships } from './task-relationships.js';
+
+/**
+ * Lists all tasks with optional filtering
+ * @param options Filter options
+ * @returns Operation result with array of tasks
+ */
+export async function listTasks(options: TaskFilterOptions = {}): Promise<OperationResult<Task[]>> {
+  try {
+    const tasksDir = getTasksDirectory();
+
+    if (!fs.existsSync(tasksDir)) {
+      return {
+        success: false,
+        error: `Tasks directory not found: ${tasksDir}`
+      };
+    }
+
+    const filePaths = getAllFiles(tasksDir);
+    const tasks: Task[] = [];
+    const errors: string[] = [];
+
+    for (const filePath of filePaths) {
+      try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const task = parseTaskFile(content);
+        task.filePath = filePath;
+
+        // Extract phase and subdirectory from file path if not in metadata
+        const pathInfo = projectConfig.parseTaskPath(filePath);
+        if (pathInfo.phase && !task.metadata.phase) {
+          task.metadata.phase = pathInfo.phase;
+        }
+        if (pathInfo.subdirectory && !task.metadata.subdirectory) {
+          task.metadata.subdirectory = pathInfo.subdirectory;
+        }
+
+        // Handle _overview.md files
+        if (path.basename(filePath) === '_overview.md' && !task.metadata.is_overview) {
+          task.metadata.is_overview = true;
+        }
+
+        // Apply filters
+        if (options.status && task.metadata.status !== options.status) continue;
+        if (options.type && task.metadata.type !== options.type) continue;
+        if (options.assignee && task.metadata.assigned_to !== options.assignee) continue;
+        if (options.phase && task.metadata.phase !== options.phase) continue;
+        if (options.subdirectory && task.metadata.subdirectory !== options.subdirectory) continue;
+        if (options.is_overview !== undefined && task.metadata.is_overview !== options.is_overview) continue;
+
+        // Filter out completed tasks by default, UNLESS explicitly requested to include them
+        if (options.include_completed !== true) {
+          const status = task.metadata.status || '';
+          if (status.includes('Done') ||
+              status.includes('🟢') ||
+              status.includes('Completed') ||
+              status.includes('Complete')) {
+            continue;
+          }
+        }
+
+        // Filter by tags if provided
+        if (options.tags && options.tags.length > 0) {
+          if (!task.metadata.tags || !Array.isArray(task.metadata.tags)) continue;
+          
+          const taskTags = task.metadata.tags;
+          const hasAllTags = options.tags.every(tag => taskTags.includes(tag));
+          if (!hasAllTags) continue;
+        }
+
+        // Exclude content if not explicitly requested (to reduce token size)
+        if (options.include_content !== true) {
+          task.content = '';
+        }
+
+        tasks.push(task);
+      } catch (error) {
+        errors.push(`Error parsing ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    // Sort tasks by priority or creation date (newest first)
+    tasks.sort((a, b) => {
+      const priorityOrder: Record<string, number> = {
+        '🔥 Highest': 4,
+        '🔼 High': 3,
+        '▶️ Medium': 2,
+        '🔽 Low': 1,
+        '': 0
+      };
+
+      const aPrio = priorityOrder[a.metadata.priority || ''] || 0;
+      const bPrio = priorityOrder[b.metadata.priority || ''] || 0;
+
+      if (aPrio !== bPrio) {
+        return bPrio - aPrio; // Higher priority first
+      }
+
+      // If priorities are the same, sort by creation date (newest first)
+      const aDate = a.metadata.created_date ? new Date(a.metadata.created_date).getTime() : 0;
+      const bDate = b.metadata.created_date ? new Date(b.metadata.created_date).getTime() : 0;
+      return bDate - aDate;
+    });
+
+    return {
+      success: true,
+      data: tasks,
+      warnings: errors.length > 0 ? errors : undefined
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error listing tasks: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Gets a task by ID, optionally with phase and subdirectory information
+ * @param id Task ID
+ * @param phase Optional phase to look in
+ * @param subdirectory Optional subdirectory to look in
+ * @returns Operation result with task if found
+ */
+export async function getTask(id: string, phase?: string, subdirectory?: string): Promise<OperationResult<Task>> {
+  try {
+    // If phase and subdirectory are provided, try direct path lookup first
+    if (phase && subdirectory) {
+      const filePath = projectConfig.getTaskFilePath(id, phase, subdirectory);
+
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const task = parseTaskFile(content);
+        task.filePath = filePath;
+
+        // Set phase and subdirectory in metadata if not already set
+        if (!task.metadata.phase) {
+          task.metadata.phase = phase;
+        }
+        if (!task.metadata.subdirectory) {
+          task.metadata.subdirectory = subdirectory;
+        }
+
+        return { success: true, data: task };
+      }
+    }
+
+    // If direct path lookup fails or phase/subdirectory not provided, search all tasks
+    const tasksResult = await listTasks({ include_content: true, include_completed: true });
+    if (!tasksResult.success || !tasksResult.data) {
+      return {
+        success: false,
+        error: tasksResult.error || 'Failed to list tasks'
+      };
+    }
+
+    const task = tasksResult.data.find(task => task.metadata.id === id);
+    if (!task) {
+      return {
+        success: false,
+        error: `Task with ID ${id} not found`
+      };
+    }
+
+    return { success: true, data: task };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error getting task: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Creates a new task
+ * @param task Task object to create
+ * @param subdirectory Optional subdirectory within phase (e.g., "FEATURE_Authentication")
+ * @returns Operation result with the created task
+ */
+export async function createTask(task: Task, subdirectory?: string): Promise<OperationResult<Task>> {
+  try {
+    const tasksDir = getTasksDirectory();
+
+    if (!fs.existsSync(tasksDir)) {
+      fs.mkdirSync(tasksDir, { recursive: true });
+    }
+
+    // Store subdirectory in task metadata if provided
+    if (subdirectory) {
+      task.metadata.subdirectory = subdirectory;
+    }
+
+    // Generate ID if not provided
+    if (!task.metadata.id) {
+      task.metadata.id = generateTaskId();
+    }
+
+    // Add created date if not set
+    if (!task.metadata.created_date) {
+      const today = new Date();
+      task.metadata.created_date = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    }
+
+    // Set updated date to today
+    const today = new Date();
+    task.metadata.updated_date = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Format task as TOML + Markdown file
+    const fileContent = formatTaskFile(task);
+
+    // Determine file path based on phase and subdirectory
+    const filePath = task.metadata.phase
+      ? projectConfig.getTaskFilePath(
+          task.metadata.id,
+          task.metadata.phase,
+          task.metadata.subdirectory
+        )
+      : path.join(tasksDir, `${task.metadata.id}.md`);
+
+    // Create phase directory if needed
+    const fileDir = path.dirname(filePath);
+    if (!fs.existsSync(fileDir)) {
+      fs.mkdirSync(fileDir, { recursive: true });
+    }
+
+    // Write the file
+    fs.writeFileSync(filePath, fileContent);
+    task.filePath = filePath;
+
+    // Update relationships
+    if (
+      task.metadata.parent_task || 
+      task.metadata.depends || 
+      task.metadata.next_task || 
+      task.metadata.previous_task
+    ) {
+      await updateRelationships(task);
+    }
+
+    return { 
+      success: true, 
+      data: task,
+      message: `Task ${task.metadata.id} created successfully` 
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error creating task: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Updates a task
+ * @param id Task id
+ * @param updates Updates to apply
+ * @param searchPhase Optional phase to search for the task in 
+ * @param searchSubdirectory Optional subdirectory to search for the task in
+ * @returns Operation result with updated task
+ */
+export async function updateTask(
+  id: string,
+  updates: TaskUpdateOptions,
+  searchPhase?: string,
+  searchSubdirectory?: string
+): Promise<OperationResult<Task>> {
+  try {
+    // Get the task, using phase and subdirectory if provided
+    const taskResult = await getTask(id, searchPhase, searchSubdirectory);
+    if (!taskResult.success || !taskResult.data) {
+      return {
+        success: false,
+        error: taskResult.error || `Task with ID ${id} not found`
+      };
+    }
+
+    const task = taskResult.data;
+    let needsRelationshipUpdate = false;
+
+    // Check if updating phase or subdirectory (requires file move)
+    const targetPhase = updates.metadata?.phase || updates.phase;
+    const targetSubdirectory = updates.metadata?.subdirectory || updates.subdirectory;
+    const needsFileMove = 
+      (targetPhase && targetPhase !== task.metadata.phase) || 
+      (targetSubdirectory && targetSubdirectory !== task.metadata.subdirectory);
+
+    // Set updated date to today
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    // Update metadata fields
+    if (updates.metadata) {
+      task.metadata = {
+        ...task.metadata,
+        ...updates.metadata,
+        // Always update the updated_date
+        updated_date: todayString
+      };
+      
+      // Check if any relationship fields were updated
+      if (updates.metadata.parent_task !== undefined || 
+          updates.metadata.depends !== undefined || 
+          updates.metadata.next_task !== undefined || 
+          updates.metadata.previous_task !== undefined) {
+        needsRelationshipUpdate = true;
+      }
+    }
+    
+    // Handle direct property updates (not nested in metadata)
+    if (updates.status !== undefined) {
+      task.metadata.status = updates.status;
+    }
+    
+    if (updates.phase !== undefined) {
+      task.metadata.phase = updates.phase;
+    }
+    
+    if (updates.subdirectory !== undefined) {
+      task.metadata.subdirectory = updates.subdirectory;
+    }
+
+    // Update content if provided
+    if (updates.content !== undefined) {
+      task.content = updates.content;
+    }
+
+    // We've already set the date in the metadata update above
+
+    // Handle ID change
+    if (updates.metadata?.new_id || updates.new_id) {
+      const oldId = task.metadata.id;
+      task.metadata.id = updates.metadata?.new_id || updates.new_id;
+
+      // Update relationships for new ID
+      needsRelationshipUpdate = true;
+    }
+    
+    // Set updated date if it wasn't already updated in metadata
+    if (!updates.metadata) {
+      task.metadata.updated_date = todayString;
+    }
+
+    // Format task as TOML + Markdown file
+    const fileContent = formatTaskFile(task);
+
+    if (needsFileMove) {
+      // Determine old and new file paths
+      const oldFilePath = task.filePath;
+      const newFilePath = projectConfig.getTaskFilePath(
+        task.metadata.id,
+        targetPhase || task.metadata.phase,
+        targetSubdirectory || task.metadata.subdirectory
+      );
+
+      // Create target directory if needed
+      const targetDir = path.dirname(newFilePath);
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+
+      // Write to new location
+      fs.writeFileSync(newFilePath, fileContent);
+
+      // Delete original file
+      fs.unlinkSync(oldFilePath);
+
+      // Update file path
+      task.filePath = newFilePath;
+    } else {
+      // No file move needed, just update in place
+      fs.writeFileSync(task.filePath, fileContent);
+    }
+
+    // Update relationships if needed
+    if (needsRelationshipUpdate) {
+      await updateRelationships(task);
+    }
+
+    return { success: true, data: task };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error updating task: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Deletes a task
+ * @param id Task ID
+ * @param phase Optional phase to look in
+ * @param subdirectory Optional subdirectory to look in
+ * @returns Operation result
+ */
+export async function deleteTask(id: string, phase?: string, subdirectory?: string): Promise<OperationResult<void>> {
+  try {
+    const taskResult = await getTask(id, phase, subdirectory);
+
+    if (!taskResult.success || !taskResult.data) {
+      return {
+        success: false,
+        error: taskResult.error || `Task with ID ${id} not found`
+      };
+    }
+
+    const task = taskResult.data;
+
+    // Delete the file
+    if (task.filePath && fs.existsSync(task.filePath)) {
+      fs.unlinkSync(task.filePath);
+    } else {
+      return {
+        success: false,
+        error: `Task file not found: ${task.filePath}`
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error deleting task: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}

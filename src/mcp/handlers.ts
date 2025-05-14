@@ -300,12 +300,12 @@ export async function handleFeatureGet(params: FeatureGetParams) {
  * Handler for feature_create method
  */
 export async function handleFeatureCreate(params: FeatureCreateParams) {
+  console.log(`[DEBUG] Feature Create: description=${params.description}, assignee=${params.assignee}`);
   return await createFeature(
     params.name,
     params.title,
     params.phase,
     params.type || '🌟 Feature',
-    params.status || '🟡 To Do',
     params.description,
     params.assignee,
     params.tags
@@ -353,12 +353,12 @@ export async function handleAreaGet(params: AreaGetParams) {
  * Handler for area_create method
  */
 export async function handleAreaCreate(params: AreaCreateParams) {
+  console.log(`[DEBUG] Area Create: description=${params.description}, assignee=${params.assignee}`);
   return await createArea(
     params.name,
     params.title,
     params.phase,
     params.type || '🧹 Chore',
-    params.status || '🟡 To Do',
     params.description,
     params.assignee,
     params.tags

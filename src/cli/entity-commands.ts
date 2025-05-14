@@ -423,21 +423,28 @@ export function setupFeatureAreaCommands(program: Command): void {
     .action(async (options) => {
       const subdirectory = `FEATURE_${options.name.replace(/\s+/g, '')}`;
       
-      // Create feature overview file
-      await handleCreateCommand({
-        id: '_overview',
-        title: options.title,
-        type: options.type || '🌟 Feature',
-        status: options.status || '🟡 To Do',
-        priority: options.priority || '▶️ Medium',
-        assignee: options.assignee,
-        phase: options.phase,
-        subdirectory,
-        tags: options.tags,
-        content: options.description ? 
-          `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1` : 
-          `# ${options.title}\n\nOverview of this feature.\n\n## Tasks\n\n- [ ] Task 1`
-      });
+      try {
+        // Create feature overview file
+        const result = await handleCreateCommand({
+          id: '_overview',
+          title: options.title,
+          type: options.type || '🌟 Feature',
+          status: options.status || '🟡 To Do',
+          priority: options.priority || '▶️ Medium',
+          assignee: options.assignee,
+          phase: options.phase,
+          subdirectory,
+          tags: options.tags,
+          content: options.description ? 
+            `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1` : 
+            `# ${options.title}\n\nOverview of this feature.\n\n## Tasks\n\n- [ ] Task 1`
+        });
+        
+        // The message will be printed by handleCreateCommand
+        console.log(`Feature '${options.name}' created successfully with overview file.`);
+      } catch (error) {
+        // Error will be handled by handleCreateCommand
+      }
     });
 
   // feature list command (lists all FEATURE_ subdirectories)
@@ -500,21 +507,28 @@ export function setupFeatureAreaCommands(program: Command): void {
     .action(async (options) => {
       const subdirectory = `AREA_${options.name.replace(/\s+/g, '')}`;
       
-      // Create area overview file
-      await handleCreateCommand({
-        id: '_overview',
-        title: options.title,
-        type: options.type || '🧹 Chore',
-        status: options.status || '🟡 To Do',
-        priority: options.priority || '▶️ Medium',
-        assignee: options.assignee,
-        phase: options.phase,
-        subdirectory,
-        tags: options.tags,
-        content: options.description ? 
-          `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1` : 
-          `# ${options.title}\n\nOverview of this cross-cutting area.\n\n## Tasks\n\n- [ ] Task 1`
-      });
+      try {
+        // Create area overview file
+        const result = await handleCreateCommand({
+          id: '_overview',
+          title: options.title,
+          type: options.type || '🧹 Chore',
+          status: options.status || '🟡 To Do',
+          priority: options.priority || '▶️ Medium',
+          assignee: options.assignee,
+          phase: options.phase,
+          subdirectory,
+          tags: options.tags,
+          content: options.description ? 
+            `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1` : 
+            `# ${options.title}\n\nOverview of this cross-cutting area.\n\n## Tasks\n\n- [ ] Task 1`
+        });
+        
+        // The message will be printed by handleCreateCommand
+        console.log(`Area '${options.name}' created successfully with overview file.`);
+      } catch (error) {
+        // Error will be handled by handleCreateCommand
+      }
     });
 
   // area list command (lists all AREA_ subdirectories)

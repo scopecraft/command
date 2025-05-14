@@ -291,7 +291,9 @@ export async function handleCreateCommand(options: {
       process.exit(1);
     }
 
-    console.log(result.message);
+    if (result.message) {
+      console.log(result.message);
+    }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
