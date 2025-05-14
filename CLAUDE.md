@@ -228,6 +228,186 @@ The task management flow follows these principles:
 6. **Task Execution**: Work on tasks in priority order
 7. **Task Completion**: Mark tasks as done, triggering suggestions for the next task
 
+### Phase Management Best Practices
+
+Phases serve as the top-level organization in the task management system, representing significant milestones or releases in your project. Follow these best practices for effective phase management:
+
+1. **Phase Lifecycle**:
+   - Create phases with a clear scope and timeline
+   - Update phase status as work progresses (🟡 Planned → 🔵 In Progress → 🟢 Completed)
+   - Prefer archiving completed phases rather than deleting them to maintain history
+
+2. **Phase Organization**:
+   - Use consistent naming conventions (e.g., "release-v1.0", "milestone-2", "sprint-3")
+   - Structure phases in chronological or priority order
+   - Consider using phase order property to explicitly define sequence
+
+3. **Phase and Directory Structure Integration**:
+   - Each phase corresponds to a top-level directory in the task structure
+   - Feature and area subdirectories should be created within phases
+   - When renaming a phase (updating its ID), all contained tasks and subdirectories will be maintained
+
+4. **Common Phase Operations**:
+   - **Creating phases**: Define clear boundaries between development stages
+   - **Updating phases**: Adjust name, description, status as the project evolves
+   - **Phase status transitions**: Follow a consistent workflow (Planned → In Progress → Completed)
+   - **Archiving phases**: Mark phases as complete while preserving all task content
+
+5. **Phase Status Conventions**:
+   - "🟡 Planned" - For phases not yet started
+   - "🔵 In Progress" - For active phases currently being worked on
+   - "🟢 Completed" - For finished phases (tasks complete, objectives met)
+   - "🗄️ Archived" - For completed phases that are no longer active but preserved for reference
+
+### Common Phase Management Scenarios
+
+Here are examples of how to handle common phase management scenarios using the MCP tools:
+
+#### 1. Creating a Release Roadmap with Multiple Phases
+
+```json
+// 1. Create first release phase
+// Tool: mcp__scopecraft-cmd__phase_create
+mcp__scopecraft-cmd__phase_create {
+  "id": "release-v1",
+  "name": "Release 1.0",
+  "description": "Initial release with core functionality",
+  "status": "🟡 Planned",
+  "order": 1
+}
+
+// 2. Create second release phase
+// Tool: mcp__scopecraft-cmd__phase_create
+mcp__scopecraft-cmd__phase_create {
+  "id": "release-v1.1",
+  "name": "Release 1.1",
+  "description": "Bugfixes and minor enhancements",
+  "status": "🟡 Planned",
+  "order": 2
+}
+
+// 3. Create third release phase
+// Tool: mcp__scopecraft-cmd__phase_create
+mcp__scopecraft-cmd__phase_create {
+  "id": "release-v2",
+  "name": "Release 2.0",
+  "description": "Major feature release",
+  "status": "🟡 Planned",
+  "order": 3
+}
+```
+
+#### 2. Transitioning a Phase Through Its Lifecycle
+
+```json
+// 1. Start work on a phase
+// Tool: mcp__scopecraft-cmd__phase_update
+mcp__scopecraft-cmd__phase_update {
+  "id": "release-v1",
+  "updates": {
+    "status": "🔵 In Progress"
+  }
+}
+
+// 2. Complete a phase after all tasks are done
+// Tool: mcp__scopecraft-cmd__phase_update
+mcp__scopecraft-cmd__phase_update {
+  "id": "release-v1",
+  "updates": {
+    "status": "🟢 Completed"
+  }
+}
+
+// 3. Archive a completed phase
+// Tool: mcp__scopecraft-cmd__phase_update
+mcp__scopecraft-cmd__phase_update {
+  "id": "release-v1",
+  "updates": {
+    "status": "🗄️ Archived"
+  }
+}
+```
+
+#### 3. Renaming a Phase and Updating Its Structure
+
+```json
+// Update a phase with new ID (rename), name and description
+// Tool: mcp__scopecraft-cmd__phase_update
+mcp__scopecraft-cmd__phase_update {
+  "id": "old-phase-name",
+  "updates": {
+    "id": "new-phase-name",
+    "name": "Updated Phase Name",
+    "description": "Revised description for the phase"
+  }
+}
+
+// This operation will:
+// 1. Rename the phase directory from 'old-phase-name' to 'new-phase-name'
+// 2. Update all task metadata to reflect the new phase name
+// 3. Preserve all feature/area subdirectories within the phase
+```
+
+#### 4. Working with Multiple Phases and Prioritization
+
+```json
+// 1. List phases to see the current status
+// Tool: mcp__scopecraft-cmd__phase_list
+mcp__scopecraft-cmd__phase_list
+
+// 2. Find tasks from a specific phase
+// Tool: mcp__scopecraft-cmd__task_list
+mcp__scopecraft-cmd__task_list { "phase": "release-v1" }
+
+// 3. Find the next highest priority task across all phases
+// Tool: mcp__scopecraft-cmd__task_next
+mcp__scopecraft-cmd__task_next
+
+// The system will prioritize tasks based on:
+// - Priority level (🔥 Highest > 🔼 High > ▶️ Medium > 🔽 Low)
+// - Phase order (earlier phases take precedence)
+// - Dependencies and explicit task sequences
+```
+
+#### 5. Creating Features and Areas Within Phases
+
+```json
+// 1. Create a feature within a phase
+// Tool: mcp__scopecraft-cmd__feature_create
+mcp__scopecraft-cmd__feature_create {
+  "name": "Authentication",
+  "title": "User Authentication System",
+  "phase": "release-v1",
+  "description": "Implementation of user authentication including login/logout flows"
+}
+
+// 2. Create an area within a phase
+// Tool: mcp__scopecraft-cmd__area_create
+mcp__scopecraft-cmd__area_create {
+  "name": "Performance",
+  "title": "Performance Optimization",
+  "phase": "release-v1",
+  "description": "Cross-cutting performance improvements across all features"
+}
+
+// 3. Create a task within a feature
+// Tool: mcp__scopecraft-cmd__task_create
+mcp__scopecraft-cmd__task_create {
+  "title": "Implement Login Form",
+  "type": "🌟 Feature",
+  "phase": "release-v1",
+  "subdirectory": "FEATURE_Authentication",
+  "priority": "🔼 High"
+}
+
+// 4. List all features in a phase
+// Tool: mcp__scopecraft-cmd__feature_list
+mcp__scopecraft-cmd__feature_list {
+  "phase": "release-v1",
+  "include_tasks": true
+}
+```
+
 ### Workflow Intelligence
 
 The system intelligently determines the next task based on:
@@ -246,6 +426,69 @@ The system supports the MDTM directory structure for organizing tasks:
 - **Numbered Tasks**: Optionally, tasks can be named with sequence numbers (e.g., `001_login.md`)
 
 This structure allows for better organization of related tasks. Features typically represent functional parts of the product, while Areas represent cross-cutting concerns.
+
+#### Hierarchical Organization: Phases, Features, and Areas
+
+The task management system uses a hierarchical organization structure:
+
+1. **Phases (Top Level)**: Represent major milestones or releases
+2. **Features/Areas (Middle Level)**: Group related tasks within a phase
+3. **Tasks (Bottom Level)**: Individual work items
+
+This creates a directory structure like this:
+
+```
+.tasks/
+  ├── release-v1/                  # Phase directory
+  │   ├── FEATURE_Authentication/  # Feature subdirectory
+  │   │   ├── _overview.md         # Feature overview
+  │   │   ├── 001_login-form.md    # Individual task
+  │   │   └── 002_auth-logic.md    # Individual task
+  │   │
+  │   ├── AREA_Performance/        # Area subdirectory
+  │   │   ├── _overview.md         # Area overview
+  │   │   └── 001_optimization.md  # Individual task
+  │   │
+  │   └── standalone-task.md       # Task directly in phase (not in feature/area)
+  │
+  └── release-v2/                  # Another phase
+      └── ...
+```
+
+#### Best Practices for Phase-Feature-Area Organization
+
+1. **Phase Structure**:
+   - Keep phases focused on specific milestones or releases
+   - Use consistent naming patterns for phases (e.g., "release-vX.Y")
+   - Consider ordering phases chronologically or by priority
+   - Use `mcp__scopecraft-cmd__phase_create` and `mcp__scopecraft-cmd__phase_update` to manage phases
+
+2. **Feature/Area Organization**:
+   - Create features for product functionality (e.g., `FEATURE_UserManagement`) using `mcp__scopecraft-cmd__feature_create`
+   - Create areas for cross-cutting concerns (e.g., `AREA_Documentation`, `AREA_Performance`) using `mcp__scopecraft-cmd__area_create`
+   - Always create an `_overview.md` file to explain the purpose of a feature/area (automatically handled by feature/area creation tools)
+   - Use CamelCase for feature and area names
+
+3. **Task Organization**:
+   - Place related tasks in the appropriate feature/area subdirectory
+   - Consider using numbered prefixes (e.g., `001_`, `002_`) for task files to indicate sequence
+   - Tasks can be placed directly in a phase if they don't fit into any feature/area
+
+4. **When Working with Phases**:
+   - When creating a new phase, consider which features and areas it will contain
+   - When renaming a phase, all its features, areas, and tasks will move with it
+   - When archiving a phase, all its content is preserved
+
+5. **Cross-Phase Relationships**:
+   - Tasks can reference other tasks across phases using dependencies
+   - Features in different phases can be related but should be named distinctly
+   - Consider using tags to track related work across different phases
+
+6. **Common Patterns**:
+   - Create a new phase for each major release or milestone
+   - Use features for product modules or significant functionality
+   - Use areas for initiatives that span multiple features (refactoring, documentation, etc.)
+   - Place one-off tasks directly in the phase if they don't warrant a feature/area
 
 ## Common CLI Commands
 
