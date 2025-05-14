@@ -5,10 +5,7 @@
 
 export * from './types.js';
 export * from './task-parser.js';
-export * from './task-manager.js';
-export * from './task-manager/feature-crud.js';
-export * from './task-manager/area-crud.js';
-export * from './task-manager/task-move.js';
+export * from './task-manager/index.js';
 export * from './formatters.js';
 export * from './project-config.js';
 export * from './template-manager.js';
