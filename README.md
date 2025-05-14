@@ -13,6 +13,8 @@ A comprehensive toolset for managing Markdown-Driven Task Management (MDTM) file
 The project is organized into three main components:
 
 1. **Core** - Core task management functionality shared by both CLI and MCP server
+   - Features a modular architecture with task operations split into focused modules
+   - Each module has a single responsibility (e.g., task-crud.ts, phase-crud.ts, task-relationships.ts) 
 2. **CLI** - Command-line interface for interacting with tasks
 3. **MCP** - MCP-compatible server for integration with Roo Commander LLMs
 
@@ -348,21 +350,31 @@ sc phase-create --id "phase-1" ...   # Create a phase
 
 ```
 src/
-├── core/               # Shared core functionality
-│   ├── types.ts        # Common type definitions
-│   ├── task-parser.ts  # TOML+MD parsing utilities
-│   ├── task-manager.ts # Core task operations
-│   ├── formatters.ts   # Output formatting
-│   └── index.ts        # Core module exports
-├── cli/                # Command-line interface
-│   ├── cli.ts          # CLI entry point
-│   ├── commands.ts     # CLI command handlers
+├── core/                  # Shared core functionality
+│   ├── types.ts           # Common type definitions
+│   ├── task-parser.ts     # TOML+MD parsing utilities
+│   ├── task-manager/      # Modular task operations
+│   │   ├── index.ts       # Re-exports from all modules
+│   │   ├── directory-utils.ts  # Directory operations
+│   │   ├── task-crud.ts   # Basic task CRUD operations
+│   │   ├── task-relationships.ts # Relationship management
+│   │   ├── task-workflow.ts # Next task finder and workflow
+│   │   ├── phase-crud.ts  # Phase management
+│   │   ├── feature-crud.ts # Feature operations
+│   │   ├── area-crud.ts   # Area operations
+│   │   ├── task-move.ts   # Task movement operations
+│   │   └── utils.ts       # Shared utilities
+│   ├── formatters.ts      # Output formatting
+│   └── index.ts           # Core module exports
+├── cli/                   # Command-line interface
+│   ├── cli.ts             # CLI entry point
+│   ├── commands.ts        # CLI command handlers
 │   └── entity-commands.ts # Entity-command pattern implementation
-└── mcp/                # MCP server
-    ├── cli.ts          # MCP CLI entry point
-    ├── handlers.ts     # MCP method handlers
-    ├── server.ts       # HTTP server implementation
-    └── types.ts        # MCP-specific types
+└── mcp/                   # MCP server
+    ├── cli.ts             # MCP CLI entry point
+    ├── handlers.ts        # MCP method handlers
+    ├── server.ts          # HTTP server implementation
+    └── types.ts           # MCP-specific types
 ```
 
 ## Integration Options
