@@ -1612,7 +1612,11 @@ async function deletePhase(id: string, options: { force?: boolean } = {}): Promi
  * @param options Filter options for features
  * @returns Operation result with array of features
  */
-export async function listFeatures(options: FeatureFilterOptions = {}): Promise<OperationResult<Feature[]>> {
+/**
+ * @deprecated Moved to task-manager/feature-crud.js
+ */
+/*
+async function listFeatures_old(options: FeatureFilterOptions = {}): Promise<OperationResult<Feature[]>> {
   try {
     const tasksDir = getTasksDirectory();
 
@@ -1782,7 +1786,11 @@ export async function listFeatures(options: FeatureFilterOptions = {}): Promise<
  * @param phase Optional phase to look in
  * @returns Operation result with feature if found
  */
-export async function getFeature(id: string, phase?: string): Promise<OperationResult<Feature>> {
+/**
+ * @deprecated Moved to task-manager/feature-crud.js
+ */
+/*
+async function getFeature_old(id: string, phase?: string): Promise<OperationResult<Feature>> {
   try {
     const features = await listFeatures({
       phase,
@@ -1831,7 +1839,11 @@ export async function getFeature(id: string, phase?: string): Promise<OperationR
  * @param tags Optional tags
  * @returns Operation result with created feature
  */
-export async function createFeature(
+/**
+ * @deprecated Moved to task-manager/feature-crud.js
+ */
+/*
+async function createFeature_old(
   name: string,
   title: string,
   phase: string,
@@ -1928,7 +1940,11 @@ export async function createFeature(
  * @param phase Optional phase to look in
  * @returns Operation result with updated feature
  */
-export async function updateFeature(
+/**
+ * @deprecated Moved to task-manager/feature-crud.js
+ */
+/*
+async function updateFeature_old(
   id: string,
   updates: FeatureUpdateOptions,
   phase?: string
@@ -2071,7 +2087,11 @@ export async function updateFeature(
  * @param force Whether to force deletion even if feature contains tasks
  * @returns Operation result
  */
-export async function deleteFeature(id: string, phase?: string, force: boolean = false): Promise<OperationResult<void>> {
+/**
+ * @deprecated Moved to task-manager/feature-crud.js
+ */
+/*
+async function deleteFeature_old(id: string, phase?: string, force: boolean = false): Promise<OperationResult<void>> {
   try {
     // Get the feature first
     const feature = await getFeature(id, phase);
@@ -2146,7 +2166,11 @@ export async function deleteFeature(id: string, phase?: string, force: boolean =
  * @param options Filter options for areas
  * @returns Operation result with array of areas
  */
-export async function listAreas(options: AreaFilterOptions = {}): Promise<OperationResult<Area[]>> {
+/**
+ * @deprecated Moved to task-manager/area-crud.js
+ */
+/*
+async function listAreas_old(options: AreaFilterOptions = {}): Promise<OperationResult<Area[]>> {
   try {
     const tasksDir = getTasksDirectory();
 
@@ -2316,7 +2340,11 @@ export async function listAreas(options: AreaFilterOptions = {}): Promise<Operat
  * @param phase Optional phase to look in
  * @returns Operation result with area if found
  */
-export async function getArea(id: string, phase?: string): Promise<OperationResult<Area>> {
+/**
+ * @deprecated Moved to task-manager/area-crud.js
+ */
+/*
+async function getArea_old(id: string, phase?: string): Promise<OperationResult<Area>> {
   try {
     const areas = await listAreas({
       phase,
@@ -2365,7 +2393,11 @@ export async function getArea(id: string, phase?: string): Promise<OperationResu
  * @param tags Optional tags
  * @returns Operation result with created area
  */
-export async function createArea(
+/**
+ * @deprecated Moved to task-manager/area-crud.js
+ */
+/*
+async function createArea_old(
   name: string,
   title: string,
   phase: string,
@@ -2462,7 +2494,11 @@ export async function createArea(
  * @param phase Optional phase to look in
  * @returns Operation result with updated area
  */
-export async function updateArea(
+/**
+ * @deprecated Moved to task-manager/area-crud.js
+ */
+/*
+async function updateArea_old(
   id: string,
   updates: AreaUpdateOptions,
   phase?: string
@@ -2605,7 +2641,11 @@ export async function updateArea(
  * @param force Whether to force deletion even if area contains tasks
  * @returns Operation result
  */
-export async function deleteArea(id: string, phase?: string, force: boolean = false): Promise<OperationResult<void>> {
+/**
+ * @deprecated Moved to task-manager/area-crud.js
+ */
+/*
+async function deleteArea_old(id: string, phase?: string, force: boolean = false): Promise<OperationResult<void>> {
   try {
     // Get the area first
     const area = await getArea(id, phase);
@@ -2681,7 +2721,11 @@ export async function deleteArea(id: string, phase?: string, force: boolean = fa
  * @param options Move options (targetSubdirectory, targetPhase, searchPhase, searchSubdirectory)
  * @returns Operation result with moved task
  */
-export async function moveTask(id: string, options: {
+/**
+ * @deprecated Moved to task-manager/task-move.js
+ */
+/*
+async function moveTask_old(id: string, options: {
   targetSubdirectory: string;
   targetPhase?: string;
   searchPhase?: string;
@@ -2744,4 +2788,6 @@ export async function moveTask(id: string, options: {
       error: `Error moving task: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
   }
-}
+}*/
+
+// The functions above have been moved to respective modules in the task-manager/ directory.
