@@ -490,12 +490,12 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
     },
     async (params) => {
       try {
+        console.log(`[DEBUG] Feature Create (core-server): description=${params.description}, assignee=${params.assignee}`);
         const result = await createFeature(
           params.name,
           params.title,
           params.phase,
           params.type || '🌟 Feature',
-          params.status || '🟡 To Do',
           params.description,
           params.assignee,
           params.tags
@@ -615,12 +615,12 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
     },
     async (params) => {
       try {
+        console.log(`[DEBUG] Area Create (core-server): description=${params.description}, assignee=${params.assignee}`);
         const result = await createArea(
           params.name,
           params.title,
           params.phase,
           params.type || '🧹 Chore',
-          params.status || '🟡 To Do',
           params.description,
           params.assignee,
           params.tags

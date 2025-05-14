@@ -175,6 +175,15 @@ export async function listFeatures(options: FeatureFilterOptions = {}): Promise<
           tasks: taskIds
         };
         
+        // Fix: Make sure description isn't using the status value
+        if (feature.description === '🟡 To Do' || feature.description === status) {
+          // Try to get a better description
+          if (overviewTask?.metadata.assigned_to && overviewTask.metadata.assigned_to.length > 10) {
+            // This is likely a description that was incorrectly set as assigned_to
+            feature.description = overviewTask.metadata.assigned_to;
+          }
+        }
+        
         // Add the overview task if available
         if (overviewTask) {
           feature.overview = overviewTask;
@@ -315,8 +324,13 @@ export async function createFeature(
       content: description || `# ${title}\n\n## Description\n\nFeature overview for ${name.replace(/^FEATURE_/, '')}`
     };
     
+    // Important: Only set assigned_to if explicitly provided
     if (assignee) {
       overviewTask.metadata.assigned_to = assignee;
+    } else {
+      // Make sure we explicitly set it to empty string to avoid description being
+      // incorrectly used as assigned_to
+      overviewTask.metadata.assigned_to = '';
     }
     
     if (tags && tags.length > 0) {
@@ -325,6 +339,18 @@ export async function createFeature(
     
     // Save the overview file
     const overviewPath = path.join(featureDir, '_overview.md');
+    
+    // Fix for the description/content issue - ensure content is properly set
+    if (description && overviewTask.metadata.assigned_to === description) {
+      // If description was erroneously set as assigned_to, fix it
+      overviewTask.metadata.assigned_to = assignee || '';
+    }
+    
+    // Make sure content is more than just the status
+    if (overviewTask.content === '🟡 To Do' || overviewTask.content === overviewTask.metadata.status) {
+      overviewTask.content = description || `# ${title}\n\n## Description\n\nFeature overview for ${name.replace(/^FEATURE_/, '')}`;
+    }
+    
     const fileContent = formatTaskFile(overviewTask);
     fs.writeFileSync(overviewPath, fileContent);
     
