@@ -86,18 +86,20 @@ export async function listFeatures(options: FeatureFilterOptions = {}): Promise<
         const featureName = subdir.replace(/^FEATURE_/, '');
         
         // List tasks in the feature directory if requested
-        let tasks: Task[] = [];
-        if (options.include_tasks) {
-          const tasksResult = await listTasks({ 
-            phase, 
-            subdirectory: subdir,
-            include_content: options.include_content || false,
-            include_completed: options.include_completed || false
-          });
-          
-          if (tasksResult.success && tasksResult.data) {
-            tasks = tasksResult.data;
-          }
+        let taskObjects: Task[] = [];
+        let taskIds: string[] = [];
+        
+        // Get all tasks for this feature
+        const tasksResult = await listTasks({ 
+          phase, 
+          subdirectory: subdir,
+          include_content: options.include_content || false,
+          include_completed: options.include_completed || false
+        });
+        
+        if (tasksResult.success && tasksResult.data) {
+          taskObjects = tasksResult.data;
+          taskIds = taskObjects.map(task => task.metadata.id);
         }
         
         // Calculate progress if requested
@@ -131,23 +133,23 @@ export async function listFeatures(options: FeatureFilterOptions = {}): Promise<
           status = overviewTask.metadata.status;
         } else {
           // If no overview status, derive from tasks
-          const tasksInProgress = tasks.some(task => 
+          const tasksInProgress = taskObjects.some(task => 
             (task.metadata.status || '').includes('In Progress') || 
             (task.metadata.status || '').includes('🔵')
           );
           
-          const tasksBlocked = tasks.some(task => 
+          const tasksBlocked = taskObjects.some(task => 
             (task.metadata.status || '').includes('Blocked') || 
             (task.metadata.status || '').includes('⚪')
           );
           
-          const tasksCompleted = tasks.every(task => {
+          const tasksCompleted = taskObjects.every(task => {
             const taskStatus = task.metadata.status || '';
             return taskStatus.includes('Done') || taskStatus.includes('🟢') || 
                   taskStatus.includes('Completed') || taskStatus.includes('Complete');
           });
           
-          if (tasks.length === 0) {
+          if (taskObjects.length === 0) {
             status = '🟡 To Do';
           } else if (tasksBlocked) {
             status = '⚪ Blocked';
@@ -170,8 +172,13 @@ export async function listFeatures(options: FeatureFilterOptions = {}): Promise<
           task_count: taskFiles.length,
           progress,
           status,
-          tasks: options.include_tasks ? tasks : []
+          tasks: taskIds
         };
+        
+        // Add the overview task if available
+        if (overviewTask) {
+          feature.overview = overviewTask;
+        }
         
         // Apply type filter if specified
         if (options.type && overviewTask && overviewTask.metadata.type !== options.type) {
