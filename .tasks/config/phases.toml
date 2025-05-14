@@ -11,3 +11,10 @@ name = "MCP Test Phase"
 description = "Phase for MCP testing - safe to delete after tests"
 status = "🟡 Pending"
 order = 2
+
+[[phases]]
+id = "release-v1.1"
+name = "Release V1.1"
+description = "Release focused on advanced MCP capabilities, enhanced phase management, and feature/area improvements"
+status = "🟡 Pending"
+order = 3
