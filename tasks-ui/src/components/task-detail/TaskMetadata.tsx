@@ -1,11 +1,14 @@
 import type { Task } from '../../lib/types';
 import { formatDate, hasDependencies } from '../../lib/utils/format';
+import { TaskMoveDropdown } from './TaskMoveDropdown';
+import { useTaskContext } from '../../context/TaskContext';
 
 interface TaskMetadataProps {
   task: Task;
 }
 
 export function TaskMetadata({ task }: TaskMetadataProps) {
+  const { refreshTasks } = useTaskContext();
   // Define metadata fields to display
   const metadataFields = [
     { label: 'ID', value: task.id },
@@ -19,13 +22,28 @@ export function TaskMetadata({ task }: TaskMetadataProps) {
     { label: 'Phase', value: task.phase || '—' },
   ];
 
+  // Format feature/area information
+  let featureArea = null;
+  if (task.subdirectory) {
+    let label = 'Location';
+    
+    if (task.subdirectory.startsWith('FEATURE_')) {
+      label = 'Feature';
+    } else if (task.subdirectory.startsWith('AREA_')) {
+      label = 'Area';
+    }
+    
+    // We'll handle the display separately with the TaskMoveDropdown
+    featureArea = { label, value: null };
+  }
+  
   // Additional fields that are only displayed if they have values
   const optionalFields = [
     { label: 'Parent Task', value: task.parent_task || null },
     { label: 'Previous Task', value: task.previous_task || null },
     { label: 'Next Task', value: task.next_task || null },
-    { label: 'Subdirectory', value: task.subdirectory || null },
-  ].filter(field => field.value !== null);
+    featureArea,
+  ].filter(field => field && field.value !== null);
 
   return (
     <div className="bg-card p-4 rounded-md border border-border">
@@ -69,15 +87,30 @@ export function TaskMetadata({ task }: TaskMetadataProps) {
         )}
 
         {/* Optional fields */}
-        {optionalFields.length > 0 && (
+        {(optionalFields.length > 0 || task.subdirectory) && (
           <div className="border-t border-border mt-4 pt-4 space-y-2">
             <div className="text-sm font-medium text-muted-foreground">Additional Information</div>
+            
+            {/* Regular optional fields */}
             {optionalFields.map((field) => (
               <div key={field.label} className="grid grid-cols-3 gap-2">
                 <div className="text-sm font-medium text-muted-foreground">{field.label}:</div>
                 <div className="text-sm col-span-2">{field.value}</div>
               </div>
             ))}
+            
+            {/* Feature/Area location with move dropdown */}
+            {task.subdirectory && (
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="text-sm font-medium text-muted-foreground">
+                  {task.subdirectory.startsWith('FEATURE_') ? 'Feature' : 
+                   task.subdirectory.startsWith('AREA_') ? 'Area' : 'Location'}:
+                </div>
+                <div className="text-sm col-span-2">
+                  <TaskMoveDropdown task={task} onMoveComplete={refreshTasks} />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -5,6 +5,13 @@ export const routes = {
   taskCreate: '/tasks/create',
   taskDetail: (id: string) => `/tasks/${id}`,
   taskEdit: (id: string) => `/tasks/${id}/edit`,
+  featureDetail: (id: string) => `/features/${id}`,
+  featureEdit: (id: string) => `/features/${id}/edit`,
+  featureCreate: '/features/create',
+  areaDetail: (id: string) => `/areas/${id}`,
+  areaEdit: (id: string) => `/areas/${id}/edit`,
+  areaCreate: '/areas/create',
+  comparison: '/comparison',
   graph: '/graph',
 };
 

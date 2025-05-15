@@ -11,6 +11,8 @@ interface FiltersProps {
   tagOptions?: string[];
   assigneeOptions?: string[];
   phaseOptions?: string[];
+  featureOptions?: string[];
+  areaOptions?: string[];
 }
 
 export function TaskFilters({
@@ -22,6 +24,8 @@ export function TaskFilters({
   tagOptions = [],
   assigneeOptions = [],
   phaseOptions = [],
+  featureOptions = [],
+  areaOptions = [],
 }: FiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState(filters.searchTerm || "");
@@ -56,6 +60,24 @@ export function TaskFilters({
 
   const handlePhaseChange = (phase: string | undefined) => {
     onFilterChange({ ...filters, phase });
+  };
+  
+  const handleFeatureChange = (feature: string | undefined) => {
+    // Clear area selection if a feature is selected
+    const newFilters = { ...filters, feature };
+    if (feature) {
+      delete newFilters.area;
+    }
+    onFilterChange(newFilters);
+  };
+
+  const handleAreaChange = (area: string | undefined) => {
+    // Clear feature selection if an area is selected
+    const newFilters = { ...filters, area };
+    if (area) {
+      delete newFilters.feature;
+    }
+    onFilterChange(newFilters);
   };
 
   const clearFilters = () => {
@@ -211,6 +233,66 @@ export function TaskFilters({
                       className="mr-2"
                     />
                     <label htmlFor={`assignee-${assignee}`} className="text-sm font-mono">{assignee}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {featureOptions.length > 0 && (
+            <div>
+              <label className="text-sm font-medium">Feature</label>
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="feature-all"
+                    checked={!filters.feature}
+                    onChange={() => handleFeatureChange(undefined)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="feature-all" className="text-sm">All</label>
+                </div>
+                {featureOptions.map((feature) => (
+                  <div key={feature} className="flex items-center">
+                    <input
+                      type="radio"
+                      id={`feature-${feature}`}
+                      checked={filters.feature === feature}
+                      onChange={() => handleFeatureChange(feature)}
+                      className="mr-2"
+                    />
+                    <label htmlFor={`feature-${feature}`} className="text-sm">{feature.replace('FEATURE_', '')}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {areaOptions.length > 0 && (
+            <div>
+              <label className="text-sm font-medium">Area</label>
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="area-all"
+                    checked={!filters.area}
+                    onChange={() => handleAreaChange(undefined)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="area-all" className="text-sm">All</label>
+                </div>
+                {areaOptions.map((area) => (
+                  <div key={area} className="flex items-center">
+                    <input
+                      type="radio"
+                      id={`area-${area}`}
+                      checked={filters.area === area}
+                      onChange={() => handleAreaChange(area)}
+                      className="mr-2"
+                    />
+                    <label htmlFor={`area-${area}`} className="text-sm">{area.replace('AREA_', '')}</label>
                   </div>
                 ))}
               </div>

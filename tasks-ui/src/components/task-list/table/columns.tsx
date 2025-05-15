@@ -1,12 +1,13 @@
 import { Button } from "../../ui/button";
 import type { Task } from "../../../lib/types";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useLocation } from "wouter";
 import { routes } from "../../../lib/routes";
 import { formatDate, hasDependencies } from "../../../lib/utils/format";
+import { Checkbox } from "../../ui/checkbox";
 
-// Define the columns for the task table
-export const columns: ColumnDef<Task>[] = [
+// Base columns for the task table
+const baseColumns: ColumnDef<Task>[] = [
   {
     accessorKey: "id",
     header: "ID",
@@ -66,6 +67,58 @@ export const columns: ColumnDef<Task>[] = [
       return (
         <div className="text-sm font-mono">
           {assignedTo || "—"}
+        </div>
+      );
+    },
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id) || "");
+    },
+    enableSorting: true,
+    enableHiding: true,
+  },
+  {
+    accessorKey: "subdirectory",
+    header: "Feature/Area",
+    cell: ({ row }) => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const [, navigate] = useLocation();
+      const subdirectory = row.getValue<string>("subdirectory");
+      if (!subdirectory) return <div className="text-sm">—</div>;
+      
+      let name = subdirectory;
+      let isFeature = false;
+      let isArea = false;
+      let url = '';
+      
+      if (subdirectory.startsWith('FEATURE_')) {
+        name = subdirectory.replace('FEATURE_', '');
+        isFeature = true;
+        url = `/features/${name}`;
+      } else if (subdirectory.startsWith('AREA_')) {
+        name = subdirectory.replace('AREA_', '');
+        isArea = true;
+        url = `/areas/${name}`;
+      }
+      
+      const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent row click
+        navigate(url);
+      };
+      
+      return (
+        <div className="text-sm flex items-center gap-1">
+          {isFeature && <span title="Feature" className="text-blue-500">📦</span>}
+          {isArea && <span title="Area" className="text-green-500">🔷</span>}
+          {(isFeature || isArea) ? (
+            <button 
+              onClick={handleClick}
+              className="text-blue-500 hover:underline"
+            >
+              {name}
+            </button>
+          ) : (
+            <span>{name}</span>
+          )}
         </div>
       );
     },
@@ -172,3 +225,45 @@ export const columns: ColumnDef<Task>[] = [
     },
   },
 ];
+
+// Function to get columns with or without selection
+export function getColumns(selectable = false): ColumnDef<Task>[] {
+  if (!selectable) {
+    return baseColumns;
+  }
+  
+  // Add selection column at the beginning
+  return [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+          className="translate-y-[2px]"
+        />
+      ),
+      cell: ({ row }) => (
+        <div className="px-1">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            onClick={(e) => e.stopPropagation()}
+            className="translate-y-[2px]"
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    ...baseColumns,
+  ];
+}
+
+// Default export for backward compatibility
+export const columns = baseColumns;

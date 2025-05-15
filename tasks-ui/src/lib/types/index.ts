@@ -27,6 +27,8 @@ export interface Task {
   next_task?: string;
   phase?: string;
   subdirectory?: string;
+  feature?: string;
+  area?: string;
   tags?: string[];
   content?: string;
   [key: string]: any;
@@ -39,6 +41,48 @@ export interface Phase {
   description?: string;
   status?: string;
   order: number;
+}
+
+// Feature model
+export interface Feature {
+  id: string;
+  name: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  created_date?: string;
+  updated_date?: string;
+  assigned_to?: string;
+  phase?: string;
+  is_overview?: boolean;
+  subtasks?: string[];
+  progress?: {
+    completed: number;
+    total: number;
+    percentage: number;
+  };
+  tags?: string[];
+}
+
+// Area model
+export interface Area {
+  id: string;
+  name: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  created_date?: string;
+  updated_date?: string;
+  assigned_to?: string;
+  phase?: string;
+  is_overview?: boolean;
+  subtasks?: string[];
+  progress?: {
+    completed: number;
+    total: number;
+    percentage: number;
+  };
+  tags?: string[];
 }
 
 // Template model
@@ -61,6 +105,8 @@ export interface TaskListFilter {
   searchTerm?: string;
   assignedTo?: string;
   subdirectory?: string;
+  feature?: string;
+  area?: string;
   tag?: string;
   sortBy?: keyof Task;
   sortDirection?: 'asc' | 'desc';

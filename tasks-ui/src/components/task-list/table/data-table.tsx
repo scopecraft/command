@@ -20,16 +20,22 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onRowClick?: (row: TData) => void;
+  selectable?: boolean;
+  selectedRows?: Record<string, boolean>;
+  onSelectionChange?: (selection: Record<string, boolean>) => void;
 }
 
 export function DataTable<TData extends object, TValue>({
   columns,
   data,
   onRowClick,
+  selectable = false,
+  selectedRows = {},
+  onSelectionChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = useState({});
+  const [rowSelection, setRowSelection] = useState(selectedRows);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     // Hide these columns by default
     created_date: false,
@@ -45,8 +51,14 @@ export function DataTable<TData extends object, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: (updatedRowSelection) => {
+      setRowSelection(updatedRowSelection);
+      if (onSelectionChange) {
+        onSelectionChange(updatedRowSelection);
+      }
+    },
     onColumnVisibilityChange: setColumnVisibility,
+    enableRowSelection: selectable,
     state: {
       sorting,
       columnFilters,

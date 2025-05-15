@@ -7,6 +7,11 @@ import { TaskFormView } from './components/task-form/TaskFormView';
 import { TaskDetailView } from './components/task-detail/TaskDetailView';
 import { HomePage } from './components/pages/HomePage';
 import { GraphPage } from './components/pages/GraphPage';
+import { FeatureDetailView } from './components/pages/FeatureDetailPage';
+import { AreaDetailView } from './components/pages/AreaDetailPage';
+import { ProgressComparisonView } from './components/pages/ProgressComparisonView';
+import { FeatureFormView } from './components/feature-form/FeatureFormView';
+import { AreaFormView } from './components/area-form/AreaFormView';
 import { routes } from './lib/routes';
 
 // Main App component with routing
@@ -22,6 +27,20 @@ function App() {
           <Route path={routes.taskEdit(':id')}>
             {params => <TaskFormView taskId={params.id} />}
           </Route>
+          <Route path={routes.featureDetail(':id')} component={FeatureDetailView} />
+          <Route path={routes.featureEdit(':id')}>
+            {params => <FeatureFormView featureId={`FEATURE_${params.id}`} isEdit={true} />}
+          </Route>
+          <Route path={routes.featureCreate} component={FeatureFormView} />
+          
+          <Route path={routes.areaDetail(':id')} component={AreaDetailView} />
+          <Route path={routes.areaEdit(':id')}>
+            {params => <AreaFormView areaId={`AREA_${params.id}`} isEdit={true} />}
+          </Route>
+          <Route path={routes.areaCreate} component={AreaFormView} />
+          
+          <Route path={routes.comparison} component={ProgressComparisonView} />
+          
           <Route path={routes.graph} component={GraphPage} />
           {/* Fallback route */}
           <Route>

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Task, OperationResult } from '../lib/types';
-import { fetchTasks, saveTask, removeTask } from '../lib/api/core-client';
+import { fetchTasks, saveTask, removeTask, moveTask } from '../lib/api/core-client';
 import { useToast } from '../hooks/useToast';
 
 interface TaskContextType {
@@ -12,6 +12,14 @@ interface TaskContextType {
   createTask: (task: Task) => Promise<OperationResult<Task>>;
   updateTask: (task: Task) => Promise<OperationResult<Task>>;
   deleteTask: (id: string) => Promise<OperationResult<void>>;
+  moveTaskToFeatureOrArea: (
+    taskId: string, 
+    options: { targetFeature?: string; targetArea?: string; targetPhase?: string }
+  ) => Promise<OperationResult<Task>>;
+  bulkMoveTasks: (
+    taskIds: string[], 
+    options: { targetFeature?: string; targetArea?: string; targetPhase?: string }
+  ) => Promise<{ success: boolean; message?: string; completedCount: number }>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -138,6 +146,81 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Move a task to a feature or area
+  const moveTaskToFeatureOrArea = async (
+    taskId: string, 
+    options: { targetFeature?: string; targetArea?: string; targetPhase?: string }
+  ) => {
+    try {
+      const result = await moveTask(taskId, options);
+      if (result.success) {
+        refreshTasks();
+        const destination = options.targetFeature ? 'feature' : 
+                           options.targetArea ? 'area' : 
+                           options.targetPhase ? 'phase' : 'location';
+        toast.success(`Task moved to new ${destination} successfully`);
+      } else {
+        const errorMessage = result.message || 'Failed to move task';
+        toast.error(errorMessage);
+      }
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to move task';
+      const error = err instanceof Error ? err : new Error(errorMessage);
+      setError(error);
+      toast.error(errorMessage);
+      return { success: false, message: errorMessage } as OperationResult<Task>;
+    }
+  };
+
+  // Move multiple tasks at once
+  const bulkMoveTasks = async (
+    taskIds: string[], 
+    options: { targetFeature?: string; targetArea?: string; targetPhase?: string }
+  ) => {
+    let completedCount = 0;
+    let failedCount = 0;
+    let lastError = '';
+
+    // Process each task move sequentially
+    for (const taskId of taskIds) {
+      try {
+        const result = await moveTask(taskId, options);
+        if (result.success) {
+          completedCount++;
+        } else {
+          failedCount++;
+          lastError = result.message || 'Failed to move task';
+        }
+      } catch (err) {
+        failedCount++;
+        lastError = err instanceof Error ? err.message : 'Failed to move task';
+      }
+    }
+
+    // Refresh task list after all moves
+    refreshTasks();
+
+    // Determine the success message
+    const destination = options.targetFeature ? 'feature' : 
+                       options.targetArea ? 'area' : 
+                       options.targetPhase ? 'phase' : 'location';
+
+    if (completedCount === taskIds.length) {
+      const message = `Successfully moved ${completedCount} task${completedCount !== 1 ? 's' : ''} to new ${destination}`;
+      toast.success(message);
+      return { success: true, completedCount, message };
+    } else if (completedCount > 0) {
+      const message = `Moved ${completedCount} of ${taskIds.length} tasks to new ${destination}. ${failedCount} failed.`;
+      toast.warning(message);
+      return { success: false, completedCount, message };
+    } else {
+      const message = `Failed to move tasks: ${lastError}`;
+      toast.error(message);
+      return { success: false, completedCount: 0, message };
+    }
+  };
+
   const value = {
     tasks,
     loading,
@@ -146,6 +229,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     createTask,
     updateTask,
     deleteTask,
+    moveTaskToFeatureOrArea,
+    bulkMoveTasks,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

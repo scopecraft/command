@@ -13,15 +13,18 @@
     "start": "bun server.ts",
     "deploy": "npm run typecheck && npm run check-imports && bun run build && bun run start",
     "prepare": "cd .. && husky install tasks-ui/.husky",
-    "test:api": "bun ./scripts/test-api.js"
+    "test:api": "bun ./scripts/test-api.js",
+    "test:feature-area": "bun ./scripts/test-feature-area-api.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
+    "@radix-ui/react-checkbox": "^1.3.1",
     "@radix-ui/react-slot": "^1.2.2",
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "elkjs": "^0.10.0",
+    "lucide-react": "^0.510.0",
     "mrmime": "^2.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

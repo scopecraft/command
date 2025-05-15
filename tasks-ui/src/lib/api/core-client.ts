@@ -3,6 +3,8 @@ import type {
   OperationResult, 
   Task, 
   Phase, 
+  Feature,
+  Area,
   Template, 
   TaskListFilter
 } from '../types';
@@ -22,6 +24,8 @@ export async function fetchTasks(filter?: TaskListFilter): Promise<OperationResu
       if (filter.phase) params.append('phase', filter.phase);
       if (filter.assignedTo) params.append('assignee', filter.assignedTo);
       if (filter.subdirectory) params.append('subdirectory', filter.subdirectory);
+      if (filter.feature) params.append('feature', filter.feature);
+      if (filter.area) params.append('area', filter.area);
       if (filter.tag) params.append('tags', filter.tag);
     }
     
@@ -446,4 +450,442 @@ export async function fetchTemplates(): Promise<OperationResult<Template[]>> {
     success: false,
     message: 'Template fetching is not implemented in the API yet'
   };
+}
+
+/**
+ * Fetch all features from the API
+ */
+export async function fetchFeatures(phase?: string, includeProgress = true, includeTasks = false): Promise<OperationResult<Feature[]>> {
+  try {
+    // Build query parameters
+    const params = new URLSearchParams();
+    
+    if (phase) {
+      params.append('phase', phase);
+    }
+    
+    params.append('include_progress', includeProgress.toString());
+    params.append('include_tasks', includeTasks.toString());
+    
+    const response = await fetch(`${API_BASE_URL}/features?${params}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch features: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        message: result.message || result.error || 'Failed to fetch features'
+      };
+    }
+    
+    return {
+      success: true,
+      data: result.data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error during feature fetch',
+      error: error instanceof Error ? error : new Error('Unknown error during feature fetch')
+    };
+  }
+}
+
+/**
+ * Fetch a single feature by ID
+ */
+export async function fetchFeature(id: string, phase?: string): Promise<OperationResult<Feature>> {
+  try {
+    const params = new URLSearchParams();
+    if (phase) {
+      params.append('phase', phase);
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/features/${encodeURIComponent(id)}?${params}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch feature: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        message: result.message || result.error || `Feature with ID ${id} not found`
+      };
+    }
+    
+    return {
+      success: true,
+      data: result.data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : `Unknown error fetching feature ${id}`,
+      error: error instanceof Error ? error : new Error(`Unknown error fetching feature ${id}`)
+    };
+  }
+}
+
+/**
+ * Create or update a feature
+ */
+export async function saveFeature(feature: Feature): Promise<OperationResult<Feature>> {
+  try {
+    const isNew = !feature.id.startsWith('FEATURE_');
+    
+    // Build the request body
+    const requestBody = {
+      name: feature.name,
+      title: feature.title,
+      description: feature.description,
+      phase: feature.phase,
+      status: feature.status,
+      tags: feature.tags,
+      assignee: feature.assigned_to
+    };
+    
+    let response;
+    
+    if (isNew) {
+      // Create new feature
+      response = await fetch(`${API_BASE_URL}/features`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+    } else {
+      // Update existing feature
+      response = await fetch(`${API_BASE_URL}/features/${encodeURIComponent(feature.id)}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          updates: requestBody
+        })
+      });
+    }
+    
+    if (!response.ok) {
+      throw new Error(`Failed to save feature: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        message: result.message || result.error || 'Failed to save feature'
+      };
+    }
+    
+    return {
+      success: true,
+      data: result.data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error saving feature',
+      error: error instanceof Error ? error : new Error('Unknown error saving feature')
+    };
+  }
+}
+
+/**
+ * Delete a feature by ID
+ */
+export async function removeFeature(id: string, force = false): Promise<OperationResult<void>> {
+  try {
+    const params = new URLSearchParams();
+    if (force) {
+      params.append('force', 'true');
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/features/${encodeURIComponent(id)}?${params}`, {
+      method: 'DELETE'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete feature: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.message || result.error || `Failed to delete feature ${id}`
+      };
+    }
+    
+    return {
+      success: true
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : `Unknown error deleting feature ${id}`,
+      error: error instanceof Error ? error : new Error(`Unknown error deleting feature ${id}`)
+    };
+  }
+}
+
+/**
+ * Fetch all areas from the API
+ */
+export async function fetchAreas(phase?: string, includeProgress = true, includeTasks = false): Promise<OperationResult<Area[]>> {
+  try {
+    // Build query parameters
+    const params = new URLSearchParams();
+    
+    if (phase) {
+      params.append('phase', phase);
+    }
+    
+    params.append('include_progress', includeProgress.toString());
+    params.append('include_tasks', includeTasks.toString());
+    
+    const response = await fetch(`${API_BASE_URL}/areas?${params}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch areas: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        message: result.message || result.error || 'Failed to fetch areas'
+      };
+    }
+    
+    return {
+      success: true,
+      data: result.data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error during area fetch',
+      error: error instanceof Error ? error : new Error('Unknown error during area fetch')
+    };
+  }
+}
+
+/**
+ * Fetch a single area by ID
+ */
+export async function fetchArea(id: string, phase?: string): Promise<OperationResult<Area>> {
+  try {
+    const params = new URLSearchParams();
+    if (phase) {
+      params.append('phase', phase);
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/areas/${encodeURIComponent(id)}?${params}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch area: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        message: result.message || result.error || `Area with ID ${id} not found`
+      };
+    }
+    
+    return {
+      success: true,
+      data: result.data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : `Unknown error fetching area ${id}`,
+      error: error instanceof Error ? error : new Error(`Unknown error fetching area ${id}`)
+    };
+  }
+}
+
+/**
+ * Create or update an area
+ */
+export async function saveArea(area: Area): Promise<OperationResult<Area>> {
+  try {
+    const isNew = !area.id.startsWith('AREA_');
+    
+    // Build the request body
+    const requestBody = {
+      name: area.name,
+      title: area.title,
+      description: area.description,
+      phase: area.phase,
+      status: area.status,
+      tags: area.tags,
+      assignee: area.assigned_to
+    };
+    
+    let response;
+    
+    if (isNew) {
+      // Create new area
+      response = await fetch(`${API_BASE_URL}/areas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+    } else {
+      // Update existing area
+      response = await fetch(`${API_BASE_URL}/areas/${encodeURIComponent(area.id)}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          updates: requestBody
+        })
+      });
+    }
+    
+    if (!response.ok) {
+      throw new Error(`Failed to save area: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        message: result.message || result.error || 'Failed to save area'
+      };
+    }
+    
+    return {
+      success: true,
+      data: result.data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error saving area',
+      error: error instanceof Error ? error : new Error('Unknown error saving area')
+    };
+  }
+}
+
+/**
+ * Delete an area by ID
+ */
+export async function removeArea(id: string, force = false): Promise<OperationResult<void>> {
+  try {
+    const params = new URLSearchParams();
+    if (force) {
+      params.append('force', 'true');
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/areas/${encodeURIComponent(id)}?${params}`, {
+      method: 'DELETE'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete area: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.message || result.error || `Failed to delete area ${id}`
+      };
+    }
+    
+    return {
+      success: true
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : `Unknown error deleting area ${id}`,
+      error: error instanceof Error ? error : new Error(`Unknown error deleting area ${id}`)
+    };
+  }
+}
+
+/**
+ * Move a task to a different feature or area
+ */
+export async function moveTask(taskId: string, options: {
+  targetFeature?: string,
+  targetArea?: string,
+  targetPhase?: string
+}): Promise<OperationResult<Task>> {
+  try {
+    // Determine the target subdirectory
+    let targetSubdirectory = '';
+    if (options.targetFeature) {
+      targetSubdirectory = `FEATURE_${options.targetFeature}`;
+    } else if (options.targetArea) {
+      targetSubdirectory = `AREA_${options.targetArea}`;
+    }
+    
+    // Build request body
+    const requestBody = {
+      id: taskId,
+      target_subdirectory: targetSubdirectory
+    };
+    
+    // Add target phase if specified
+    if (options.targetPhase) {
+      requestBody['target_phase'] = options.targetPhase;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/tasks/move`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to move task: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        message: result.message || result.error || 'Failed to move task'
+      };
+    }
+    
+    return {
+      success: true,
+      data: result.data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error moving task',
+      error: error instanceof Error ? error : new Error('Unknown error moving task')
+    };
+  }
 }
