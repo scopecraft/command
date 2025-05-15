@@ -12,7 +12,18 @@ import {
   handlePhaseList,
   handlePhaseCreate,
   handleWorkflowCurrent,
-  handleWorkflowMarkCompleteNext
+  handleWorkflowMarkCompleteNext,
+  handleFeatureList,
+  handleFeatureGet,
+  handleFeatureCreate,
+  handleFeatureUpdate,
+  handleFeatureDelete,
+  handleAreaList,
+  handleAreaGet,
+  handleAreaCreate,
+  handleAreaUpdate,
+  handleAreaDelete,
+  handleTaskMove
 } from '../src/mcp/handlers.js';
 
 // Configuration
@@ -216,6 +227,137 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
     if (path === '/workflow/mark-complete-next') {
       if (req.method === 'POST') {
         const result = await handleWorkflowMarkCompleteNext(params);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    // Feature endpoints
+    if (path === '/features') {
+      if (req.method === 'GET') {
+        // Convert boolean string parameters to actual booleans
+        if (params.include_progress) {
+          params.include_progress = params.include_progress === 'true';
+        }
+        if (params.include_tasks) {
+          params.include_tasks = params.include_tasks === 'true';
+        }
+        
+        const result = await handleFeatureList(params);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+      
+      if (req.method === 'POST') {
+        const result = await handleFeatureCreate(params);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 201 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    if (path.match(/^\/features\/[^\/]+$/)) {
+      const id = path.split('/').pop() || '';
+      
+      if (req.method === 'GET') {
+        const result = await handleFeatureGet({ id, ...params });
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 404,
+          headers: corsHeaders
+        });
+      }
+      
+      if (req.method === 'PUT' || req.method === 'PATCH') {
+        const result = await handleFeatureUpdate({ id, updates: params });
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+      
+      if (req.method === 'DELETE') {
+        // Convert force parameter to boolean
+        if (params.force) {
+          params.force = params.force === 'true';
+        }
+        
+        const result = await handleFeatureDelete({ id, force: params.force });
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    // Area endpoints
+    if (path === '/areas') {
+      if (req.method === 'GET') {
+        // Convert boolean string parameters to actual booleans
+        if (params.include_progress) {
+          params.include_progress = params.include_progress === 'true';
+        }
+        if (params.include_tasks) {
+          params.include_tasks = params.include_tasks === 'true';
+        }
+        
+        const result = await handleAreaList(params);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+      
+      if (req.method === 'POST') {
+        const result = await handleAreaCreate(params);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 201 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    if (path.match(/^\/areas\/[^\/]+$/)) {
+      const id = path.split('/').pop() || '';
+      
+      if (req.method === 'GET') {
+        const result = await handleAreaGet({ id, ...params });
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 404,
+          headers: corsHeaders
+        });
+      }
+      
+      if (req.method === 'PUT' || req.method === 'PATCH') {
+        const result = await handleAreaUpdate({ id, updates: params });
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+      
+      if (req.method === 'DELETE') {
+        // Convert force parameter to boolean
+        if (params.force) {
+          params.force = params.force === 'true';
+        }
+        
+        const result = await handleAreaDelete({ id, force: params.force });
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    // Task Move endpoint
+    if (path === '/tasks/move') {
+      if (req.method === 'POST') {
+        const result = await handleTaskMove(params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
           headers: corsHeaders
