@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { Area, OperationResult } from '../lib/types';
 import { fetchAreas, fetchArea, saveArea, removeArea } from '../lib/api/core-client';
 import { useToast } from '../hooks/useToast';
+import { deduplicateByName } from '../lib/utils';
 
 interface AreaContextType {
   areas: Area[];
@@ -14,7 +15,7 @@ interface AreaContextType {
   updateArea: (area: Area) => Promise<OperationResult<Area>>;
   deleteArea: (id: string, force?: boolean) => Promise<OperationResult<void>>;
   setCurrentArea: (areaId: string | null) => void;
-  getAreaById: (id: string) => Area | undefined;
+  getAreaById: (id: string, phase?: string) => Area | undefined;
 }
 
 const AreaContext = createContext<AreaContextType | undefined>(undefined);
@@ -29,9 +30,23 @@ export function AreaProvider({ children }: { children: ReactNode }) {
   const refreshAreas = async (phase?: string) => {
     setLoading(true);
     try {
+      // If phase is specified, we only fetch areas for that phase
       const result = await fetchAreas(phase);
       if (result.success) {
-        setAreas(result.data || []);
+        // When no specific phase is requested, deduplicate areas by name
+        if (!phase) {
+          // Fetch areas for all phases and deduplicate
+          const allAreasResult = await fetchAreas();
+          if (allAreasResult.success) {
+            const deduplicated = deduplicateByName(allAreasResult.data || []);
+            setAreas(deduplicated);
+          } else {
+            setAreas(result.data || []);
+          }
+        } else {
+          // Phase-specific view, no need to deduplicate
+          setAreas(result.data || []);
+        }
 
         // If no current area is selected and we have areas available,
         // we don't auto-select to avoid unexpected UI changes
@@ -131,7 +146,14 @@ export function AreaProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const getAreaById = (id: string) => {
+  const getAreaById = (id: string, phase?: string) => {
+    // If phase is specified, try to find an area with the exact ID and phase first
+    if (phase) {
+      const areaInPhase = areas.find(a => a.id === id && a.phase === phase);
+      if (areaInPhase) return areaInPhase;
+    }
+    
+    // Otherwise, find by ID only
     return areas.find(a => a.id === id);
   };
 

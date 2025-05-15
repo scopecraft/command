@@ -110,7 +110,20 @@ function FeatureDetailViewInner() {
               </div>
               <div>
                 <span className="text-muted-foreground">Phase:</span>{' '}
-                <span>{feature.phase || 'Not set'}</span>
+                {feature.phases && feature.phases.length > 0 ? (
+                  <span className="flex flex-wrap gap-1 mt-1">
+                    {feature.phases.map((phase) => (
+                      <span 
+                        key={phase} 
+                        className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 text-xs px-2 py-0.5 rounded"
+                      >
+                        {phase}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span>{feature.phase || 'Not set'}</span>
+                )}
               </div>
               <div>
                 <span className="text-muted-foreground">Created:</span>{' '}

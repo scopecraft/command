@@ -110,7 +110,20 @@ function AreaDetailViewInner() {
               </div>
               <div>
                 <span className="text-muted-foreground">Phase:</span>{' '}
-                <span>{area.phase || 'Not set'}</span>
+                {area.phases && area.phases.length > 0 ? (
+                  <span className="flex flex-wrap gap-1 mt-1">
+                    {area.phases.map((phase) => (
+                      <span 
+                        key={phase} 
+                        className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs px-2 py-0.5 rounded"
+                      >
+                        {phase}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span>{area.phase || 'Not set'}</span>
+                )}
               </div>
               <div>
                 <span className="text-muted-foreground">Created:</span>{' '}

@@ -54,6 +54,7 @@ export interface Feature {
   updated_date?: string;
   assigned_to?: string;
   phase?: string;
+  phases?: string[]; // Array of phases this feature exists in
   is_overview?: boolean;
   subtasks?: string[];
   progress?: {
@@ -75,6 +76,7 @@ export interface Area {
   updated_date?: string;
   assigned_to?: string;
   phase?: string;
+  phases?: string[]; // Array of phases this area exists in
   is_overview?: boolean;
   subtasks?: string[];
   progress?: {

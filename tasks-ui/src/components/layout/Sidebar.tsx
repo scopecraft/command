@@ -22,7 +22,7 @@ export function Sidebar() {
     navigate('/tasks?phase=' + phaseId);
   };
   
-  // Handle feature selection and navigate to task list with feature filter
+  // Handle feature selection and navigate to feature detail page
   const handleFeatureClick = (featureId: string) => {
     console.log('Selected feature:', featureId);
     setCurrentFeature(featureId);
@@ -30,11 +30,13 @@ export function Sidebar() {
     if (currentArea) {
       setCurrentArea(null);
     }
-    // Navigate to tasks view with feature filter in URL
-    navigate('/tasks?feature=' + featureId);
+    // Extract the ID without the FEATURE_ prefix
+    const id = featureId.replace('FEATURE_', '');
+    // Navigate to feature detail page
+    navigate(routes.featureDetail(id));
   };
   
-  // Handle area selection and navigate to task list with area filter
+  // Handle area selection and navigate to area detail page
   const handleAreaClick = (areaId: string) => {
     console.log('Selected area:', areaId);
     setCurrentArea(areaId);
@@ -42,8 +44,10 @@ export function Sidebar() {
     if (currentFeature) {
       setCurrentFeature(null);
     }
-    // Navigate to tasks view with area filter in URL
-    navigate('/tasks?area=' + areaId);
+    // Extract the ID without the AREA_ prefix
+    const id = areaId.replace('AREA_', '');
+    // Navigate to area detail page
+    navigate(routes.areaDetail(id));
   };
 
   if (!ui.sidebarOpen) return null;

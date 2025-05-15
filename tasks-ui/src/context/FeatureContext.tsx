@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { Feature, OperationResult } from '../lib/types';
 import { fetchFeatures, fetchFeature, saveFeature, removeFeature } from '../lib/api/core-client';
 import { useToast } from '../hooks/useToast';
+import { deduplicateByName } from '../lib/utils';
 
 interface FeatureContextType {
   features: Feature[];
@@ -14,7 +15,7 @@ interface FeatureContextType {
   updateFeature: (feature: Feature) => Promise<OperationResult<Feature>>;
   deleteFeature: (id: string, force?: boolean) => Promise<OperationResult<void>>;
   setCurrentFeature: (featureId: string | null) => void;
-  getFeatureById: (id: string) => Feature | undefined;
+  getFeatureById: (id: string, phase?: string) => Feature | undefined;
 }
 
 const FeatureContext = createContext<FeatureContextType | undefined>(undefined);
@@ -29,9 +30,23 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
   const refreshFeatures = async (phase?: string) => {
     setLoading(true);
     try {
+      // If phase is specified, we only fetch features for that phase
       const result = await fetchFeatures(phase);
       if (result.success) {
-        setFeatures(result.data || []);
+        // When no specific phase is requested, deduplicate features by name
+        if (!phase) {
+          // Fetch features for all phases and deduplicate
+          const allFeaturesResult = await fetchFeatures();
+          if (allFeaturesResult.success) {
+            const deduplicated = deduplicateByName(allFeaturesResult.data || []);
+            setFeatures(deduplicated);
+          } else {
+            setFeatures(result.data || []);
+          }
+        } else {
+          // Phase-specific view, no need to deduplicate
+          setFeatures(result.data || []);
+        }
 
         // If no current feature is selected and we have features available,
         // we don't auto-select to avoid unexpected UI changes
@@ -131,7 +146,14 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const getFeatureById = (id: string) => {
+  const getFeatureById = (id: string, phase?: string) => {
+    // If phase is specified, try to find a feature with the exact ID and phase first
+    if (phase) {
+      const featureInPhase = features.find(f => f.id === id && f.phase === phase);
+      if (featureInPhase) return featureInPhase;
+    }
+    
+    // Otherwise, find by ID only
     return features.find(f => f.id === id);
   };
 
