@@ -12,6 +12,13 @@ import { parseTaskFile, formatTaskFile, generateTaskId } from '../task-parser.js
 import { projectConfig } from '../project-config.js';
 import { getTasksDirectory, getPhasesDirectory, ensureDirectoryExists, getAllFiles } from './index.js';
 import { updateRelationships } from './task-relationships.js';
+import { 
+  normalizePriority, 
+  normalizeTaskStatus,
+  normalizePhaseStatus,
+  isCompletedTaskStatus,
+  getPriorityOrder
+} from '../field-normalizers.js';
 
 /**
  * Lists all tasks with optional filtering
@@ -53,8 +60,13 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
           task.metadata.is_overview = true;
         }
 
-        // Apply filters
-        if (options.status && task.metadata.status !== options.status) continue;
+        // Apply filters with normalization
+        if (options.status) {
+          const normalizedFilterStatus = normalizeTaskStatus(options.status);
+          const normalizedTaskStatus = normalizeTaskStatus(task.metadata.status);
+          if (normalizedTaskStatus !== normalizedFilterStatus) continue;
+        }
+        
         if (options.type && task.metadata.type !== options.type) continue;
         if (options.assignee && task.metadata.assigned_to !== options.assignee) continue;
         if (options.phase && task.metadata.phase !== options.phase) continue;
@@ -63,11 +75,7 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
 
         // Filter out completed tasks by default, UNLESS explicitly requested to include them
         if (options.include_completed !== true) {
-          const status = task.metadata.status || '';
-          if (status.includes('Done') ||
-              status.includes('🟢') ||
-              status.includes('Completed') ||
-              status.includes('Complete')) {
+          if (isCompletedTaskStatus(task.metadata.status)) {
             continue;
           }
         }
@@ -94,16 +102,8 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
 
     // Sort tasks by priority or creation date (newest first)
     tasks.sort((a, b) => {
-      const priorityOrder: Record<string, number> = {
-        '🔥 Highest': 4,
-        '🔼 High': 3,
-        '▶️ Medium': 2,
-        '🔽 Low': 1,
-        '': 0
-      };
-
-      const aPrio = priorityOrder[a.metadata.priority || ''] || 0;
-      const bPrio = priorityOrder[b.metadata.priority || ''] || 0;
+      const aPrio = getPriorityOrder(a.metadata.priority);
+      const bPrio = getPriorityOrder(b.metadata.priority);
 
       if (aPrio !== bPrio) {
         return bPrio - aPrio; // Higher priority first
@@ -208,6 +208,15 @@ export async function createTask(task: Task, subdirectory?: string): Promise<Ope
       task.metadata.id = generateTaskId();
     }
 
+    // Normalize priority and status values if present
+    if (task.metadata.priority) {
+      task.metadata.priority = normalizePriority(task.metadata.priority);
+    }
+
+    if (task.metadata.status) {
+      task.metadata.status = normalizeTaskStatus(task.metadata.status);
+    }
+
     // Add created date if not set
     if (!task.metadata.created_date) {
       const today = new Date();
@@ -301,11 +310,24 @@ export async function updateTask(
     const today = new Date();
     const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD
     
-    // Update metadata fields
+    // Update metadata fields with normalization
     if (updates.metadata) {
+      // Create a normalized copy of the updates
+      const normalizedMetadata = { ...updates.metadata };
+      
+      // Apply normalizations to relevant fields
+      if (normalizedMetadata.status !== undefined) {
+        normalizedMetadata.status = normalizeTaskStatus(normalizedMetadata.status);
+      }
+      
+      if (normalizedMetadata.priority !== undefined) {
+        normalizedMetadata.priority = normalizePriority(normalizedMetadata.priority);
+      }
+      
+      // Update the task metadata with normalized values
       task.metadata = {
         ...task.metadata,
-        ...updates.metadata,
+        ...normalizedMetadata,
         // Always update the updated_date
         updated_date: todayString
       };
@@ -319,9 +341,13 @@ export async function updateTask(
       }
     }
     
-    // Handle direct property updates (not nested in metadata)
+    // Handle direct property updates (not nested in metadata) with normalization
     if (updates.status !== undefined) {
-      task.metadata.status = updates.status;
+      task.metadata.status = normalizeTaskStatus(updates.status);
+    }
+    
+    if (updates.priority !== undefined) {
+      task.metadata.priority = normalizePriority(updates.priority);
     }
     
     if (updates.phase !== undefined) {

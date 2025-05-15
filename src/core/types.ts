@@ -100,7 +100,17 @@ export interface TaskFilterOptions {
 
 // Update options for task
 export interface TaskUpdateOptions {
+  // Direct field updates (for convenience)
+  status?: string;
+  priority?: string;
+  phase?: string;
+  subdirectory?: string;
+  new_id?: string;
+  
+  // Nested metadata updates (for full control)
   metadata?: Partial<TaskMetadata>;
+  
+  // Content updates
   content?: string;
 }
 

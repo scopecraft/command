@@ -54,7 +54,10 @@ import {
   deletePhase,
   Task,
   TaskMetadata,
-  generateTaskId
+  generateTaskId,
+  normalizePriority,
+  normalizeTaskStatus,
+  normalizePhaseStatus
 } from '../core/index.js';
 
 /**
@@ -88,13 +91,13 @@ export async function handleTaskGet(params: TaskGetParams) {
  * Handler for task_create method
  */
 export async function handleTaskCreate(params: TaskCreateParams) {
-  // Create the task object from the parameters
+  // Create the task object from the parameters with normalization
   const metadata: TaskMetadata = {
     id: params.id || generateTaskId(),
     title: params.title,
     type: params.type,
-    status: params.status || '🟡 To Do',
-    priority: params.priority || '▶️ Medium',
+    status: normalizeTaskStatus(params.status || '🟡 To Do'),
+    priority: normalizePriority(params.priority || '▶️ Medium'),
     created_date: new Date().toISOString().split('T')[0],
     updated_date: new Date().toISOString().split('T')[0],
     assigned_to: params.assignee || '',
@@ -130,7 +133,30 @@ export async function handleTaskCreate(params: TaskCreateParams) {
  * Handler for task_update method
  */
 export async function handleTaskUpdate(params: TaskUpdateParams) {
-  return await updateTask(params.id, params.updates, params.phase, params.subdirectory);
+  // Normalize status and priority values if provided
+  const updates = { ...params.updates };
+  
+  // Normalize direct property updates
+  if (updates.status !== undefined) {
+    updates.status = normalizeTaskStatus(updates.status);
+  }
+  
+  if (updates.priority !== undefined) {
+    updates.priority = normalizePriority(updates.priority);
+  }
+  
+  // Normalize metadata property updates if present
+  if (updates.metadata) {
+    if (updates.metadata.status !== undefined) {
+      updates.metadata.status = normalizeTaskStatus(updates.metadata.status);
+    }
+    
+    if (updates.metadata.priority !== undefined) {
+      updates.metadata.priority = normalizePriority(updates.metadata.priority);
+    }
+  }
+  
+  return await updateTask(params.id, updates, params.phase, params.subdirectory);
 }
 
 /**
@@ -162,7 +188,7 @@ export async function handlePhaseCreate(params: PhaseCreateParams) {
     id: params.id,
     name: params.name,
     description: params.description,
-    status: params.status || '🟡 Pending',
+    status: normalizePhaseStatus(params.status || '🟡 Pending'),
     order: params.order,
     tasks: []
   };
@@ -174,7 +200,14 @@ export async function handlePhaseCreate(params: PhaseCreateParams) {
  * Handler for phase_update method
  */
 export async function handlePhaseUpdate(params: PhaseUpdateParams) {
-  return await updatePhase(params.id, params.updates);
+  // Normalize phase status if provided
+  const updates = { ...params.updates };
+  
+  if (updates.status !== undefined) {
+    updates.status = normalizePhaseStatus(updates.status);
+  }
+  
+  return await updatePhase(params.id, updates);
 }
 
 /**
@@ -188,21 +221,14 @@ export async function handlePhaseDelete(params: PhaseDeleteParams) {
  * Handler for workflow_current method
  */
 export async function handleWorkflowCurrent(params: WorkflowCurrentParams) {
-  const inProgressResult = await listTasks({ status: '🔵 In Progress' });
+  // Using the normalized status value means we'll find all in-progress tasks
+  // regardless of their specific format
+  const inProgressResult = await listTasks({ 
+    status: normalizeTaskStatus('In Progress') 
+  });
   
   if (!inProgressResult.success) {
     return inProgressResult;
-  }
-  
-  if (inProgressResult.data && inProgressResult.data.length === 0) {
-    // Try alternative status text
-    const alternativeResult = await listTasks({ status: 'In Progress' });
-    
-    if (!alternativeResult.success) {
-      return alternativeResult;
-    }
-    
-    return alternativeResult;
   }
   
   return inProgressResult;
@@ -215,8 +241,10 @@ export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkComplet
   // Get the next task before marking current as complete
   const nextTaskResult = await findNextTask(params.id);
   
-  // Mark current task as complete
-  const updateResult = await updateTask(params.id, { metadata: { status: '🟢 Done' } });
+  // Mark current task as complete, using the normalized "Done" status
+  const updateResult = await updateTask(params.id, { 
+    metadata: { status: normalizeTaskStatus('Done') }
+  });
   
   if (!updateResult.success) {
     return updateResult;
