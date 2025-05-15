@@ -29,8 +29,29 @@ program
   .description('CLI for managing Markdown-Driven Task Management (MDTM) files with TOML/YAML frontmatter')
   .version(version);
 
+// Add structured help overview
+program.addHelpText('beforeAll', `
+USAGE: sc [entity] [command] [options]
+
+Available entity types:
+  task       Task operations (create, list, update, delete, etc.)
+  phase      Phase management operations
+  feature    Feature management operations
+  area       Area management operations
+  workflow   Task workflow and sequence operations
+  template   Template management operations
+
+Examples:
+  sc task list                     List all tasks
+  sc task create --title "New task" --type "🌟 Feature"   Create a new task
+  sc phase list                    List all phases
+  sc workflow next                 Find next task to work on
+`);
+
 // Set up entity commands (task, phase, feature, area, workflow)
 setupEntityCommands(program);
+
+// No footnote needed for alternative command formats
 
 /**
  * Validate environment before running commands

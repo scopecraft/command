@@ -36,12 +36,13 @@ import {
 export function setupTaskCommands(program: Command): void {
   // Create task command group
   const taskCommand = new Command('task')
-    .description('Task management commands');
+    .description('Task management commands')
+    .addHelpText('before', '\nTASK MANAGEMENT COMMANDS\n======================\n');
 
   // task list command
   taskCommand
     .command('list')
-    .description('List all tasks')
+    .description('List all tasks (Example: sc task list --status "🟡 To Do" --phase "release-v1")')
     .option('-s, --status <status>', 'Filter by status (e.g., "🟡 To Do", "🟢 Done")')
     .option('-t, --type <type>', 'Filter by type (e.g., "🌟 Feature", "🐛 Bug")')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
@@ -64,7 +65,7 @@ export function setupTaskCommands(program: Command): void {
   // task create command
   taskCommand
     .command('create')
-    .description('Create a new task')
+    .description('Create a new task (Example: sc task create --title "New feature" --type "🌟 Feature" --phase "release-v1")')
     .option('--id <id>', 'Task ID (generated if not provided, use "_overview" for feature overview files)')
     .option('--title <title>', 'Task title')
     .option('--type <type>', 'Task type (e.g., "🌟 Feature", "🐛 Bug")')
@@ -88,7 +89,7 @@ export function setupTaskCommands(program: Command): void {
   // task update command
   taskCommand
     .command('update <id>')
-    .description('Update a task')
+    .description('Update a task (Example: sc task update TASK-123 --status "🔵 In Progress")')
     .option('--title <title>', 'Task title')
     .option('--status <status>', 'Task status')
     .option('--type <type>', 'Task type')
@@ -147,7 +148,7 @@ export function setupTaskCommands(program: Command): void {
   // task move command
   taskCommand
     .command('move <id>')
-    .description('Move a task to a different feature or area subdirectory')
+    .description('Move a task to a different feature or area subdirectory (Example: sc task move TASK-123 --subdirectory "FEATURE_NewFeature")')
     .requiredOption('--subdirectory <subdirectory>', 'Target subdirectory to move the task to')
     .option('--phase <phase>', 'Target phase (if moving between phases)')
     .option('--search-phase <searchPhase>', 'Source phase to search for the task')
@@ -157,10 +158,10 @@ export function setupTaskCommands(program: Command): void {
   // Add task group to root program
   program.addCommand(taskCommand);
 
-  // Also add legacy commands (directly on root program)
+  // Add only the most essential top-level commands for convenience
   program
     .command('list')
-    .description('List all tasks (Legacy: use "task list" instead)')
+    .description('List all tasks')
     .option('-s, --status <status>', 'Filter by status (e.g., "🟡 To Do", "🟢 Done")')
     .option('-t, --type <type>', 'Filter by type (e.g., "🌟 Feature", "🐛 Bug")')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
@@ -173,90 +174,11 @@ export function setupTaskCommands(program: Command): void {
 
   program
     .command('get <id>')
-    .description('Get a task by ID (Legacy: use "task get" instead)')
+    .description('Get a task by ID')
     .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
     .option('-p, --phase <phase>', 'Phase to look in')
     .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
     .action(handleGetCommand);
-
-  program
-    .command('create')
-    .description('Create a new task (Legacy: use "task create" instead)')
-    .option('--id <id>', 'Task ID (generated if not provided, use "_overview" for feature overview files)')
-    .option('--title <title>', 'Task title')
-    .option('--type <type>', 'Task type (e.g., "🌟 Feature", "🐛 Bug")')
-    .option('--status <status>', 'Task status (default: "🟡 To Do")')
-    .option('--priority <priority>', 'Task priority (default: "▶️ Medium")')
-    .option('--assignee <assignee>', 'Assigned to')
-    .option('--phase <phase>', 'Phase ID or name')
-    .option('--subdirectory <subdirectory>', 'Subdirectory within phase (e.g., "FEATURE_Login")')
-    .option('--parent <parent>', 'Parent task ID')
-    .option('--depends <depends...>', 'Dependencies (task IDs)')
-    .option('--previous <previous>', 'Previous task in workflow')
-    .option('--next <next>', 'Next task in workflow')
-    .option('--tags <tags...>', 'Tags for the task')
-    .option('--content <content>', 'Task content')
-    .option('--file <file>', 'Create from file (JSON or TOML+Markdown)')
-    .option('--template <template>', 'Use a predefined template (feature, bug, etc.)')
-    .requiredOption('--title <title>', 'Task title is required')
-    .requiredOption('--type <type>', 'Task type is required')
-    .action(handleCreateCommand);
-
-  program
-    .command('update <id>')
-    .description('Update a task (Legacy: use "task update" instead)')
-    .option('--title <title>', 'Task title')
-    .option('--status <status>', 'Task status')
-    .option('--type <type>', 'Task type')
-    .option('--priority <priority>', 'Task priority')
-    .option('--assignee <assignee>', 'Assigned to')
-    .option('--phase <phase>', 'Phase ID or name (where to move the task)')
-    .option('--subdirectory <subdirectory>', 'Subdirectory within phase (where to move the task)')
-    .option('--search-phase <searchPhase>', 'Phase to search for the task')
-    .option('--search-subdirectory <searchSubdirectory>', 'Subdirectory to search for the task')
-    .option('--parent <parent>', 'Parent task ID')
-    .option('--depends <depends...>', 'Dependencies (task IDs)')
-    .option('--previous <previous>', 'Previous task in workflow')
-    .option('--next <next>', 'Next task in workflow')
-    .option('--tags <tags...>', 'Tags for the task')
-    .option('--content <content>', 'Task content')
-    .option('--file <file>', 'Update from file (JSON or TOML+Markdown)')
-    .action(handleUpdateCommand);
-
-  program
-    .command('delete <id>')
-    .description('Delete a task (Legacy: use "task delete" instead)')
-    .option('-p, --phase <phase>', 'Phase to look in')
-    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
-    .action(handleDeleteCommand);
-
-  program
-    .command('start <id>')
-    .description('Mark a task as "In Progress" (Legacy: use "task start" instead)')
-    .action(async (id) => {
-      await handleUpdateCommand(id, { status: '🔵 In Progress' });
-    });
-
-  program
-    .command('complete <id>')
-    .description('Mark a task as "Done" (Legacy: use "task complete" instead)')
-    .action(async (id) => {
-      await handleUpdateCommand(id, { status: '🟢 Done' });
-    });
-
-  program
-    .command('block <id>')
-    .description('Mark a task as "Blocked" (Legacy: use "task block" instead)')
-    .action(async (id) => {
-      await handleUpdateCommand(id, { status: '⚪ Blocked' });
-    });
-
-  program
-    .command('review <id>')
-    .description('Mark a task as "In Review" (Legacy: use "task review" instead)')
-    .action(async (id) => {
-      await handleUpdateCommand(id, { status: '🟣 Review' });
-    });
 }
 
 /**
@@ -266,19 +188,20 @@ export function setupTaskCommands(program: Command): void {
 export function setupPhaseCommands(program: Command): void {
   // Create phase command group
   const phaseCommand = new Command('phase')
-    .description('Phase management commands');
+    .description('Phase management commands')
+    .addHelpText('before', '\nPHASE MANAGEMENT COMMANDS\n======================\n');
 
   // phase list command
   phaseCommand
     .command('list')
-    .description('List all phases')
+    .description('List all phases (Example: sc phase list --format json)')
     .option('-f, --format <format>', 'Output format: table, json', 'table')
     .action(handlePhasesCommand);
 
   // phase create command
   phaseCommand
     .command('create')
-    .description('Create a new phase')
+    .description('Create a new phase (Example: sc phase create --id "release-v2" --name "Release 2.0")')
     .requiredOption('--id <id>', 'Phase ID')
     .requiredOption('--name <n>', 'Phase name')
     .option('--description <description>', 'Phase description')
@@ -336,66 +259,12 @@ export function setupPhaseCommands(program: Command): void {
   // Add phase group to root program
   program.addCommand(phaseCommand);
 
-  // Also add legacy commands (directly on root program)
+  // Add phases command for phases listing at top level
   program
     .command('phases')
-    .description('List all phases (Legacy: use "phase list" instead)')
+    .description('List all phases')
     .option('-f, --format <format>', 'Output format: table, json', 'table')
     .action(handlePhasesCommand);
-
-  program
-    .command('phase-create')
-    .description('Create a new phase (Legacy: use "phase create" instead)')
-    .requiredOption('--id <id>', 'Phase ID')
-    .requiredOption('--name <n>', 'Phase name')
-    .option('--description <description>', 'Phase description')
-    .option('--status <status>', 'Phase status (default: "🟡 Pending")')
-    .option('--order <order>', 'Phase order (number)', parseInt)
-    .action(handlePhaseCreateCommand);
-
-  program
-    .command('phase-update <id>')
-    .description('Update an existing phase (Legacy: use "phase update" instead)')
-    .option('--new-id <newId>', 'New phase ID (use this to rename the phase)')
-    .option('--name <n>', 'New phase name')
-    .option('--description <description>', 'New phase description')
-    .option('--status <status>', 'New phase status')
-    .option('--order <order>', 'New phase order (number)', parseInt)
-    .action(handlePhaseUpdateCommand);
-
-  program
-    .command('phase-delete <id>')
-    .description('Delete a phase (Legacy: use "phase delete" instead)')
-    .option('-f, --force', 'Force deletion of phase with tasks')
-    .action(handlePhaseDeleteCommand);
-
-  program
-    .command('phase-start <id>')
-    .description('Mark a phase as "In Progress" (Legacy: use "phase start" instead)')
-    .action(async (id) => {
-      await handlePhaseUpdateCommand(id, { status: '🔵 In Progress' });
-    });
-
-  program
-    .command('phase-complete <id>')
-    .description('Mark a phase as "Completed" (Legacy: use "phase complete" instead)')
-    .action(async (id) => {
-      await handlePhaseUpdateCommand(id, { status: '🟢 Completed' });
-    });
-
-  program
-    .command('phase-block <id>')
-    .description('Mark a phase as "Blocked" (Legacy: use "phase block" instead)')
-    .action(async (id) => {
-      await handlePhaseUpdateCommand(id, { status: '⚪ Blocked' });
-    });
-
-  program
-    .command('phase-pending <id>')
-    .description('Mark a phase as "Pending" (Legacy: use "phase pending" instead)')
-    .action(async (id) => {
-      await handlePhaseUpdateCommand(id, { status: '🟡 Pending' });
-    });
 }
 
 /**
@@ -405,12 +274,13 @@ export function setupPhaseCommands(program: Command): void {
 export function setupFeatureAreaCommands(program: Command): void {
   // Create feature command group
   const featureCommand = new Command('feature')
-    .description('Feature management commands');
+    .description('Feature management commands')
+    .addHelpText('before', '\nFEATURE MANAGEMENT COMMANDS\n========================\n');
 
   // feature create command (creates an overview file in a FEATURE_ subdirectory)
   featureCommand
     .command('create')
-    .description('Create a new feature (creates overview file in FEATURE_ subdirectory)')
+    .description('Create a new feature (Example: sc feature create --name "Authentication" --title "User Auth" --phase "release-v1")')
     .requiredOption('--name <name>', 'Feature name (will be prefixed with FEATURE_)')
     .requiredOption('--title <title>', 'Feature title')
     .requiredOption('--phase <phase>', 'Phase to create the feature in')
@@ -489,7 +359,8 @@ export function setupFeatureAreaCommands(program: Command): void {
 
   // Create area command group
   const areaCommand = new Command('area')
-    .description('Area management commands');
+    .description('Area management commands')
+    .addHelpText('before', '\nAREA MANAGEMENT COMMANDS\n=====================\n');
 
   // area create command (creates an overview file in an AREA_ subdirectory)
   areaCommand
@@ -579,12 +450,13 @@ export function setupFeatureAreaCommands(program: Command): void {
 export function setupWorkflowCommands(program: Command): void {
   // Create workflow command group
   const workflowCommand = new Command('workflow')
-    .description('Workflow management commands');
+    .description('Workflow management commands')
+    .addHelpText('before', '\nWORKFLOW MANAGEMENT COMMANDS\n=========================\n');
 
   // workflow next command
   workflowCommand
     .command('next [id]')
-    .description('Find the next task to work on, optionally based on a current task')
+    .description('Find the next task to work on (Example: sc workflow next)')
     .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
     .action(handleNextTaskCommand);
 
@@ -604,25 +476,6 @@ export function setupWorkflowCommands(program: Command): void {
 
   // Add workflow group to root program
   program.addCommand(workflowCommand);
-
-  // Also add legacy commands (directly on root program)
-  program
-    .command('next-task [id]')
-    .description('Find the next task to work on (Legacy: use "workflow next" instead)')
-    .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
-    .action(handleNextTaskCommand);
-
-  program
-    .command('current-task')
-    .description('Show tasks currently in progress (Legacy: use "workflow current" instead)')
-    .option('-f, --format <format>', 'Output format: table, json, minimal, workflow', 'table')
-    .action(handleCurrentTaskCommand);
-
-  program
-    .command('mark-complete-next <id>')
-    .description('Mark a task as done and show the next task (Legacy: use "workflow mark-complete-next" instead)')
-    .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
-    .action(handleMarkCompleteNextCommand);
 }
 
 /**
@@ -632,7 +485,8 @@ export function setupWorkflowCommands(program: Command): void {
 export function setupTemplateCommands(program: Command): void {
   // Create template command group
   const templateCommand = new Command('template')
-    .description('Template management commands');
+    .description('Template management commands')
+    .addHelpText('before', '\nTEMPLATE MANAGEMENT COMMANDS\n=========================\n');
 
   // template list command
   templateCommand
@@ -642,12 +496,6 @@ export function setupTemplateCommands(program: Command): void {
 
   // Add template group to root program
   program.addCommand(templateCommand);
-
-  // Also add legacy command (directly on root program)
-  program
-    .command('list-templates')
-    .description('List available task templates (Legacy: use "template list" instead)')
-    .action(handleListTemplatesCommand);
 }
 
 /**
