@@ -193,9 +193,19 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
     {
       id: z.string(),
       updates: z.object({
+        // Add direct field updates to match TaskUpdateOptions interface
+        status: z.string().optional(),
+        priority: z.string().optional(),
+        phase: z.string().optional(),
+        subdirectory: z.string().optional(),
+        new_id: z.string().optional(),
+        
+        // Keep existing metadata and content fields
         metadata: z.record(z.any()).optional(),
         content: z.string().optional()
-      }).optional()
+      }).optional(),
+      phase: z.string().optional(),
+      subdirectory: z.string().optional()
     },
     async (params) => {
       try {
@@ -204,7 +214,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           return formatError(new Error("No updates provided"));
         }
         
-        const result = await updateTask(params.id, params.updates);
+        const result = await updateTask(params.id, params.updates, params.phase, params.subdirectory);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
