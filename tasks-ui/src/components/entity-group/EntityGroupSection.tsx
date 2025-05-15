@@ -6,6 +6,7 @@ import { columns } from '../task-list/table/columns';
 import { Button } from '../ui/button';
 import { useLocation } from 'wouter';
 import { routes } from '../../lib/routes';
+import { formatDate } from '../../lib/utils/format';
 
 type EntityType = 'feature' | 'area' | 'phase';
 
@@ -25,6 +26,10 @@ interface EntityGroupSectionProps {
     title?: string;
     description?: string;
     status?: string;
+    assigned_to?: string;
+    created_date?: string;
+    updated_date?: string;
+    tags?: string[];
     progress?: {
       completed: number;
       total: number;
@@ -72,59 +77,107 @@ export function EntityGroupSection({
         className={`${colors.headerBg} p-4 flex justify-between items-center cursor-pointer`}
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <div className="flex items-center">
-          <span className={`${colors.icon} mr-2`}>
+        <div className="flex flex-1 items-center">
+          <span className={`${colors.icon} mr-2 text-xl`}>
             {getEntityIcon(childEntity.type)}
           </span>
           
-          <div>
-            <h3 className="text-lg font-semibold flex items-center">
-              <span>{childEntity.name}</span>
-              {childEntity.title && childEntity.title !== childEntity.name && (
-                <span className="ml-2 text-sm text-muted-foreground">({childEntity.title})</span>
-              )}
-            </h3>
-            
-            {childEntity.status && (
-              <div className="text-xs text-muted-foreground">
-                Status: {childEntity.status}
+          <div className="flex-1">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold flex items-center">
+                <span>{childEntity.name}</span>
+                {childEntity.title && childEntity.title !== childEntity.name && (
+                  <span className="ml-2 text-sm text-muted-foreground">({childEntity.title})</span>
+                )}
+              </h3>
+              
+              <div className="flex items-center text-sm space-x-3">
+                {childEntity.status && (
+                  <span className={`${getStatusBadgeColor(childEntity.status)} px-2 py-0.5 rounded text-xs font-medium`}>
+                    {childEntity.status}
+                  </span>
+                )}
+                
+                {childEntity.assigned_to && (
+                  <span className="text-xs text-muted-foreground">
+                    Assigned: <span className="font-mono">{childEntity.assigned_to}</span>
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-          
-          <div className="ml-4 text-sm text-muted-foreground">
-            {progress.percentage}% complete - {progress.completed}/{progress.total} tasks
+            </div>
+            
+            <div className="flex justify-between items-center mt-1">
+              <div className="text-sm text-muted-foreground">
+                {progress.percentage}% complete - {progress.completed}/{progress.total} tasks
+              </div>
+              
+              <div className="flex items-center">
+                <div className="w-32 h-2 bg-muted rounded-full overflow-hidden mr-3">
+                  <div 
+                    className={`h-full ${colors.progressBar}`}
+                    style={{ width: `${progress.percentage}%` }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center">
-          <div className="w-32 h-3 bg-muted rounded-full overflow-hidden mr-3">
-            <div 
-              className={`h-full ${colors.progressBar}`}
-              style={{ width: `${progress.percentage}%` }}
-            />
-          </div>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsCollapsed(!isCollapsed);
-            }}
-          >
-            {isCollapsed ? '▼' : '▲'}
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsCollapsed(!isCollapsed);
+          }}
+        >
+          {isCollapsed ? '▼' : '▲'}
+        </Button>
       </div>
       
       {/* Content section (only shown when not collapsed) */}
       {!isCollapsed && (
         <div className="p-4">
+          {/* Metadata grid */}
+          <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-2 text-sm">
+            {childEntity.created_date && (
+              <div>
+                <span className="text-muted-foreground">Created:</span>{' '}
+                <span>{formatDate(childEntity.created_date)}</span>
+              </div>
+            )}
+            
+            {childEntity.updated_date && (
+              <div>
+                <span className="text-muted-foreground">Updated:</span>{' '}
+                <span>{formatDate(childEntity.updated_date)}</span>
+              </div>
+            )}
+            
+            {/* Tags display */}
+            {childEntity.tags && childEntity.tags.length > 0 && (
+              <div className="col-span-2">
+                <span className="text-muted-foreground mr-2">Tags:</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {childEntity.tags.map(tag => (
+                    <span 
+                      key={tag} 
+                      className="bg-accent/20 text-xs px-2 py-0.5 rounded-md"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
           {/* Entity-specific description */}
           {childEntity.description && (
-            <div className="mb-4 text-sm text-muted-foreground">
-              {childEntity.description}
+            <div className="mb-4 px-3 py-2 bg-card/50 border border-border/50 rounded-md text-sm">
+              <h4 className="font-medium mb-1">Description</h4>
+              <p className="text-muted-foreground">{childEntity.description}</p>
             </div>
           )}
           
@@ -321,7 +374,7 @@ function getEntityDetailRoute(entityType: EntityType, id: string) {
   }
 }
 
-// Get status-specific color
+// Get status-specific color for progress bars
 function getStatusColor(status: string) {
   if (status.includes('Done') || status.includes('Complete')) {
     return 'bg-green-500';
@@ -336,10 +389,36 @@ function getStatusColor(status: string) {
   }
 }
 
+// Get status-specific color for badges
+function getStatusBadgeColor(status: string) {
+  if (status.includes('Done') || status.includes('Complete')) {
+    return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+  } else if (status.includes('Progress')) {
+    return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
+  } else if (status.includes('To Do')) {
+    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100';
+  } else if (status.includes('Block') || status.includes('Issue')) {
+    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
+  } else {
+    return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100';
+  }
+}
+
 // Create task with parent-child relationship
 function createTask(
   parentEntity: { id: string; type: EntityType; name: string; },
-  childEntity: { id: string; type: EntityType; name: string; },
+  childEntity: { 
+    id: string; 
+    type: EntityType; 
+    name: string;
+    title?: string;
+    description?: string;
+    status?: string;
+    assigned_to?: string;
+    created_date?: string;
+    updated_date?: string;
+    tags?: string[];
+  },
   navigate: (route: string) => void
 ) {
   const params = new URLSearchParams();
