@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { useFeatureContext } from '../../context/FeatureContext';
 import { useTaskContext } from '../../context/TaskContext';
+import { usePhaseContext } from '../../context/PhaseContext';
 import { Button } from '../ui/button';
 import { routes } from '../../lib/routes';
 import { formatDate } from '../../lib/utils/format';
 import { DataTable } from '../task-list/table/data-table';
 import { columns } from '../task-list/table/columns';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
+import { EntityGroupSection } from '../entity-group';
 
 function FeatureDetailViewInner() {
   const [, params] = useRoute<{ id: string }>(routes.featureDetail(':id'));
@@ -15,6 +17,7 @@ function FeatureDetailViewInner() {
   const featureId = `FEATURE_${id}`;
   const { features, getFeatureById, loading, error } = useFeatureContext();
   const { tasks } = useTaskContext();
+  const { phases } = usePhaseContext();
   const [, navigate] = useLocation();
   const [feature, setFeature] = useState(getFeatureById(featureId));
   
@@ -26,6 +29,9 @@ function FeatureDetailViewInner() {
   const completedTasks = featureTasks.filter(task => 
     task.status.includes('Done') || task.status.includes('Complete')).length;
   const progressPercentage = totalTasks > 0 ? Math.floor((completedTasks / totalTasks) * 100) : 0;
+  
+  // Group tasks by phase
+  const tasksByPhase = groupTasksByPhase(featureTasks);
 
   useEffect(() => {
     // Update feature data when features are loaded
@@ -217,8 +223,9 @@ function FeatureDetailViewInner() {
         )}
       </div>
       
+      {/* Phase-specific sections */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-4">Tasks in Feature</h2>
+        <h2 className="text-xl font-semibold mb-4">Tasks by Phase</h2>
         
         {featureTasks.length === 0 ? (
           <div className="text-center p-4 border border-border rounded-md">
@@ -231,11 +238,34 @@ function FeatureDetailViewInner() {
             </Button>
           </div>
         ) : (
-          <DataTable 
-            columns={columns} 
-            data={featureTasks}
-            onRowClick={(row) => navigate(routes.taskDetail(row.id))}
-          />
+          <div className="space-y-4">
+            {Object.entries(tasksByPhase).map(([phaseId, phaseTasks]) => {
+              // Find the phase object
+              const phase = phases.find(p => p.id === phaseId) || {
+                id: phaseId,
+                name: phaseId === 'unassigned' ? 'Unassigned' : phaseId,
+                order: 999
+              };
+              
+              return (
+                <EntityGroupSection
+                  key={phaseId}
+                  parentEntity={{
+                    id: featureId,
+                    type: 'feature',
+                    name: feature.name
+                  }}
+                  childEntity={{
+                    id: phase.id,
+                    type: 'phase',
+                    name: phase.name,
+                    status: phase.status
+                  }}
+                  tasks={phaseTasks}
+                />
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
@@ -255,4 +285,20 @@ export function FeatureDetailView() {
       <FeatureDetailViewInner />
     </ErrorBoundary>
   );
+}
+
+// Helper function to group tasks by phase
+function groupTasksByPhase(tasks: any[]) {
+  const taskGroups: Record<string, any[]> = {};
+  
+  // First collect all tasks by phase
+  tasks.forEach(task => {
+    const phase = task.phase || 'unassigned';
+    if (!taskGroups[phase]) {
+      taskGroups[phase] = [];
+    }
+    taskGroups[phase].push(task);
+  });
+  
+  return taskGroups;
 }
