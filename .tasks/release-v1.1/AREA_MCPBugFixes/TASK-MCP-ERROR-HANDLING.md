@@ -7,7 +7,7 @@ priority = "🔼 High"
 created_date = "2025-05-11"
 updated_date = "2025-05-15"
 assigned_to = ""
-phase = "release-v1"
+phase = "release-v1.1"
 subdirectory = "AREA_MCPBugFixes"
 +++
 
