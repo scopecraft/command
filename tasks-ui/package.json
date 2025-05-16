@@ -25,7 +25,7 @@
     "clsx": "^2.1.1",
     "elkjs": "^0.10.0",
     "lucide-react": "^0.510.0",
-    "mrmime": "^2.0.0",
+    "mrmime": "^2.0.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.56.3",

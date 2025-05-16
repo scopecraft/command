@@ -2,6 +2,8 @@ import { serve } from 'bun';
 import { join } from 'path';
 import { stat } from 'fs/promises';
 import { lookup } from 'mrmime';
+import { createClaudeWebSocketHandler } from './websocket/claude-handler.js';
+import { ProcessManager } from './websocket/process-manager.js';
 import {
   handleTaskList,
   handleTaskGet,
@@ -31,14 +33,27 @@ const DIST_DIR = './tasks-ui/dist';
 const PORT = process.env.PORT || 3000;
 const API_PREFIX = '/api';
 
+// Initialize WebSocket components
+const processManager = new ProcessManager();
+const claudeWebSocketHandler = createClaudeWebSocketHandler(processManager);
+
 console.log(`Current working directory: ${process.cwd()}`);
 
 // Serve the React SPA and API endpoints
-serve({
+const server = serve({
   port: PORT as number,
-  async fetch(req) {
+  async fetch(req: Request, server: any) {
     const url = new URL(req.url);
     let path = url.pathname;
+    
+    // Upgrade to WebSocket if requested
+    if (path === '/ws/claude' && req.headers.get('upgrade') === 'websocket') {
+      const success = server.upgrade(req);
+      if (success) {
+        return undefined;
+      }
+      return new Response('WebSocket upgrade failed', { status: 500 });
+    }
     
     // Handle API requests
     if (path.startsWith(API_PREFIX)) {
@@ -87,7 +102,9 @@ serve({
       console.error('Error serving file:', err);
       return new Response('Not Found', { status: 404 });
     }
-  }
+  },
+  
+  websocket: claudeWebSocketHandler
 });
 
 // Handle API requests by mapping them to MCP handlers
@@ -381,5 +398,9 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
     );
   }
 }
+
+// Setup process manager with server reference
+processManager.setServer(server);
+processManager.setupShutdownHandlers();
 
 console.log(`Server running at http://localhost:${PORT}`);

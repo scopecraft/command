@@ -13,6 +13,7 @@ import { PhaseDetailView } from './components/pages/PhaseDetailPage';
 import { ProgressComparisonView } from './components/pages/ProgressComparisonView';
 import { FeatureFormView } from './components/feature-form/FeatureFormView';
 import { AreaFormView } from './components/area-form/AreaFormView';
+import { PromptPage } from './components/pages/PromptPage';
 import { routes } from './lib/routes';
 
 // Main App component with routing
@@ -45,6 +46,10 @@ function App() {
           <Route path={routes.comparison} component={ProgressComparisonView} />
           
           <Route path={routes.graph} component={GraphPage} />
+          
+          <Route path={routes.prompt} component={PromptPage} />
+          <Route path={routes.promptWithId(':id')} component={PromptPage} />
+          
           {/* Fallback route */}
           <Route>
             <div className="p-4 text-center">

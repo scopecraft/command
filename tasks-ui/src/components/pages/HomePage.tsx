@@ -23,6 +23,9 @@ export function HomePage() {
           <Button onClick={() => navigate(routes.taskList)}>
             View Tasks
           </Button>
+          <Button variant="ghost" onClick={() => navigate(routes.prompt)} className="col-span-2">
+            Open Claude Assistant
+          </Button>
         </div>
       </div>
     </div>

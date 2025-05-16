@@ -206,44 +206,15 @@ export function Sidebar() {
           </ul>
         )}
       </div>
-      <div className="p-4 border-t border-border flex flex-col gap-2">
+      <div className="p-4 border-t border-border">
         <Button 
           variant="atlas" 
           className="w-full"
           onClick={() => {
-            // Create task with current context (feature, area, phase)
-            const params = new URLSearchParams();
-            
-            // Include selected phase, feature, or area in the task creation params
-            if (currentPhase) {
-              params.append('phase', currentPhase.id);
-            }
-            
-            if (currentFeature) {
-              params.append('feature', currentFeature.id);
-            }
-            
-            if (currentArea) {
-              params.append('area', currentArea.id);
-            }
-            
-            // Navigate to task create with context
-            const queryString = params.toString() ? `?${params.toString()}` : '';
-            navigate(`${routes.taskCreate}${queryString}`);
+            navigate(routes.prompt);
           }}
         >
-          <span className="text-[var(--atlas-light)] mr-1">+</span> Create Task
-        </Button>
-        <Button 
-          variant="outline" 
-          className="w-full"
-          onClick={() => {
-            // Clear current phase selection and navigate to all tasks
-            setCurrentPhase(null);
-            navigate('/tasks');
-          }}
-        >
-          All Tasks
+          <span className="text-[var(--atlas-light)] mr-1">💬</span> Claude Assistant
         </Button>
       </div>
     </aside>
