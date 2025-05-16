@@ -5,7 +5,7 @@ type = "🐞 Bug"
 status = "🟢 Done"
 priority = "🔥 Highest"
 created_date = "2025-05-10"
-updated_date = "2025-05-10"
+updated_date = "2025-05-16"
 assigned_to = ""
 phase = "release-v1"
 +++
