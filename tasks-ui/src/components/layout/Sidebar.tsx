@@ -118,7 +118,7 @@ export function Sidebar() {
                 <Button
                   variant={currentPhase?.id === phase.id ? 'secondary' : 'ghost'}
                   className={cn(
-                    'w-full justify-start text-left',
+                    'w-full justify-start text-left normal-case',
                     currentPhase?.id === phase.id && 'bg-accent'
                   )}
                   onClick={() => handlePhaseClick(phase.id)}
@@ -155,7 +155,7 @@ export function Sidebar() {
                 <Button
                   variant={currentFeature?.id === feature.id ? 'secondary' : 'ghost'}
                   className={cn(
-                    'w-full justify-start text-left',
+                    'w-full justify-start text-left normal-case',
                     currentFeature?.id === feature.id && 'bg-accent'
                   )}
                   onClick={() => handleFeatureClick(feature.id)}
@@ -193,7 +193,7 @@ export function Sidebar() {
                 <Button
                   variant={currentArea?.id === area.id ? 'secondary' : 'ghost'}
                   className={cn(
-                    'w-full justify-start text-left',
+                    'w-full justify-start text-left normal-case',
                     currentArea?.id === area.id && 'bg-accent'
                   )}
                   onClick={() => handleAreaClick(area.id)}
