@@ -1,11 +1,11 @@
 +++
 id = "TASK-MCP-TEMPLATE-INFO"
 title = "Enhance MCP Template Access"
-status = "🟡 To Do"
+status = "🟢 Done"
 type = "🌟 Feature"
 priority = "▶️ Medium"
 created_date = "2025-05-11"
-updated_date = "2025-05-13"
+updated_date = "2025-05-16"
 assigned_to = ""
 parent_task = ""
 depends_on = [ ]
@@ -39,17 +39,17 @@ subdirectory = "FEATURE_MCPIntegration"
 
 ## Acceptance Criteria ✅
 
-*   - [ ] New `template_list` method returns comprehensive template details
-*   - [ ] Documentation explains how to access and use templates via MCP
-*   - [ ] Template usage examples follow the MCP prompt guidelines for improved user experience
-*   - [ ] Implementation correctly works in both standalone and Roo Commander modes
+*   - [x] New `template_list` method returns comprehensive template details
+*   - [x] Documentation explains how to access and use templates via MCP
+*   - [x] Template usage examples follow the MCP prompt guidelines for improved user experience
+*   - [x] Implementation correctly works in both standalone and Roo Commander modes
 
 ## Implementation Notes / Sub-Tasks 📝
 
-*   - [ ] Implement the `template_list` method in the MCP server
-*   - [ ] Create helper functions to retrieve template details from the core module
-*   - [ ] Update MCP documentation to explain template usage
-*   - [ ] Create standard prompt patterns for template-based task creation (following MCP_PROMPT_GUIDELINES.md)
+*   - [x] Implement the `template_list` method in the MCP server
+*   - [x] Create helper functions to retrieve template details from the core module
+*   - [x] Update MCP documentation to explain template usage
+*   - [x] Create standard prompt patterns for template-based task creation (following MCP_PROMPT_GUIDELINES.md)
 
 ## Implementation Approach
 
@@ -155,3 +155,42 @@ Would you like me to customize any of these sections further?
 *   The prompt patterns ensure a consistent and user-friendly experience when working with templates
 *   This builds on our existing MCP tools implementation by adding template-specific methods and patterns
 *   Follows the guidelines established in MCP_PROMPT_GUIDELINES.md for improved user experience
+
+## Implementation Log 📊
+
+**Date: 2025-05-16**
+
+Completed implementation of the `template_list` MCP tool:
+
+1. Added new `TEMPLATE_LIST` method to `McpMethod` enum in `types.ts`
+2. Created `TemplateListParams` interface for the method parameters
+3. Implemented the `handleTemplateList` function in `handlers.ts`
+4. Registered the handler in the method registry
+5. Added the tool registration in `core-server.ts`
+6. Updated documentation:
+   - Added template_list tool details in `mcp-tool-descriptions.md`
+   - Added template usage prompt patterns in `MCP_PROMPT_GUIDELINES.md`
+
+Verified the implementation works by directly calling the tool:
+```
+mcp__scopecraft-cmd__template_list
+```
+
+This yields a proper list of templates with descriptions, e.g.:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "feature",
+      "name": "feature",
+      "path": "/.../01_mdtm_feature.md",
+      "description": "🌟 Feature"
+    },
+    ...
+  ],
+  "message": "Found 6 templates"
+}
+```
+
+The implementation leverages the existing `listTemplates()` function from the core module.
