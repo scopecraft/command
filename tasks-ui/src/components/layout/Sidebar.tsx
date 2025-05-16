@@ -64,8 +64,9 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 h-full bg-card border-r border-border flex flex-col">
+      
       <div className="p-4 border-b border-border">
-        <h2 className="text-sm font-medium text-muted-foreground">Views</h2>
+        <h2 className="text-sm font-medium text-[var(--atlas-light)] uppercase">Views</h2>
       </div>
       <div className="p-2 border-b border-border">
         <ul className="space-y-1">
@@ -73,7 +74,7 @@ export function Sidebar() {
             <Link href={routes.taskList}>
               <Button
                 variant="ghost"
-                className="w-full justify-start text-left"
+                className="w-full justify-start text-left normal-case"
               >
                 <span className="truncate">Task List</span>
               </Button>
@@ -83,7 +84,7 @@ export function Sidebar() {
             <Link href={routes.graph}>
               <Button
                 variant="ghost"
-                className="w-full justify-start text-left"
+                className="w-full justify-start text-left normal-case"
               >
                 <span className="truncate">Relationship Graph</span>
               </Button>
@@ -93,7 +94,7 @@ export function Sidebar() {
             <Link href={routes.comparison}>
               <Button
                 variant="ghost"
-                className="w-full justify-start text-left"
+                className="w-full justify-start text-left normal-case"
               >
                 <span className="truncate">Progress Comparison</span>
               </Button>
@@ -103,7 +104,7 @@ export function Sidebar() {
       </div>
 
       <div className="p-4 border-b border-border">
-        <h2 className="text-sm font-medium text-muted-foreground">Phases</h2>
+        <h2 className="text-sm font-medium text-[var(--atlas-light)] uppercase">Phases</h2>
       </div>
       <div className="overflow-y-auto p-2">
         {phasesLoading ? (
@@ -131,7 +132,7 @@ export function Sidebar() {
       </div>
       
       <div className="p-4 border-b border-border flex justify-between items-center">
-        <h2 className="text-sm font-medium text-muted-foreground">Features</h2>
+        <h2 className="text-sm font-medium text-[var(--atlas-light)] uppercase">Features</h2>
         <Button 
           variant="ghost" 
           size="sm" 
@@ -169,7 +170,7 @@ export function Sidebar() {
       </div>
       
       <div className="p-4 border-b border-border flex justify-between items-center">
-        <h2 className="text-sm font-medium text-muted-foreground">Areas</h2>
+        <h2 className="text-sm font-medium text-[var(--atlas-light)] uppercase">Areas</h2>
         <Button 
           variant="ghost" 
           size="sm" 
@@ -207,7 +208,7 @@ export function Sidebar() {
       </div>
       <div className="p-4 border-t border-border flex flex-col gap-2">
         <Button 
-          variant="default" 
+          variant="atlas" 
           className="w-full"
           onClick={() => {
             // Create task with current context (feature, area, phase)
@@ -231,7 +232,7 @@ export function Sidebar() {
             navigate(`${routes.taskCreate}${queryString}`);
           }}
         >
-          + Create Task
+          <span className="text-[var(--atlas-light)] mr-1">+</span> Create Task
         </Button>
         <Button 
           variant="outline" 

@@ -2,48 +2,65 @@
 
 @layer base {
   :root {
+    /* Atlas-inspired color scheme */
+    --terminal-black: #121212;
+    --terminal-dark: #1A1A1A;
+    --registry-blue: #1A5F7A;
+    --document-slate: #2C3333;
+    --connection-teal: #2E8A99;
+    --cream: #F2EFE1;
+    --atlas-navy: #0A2647;
+    --atlas-light: #3A8BD1;
+    --bridge-orange: #E57C23;
+    --forge-rust: #8B4513;
+    --lens-violet: #5B4B8A;
+    --grid-color: rgba(255, 255, 255, 0.05);
+    --section-gradient: linear-gradient(90deg, rgba(10, 38, 71, 0.3) 0%, rgba(26, 95, 122, 0.1) 100%);
+
+    /* Theme variables mapped to Atlas colors (for light mode) */
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
+    --primary: 204 82% 33%; /* atlas-navy with light mode adjustment */
+    --primary-foreground: 42 43% 92%; /* cream */
+    --secondary: 200 39% 45%; /* registry-blue with light mode adjustment */
+    --secondary-foreground: 42 43% 92%; /* cream */
+    --muted: 200 15% 95%;
     --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
+    --accent: 209 63% 53%; /* atlas-light */
     --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 24 75% 52%; /* bridge-orange */
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+    --ring: 204 82% 33%; /* atlas-navy */
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 230 14% 6%;
-    --foreground: 0 0% 98%;
-    --card: 230 14% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 230 14% 6%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 230 14% 12%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 230 14% 12%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 230 14% 12%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 230 14% 16%;
-    --input: 230 14% 16%;
-    --ring: 0 0% 83.1%;
+    /* Theme variables mapped to Atlas colors (for dark mode) */
+    --background: 0 0% 7%; /* terminal-black */
+    --foreground: 42 43% 92%; /* cream */
+    --card: 0 0% 10%; /* terminal-dark */
+    --card-foreground: 42 43% 92%; /* cream */
+    --popover: 0 0% 7%; /* terminal-black */
+    --popover-foreground: 42 43% 92%; /* cream */
+    --primary: 42 43% 92%; /* cream */
+    --primary-foreground: 204 82% 14%; /* atlas-navy */
+    --secondary: 204 82% 16%; /* atlas-navy */
+    --secondary-foreground: 42 43% 92%; /* cream */
+    --muted: 204 82% 10%; /* darker atlas-navy */
+    --muted-foreground: 42 43% 70%; /* slightly dimmed cream */
+    --accent: 209 63% 53%; /* atlas-light */
+    --accent-foreground: 42 43% 92%; /* cream */
+    --destructive: 24 75% 40%; /* darker bridge-orange */
+    --destructive-foreground: 42 43% 92%; /* cream */
+    --border: 204 20% 18%; /* slightly visible border based on atlas-navy */
+    --input: 204 20% 18%; /* slightly visible input based on atlas-navy */
+    --ring: 209 63% 53%; /* atlas-light */
   }
 }
 
@@ -55,5 +72,29 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+    position: relative;
+    overflow-x: hidden;
+  }
+  
+  /* Atlas-inspired dot grid background pattern */
+  body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(circle at 50% 50%, var(--grid-color) 1px, transparent 1px);
+    background-size: 16px 16px;
+    z-index: -1;
+    pointer-events: none;
+  }
+  
+  /* Section gradient styles that can be applied to cards */
+  .atlas-card {
+    background: var(--section-gradient);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
   }
 }

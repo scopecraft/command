@@ -24,15 +24,21 @@ export function Header() {
         >
           <MenuIcon className="h-5 w-5" />
         </Button>
-        <h1
-          className="text-lg font-semibold cursor-pointer"
+        {/* Atlas-inspired logo with icon and text treatment */}
+        <div 
+          className="flex items-center gap-3 cursor-pointer"
           onClick={handleHomeLinkClick}
           role="button"
           tabIndex={0}
         >
-          <span className="text-foreground">Task</span>
-          <span className="text-primary">UI</span>
-        </h1>
+          <div className="w-8 h-8 bg-[var(--atlas-navy)] rounded flex items-center justify-center text-[var(--cream)] font-bold">
+            T
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-lg font-bold text-foreground uppercase leading-tight">Command</h1>
+            <div className="text-[10px] text-muted-foreground uppercase">TASK MANAGER</div>
+          </div>
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <Button
