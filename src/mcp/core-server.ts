@@ -37,7 +37,8 @@ import {
   AreaFilterOptions,
   FeatureUpdateOptions,
   AreaUpdateOptions,
-  generateTaskId
+  generateTaskId,
+  listTemplates
 } from '../core/index.js';
 
 /**
@@ -684,6 +685,26 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       try {
         const result = await deleteArea(params.id, params.phase, params.force);
         return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Template list tool
+  server.tool(
+    "template_list",
+    {
+      format: z.string().optional()
+    },
+    async (params) => {
+      try {
+        const templates = listTemplates();
+        return formatResponse({
+          success: true,
+          data: templates,
+          message: `Found ${templates.length} templates`
+        });
       } catch (error) {
         return formatError(error);
       }

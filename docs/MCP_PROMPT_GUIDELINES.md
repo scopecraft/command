@@ -210,6 +210,43 @@ When updating tasks, use these patterns:
    - Updated implementation details
    ```
 
+### Template Usage Prompts
+
+When working with templates, use these patterns:
+
+1. **Template Discovery Pattern**:
+   ```
+   I'll find available templates for your task.
+
+   *Calling template_list...*
+   ✅ Available templates: feature, bug, documentation, chore, test
+
+   What type of task would you like to create?
+   ```
+
+2. **Template Selection Confirmation Pattern**:
+   ```
+   I'll use the "feature" template for creating your task. This will include:
+   - Standard feature task metadata
+   - Checklist for implementation
+   - Areas for acceptance criteria
+
+   Does this sound right for your "Authentication System" task?
+   ```
+
+3. **Template-Based Creation Acknowledgment Pattern**:
+   ```
+   📝 *Creating task from feature template...*
+   ✅ Task "Authentication System" created with ID TASK-20250513T123456
+
+   The template has added standard sections for:
+   - Description
+   - Implementation checklist
+   - Acceptance criteria
+
+   Would you like me to customize any of these sections further?
+   ```
+
 ## Error Handling
 
 ### Common Error Scenarios

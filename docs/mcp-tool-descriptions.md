@@ -516,6 +516,51 @@ Marks a task as complete and suggests the next task.
 }
 ```
 
+## Template Management Tools
+
+### template_list
+
+Lists available task templates with their descriptions.
+
+**Parameters:**
+- `format` (optional): Output format
+
+**Example:**
+```json
+{
+  "method": "template_list",
+  "params": {}
+}
+```
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "feature",
+      "name": "feature",
+      "path": "/path/to/templates/01_mdtm_feature.md",
+      "description": "🌟 Feature"
+    },
+    {
+      "id": "bug",
+      "name": "bug",
+      "path": "/path/to/templates/02_mdtm_bug.md",
+      "description": "🐞 Bug"
+    },
+    {
+      "id": "chore",
+      "name": "chore",
+      "path": "/path/to/templates/03_mdtm_chore.md",
+      "description": "🧹 Chore"
+    }
+  ],
+  "message": "Found 3 templates"
+}
+```
+
 ## Debugging Tools
 
 ### debug_code_path

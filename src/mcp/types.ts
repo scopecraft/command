@@ -49,6 +49,9 @@ export enum McpMethod {
   WORKFLOW_CURRENT = 'workflow_current',
   WORKFLOW_MARK_COMPLETE_NEXT = 'workflow_mark_complete_next',
 
+  // Template methods
+  TEMPLATE_LIST = 'template_list',
+
   // Debug method (temporary)
   DEBUG_CODE_PATH = 'debug_code_path'
 }
@@ -268,6 +271,11 @@ export interface WorkflowMarkCompleteNextParams {
 // Debug code path params
 export interface DebugCodePathParams {
   // No parameters needed
+}
+
+// Template list request params
+export interface TemplateListParams {
+  format?: string;
 }
 
 // MCP method handler type

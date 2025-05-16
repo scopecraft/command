@@ -28,7 +28,8 @@ import {
   PhaseDeleteParams,
   WorkflowCurrentParams,
   WorkflowMarkCompleteNextParams,
-  DebugCodePathParams
+  DebugCodePathParams,
+  TemplateListParams
 } from './types.js';
 import {
   listTasks,
@@ -57,7 +58,8 @@ import {
   generateTaskId,
   normalizePriority,
   normalizeTaskStatus,
-  normalizePhaseStatus
+  normalizePhaseStatus,
+  listTemplates
 } from '../core/index.js';
 
 /**
@@ -412,6 +414,25 @@ export async function handleAreaDelete(params: AreaDeleteParams) {
 }
 
 /**
+ * Handler for template_list method
+ */
+export async function handleTemplateList(params: TemplateListParams) {
+  try {
+    const templates = listTemplates();
+    return {
+      success: true,
+      data: templates,
+      message: `Found ${templates.length} templates`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
  * Registry of all MCP method handlers
  */
 export const methodRegistry: McpMethodRegistry = {
@@ -438,5 +459,6 @@ export const methodRegistry: McpMethodRegistry = {
   [McpMethod.PHASE_DELETE]: handlePhaseDelete,
   [McpMethod.WORKFLOW_CURRENT]: handleWorkflowCurrent,
   [McpMethod.WORKFLOW_MARK_COMPLETE_NEXT]: handleWorkflowMarkCompleteNext,
+  [McpMethod.TEMPLATE_LIST]: handleTemplateList,
   [McpMethod.DEBUG_CODE_PATH]: handleDebugCodePath
 };
