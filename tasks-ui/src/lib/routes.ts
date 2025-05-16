@@ -11,6 +11,7 @@ export const routes = {
   areaDetail: (id: string) => `/areas/${id}`,
   areaEdit: (id: string) => `/areas/${id}/edit`,
   areaCreate: '/areas/create',
+  phaseDetail: (id: string) => `/phases/${id}`,
   comparison: '/comparison',
   graph: '/graph',
 };

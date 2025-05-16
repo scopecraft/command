@@ -9,6 +9,7 @@ import { HomePage } from './components/pages/HomePage';
 import { GraphPage } from './components/pages/GraphPage';
 import { FeatureDetailView } from './components/pages/FeatureDetailPage';
 import { AreaDetailView } from './components/pages/AreaDetailPage';
+import { PhaseDetailView } from './components/pages/PhaseDetailPage';
 import { ProgressComparisonView } from './components/pages/ProgressComparisonView';
 import { FeatureFormView } from './components/feature-form/FeatureFormView';
 import { AreaFormView } from './components/area-form/AreaFormView';
@@ -38,6 +39,8 @@ function App() {
             {params => <AreaFormView areaId={`AREA_${params.id}`} isEdit={true} />}
           </Route>
           <Route path={routes.areaCreate} component={AreaFormView} />
+          
+          <Route path={routes.phaseDetail(':id')} component={PhaseDetailView} />
           
           <Route path={routes.comparison} component={ProgressComparisonView} />
           

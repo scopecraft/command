@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { useAreaContext } from '../../context/AreaContext';
 import { useTaskContext } from '../../context/TaskContext';
@@ -9,7 +9,8 @@ import { formatDate } from '../../lib/utils/format';
 import { DataTable } from '../task-list/table/data-table';
 import { columns } from '../task-list/table/columns';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
-import { EntityGroupSection } from '../entity-group';
+import { EntityGroupSection, PhaseSelector } from '../entity-group';
+import { useQueryParams } from '../../hooks/useQueryParams';
 
 function AreaDetailViewInner() {
   const [, params] = useRoute<{ id: string }>(routes.areaDetail(':id'));
@@ -21,8 +22,18 @@ function AreaDetailViewInner() {
   const [, navigate] = useLocation();
   const [area, setArea] = useState(getAreaById(areaId));
   
+  // Get phase from query params for direct phase filtering
+  const { getParam, setParam } = useQueryParams();
+  const queryPhase = getParam('phase');
+  
+  // Track the selected phase for filtering sections (null means show all phases)
+  const [selectedPhase, setSelectedPhase] = useState<string | null>(queryPhase);
+  
   // Filter tasks that belong to this area
-  const areaTasks = tasks.filter(task => task.subdirectory === areaId);
+  const areaTasks = useMemo(() => 
+    tasks.filter(task => task.subdirectory === areaId),
+    [tasks, areaId]
+  );
   
   // Calculate progress
   const totalTasks = areaTasks.length;
@@ -30,8 +41,21 @@ function AreaDetailViewInner() {
     task.status.includes('Done') || task.status.includes('Complete')).length;
   const progressPercentage = totalTasks > 0 ? Math.floor((completedTasks / totalTasks) * 100) : 0;
   
-  // Group tasks by phase
-  const tasksByPhase = groupTasksByPhase(areaTasks);
+  // Group tasks by phase, filtered by selected phase if applicable
+  const tasksByPhase = useMemo(() => {
+    const result = groupTasksByPhase(areaTasks);
+    
+    // If no phase is selected, return all phase groups
+    if (!selectedPhase) return result;
+    
+    // Otherwise, only return the selected phase group
+    const filteredResult: Record<string, any[]> = {};
+    if (result[selectedPhase]) {
+      filteredResult[selectedPhase] = result[selectedPhase];
+    }
+    
+    return filteredResult;
+  }, [areaTasks, selectedPhase]);
 
   useEffect(() => {
     // Update area data when areas are loaded
@@ -45,6 +69,17 @@ function AreaDetailViewInner() {
       }
     }
   }, [areaId, areas, loading]);
+
+  // Update URL when phase selection changes
+  useEffect(() => {
+    setParam('phase', selectedPhase);
+  }, [selectedPhase, setParam]);
+
+  // Handle phase selection
+  const handlePhaseSelect = (phaseId: string) => {
+    // Toggle selection: if already selected, clear it
+    setSelectedPhase(phaseId === selectedPhase ? null : phaseId);
+  };
 
   if (loading) {
     return <div className="p-4 text-center">Loading area details...</div>;
@@ -82,7 +117,15 @@ function AreaDetailViewInner() {
             size="sm"
             onClick={() => {
               // Navigate to create task with the area pre-selected
-              navigate(`${routes.taskCreate}?area=${areaId}`);
+              const params = new URLSearchParams();
+              params.append('area', areaId);
+              
+              // Include phase if one is selected
+              if (selectedPhase) {
+                params.append('phase', selectedPhase);
+              }
+              
+              navigate(`${routes.taskCreate}?${params}`);
             }}
           >
             Add Task
@@ -123,13 +166,37 @@ function AreaDetailViewInner() {
             )}
           </div>
 
-          {/* We'll add phase selector here in a future task */}
+          {/* Phase selector */}
+          {area.phases && area.phases.length > 1 && (
+            <PhaseSelector
+              entityType="area"
+              phases={area.phases}
+              currentPhase={selectedPhase}
+              onPhaseSelect={handlePhaseSelect}
+            />
+          )}
         </div>
       </div>
       
       {/* Phase-specific sections */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-4">Tasks by Phase</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">
+            {selectedPhase 
+              ? `Tasks in ${phases.find(p => p.id === selectedPhase)?.name || selectedPhase} Phase`
+              : 'Tasks by Phase'}
+          </h2>
+          
+          {selectedPhase && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setSelectedPhase(null)}
+            >
+              Show All Phases
+            </Button>
+          )}
+        </div>
         
         {areaTasks.length === 0 ? (
           <div className="text-center p-4 border border-border rounded-md">
@@ -139,6 +206,24 @@ function AreaDetailViewInner() {
               onClick={() => navigate(routes.taskCreate)}
             >
               Create Task
+            </Button>
+          </div>
+        ) : Object.keys(tasksByPhase).length === 0 ? (
+          <div className="text-center p-4 border border-border rounded-md">
+            <p className="text-muted-foreground">No tasks in the selected phase</p>
+            <Button 
+              className="mt-2" 
+              onClick={() => {
+                // Create task in this area and the selected phase
+                const params = new URLSearchParams();
+                params.append('area', areaId);
+                if (selectedPhase) {
+                  params.append('phase', selectedPhase);
+                }
+                navigate(`${routes.taskCreate}?${params}`);
+              }}
+            >
+              Create Task in This Phase
             </Button>
           </div>
         ) : (

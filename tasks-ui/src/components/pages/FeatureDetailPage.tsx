@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { useFeatureContext } from '../../context/FeatureContext';
 import { useTaskContext } from '../../context/TaskContext';
@@ -9,7 +9,8 @@ import { formatDate } from '../../lib/utils/format';
 import { DataTable } from '../task-list/table/data-table';
 import { columns } from '../task-list/table/columns';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
-import { EntityGroupSection } from '../entity-group';
+import { EntityGroupSection, PhaseSelector } from '../entity-group';
+import { useQueryParams } from '../../hooks/useQueryParams';
 
 function FeatureDetailViewInner() {
   const [, params] = useRoute<{ id: string }>(routes.featureDetail(':id'));
@@ -21,8 +22,18 @@ function FeatureDetailViewInner() {
   const [, navigate] = useLocation();
   const [feature, setFeature] = useState(getFeatureById(featureId));
   
+  // Get phase from query params for direct phase filtering
+  const { getParam, setParam } = useQueryParams();
+  const queryPhase = getParam('phase');
+  
+  // Track the selected phase for filtering sections (null means show all phases)
+  const [selectedPhase, setSelectedPhase] = useState<string | null>(queryPhase);
+  
   // Filter tasks that belong to this feature
-  const featureTasks = tasks.filter(task => task.subdirectory === featureId);
+  const featureTasks = useMemo(() => 
+    tasks.filter(task => task.subdirectory === featureId),
+    [tasks, featureId]
+  );
   
   // Calculate progress
   const totalTasks = featureTasks.length;
@@ -30,8 +41,21 @@ function FeatureDetailViewInner() {
     task.status.includes('Done') || task.status.includes('Complete')).length;
   const progressPercentage = totalTasks > 0 ? Math.floor((completedTasks / totalTasks) * 100) : 0;
   
-  // Group tasks by phase
-  const tasksByPhase = groupTasksByPhase(featureTasks);
+  // Group tasks by phase, filtered by selected phase if applicable
+  const tasksByPhase = useMemo(() => {
+    const result = groupTasksByPhase(featureTasks);
+    
+    // If no phase is selected, return all phase groups
+    if (!selectedPhase) return result;
+    
+    // Otherwise, only return the selected phase group
+    const filteredResult: Record<string, any[]> = {};
+    if (result[selectedPhase]) {
+      filteredResult[selectedPhase] = result[selectedPhase];
+    }
+    
+    return filteredResult;
+  }, [featureTasks, selectedPhase]);
 
   useEffect(() => {
     // Update feature data when features are loaded
@@ -45,6 +69,17 @@ function FeatureDetailViewInner() {
       }
     }
   }, [featureId, features, loading]);
+
+  // Update URL when phase selection changes
+  useEffect(() => {
+    setParam('phase', selectedPhase);
+  }, [selectedPhase, setParam]);
+
+  // Handle phase selection
+  const handlePhaseSelect = (phaseId: string) => {
+    // Toggle selection: if already selected, clear it
+    setSelectedPhase(phaseId === selectedPhase ? null : phaseId);
+  };
 
   if (loading) {
     return <div className="p-4 text-center">Loading feature details...</div>;
@@ -82,7 +117,15 @@ function FeatureDetailViewInner() {
             size="sm"
             onClick={() => {
               // Navigate to create task with the feature pre-selected
-              navigate(`${routes.taskCreate}?feature=${featureId}`);
+              const params = new URLSearchParams();
+              params.append('feature', featureId);
+              
+              // Include phase if one is selected
+              if (selectedPhase) {
+                params.append('phase', selectedPhase);
+              }
+              
+              navigate(`${routes.taskCreate}?${params}`);
             }}
           >
             Add Task
@@ -123,13 +166,37 @@ function FeatureDetailViewInner() {
             )}
           </div>
 
-          {/* We'll add phase selector here in a future task */}
+          {/* Phase selector */}
+          {feature.phases && feature.phases.length > 1 && (
+            <PhaseSelector
+              entityType="feature"
+              phases={feature.phases}
+              currentPhase={selectedPhase}
+              onPhaseSelect={handlePhaseSelect}
+            />
+          )}
         </div>
       </div>
       
       {/* Phase-specific sections */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-4">Tasks by Phase</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">
+            {selectedPhase 
+              ? `Tasks in ${phases.find(p => p.id === selectedPhase)?.name || selectedPhase} Phase`
+              : 'Tasks by Phase'}
+          </h2>
+          
+          {selectedPhase && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setSelectedPhase(null)}
+            >
+              Show All Phases
+            </Button>
+          )}
+        </div>
         
         {featureTasks.length === 0 ? (
           <div className="text-center p-4 border border-border rounded-md">
@@ -139,6 +206,24 @@ function FeatureDetailViewInner() {
               onClick={() => navigate(routes.taskCreate)}
             >
               Create Task
+            </Button>
+          </div>
+        ) : Object.keys(tasksByPhase).length === 0 ? (
+          <div className="text-center p-4 border border-border rounded-md">
+            <p className="text-muted-foreground">No tasks in the selected phase</p>
+            <Button 
+              className="mt-2" 
+              onClick={() => {
+                // Create task in this feature and the selected phase
+                const params = new URLSearchParams();
+                params.append('feature', featureId);
+                if (selectedPhase) {
+                  params.append('phase', selectedPhase);
+                }
+                navigate(`${routes.taskCreate}?${params}`);
+              }}
+            >
+              Create Task in This Phase
             </Button>
           </div>
         ) : (

@@ -14,12 +14,12 @@ export function Sidebar() {
   const { areas, loading: areasLoading, currentArea, setCurrentArea } = useAreaContext();
   const [, navigate] = useLocation();
   
-  // Handle phase selection and navigate to task list with phase filter
+  // Handle phase selection and navigate to phase detail page
   const handlePhaseClick = (phaseId: string) => {
     console.log('Selected phase:', phaseId);
     setCurrentPhase(phaseId);
-    // Navigate to tasks view with phase filter in URL
-    navigate('/tasks?phase=' + phaseId);
+    // Navigate to phase detail view
+    navigate(routes.phaseDetail(phaseId));
   };
   
   // Handle feature selection and navigate to feature detail page
@@ -32,8 +32,13 @@ export function Sidebar() {
     }
     // Extract the ID without the FEATURE_ prefix
     const id = featureId.replace('FEATURE_', '');
-    // Navigate to feature detail page
-    navigate(routes.featureDetail(id));
+    
+    // Navigate to feature detail page, preserving phase context if a phase is selected
+    let route = routes.featureDetail(id);
+    if (currentPhase) {
+      route += `?phase=${currentPhase.id}`;
+    }
+    navigate(route);
   };
   
   // Handle area selection and navigate to area detail page
@@ -46,8 +51,13 @@ export function Sidebar() {
     }
     // Extract the ID without the AREA_ prefix
     const id = areaId.replace('AREA_', '');
-    // Navigate to area detail page
-    navigate(routes.areaDetail(id));
+    
+    // Navigate to area detail page, preserving phase context if a phase is selected
+    let route = routes.areaDetail(id);
+    if (currentPhase) {
+      route += `?phase=${currentPhase.id}`;
+    }
+    navigate(route);
   };
 
   if (!ui.sidebarOpen) return null;
@@ -196,11 +206,33 @@ export function Sidebar() {
         )}
       </div>
       <div className="p-4 border-t border-border flex flex-col gap-2">
-        <Link href={routes.taskCreate}>
-          <Button variant="default" className="w-full">
-            + Create Task
-          </Button>
-        </Link>
+        <Button 
+          variant="default" 
+          className="w-full"
+          onClick={() => {
+            // Create task with current context (feature, area, phase)
+            const params = new URLSearchParams();
+            
+            // Include selected phase, feature, or area in the task creation params
+            if (currentPhase) {
+              params.append('phase', currentPhase.id);
+            }
+            
+            if (currentFeature) {
+              params.append('feature', currentFeature.id);
+            }
+            
+            if (currentArea) {
+              params.append('area', currentArea.id);
+            }
+            
+            // Navigate to task create with context
+            const queryString = params.toString() ? `?${params.toString()}` : '';
+            navigate(`${routes.taskCreate}${queryString}`);
+          }}
+        >
+          + Create Task
+        </Button>
         <Button 
           variant="outline" 
           className="w-full"

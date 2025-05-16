@@ -67,8 +67,18 @@ export function EntityGroupSection({
   // Generate colors based on entity type
   const colors = getEntityColors(childEntity.type);
   
+  // Check if we're in a phase-specific context
+  // If parent is a feature/area and child is a phase, pass the phase ID as context
+  // If parent is a phase and child is a feature/area, pass the parent ID as context
+  let phaseContext: string | undefined;
+  if (parentEntity.type === 'phase') {
+    phaseContext = parentEntity.id;
+  } else if (childEntity.type === 'phase') {
+    phaseContext = childEntity.id;
+  }
+  
   // Generate parameterized route based on entity type
-  const detailRoute = getEntityDetailRoute(childEntity.type, childEntity.id);
+  const detailRoute = getEntityDetailRoute(childEntity.type, childEntity.id, phaseContext);
   
   return (
     <div className="mb-8 border border-border rounded-md overflow-hidden">
@@ -272,7 +282,13 @@ export function EntityGroupSection({
               <DataTable 
                 columns={columns} 
                 data={tasks}
-                onRowClick={(row) => navigate(routes.taskDetail(row.id))}
+                onRowClick={(row) => {
+                  // When navigating to task detail, preserve phase context if available
+                  const url = phaseContext 
+                    ? `${routes.taskDetail(row.id)}?phase=${phaseContext}`
+                    : routes.taskDetail(row.id);
+                  navigate(url);
+                }}
               />
             )}
           </div>
@@ -356,22 +372,32 @@ function getEntityIcon(entityType: EntityType) {
   }
 }
 
-// Get entity detail route
-function getEntityDetailRoute(entityType: EntityType, id: string) {
+// Get entity detail route, preserving phase context if provided
+function getEntityDetailRoute(entityType: EntityType, id: string, phaseContext?: string) {
   // Extract the ID without the prefix if needed
   const cleanId = id.replace(/^(FEATURE_|AREA_|PHASE_)/, '');
   
+  let route = '';
   switch (entityType) {
     case 'feature':
-      return routes.featureDetail(cleanId);
+      route = routes.featureDetail(cleanId);
+      break;
     case 'area':
-      return routes.areaDetail(cleanId);
+      route = routes.areaDetail(cleanId);
+      break;
     case 'phase':
-      // Assuming a phase detail route exists or will exist
-      return `/phases/${cleanId}`;
+      route = routes.phaseDetail(cleanId);
+      break;
     default:
       return null;
   }
+  
+  // Add phase context to the URL if provided
+  if (phaseContext) {
+    route += `?phase=${phaseContext}`;
+  }
+  
+  return route;
 }
 
 // Get status-specific color for progress bars
@@ -443,5 +469,6 @@ function createTask(
     }
   }
   
+  // Navigate to task create with entity and phase context
   navigate(`${routes.taskCreate}?${params.toString()}`);
 }
