@@ -48,7 +48,9 @@ export function PromptPage() {
     setIsConnecting(true);
     setError(null);
     
-    const ws = new WebSocket('ws://localhost:3000/ws/claude');
+    // Use relative WebSocket URL - same server that serves the React app
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/claude`);
     wsRef.current = ws;
     
     ws.onopen = () => {

@@ -8,17 +8,29 @@ import {
   ProcessWithWebSocket,
   TIMEOUT_MS
 } from './schemas.js';
+import { logger } from '../src/observability/logger.js';
 
 export function createClaudeWebSocketHandler(processManager: ProcessManager) {
   return {
     open(ws: any) {
+      const connectionId = Math.random().toString(36).substr(2, 9);
+      ws.data = { ...ws.data, connectionId };
+      
+      logger.info('WebSocket connection opened', { connectionId });
+      
       const info: ClaudeWebSocketInfo = { info: "send {prompt,meta}" };
       ws.send(JSON.stringify(info));
     },
 
     async message(ws: any, data: any) {
+      const connectionId = ws.data?.connectionId;
+      
       // Log incoming data
-      console.log('[WebSocket] Received data:', data);
+      logger.info('WebSocket message received', {
+        connectionId,
+        dataType: typeof data,
+        dataLength: data?.length || 0
+      });
       
       // Validate message
       try {
@@ -26,14 +38,25 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
           typeof data === 'string' ? JSON.parse(data) : data
         );
         
-        console.log('[WebSocket] Parsed message:', message);
+        logger.info('WebSocket message parsed', {
+          connectionId,
+          hasPrompt: !!message.prompt,
+          hasMeta: !!message.meta,
+          promptLength: message.prompt.length
+        });
         
         // Create full prompt
         const fullPrompt = message.meta 
           ? `${message.prompt}\n\n[meta:${message.meta}]`
           : message.prompt;
         
-        console.log('[WebSocket] Full prompt to Claude:', fullPrompt);
+        logger.info('Full prompt prepared for Claude', {
+          connectionId,
+          fullPromptLength: fullPrompt.length,
+          prompt: message.prompt,
+          meta: message.meta,
+          fullPrompt: fullPrompt
+        });
         
         // Echo back the user message to confirm receipt
         ws.send(JSON.stringify({
@@ -45,7 +68,15 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
         let proc;
         try {
           proc = streamClaude(fullPrompt);
+          logger.info('Claude process spawned', {
+            connectionId,
+            pid: proc.pid
+          });
         } catch (error) {
+          logger.error('Failed to spawn Claude process', {
+            connectionId,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
           const errorResponse: ClaudeWebSocketError = { 
             error: `Failed to spawn Claude: ${error}` 
           };
@@ -62,7 +93,7 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
         
         // Store process info for cleanup
         const wsData: ProcessWithWebSocket = { proc, timeout };
-        ws.data = wsData;
+        ws.data = { ...ws.data, ...wsData };
         processManager.addProcess(proc);
         
         // Stream stdout
@@ -74,10 +105,21 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
               while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                ws.send(decoder.decode(value));
+                const outputText = decoder.decode(value);
+                
+                logger.info('Claude stdout output', {
+                  connectionId,
+                  stdout: outputText.substring(0, 500), // Log first 500 chars
+                  length: outputText.length
+                });
+                
+                ws.send(outputText);
               }
             } catch (error) {
-              console.error('Error reading stdout:', error);
+              logger.error('Error reading stdout', {
+                connectionId,
+                error: error instanceof Error ? error.message : 'Unknown error'
+              });
             }
           })();
         }
@@ -91,19 +133,33 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
               while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
+                const errorText = decoder.decode(value);
+                
+                logger.error('Claude stderr output', {
+                  connectionId,
+                  stderr: errorText
+                });
+                
                 const errorResponse: ClaudeWebSocketError = { 
-                  error: decoder.decode(value) 
+                  error: errorText 
                 };
                 ws.send(JSON.stringify(errorResponse));
               }
             } catch (error) {
-              console.error('Error reading stderr:', error);
+              logger.error('Error reading stderr', {
+                connectionId,
+                error: error instanceof Error ? error.message : 'Unknown error'
+              });
             }
           })();
         }
         
         // Handle process exit
         proc.exited.then((code: number | null) => {
+          logger.info('Claude process exited', {
+            connectionId,
+            exitCode: code
+          });
           clearTimeout(timeout);
           processManager.removeProcess(proc);
           ws.close(code ? 1011 : 1000);
@@ -121,6 +177,12 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
           errorMessage = 'Bad JSON';
         }
         
+        logger.error('WebSocket message error', {
+          connectionId,
+          errorMessage,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        
         const errorResponse: ClaudeWebSocketError = { error: errorMessage };
         ws.send(JSON.stringify(errorResponse));
         ws.close(1008);
@@ -128,10 +190,22 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
     },
     
     close(ws: any, code: number, reason: string) {
+      const connectionId = ws.data?.connectionId;
       const wsData = ws.data as ProcessWithWebSocket | undefined;
+      
+      logger.info('WebSocket closing', {
+        connectionId,
+        code,
+        reason
+      });
+      
       if (wsData?.proc) {
         processManager.killProcess(wsData.proc);
-        console.log(`Killed Claude process on WebSocket close (code: ${code})`);
+        logger.info('Killed Claude process on WebSocket close', {
+          connectionId,
+          code,
+          pid: wsData.proc.pid
+        });
       }
       if (wsData?.timeout) {
         clearTimeout(wsData.timeout);

@@ -4,6 +4,7 @@ import { stat } from 'fs/promises';
 import { lookup } from 'mrmime';
 import { createClaudeWebSocketHandler } from './websocket/claude-handler.js';
 import { ProcessManager } from './websocket/process-manager.js';
+import { logger } from './src/observability/logger.js';
 import {
   handleTaskList,
   handleTaskGet,
@@ -48,7 +49,9 @@ const server = serve({
     
     // Upgrade to WebSocket if requested
     if (path === '/ws/claude' && req.headers.get('upgrade') === 'websocket') {
-      const success = server.upgrade(req);
+      const success = server.upgrade(req, {
+        data: { connectionId: Math.random().toString(36).substr(2, 9) }
+      });
       if (success) {
         return undefined;
       }
@@ -388,7 +391,12 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       { status: 404, headers: corsHeaders }
     );
   } catch (error) {
-    console.error('API error:', error);
+    logger.error('API error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      path: path,
+      method: req.method
+    });
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -403,4 +411,6 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
 processManager.setServer(server);
 processManager.setupShutdownHandlers();
 
-console.log(`Server running at http://localhost:${PORT}`);
+logger.info('Server started successfully', {
+  url: `http://localhost:${PORT}`
+});

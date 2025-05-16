@@ -1,3 +1,5 @@
+import { logger } from '../src/observability/logger.js';
+
 export class ProcessManager {
   private activeProcesses = new Set<any>();
   private server: any = null;
@@ -8,24 +10,39 @@ export class ProcessManager {
 
   addProcess(proc: any): void {
     this.activeProcesses.add(proc);
+    logger.info('Process added to manager', {
+      pid: proc.pid,
+      activeCount: this.activeProcesses.size
+    });
   }
 
   removeProcess(proc: any): void {
     this.activeProcesses.delete(proc);
+    logger.info('Process removed from manager', {
+      pid: proc.pid,
+      activeCount: this.activeProcesses.size
+    });
   }
 
   killProcess(proc: any): void {
     try {
       proc.kill();
       this.removeProcess(proc);
-      console.log('Killed Claude process');
+      logger.info('Killed Claude process', {
+        pid: proc.pid
+      });
     } catch (error) {
-      console.error('Error killing process:', error);
+      logger.error('Error killing process', {
+        pid: proc.pid,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   }
 
   async shutdown(): Promise<void> {
-    console.log('\nShutting down...');
+    logger.info('Process manager shutting down', {
+      activeProcesses: this.activeProcesses.size
+    });
     
     // Kill all active Claude processes
     for (const proc of this.activeProcesses) {
@@ -34,11 +51,13 @@ export class ProcessManager {
     
     // Stop the server if it exists
     if (this.server) {
-      console.log('Stopping server...');
+      logger.info('Stopping server');
       try {
         this.server.stop();
       } catch (error) {
-        console.error('Error stopping server:', error);
+        logger.error('Error stopping server', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
     }
     
