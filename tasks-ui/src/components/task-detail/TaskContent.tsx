@@ -115,7 +115,7 @@ export function TaskContent({ task }: TaskContentProps) {
           Edit
         </Button>
       </div>
-      <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-foreground prose-p:text-base prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-strong:font-bold prose-code:bg-muted prose-code:p-1 prose-code:rounded prose-code:text-foreground prose-code:font-mono prose-code:text-sm prose-pre:bg-muted prose-pre:text-foreground prose-pre:font-mono prose-pre:text-sm prose-pre:p-2 prose-pre:rounded-md prose-ol:text-foreground prose-ul:text-foreground">
+      <div className="prose prose-sm dark:prose-invert max-w-none">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeRaw]}
