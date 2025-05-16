@@ -17,16 +17,29 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
     },
 
     async message(ws: any, data: any) {
+      // Log incoming data
+      console.log('[WebSocket] Received data:', data);
+      
       // Validate message
       try {
         const message = ClaudeWebSocketMessageSchema.parse(
           typeof data === 'string' ? JSON.parse(data) : data
         );
         
+        console.log('[WebSocket] Parsed message:', message);
+        
         // Create full prompt
         const fullPrompt = message.meta 
           ? `${message.prompt}\n\n[meta:${message.meta}]`
           : message.prompt;
+        
+        console.log('[WebSocket] Full prompt to Claude:', fullPrompt);
+        
+        // Echo back the user message to confirm receipt
+        ws.send(JSON.stringify({
+          type: 'user_echo',
+          content: `Received: ${message.prompt}${message.meta ? ` [Context: ${message.meta}]` : ''}`
+        }));
         
         // Spawn Claude process
         let proc;

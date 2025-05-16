@@ -121,11 +121,14 @@ export function PromptPage() {
       meta: currentContext || undefined
     };
     
+    console.log('[Client] Sending message:', message);
     wsRef.current.send(JSON.stringify(message));
     setPrompt(''); // Clear prompt after sending
   };
   
   const handleMessage = (data: string) => {
+    console.log('[Client] Received message:', data);
+    
     try {
       const msg = JSON.parse(data);
       
@@ -136,6 +139,11 @@ export function PromptPage() {
       
       if (msg.info) {
         addMessage('info', msg.info);
+        return;
+      }
+      
+      if (msg.type === 'user_echo') {
+        addMessage('info', msg.content);
         return;
       }
       
