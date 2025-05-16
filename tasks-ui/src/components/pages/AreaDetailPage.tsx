@@ -27,7 +27,8 @@ function AreaDetailViewInner() {
   const queryPhase = getParam('phase');
   
   // Track the selected phase for filtering sections (null means show all phases)
-  const [selectedPhase, setSelectedPhase] = useState<string | null>(queryPhase);
+  const [selectedPhase, setSelectedPhase] = useState<string | null>(queryPhase || null);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Filter tasks that belong to this area
   const areaTasks = useMemo(() => 
@@ -63,22 +64,35 @@ function AreaDetailViewInner() {
       const foundArea = getAreaById(areaId);
       if (foundArea) {
         setArea(foundArea);
+        
+        // Only initialize from query parameter, otherwise keep selectedPhase as null (All Phases)
+        if (!isInitialized) {
+          setIsInitialized(true);  // Mark as initialized even if we don't set a specific phase
+        }
       } else {
         // Area not found, navigate to tasks view
         navigate(routes.taskList);
       }
     }
-  }, [areaId, areas, loading]);
+  }, [areaId, areas, loading, queryPhase, phases, isInitialized]);
 
   // Update URL when phase selection changes
   useEffect(() => {
-    setParam('phase', selectedPhase);
-  }, [selectedPhase, setParam]);
+    // Only update the URL if we've already initialized
+    if (isInitialized) {
+      setParam('phase', selectedPhase);
+    }
+  }, [selectedPhase, setParam, isInitialized]);
 
   // Handle phase selection
   const handlePhaseSelect = (phaseId: string) => {
-    // Toggle selection: if already selected, clear it
-    setSelectedPhase(phaseId === selectedPhase ? null : phaseId);
+    // Special handling for 'all' phases
+    if (phaseId === 'all') {
+      setSelectedPhase(null);
+    } else {
+      // Toggle selection: if already selected, clear it
+      setSelectedPhase(phaseId === selectedPhase ? null : phaseId);
+    }
   };
 
   if (loading) {
@@ -186,16 +200,6 @@ function AreaDetailViewInner() {
               ? `Tasks in ${phases.find(p => p.id === selectedPhase)?.name || selectedPhase} Phase`
               : 'Tasks by Phase'}
           </h2>
-          
-          {selectedPhase && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setSelectedPhase(null)}
-            >
-              Show All Phases
-            </Button>
-          )}
         </div>
         
         {areaTasks.length === 0 ? (
@@ -263,7 +267,6 @@ function AreaDetailViewInner() {
                   }}
                   tasks={phaseTasks}
                   // Can include phase-specific overview content here if needed
-                  overviewContent={phaseSpecificArea?.description}
                 />
               );
             })}

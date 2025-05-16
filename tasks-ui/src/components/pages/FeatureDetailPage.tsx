@@ -27,7 +27,8 @@ function FeatureDetailViewInner() {
   const queryPhase = getParam('phase');
   
   // Track the selected phase for filtering sections (null means show all phases)
-  const [selectedPhase, setSelectedPhase] = useState<string | null>(queryPhase);
+  const [selectedPhase, setSelectedPhase] = useState<string | null>(queryPhase || null);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Filter tasks that belong to this feature
   const featureTasks = useMemo(() => 
@@ -63,22 +64,35 @@ function FeatureDetailViewInner() {
       const foundFeature = getFeatureById(featureId);
       if (foundFeature) {
         setFeature(foundFeature);
+        
+        // Only initialize from query parameter, otherwise keep selectedPhase as null (All Phases)
+        if (!isInitialized) {
+          setIsInitialized(true);  // Mark as initialized even if we don't set a specific phase
+        }
       } else {
         // Feature not found, navigate to tasks view
         navigate(routes.taskList);
       }
     }
-  }, [featureId, features, loading]);
+  }, [featureId, features, loading, queryPhase, phases, isInitialized]);
 
   // Update URL when phase selection changes
   useEffect(() => {
-    setParam('phase', selectedPhase);
-  }, [selectedPhase, setParam]);
+    // Only update the URL if we've already initialized
+    if (isInitialized) {
+      setParam('phase', selectedPhase);
+    }
+  }, [selectedPhase, setParam, isInitialized]);
 
   // Handle phase selection
   const handlePhaseSelect = (phaseId: string) => {
-    // Toggle selection: if already selected, clear it
-    setSelectedPhase(phaseId === selectedPhase ? null : phaseId);
+    // Special handling for 'all' phases
+    if (phaseId === 'all') {
+      setSelectedPhase(null);
+    } else {
+      // Toggle selection: if already selected, clear it
+      setSelectedPhase(phaseId === selectedPhase ? null : phaseId);
+    }
   };
 
   if (loading) {
@@ -186,16 +200,6 @@ function FeatureDetailViewInner() {
               ? `Tasks in ${phases.find(p => p.id === selectedPhase)?.name || selectedPhase} Phase`
               : 'Tasks by Phase'}
           </h2>
-          
-          {selectedPhase && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setSelectedPhase(null)}
-            >
-              Show All Phases
-            </Button>
-          )}
         </div>
         
         {featureTasks.length === 0 ? (
@@ -254,8 +258,8 @@ function FeatureDetailViewInner() {
                     type: 'phase',
                     name: phase.name,
                     status: phase.status,
-                    // We add feature's phase-specific metadata to each phase section
-                    description: phaseSpecificFeature?.description,
+                    // Use the phase's own description
+                    description: phase.description,
                     tags: phaseSpecificFeature?.tags,
                     assigned_to: phaseSpecificFeature?.assigned_to,
                     created_date: phaseSpecificFeature?.created_date,
@@ -263,7 +267,6 @@ function FeatureDetailViewInner() {
                   }}
                   tasks={phaseTasks}
                   // Can include phase-specific overview content here if needed
-                  overviewContent={phaseSpecificFeature?.description}
                 />
               );
             })}

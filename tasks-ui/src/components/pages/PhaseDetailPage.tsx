@@ -159,7 +159,6 @@ function PhaseDetailViewInner() {
                     progress: feature.progress
                   }}
                   tasks={featureTasks}
-                  overviewContent={feature.description}
                 />
               );
             })}
@@ -198,7 +197,6 @@ function PhaseDetailViewInner() {
                     progress: area.progress
                   }}
                   tasks={areaTasks}
-                  overviewContent={area.description}
                 />
               );
             })}
