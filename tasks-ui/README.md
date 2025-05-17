@@ -16,7 +16,6 @@ TaskUI is a React application that connects to the Scopecraft Command core libra
 - **Routing**: wouter (lightweight client-side routing)
 - **Server**: Bun HTTP server
 - **API**: RESTful API built on top of MCP core handlers
-- **Task Visualization**: React Flow for relationship graphs
 - **Form Handling**: Native React forms
 - **Styling**: Tailwind CSS with custom terminal-inspired theme
 
@@ -37,7 +36,6 @@ src/
 │   ├── task-detail/      # Task detail view components
 │   │   └── TaskDetailFallback.tsx  # Error fallback for task detail
 │   ├── task-form/        # Task creation/editing form components
-│   ├── relationship-graph/  # Task relationship visualization
 │   ├── pages/            # Page-level components
 ├── hooks/                # Custom React hooks
 │   └── useToast.ts       # Toast notification hook
@@ -59,7 +57,6 @@ src/
 - **Task List View**: Tabular display of tasks with sorting and filtering
 - **Task Form**: Creation and editing of tasks with form validation
 - **Task Detail View**: Display of task metadata and content
-- **Relationship Graph**: Visual representation of task relationships
 - **Toast Notifications**: User feedback for operations
 - **Error Boundaries**: Graceful error handling
 - **Phase Navigation**: Sidebar navigation for task phases
@@ -154,7 +151,6 @@ TaskUI uses wouter for lightweight client-side routing. The routes are defined i
 - `/tasks/create` - Task creation form
 - `/tasks/:id` - Task detail view
 - `/tasks/:id/edit` - Task edit form
-- `/graph` - Task relationship graph view
 
 ## State Management
 

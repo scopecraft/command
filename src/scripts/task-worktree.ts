@@ -268,69 +268,91 @@ async function finishWorktree(taskId?: string, options?: { merge?: string }) {
       process.exit(1);
     }
 
-    // We'll leave worktree removal to a separate cleanup task or to Claude
-    // Don't remove the worktree here as Claude needs to run in it
-    let worktreeRemoved = false;
-    if (!fs.existsSync(worktreeDir)) {
-      console.log(`Worktree directory ${worktreeDir} does not exist.`);
+    // Check if we're on main branch
+    const currentBranch = execSync('git branch --show-current').toString().trim();
+    if (currentBranch !== 'main') {
+      console.error('Error: You must be on the main branch to finish a task.');
+      console.error(`Current branch: ${currentBranch}`);
+      console.error('Please run: git checkout main');
+      process.exit(1);
     }
 
-    // Get merge preference from options or prompt the user
-    let mergePreference = options?.merge || 'ask';
-
-    // If mergePreference is ask, prompt user
-    if (mergePreference === 'ask') {
-      console.log('Choose a merge option:');
-      console.log('1. Local merge directly to main');
-      console.log('2. Create a pull request');
-
+    // Attempt to merge the branch
+    console.log(`Attempting to merge branch ${taskId} into main...`);
+    
+    try {
+      execSync(`git merge --no-ff ${taskId}`, { stdio: 'inherit' });
+      console.log(`Successfully merged ${taskId} into main.`);
+      
+      // Ask for confirmation before cleaning up
+      console.log('\nMerge successful! Ready to clean up the worktree and branch.');
+      console.log('This will:');
+      console.log(`1. Remove the worktree at ${worktreeDir}`);
+      console.log(`2. Delete the branch ${taskId}`);
+      console.log('3. Mark the task as completed');
+      console.log('\nDo you want to proceed with cleanup? (y/n): ');
+      
       const response = await new Promise<string>(resolve => {
         process.stdin.once('data', data => {
-          resolve(data.toString().trim());
+          resolve(data.toString().trim().toLowerCase());
         });
       });
-
-      mergePreference = response === '1' ? 'local' : 'pr';
-    }
-
-    console.log(`Selected merge option: ${mergePreference}`);
-
-    // Let Claude handle the task status update after merging to avoid merge conflicts
-    console.log(`Task status will be updated by Claude after merging to avoid conflicts...`);
-
-    // Check if .claude directory exists
-    const claudeDirExists = fs.existsSync('.claude/commands/task-finish.md');
-    if (!claudeDirExists) {
-      console.log(`Warning: Claude command directory not found. Creating minimal structure...`);
-      fs.mkdirSync('.claude/commands', { recursive: true });
-      // We've already created the task-finish.md file earlier in this implementation
-    }
-
-    // Launch Claude to handle the merge process
-    console.log(`Starting automated task completion process...`);
-    const claudeSuccess = await launchClaudeFinish(taskId, mergePreference, worktreeDir);
-
-    // If Claude integration failed, provide fallback instructions
-    if (!claudeSuccess) {
-      console.log(`\nAutomated task completion failed. You can complete the task manually:`);
-
-      if (mergePreference === 'local') {
-        console.log(`\nTo merge directly to main, run:`);
-        console.log(`git checkout main`);
-        console.log(`git merge --no-ff ${taskId}`);
-        console.log(`git push origin main`);
-      } else {
-        console.log(`\nTo create a PR for this branch, run:`);
-        console.log(`git push -u origin ${taskId}`);
-        console.log(`gh pr create --base main --head ${taskId}`);
+      
+      if (response !== 'y' && response !== 'yes') {
+        console.log('Cleanup cancelled. The merge is complete but the worktree and branch remain.');
+        console.log('\nTo manually clean up later, run:');
+        console.log(`git worktree remove "${worktreeDir}"`);
+        console.log(`git branch -d ${taskId}`);
+        process.exit(0);
       }
-
-      console.log(`\nTo remove the worktree when you're done, run:`);
-      console.log(`git worktree remove "${worktreeDir}"`);
+      
+      // Only if user confirmed, clean up the worktree and branch
+      console.log('Cleaning up worktree and branch...');
+      
+      // Remove the worktree
+      if (fs.existsSync(worktreeDir)) {
+        execSync(`git worktree remove "${worktreeDir}"`, { stdio: 'inherit' });
+        console.log(`Removed worktree at ${worktreeDir}`);
+      }
+      
+      // Delete the branch
+      execSync(`git branch -d ${taskId}`, { stdio: 'inherit' });
+      console.log(`Deleted branch ${taskId}`);
+      
+      // Update task status to completed only if not already done
+      const task = taskResult.data;
+      if (task.metadata.status !== '🟢 Done') {
+        console.log('Updating task status to completed...');
+        const updateResult = await updateTask(taskId, {
+          metadata: {
+            status: '🟢 Done',
+            updated_date: new Date().toISOString().split('T')[0]
+          }
+        });
+        
+        if (updateResult.success) {
+          console.log(`Task ${taskId} marked as completed.`);
+        } else {
+          console.log('Failed to update task status, but merge was successful.');
+        }
+      } else {
+        console.log(`Task ${taskId} is already marked as completed.`);
+      }
+      
+      console.log(`\nTask ${taskId} has been successfully completed!`);
+      console.log('Remember to push your changes: git push origin main');
+      
+    } catch (mergeError) {
+      console.error('\nMerge failed! There are conflicts that need to be resolved.');
+      console.error('Please resolve the conflicts manually and then clean up the worktree.');
+      console.error('\nTo resolve conflicts:');
+      console.error('1. Fix the conflicted files');
+      console.error('2. git add <resolved files>');
+      console.error('3. git commit');
+      console.error(`4. git worktree remove "${worktreeDir}"`);
+      console.error(`5. git branch -d ${taskId}`);
+      process.exit(1);
     }
-
-    // Claude will handle the worktree cleanup if successful
-    console.log(`\nThe worktree will be automatically removed by Claude after successful merge.`);
     
   } catch (error) {
     console.error('Error finishing worktree:', error);

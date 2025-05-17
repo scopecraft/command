@@ -6,7 +6,6 @@ import { TaskListView } from './components/task-list/TaskListView';
 import { TaskFormView } from './components/task-form/TaskFormView';
 import { TaskDetailView } from './components/task-detail/TaskDetailView';
 import { HomePage } from './components/pages/HomePage';
-import { GraphPage } from './components/pages/GraphPage';
 import { FeatureDetailView } from './components/pages/FeatureDetailPage';
 import { AreaDetailView } from './components/pages/AreaDetailPage';
 import { PhaseDetailView } from './components/pages/PhaseDetailPage';
@@ -44,8 +43,6 @@ function App() {
           <Route path={routes.phaseDetail(':id')} component={PhaseDetailView} />
           
           <Route path={routes.comparison} component={ProgressComparisonView} />
-          
-          <Route path={routes.graph} component={GraphPage} />
           
           <Route path={routes.prompt} component={PromptPage} />
           <Route path={routes.promptWithId(':id')} component={PromptPage} />

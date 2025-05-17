@@ -81,16 +81,6 @@ export function Sidebar() {
             </Link>
           </li>
           <li>
-            <Link href={routes.graph}>
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-left normal-case"
-              >
-                <span className="truncate">Relationship Graph</span>
-              </Button>
-            </Link>
-          </li>
-          <li>
             <Link href={routes.comparison}>
               <Button
                 variant="ghost"

@@ -13,7 +13,6 @@ export const routes = {
   areaCreate: '/areas/create',
   phaseDetail: (id: string) => `/phases/${id}`,
   comparison: '/comparison',
-  graph: '/graph',
   prompt: '/prompt',
   promptWithId: (id: string) => `/prompt/${id}`,
 };
