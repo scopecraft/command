@@ -28,6 +28,10 @@ export function TaskDetailViewInner() {
   const handleEditClick = () => {
     navigate(routes.taskEdit(id));
   };
+  
+  const handlePromptClick = () => {
+    navigate(routes.promptWithId(id));
+  };
 
   const handleBackClick = () => {
     // Preserve filter parameters when going back to the list
@@ -89,7 +93,12 @@ export function TaskDetailViewInner() {
           </Button>
           <h1 className="text-xl font-semibold">{task.title}</h1>
         </div>
-        <Button onClick={handleEditClick}>Edit Task</Button>
+        <div className="flex gap-2">
+          <Button onClick={handleEditClick}>Edit Task</Button>
+          <Button variant="outline" onClick={handlePromptClick}>
+            Claude Assistant
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

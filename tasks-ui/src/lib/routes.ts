@@ -14,6 +14,8 @@ export const routes = {
   phaseDetail: (id: string) => `/phases/${id}`,
   comparison: '/comparison',
   graph: '/graph',
+  prompt: '/prompt',
+  promptWithId: (id: string) => `/prompt/${id}`,
 };
 
 // Get route path by name

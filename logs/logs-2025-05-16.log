@@ -1,0 +1,4 @@
+{"timestamp":"2025-05-16T20:09:35.239Z","level":"INFO","message":"Server started successfully","data":{"url":"http://localhost:9999"}}
+{"timestamp":"2025-05-16T20:16:27.796Z","level":"INFO","message":"Server started successfully","data":{"url":"http://localhost:9999"}}
+{"timestamp":"2025-05-16T20:17:35.600Z","level":"INFO","message":"Process manager shutting down","data":{"activeProcesses":0}}
+{"timestamp":"2025-05-16T20:17:35.601Z","level":"INFO","message":"Stopping server"}
