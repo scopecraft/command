@@ -5,18 +5,18 @@
  * @returns Formatted date string or dash if date is falsy
  */
 export function formatDate(
-  dateString: string | undefined, 
-  options: { 
+  dateString: string | undefined,
+  options: {
     showYear?: boolean;
     showRelative?: boolean;
   } = { showYear: true, showRelative: false }
 ): string {
-  if (!dateString) return "—";
+  if (!dateString) return '—';
 
   const date = new Date(dateString);
-  
+
   // Check if the date is valid
-  if (isNaN(date.getTime())) return dateString;
+  if (Number.isNaN(date.getTime())) return dateString;
 
   // Format the date
   const formatter = new Intl.DateTimeFormat('en-US', {
@@ -31,14 +31,17 @@ export function formatDate(
   if (options.showRelative) {
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) {
       return `${formattedDate} (Today)`;
-    } else if (diffDays === 1) {
+    }
+    if (diffDays === 1) {
       return `${formattedDate} (Yesterday)`;
-    } else if (diffDays > 1 && diffDays <= 7) {
+    }
+    if (diffDays > 1 && diffDays <= 7) {
       return `${formattedDate} (${diffDays} days ago)`;
-    } else if (diffDays < 0 && diffDays >= -7) {
+    }
+    if (diffDays < 0 && diffDays >= -7) {
       return `${formattedDate} (In ${Math.abs(diffDays)} days)`;
     }
   }

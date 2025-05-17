@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter';
-import { Button } from '../ui/button';
 import { routes } from '../../lib/routes';
+import { Button } from '../ui/button';
 
 export function HomePage() {
   // Use the wouter hook for programmatic navigation
@@ -15,14 +15,12 @@ export function HomePage() {
             A terminal-inspired task management interface
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4 mt-8">
           <Button variant="outline" onClick={() => navigate(routes.taskCreate)}>
             Create Task
           </Button>
-          <Button onClick={() => navigate(routes.taskList)}>
-            View Tasks
-          </Button>
+          <Button onClick={() => navigate(routes.taskList)}>View Tasks</Button>
           <Button variant="ghost" onClick={() => navigate(routes.prompt)} className="col-span-2">
             Open Claude Assistant
           </Button>

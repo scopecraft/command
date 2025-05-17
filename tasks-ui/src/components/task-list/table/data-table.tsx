@@ -1,20 +1,20 @@
 import {
-  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
+  type Table,
+  type VisibilityState,
+  flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
-  flexRender,
-  type ColumnDef,
-  type SortingState,
-  type ColumnFiltersState,
-  type VisibilityState,
-  type Table,
-} from "@tanstack/react-table";
-import { useState } from "react";
-import { Button } from "../../ui/button";
-import { SortIndicator } from "./sort-indicator";
-import { ColumnToggle } from "./column-toggle";
+  useReactTable,
+} from '@tanstack/react-table';
+import { useState } from 'react';
+import { Button } from '../../ui/button';
+import { ColumnToggle } from './column-toggle';
+import { SortIndicator } from './sort-indicator';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -78,22 +78,18 @@ export function DataTable<TData extends object, TValue>({
                   <th
                     key={header.id}
                     className="text-left p-3 text-sm font-medium whitespace-nowrap"
-                    onClick={header.column.getCanSort()
-                      ? header.column.getToggleSortingHandler()
-                      : undefined
+                    onClick={
+                      header.column.getCanSort()
+                        ? header.column.getToggleSortingHandler()
+                        : undefined
                     }
                     style={{ cursor: header.column.getCanSort() ? 'pointer' : 'default' }}
                   >
                     <div className="flex items-center">
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                      {header.column.getCanSort() && (
-                        <SortIndicator column={header.column} />
-                      )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.column.getCanSort() && <SortIndicator column={header.column} />}
                     </div>
                   </th>
                 ))}
@@ -110,20 +106,14 @@ export function DataTable<TData extends object, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="p-3">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
                 </tr>
               ))
             ) : (
               <tr>
-                <td
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
+                <td colSpan={columns.length} className="h-24 text-center text-muted-foreground">
                   No results.
                 </td>
               </tr>
@@ -135,7 +125,7 @@ export function DataTable<TData extends object, TValue>({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-2">
           <div className="text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredSelectedRowModel().rows.length} of{' '}
             {table.getFilteredRowModel().rows.length} row(s) selected.
           </div>
           <ColumnToggle table={table} />
@@ -152,8 +142,7 @@ export function DataTable<TData extends object, TValue>({
             <span className="hidden sm:inline">Previous</span>
           </Button>
           <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </div>
           <Button
             variant="outline"

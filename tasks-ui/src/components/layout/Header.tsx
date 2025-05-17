@@ -1,8 +1,8 @@
 import { useLocation } from 'wouter';
 import { useUIContext } from '../../context/UIContext';
-import { Button } from '../ui/button';
-import { cn } from '../../lib/utils';
 import { routes } from '../../lib/routes';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
 
 export function Header() {
   const { ui, toggleSidebar, toggleDarkMode } = useUIContext();
@@ -25,7 +25,7 @@ export function Header() {
           <MenuIcon className="h-5 w-5" />
         </Button>
         {/* Atlas-inspired logo with icon and text treatment */}
-        <div 
+        <div
           className="flex items-center gap-3 cursor-pointer"
           onClick={handleHomeLinkClick}
           role="button"

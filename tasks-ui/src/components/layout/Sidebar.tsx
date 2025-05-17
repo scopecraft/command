@@ -1,19 +1,24 @@
-import { useLocation, Link } from 'wouter';
-import { useUIContext } from '../../context/UIContext';
-import { usePhaseContext } from '../../context/PhaseContext';
-import { useFeatureContext } from '../../context/FeatureContext';
+import { Link, useLocation } from 'wouter';
 import { useAreaContext } from '../../context/AreaContext';
+import { useFeatureContext } from '../../context/FeatureContext';
+import { usePhaseContext } from '../../context/PhaseContext';
+import { useUIContext } from '../../context/UIContext';
+import { routes } from '../../lib/routes';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
-import { routes } from '../../lib/routes';
 
 export function Sidebar() {
   const { ui } = useUIContext();
   const { phases, currentPhase, loading: phasesLoading, setCurrentPhase } = usePhaseContext();
-  const { features, loading: featuresLoading, currentFeature, setCurrentFeature } = useFeatureContext();
+  const {
+    features,
+    loading: featuresLoading,
+    currentFeature,
+    setCurrentFeature,
+  } = useFeatureContext();
   const { areas, loading: areasLoading, currentArea, setCurrentArea } = useAreaContext();
   const [, navigate] = useLocation();
-  
+
   // Handle phase selection and navigate to phase detail page
   const handlePhaseClick = (phaseId: string) => {
     console.log('Selected phase:', phaseId);
@@ -21,7 +26,7 @@ export function Sidebar() {
     // Navigate to phase detail view
     navigate(routes.phaseDetail(phaseId));
   };
-  
+
   // Handle feature selection and navigate to feature detail page
   const handleFeatureClick = (featureId: string) => {
     console.log('Selected feature:', featureId);
@@ -32,7 +37,7 @@ export function Sidebar() {
     }
     // Extract the ID without the FEATURE_ prefix
     const id = featureId.replace('FEATURE_', '');
-    
+
     // Navigate to feature detail page, preserving phase context if a phase is selected
     let route = routes.featureDetail(id);
     if (currentPhase) {
@@ -40,7 +45,7 @@ export function Sidebar() {
     }
     navigate(route);
   };
-  
+
   // Handle area selection and navigate to area detail page
   const handleAreaClick = (areaId: string) => {
     console.log('Selected area:', areaId);
@@ -51,7 +56,7 @@ export function Sidebar() {
     }
     // Extract the ID without the AREA_ prefix
     const id = areaId.replace('AREA_', '');
-    
+
     // Navigate to area detail page, preserving phase context if a phase is selected
     let route = routes.areaDetail(id);
     if (currentPhase) {
@@ -64,7 +69,6 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 h-full bg-card border-r border-border flex flex-col">
-      
       <div className="p-4 border-b border-border">
         <h2 className="text-sm font-medium text-[var(--atlas-light)] uppercase">Views</h2>
       </div>
@@ -72,20 +76,14 @@ export function Sidebar() {
         <ul className="space-y-1">
           <li>
             <Link href={routes.taskList}>
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-left normal-case"
-              >
+              <Button variant="ghost" className="w-full justify-start text-left normal-case">
                 <span className="truncate">Task List</span>
               </Button>
             </Link>
           </li>
           <li>
             <Link href={routes.comparison}>
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-left normal-case"
-              >
+              <Button variant="ghost" className="w-full justify-start text-left normal-case">
                 <span className="truncate">Progress Comparison</span>
               </Button>
             </Link>
@@ -120,12 +118,12 @@ export function Sidebar() {
           </ul>
         )}
       </div>
-      
+
       <div className="p-4 border-b border-border flex justify-between items-center">
         <h2 className="text-sm font-medium text-[var(--atlas-light)] uppercase">Features</h2>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="h-6 w-6 p-0"
           title="Create Feature"
           onClick={() => navigate(routes.featureCreate)}
@@ -158,12 +156,12 @@ export function Sidebar() {
           </ul>
         )}
       </div>
-      
+
       <div className="p-4 border-b border-border flex justify-between items-center">
         <h2 className="text-sm font-medium text-[var(--atlas-light)] uppercase">Areas</h2>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="h-6 w-6 p-0"
           title="Create Area"
           onClick={() => navigate(routes.areaCreate)}
@@ -197,8 +195,8 @@ export function Sidebar() {
         )}
       </div>
       <div className="p-4 border-t border-border">
-        <Button 
-          variant="atlas" 
+        <Button
+          variant="atlas"
           className="w-full"
           onClick={() => {
             navigate(routes.prompt);

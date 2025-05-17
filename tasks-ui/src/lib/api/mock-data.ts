@@ -1,4 +1,4 @@
-import type { Task, Phase, Template } from '../types';
+import type { Phase, Task, Template } from '../types';
 
 // Mock data with a variety of task statuses, types, and priorities
 export const mockTasks: Task[] = [
@@ -13,7 +13,8 @@ export const mockTasks: Task[] = [
     assigned_to: '🧑‍💻 User:Alice',
     phase: 'phase-1',
     tags: ['ui', 'frontend'],
-    content: '# Implement Task List View\n\nCreate a table view for displaying and filtering tasks.'
+    content:
+      '# Implement Task List View\n\nCreate a table view for displaying and filtering tasks.',
   },
   {
     id: 'TASK-002',
@@ -27,7 +28,8 @@ export const mockTasks: Task[] = [
     phase: 'phase-2',
     tags: ['ui', 'frontend'],
     depends_on: ['TASK-001'],
-    content: '# Create Task Detail View\n\nImplement a detailed view for viewing task information and content.'
+    content:
+      '# Create Task Detail View\n\nImplement a detailed view for viewing task information and content.',
   },
   {
     id: 'TASK-003',
@@ -41,7 +43,7 @@ export const mockTasks: Task[] = [
     phase: 'phase-2',
     tags: ['ui', 'frontend', 'form'],
     depends_on: ['TASK-002'],
-    content: '# Implement Task Form\n\nCreate a form for adding and editing tasks.'
+    content: '# Implement Task Form\n\nCreate a form for adding and editing tasks.',
   },
   {
     id: 'TASK-004',
@@ -55,7 +57,7 @@ export const mockTasks: Task[] = [
     assigned_to: '🧑‍💻 User:Bob',
     phase: 'phase-2',
     tags: ['ui', 'frontend', 'filtering'],
-    content: '# Add Task Filtering\n\nImplement filtering options for the task list view.'
+    content: '# Add Task Filtering\n\nImplement filtering options for the task list view.',
   },
   {
     id: 'TASK-005',
@@ -67,7 +69,7 @@ export const mockTasks: Task[] = [
     updated_date: '2025-05-12',
     phase: 'phase-2',
     tags: ['ui', 'frontend', 'sorting'],
-    content: '# Implement Task Sorting\n\nAdd sorting capabilities to the task list view.'
+    content: '# Implement Task Sorting\n\nAdd sorting capabilities to the task list view.',
   },
   {
     id: 'TASK-006',
@@ -82,7 +84,7 @@ export const mockTasks: Task[] = [
     depends_on: ['TASK-003', 'TASK-004'],
     due_date: '2025-05-15',
     assigned_to: '🧑‍💻 User:Alice',
-    content: '# Fix Task Creation Bug\n\nFix bug where task creation fails with long titles.'
+    content: '# Fix Task Creation Bug\n\nFix bug where task creation fails with long titles.',
   },
   {
     id: 'TASK-007',
@@ -95,7 +97,8 @@ export const mockTasks: Task[] = [
     assigned_to: '🤖 AI',
     phase: 'phase-3',
     tags: ['ui', 'markdown'],
-    content: '# Add Markdown Preview\n\nImplement a preview mode for markdown content in the task form.'
+    content:
+      '# Add Markdown Preview\n\nImplement a preview mode for markdown content in the task form.',
   },
   {
     id: 'TASK-008',
@@ -107,7 +110,8 @@ export const mockTasks: Task[] = [
     updated_date: '2025-05-12',
     phase: 'phase-3',
     tags: ['performance', 'frontend'],
-    content: '# Improve Task List Performance\n\nOptimize the task list rendering for better performance with large datasets.'
+    content:
+      '# Improve Task List Performance\n\nOptimize the task list rendering for better performance with large datasets.',
   },
   {
     id: 'TASK-009',
@@ -121,7 +125,7 @@ export const mockTasks: Task[] = [
     due_date: '2025-06-01',
     phase: 'phase-3',
     tags: ['auth', 'security'],
-    content: '# Add User Authentication\n\nImplement user authentication and authorization.'
+    content: '# Add User Authentication\n\nImplement user authentication and authorization.',
   },
   {
     id: 'TASK-010',
@@ -134,8 +138,9 @@ export const mockTasks: Task[] = [
     phase: 'phase-3',
     depends_on: ['TASK-007'],
     tags: ['ui', 'graph', 'dependencies'],
-    content: '# Create Task Dependency Graph\n\nImplement a visual representation of task dependencies.'
-  }
+    content:
+      '# Create Task Dependency Graph\n\nImplement a visual representation of task dependencies.',
+  },
 ];
 
 export const mockPhases: Phase[] = [
@@ -144,22 +149,22 @@ export const mockPhases: Phase[] = [
     name: 'Phase 1: Foundation',
     description: 'Initial setup and foundation components',
     status: '🟢 Done',
-    order: 1
+    order: 1,
   },
   {
     id: 'phase-2',
     name: 'Phase 2: Core Features',
     description: 'Implement the core task management features',
     status: '🔵 In Progress',
-    order: 2
+    order: 2,
   },
   {
     id: 'phase-3',
     name: 'Phase 3: Advanced Features',
     description: 'Implement advanced features and optimizations',
     status: '🟡 To Do',
-    order: 3
-  }
+    order: 3,
+  },
 ];
 
 export const mockTemplates: Template[] = [
@@ -173,7 +178,7 @@ export const mockTemplates: Template[] = [
         id: 'title',
         name: 'Title',
         type: 'text',
-        required: true
+        required: true,
       },
       {
         id: 'status',
@@ -185,9 +190,9 @@ export const mockTemplates: Template[] = [
           { value: '🔵 In Progress', label: '🔵 In Progress' },
           { value: '🟠 Blocked', label: '🟠 Blocked' },
           { value: '🟣 In Review', label: '🟣 In Review' },
-          { value: '🟢 Done', label: '🟢 Done' }
+          { value: '🟢 Done', label: '🟢 Done' },
         ],
-        default: '🟡 To Do'
+        default: '🟡 To Do',
       },
       {
         id: 'priority',
@@ -198,11 +203,11 @@ export const mockTemplates: Template[] = [
           { value: '🔥 Highest', label: '🔥 Highest' },
           { value: '🔼 High', label: '🔼 High' },
           { value: '▶️ Medium', label: '▶️ Medium' },
-          { value: '🔽 Low', label: '🔽 Low' }
+          { value: '🔽 Low', label: '🔽 Low' },
         ],
-        default: '▶️ Medium'
-      }
-    ]
+        default: '▶️ Medium',
+      },
+    ],
   },
   {
     id: 'template-feature',
@@ -214,7 +219,7 @@ export const mockTemplates: Template[] = [
         id: 'title',
         name: 'Title',
         type: 'text',
-        required: true
+        required: true,
       },
       {
         id: 'status',
@@ -226,9 +231,9 @@ export const mockTemplates: Template[] = [
           { value: '🔵 In Progress', label: '🔵 In Progress' },
           { value: '🟠 Blocked', label: '🟠 Blocked' },
           { value: '🟣 In Review', label: '🟣 In Review' },
-          { value: '🟢 Done', label: '🟢 Done' }
+          { value: '🟢 Done', label: '🟢 Done' },
         ],
-        default: '🟡 To Do'
+        default: '🟡 To Do',
       },
       {
         id: 'priority',
@@ -239,11 +244,11 @@ export const mockTemplates: Template[] = [
           { value: '🔥 Highest', label: '🔥 Highest' },
           { value: '🔼 High', label: '🔼 High' },
           { value: '▶️ Medium', label: '▶️ Medium' },
-          { value: '🔽 Low', label: '🔽 Low' }
+          { value: '🔽 Low', label: '🔽 Low' },
         ],
-        default: '▶️ Medium'
-      }
-    ]
+        default: '▶️ Medium',
+      },
+    ],
   },
   {
     id: 'template-bug',
@@ -255,7 +260,7 @@ export const mockTemplates: Template[] = [
         id: 'title',
         name: 'Title',
         type: 'text',
-        required: true
+        required: true,
       },
       {
         id: 'status',
@@ -267,9 +272,9 @@ export const mockTemplates: Template[] = [
           { value: '🔵 In Progress', label: '🔵 In Progress' },
           { value: '🟠 Blocked', label: '🟠 Blocked' },
           { value: '🟣 In Review', label: '🟣 In Review' },
-          { value: '🟢 Done', label: '🟢 Done' }
+          { value: '🟢 Done', label: '🟢 Done' },
         ],
-        default: '🟡 To Do'
+        default: '🟡 To Do',
       },
       {
         id: 'priority',
@@ -280,10 +285,10 @@ export const mockTemplates: Template[] = [
           { value: '🔥 Highest', label: '🔥 Highest' },
           { value: '🔼 High', label: '🔼 High' },
           { value: '▶️ Medium', label: '▶️ Medium' },
-          { value: '🔽 Low', label: '🔽 Low' }
+          { value: '🔽 Low', label: '🔽 Low' },
         ],
-        default: '🔼 High'
-      }
-    ]
-  }
+        default: '🔼 High',
+      },
+    ],
+  },
 ];

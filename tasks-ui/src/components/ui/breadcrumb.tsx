@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from 'wouter';
 
 interface BreadcrumbProps {
   items: {
@@ -18,19 +18,14 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
 
           return (
             <li key={index} className="flex items-center">
-              {index > 0 && (
-                <span className="mx-2 text-muted-foreground">/</span>
-              )}
-              
+              {index > 0 && <span className="mx-2 text-muted-foreground">/</span>}
+
               {isLast || !item.href ? (
                 <span className={`${isLast ? 'font-medium' : 'text-muted-foreground'}`}>
                   {item.label}
                 </span>
               ) : (
-                <Link 
-                  href={item.href}
-                  className="text-primary hover:underline"
-                >
+                <Link href={item.href} className="text-primary hover:underline">
                   {item.label}
                 </Link>
               )}

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useTaskContext } from '../../context/TaskContext';
 import { useToast } from '../../hooks/useToast';
-import { Button } from '../ui/button';
 import { routes } from '../../lib/routes';
+import { Button } from '../ui/button';
 
 export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
   const { tasks, createTask, updateTask, loading } = useTaskContext();
@@ -16,12 +16,12 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
-  
+
   // Load task data when in edit mode
   useEffect(() => {
     if (taskId) {
       setIsEditMode(true);
-      const task = tasks.find(t => t.id === taskId);
+      const task = tasks.find((t) => t.id === taskId);
       if (task) {
         setTitle(task.title);
         setStatus(task.status);
@@ -35,11 +35,11 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
       }
     }
   }, [taskId, tasks, loading, navigate, toast]);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    
+
     try {
       const taskData = {
         id: isEditMode ? taskId : undefined,
@@ -47,16 +47,16 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
         status,
         type,
         priority,
-        content: `# ${title}\n\n${content}`
+        content: `# ${title}\n\n${content}`,
       };
-      
+
       let result;
       if (isEditMode && taskId) {
         result = await updateTask(taskData as any);
       } else {
         result = await createTask(taskData as any);
       }
-      
+
       if (result.success) {
         toast.success(`Task ${isEditMode ? 'updated' : 'created'} successfully!`);
         navigate(isEditMode ? routes.taskDetail(taskId!) : routes.taskList);
@@ -65,12 +65,14 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
       }
     } catch (error) {
       console.error('Failed to save task:', error);
-      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} task: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `Failed to ${isEditMode ? 'update' : 'create'} task: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     } finally {
       setSubmitting(false);
     }
   };
-  
+
   const handleCancel = () => {
     if (isEditMode && taskId) {
       navigate(routes.taskDetail(taskId));
@@ -78,17 +80,15 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
       navigate(routes.taskList);
     }
   };
-  
+
   if (loading && isEditMode) {
     return <div className="container mx-auto p-4 text-center">Loading task data...</div>;
   }
-  
+
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-xl font-semibold mb-4">
-        {isEditMode ? 'Edit Task' : 'Create New Task'}
-      </h1>
-      
+      <h1 className="text-xl font-semibold mb-4">{isEditMode ? 'Edit Task' : 'Create New Task'}</h1>
+
       <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
         <div className="grid gap-2">
           <label htmlFor="title" className="text-sm font-medium">
@@ -103,7 +103,7 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
             required
           />
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="grid gap-2">
             <label htmlFor="type" className="text-sm font-medium">
@@ -121,7 +121,7 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
               <option value="🐛 Bug">🐛 Bug</option>
             </select>
           </div>
-          
+
           <div className="grid gap-2">
             <label htmlFor="status" className="text-sm font-medium">
               Status
@@ -138,7 +138,7 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
               <option value="🟢 Done">🟢 Done</option>
             </select>
           </div>
-          
+
           <div className="grid gap-2">
             <label htmlFor="priority" className="text-sm font-medium">
               Priority
@@ -157,7 +157,7 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
             </select>
           </div>
         </div>
-        
+
         <div className="grid gap-2">
           <label htmlFor="content" className="text-sm font-medium">
             Description
@@ -170,13 +170,13 @@ export function TaskFormView({ taskId = null }: { taskId?: string | null }) {
             disabled={submitting}
           />
         </div>
-        
+
         <div className="flex gap-2 justify-end">
           <Button type="button" variant="outline" onClick={handleCancel} disabled={submitting}>
             Cancel
           </Button>
           <Button type="submit" disabled={submitting}>
-            {submitting ? 'Saving...' : (isEditMode ? 'Update Task' : 'Create Task')}
+            {submitting ? 'Saving...' : isEditMode ? 'Update Task' : 'Create Task'}
           </Button>
         </div>
       </form>

@@ -1,23 +1,22 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
 /**
  * STDIO MCP server CLI
  * Command-line interface for starting the MCP server with STDIO transport
  */
 import { Command } from 'commander';
+import { ProjectMode, projectConfig } from '../core/index.js';
 import { startStdioServer } from './stdio-server.js';
-import fs from 'fs';
-import path from 'path';
-import { projectConfig, ProjectMode } from '../core/index.js';
 
 // Read package version from package.json
 let version = '0.2.0'; // Default
 try {
-  const packageJson = JSON.parse(fs.readFileSync(
-    path.join(process.cwd(), 'package.json'),
-    'utf-8'
-  ));
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
+  );
   version = packageJson.version || version;
-} catch (error) {
+} catch (_error) {
   // Silently fail and use default version
 }
 
@@ -50,7 +49,9 @@ program
       const rootDir = mode === ProjectMode.ROO_COMMANDER ? '.ruru' : '.tasks';
 
       console.error(`Error: ${rootDir} directory structure not found in the current directory`);
-      console.error(`Initialize the project first with "sc init${mode === ProjectMode.STANDALONE ? ' --mode standalone' : ''}"`);
+      console.error(
+        `Initialize the project first with "sc init${mode === ProjectMode.STANDALONE ? ' --mode standalone' : ''}"`
+      );
 
       // Attempt to create the directory structure if it doesn't exist
       try {
@@ -58,17 +59,20 @@ program
         projectConfig.initializeProjectStructure();
         console.log(`${rootDir} directory structure created successfully.`);
       } catch (error) {
-        console.error(`Failed to create directory structure: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error(
+          `Failed to create directory structure: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
         process.exit(1);
       }
     }
 
     // Start server
-    const modeText = projectConfig.getMode() === ProjectMode.ROO_COMMANDER ? 'Roo Commander' : 'Standalone';
+    const modeText =
+      projectConfig.getMode() === ProjectMode.ROO_COMMANDER ? 'Roo Commander' : 'Standalone';
     console.log(`Starting STDIO MCP server in ${modeText} mode...`);
-    
-    await startStdioServer({ 
-      verbose: options.verbose || false
+
+    await startStdioServer({
+      verbose: options.verbose || false,
     });
   });
 

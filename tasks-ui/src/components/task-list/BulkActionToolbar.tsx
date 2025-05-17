@@ -1,11 +1,11 @@
-import { Button } from "../ui/button";
-import { useState } from "react";
-import type { Task } from "../../lib/types/index";
-import { useTaskContext } from "../../context/TaskContext";
-import { useFeatureContext } from "../../context/FeatureContext";
-import { useAreaContext } from "../../context/AreaContext";
-import { useToast } from "../../hooks/useToast";
-import { Folder, FolderOpen, X, MoveHorizontal, Trash } from "lucide-react";
+import { Folder, FolderOpen, MoveHorizontal, Trash, X } from 'lucide-react';
+import { useState } from 'react';
+import { useAreaContext } from '../../context/AreaContext';
+import { useFeatureContext } from '../../context/FeatureContext';
+import { useTaskContext } from '../../context/TaskContext';
+import { useToast } from '../../hooks/useToast';
+import type { Task } from '../../lib/types/index';
+import { Button } from '../ui/button';
 
 interface BulkActionToolbarProps {
   selectedTaskIds: string[];
@@ -30,27 +30,27 @@ export function BulkActionToolbar({
     if (selectedTaskIds.length === 0) return;
 
     setIsMoving(true);
-    
+
     try {
       let options = {};
-      
+
       // If targetId is null, we're moving to no feature/area
       if (targetId === null) {
         options = {}; // No specific target
-      } 
+      }
       // Handle feature move
       else if (targetId.startsWith('FEATURE_')) {
         const featureId = targetId.replace('FEATURE_', '');
         options = { targetFeature: featureId };
-      } 
+      }
       // Handle area move
       else if (targetId.startsWith('AREA_')) {
         const areaId = targetId.replace('AREA_', '');
         options = { targetArea: areaId };
       }
-      
+
       const result = await bulkMoveTasks(selectedTaskIds, options);
-      
+
       if (result.success) {
         onClearSelection();
         setShowMoveDialog(false);
@@ -65,17 +65,21 @@ export function BulkActionToolbar({
 
   const handleDeleteSelected = async () => {
     if (selectedTaskIds.length === 0) return;
-    
+
     // Confirm before deletion
-    if (!window.confirm(`Are you sure you want to delete ${selectedTaskIds.length} task(s)? This action cannot be undone.`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedTaskIds.length} task(s)? This action cannot be undone.`
+      )
+    ) {
       return;
     }
-    
+
     setIsDeleting(true);
-    
+
     let successCount = 0;
     let failCount = 0;
-    
+
     try {
       // Delete tasks one by one
       for (const taskId of selectedTaskIds) {
@@ -86,7 +90,7 @@ export function BulkActionToolbar({
           failCount++;
         }
       }
-      
+
       // Display results
       if (successCount > 0 && failCount === 0) {
         toast.success(`Successfully deleted ${successCount} task(s)`);
@@ -96,7 +100,7 @@ export function BulkActionToolbar({
       } else {
         toast.error('Failed to delete any tasks');
       }
-      
+
       // Refresh the task list
       refreshTasks();
     } catch (error) {
@@ -108,26 +112,21 @@ export function BulkActionToolbar({
   };
 
   const count = selectedTaskIds.length;
-  
+
   return (
     <div className="bg-accent/30 border border-border rounded-md p-3 mb-4 flex flex-wrap justify-between items-center gap-2">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium">
           {count} task{count !== 1 ? 's' : ''} selected
         </span>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onClearSelection}
-          className="h-8"
-        >
+        <Button variant="outline" size="sm" onClick={onClearSelection} className="h-8">
           <X className="h-4 w-4 mr-1" />
           Clear
         </Button>
       </div>
-      
+
       <div className="flex flex-wrap gap-2">
-        <Button 
+        <Button
           variant="outline"
           size="sm"
           onClick={() => setShowMoveDialog(!showMoveDialog)}
@@ -137,8 +136,8 @@ export function BulkActionToolbar({
           <MoveHorizontal className="h-4 w-4 mr-1" />
           Move to...
         </Button>
-        
-        <Button 
+
+        <Button
           variant="destructive"
           size="sm"
           onClick={handleDeleteSelected}
@@ -149,12 +148,14 @@ export function BulkActionToolbar({
           Delete
         </Button>
       </div>
-      
+
       {/* Move dialog */}
       {showMoveDialog && (
         <div className="w-full mt-2 border border-border bg-background rounded-md p-2">
-          <h3 className="text-sm font-medium mb-2">Move {count} task{count !== 1 ? 's' : ''} to:</h3>
-          
+          <h3 className="text-sm font-medium mb-2">
+            Move {count} task{count !== 1 ? 's' : ''} to:
+          </h3>
+
           <div className="flex flex-col space-y-1 max-h-60 overflow-y-auto">
             {/* Option to remove from feature/area */}
             <button
@@ -164,14 +165,14 @@ export function BulkActionToolbar({
             >
               <span>No Feature/Area</span>
             </button>
-            
+
             {/* Features section */}
             {features.length > 0 && (
               <>
                 <div className="px-2 py-1 text-xs font-medium text-muted-foreground mt-1">
                   Features
                 </div>
-                {features.map(feature => (
+                {features.map((feature) => (
                   <button
                     key={feature.id}
                     className="flex items-center gap-2 w-full px-2 py-1.5 text-left rounded hover:bg-accent/50 text-sm"
@@ -184,14 +185,14 @@ export function BulkActionToolbar({
                 ))}
               </>
             )}
-            
+
             {/* Areas section */}
             {areas.length > 0 && (
               <>
                 <div className="px-2 py-1 text-xs font-medium text-muted-foreground mt-1">
                   Areas
                 </div>
-                {areas.map(area => (
+                {areas.map((area) => (
                   <button
                     key={area.id}
                     className="flex items-center gap-2 w-full px-2 py-1.5 text-left rounded hover:bg-accent/50 text-sm"
@@ -205,11 +206,11 @@ export function BulkActionToolbar({
               </>
             )}
           </div>
-          
+
           <div className="mt-2 flex justify-end">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setShowMoveDialog(false)}
               className="h-8"
             >

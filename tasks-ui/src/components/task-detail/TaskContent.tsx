@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { Task } from '../../lib/types';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { Button } from '../ui/button';
+import remarkGfm from 'remark-gfm';
 import { useTaskContext } from '../../context/TaskContext';
+import type { Task } from '../../lib/types';
+import { Button } from '../ui/button';
 
 interface TaskContentProps {
   task: Task;
@@ -67,19 +67,10 @@ export function TaskContent({ task }: TaskContentProps) {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Edit Description</h2>
           <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCancel}
-              disabled={isSaving}
-            >
+            <Button variant="outline" size="sm" onClick={handleCancel} disabled={isSaving}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
+            <Button size="sm" onClick={handleSave} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save'}
             </Button>
           </div>
@@ -116,10 +107,7 @@ export function TaskContent({ task }: TaskContentProps) {
         </Button>
       </div>
       <div className="prose prose-sm dark:prose-invert max-w-none">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw]}
-        >
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
           {task.content || ''}
         </ReactMarkdown>
       </div>

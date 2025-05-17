@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter';
-import type { Task } from '../../lib/types';
 import { routes } from '../../lib/routes';
+import type { Task } from '../../lib/types';
 
 interface TaskRelationshipsProps {
   task: Task;
@@ -17,11 +17,11 @@ export function TaskRelationships({ task, relatedTasks }: TaskRelationshipsProps
   return (
     <div className="bg-card p-4 rounded-md border border-border">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {relatedTasks.map(relatedTask => {
+        {relatedTasks.map((relatedTask) => {
           // Determine relationship type
           let relationshipType = '';
           let relationClass = '';
-          
+
           if (task.depends_on?.includes(relatedTask.id)) {
             relationshipType = 'Depends on';
             relationClass = 'text-orange-500';
@@ -41,9 +41,9 @@ export function TaskRelationships({ task, relatedTasks }: TaskRelationshipsProps
             relationshipType = 'Next';
             relationClass = 'text-green-500';
           }
-          
+
           return (
-            <div 
+            <div
               key={relatedTask.id}
               className="border border-border rounded-md p-3 cursor-pointer hover:bg-accent/10 transition-colors"
               onClick={() => handleTaskClick(relatedTask.id)}
@@ -53,7 +53,9 @@ export function TaskRelationships({ task, relatedTasks }: TaskRelationshipsProps
                   <div className="font-semibold text-sm">{relatedTask.title}</div>
                   <div className="text-xs text-muted-foreground">{relatedTask.id}</div>
                 </div>
-                <div className={`text-xs font-medium ${relationClass} px-2 py-1 bg-background rounded-md`}>
+                <div
+                  className={`text-xs font-medium ${relationClass} px-2 py-1 bg-background rounded-md`}
+                >
                   {relationshipType}
                 </div>
               </div>

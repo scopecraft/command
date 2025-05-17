@@ -1,4 +1,4 @@
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '../ui/button';
 
 interface ErrorBoundaryProps {
@@ -24,8 +24,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     // Update state so the next render will show the fallback UI
-    return { 
-      hasError: true, 
+    return {
+      hasError: true,
       error,
       errorInfo: null,
     };
@@ -66,15 +66,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </pre>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.reload()}
-              >
+              <Button variant="outline" onClick={() => window.location.reload()}>
                 Reload Page
               </Button>
-              <Button onClick={this.handleReset}>
-                Try Again
-              </Button>
+              <Button onClick={this.handleReset}>Try Again</Button>
             </div>
           </div>
         </div>

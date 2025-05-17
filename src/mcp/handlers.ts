@@ -1,66 +1,66 @@
+import {
+  type Task,
+  type TaskMetadata,
+  createArea,
+  createFeature,
+  createPhase,
+  createTask,
+  deleteArea,
+  deleteFeature,
+  deletePhase,
+  deleteTask,
+  findNextTask,
+  generateTaskId,
+  getArea,
+  getFeature,
+  getTask,
+  listAreas,
+  listFeatures,
+  listPhases,
+  listTasks,
+  listTemplates,
+  moveTask,
+  normalizePhaseStatus,
+  normalizePriority,
+  normalizeTaskStatus,
+  updateArea,
+  updateFeature,
+  updatePhase,
+  updateTask,
+} from '../core/index.js';
 /**
  * MCP method handlers
  * Each handler implements a specific MCP method
  */
 import {
-  McpMethodRegistry,
+  type AreaCreateParams,
+  type AreaDeleteParams,
+  type AreaGetParams,
+  type AreaListParams,
+  type AreaUpdateParams,
+  type DebugCodePathParams,
+  type FeatureCreateParams,
+  type FeatureDeleteParams,
+  type FeatureGetParams,
+  type FeatureListParams,
+  type FeatureUpdateParams,
   McpMethod,
-  TaskListParams,
-  TaskGetParams,
-  TaskCreateParams,
-  TaskUpdateParams,
-  TaskDeleteParams,
-  TaskMoveParams,
-  TaskNextParams,
-  FeatureListParams,
-  FeatureGetParams,
-  FeatureCreateParams,
-  FeatureUpdateParams,
-  FeatureDeleteParams,
-  AreaListParams,
-  AreaGetParams,
-  AreaCreateParams,
-  AreaUpdateParams,
-  AreaDeleteParams,
-  PhaseListParams,
-  PhaseCreateParams,
-  PhaseUpdateParams,
-  PhaseDeleteParams,
-  WorkflowCurrentParams,
-  WorkflowMarkCompleteNextParams,
-  DebugCodePathParams,
-  TemplateListParams
+  type McpMethodRegistry,
+  type PhaseCreateParams,
+  type PhaseDeleteParams,
+  type PhaseListParams,
+  type PhaseUpdateParams,
+  type TaskCreateParams,
+  type TaskDeleteParams,
+  type TaskGetParams,
+  type TaskListParams,
+  type TaskMoveParams,
+  type TaskNextParams,
+  type TaskUpdateParams,
+  type TemplateListParams,
+  type WorkflowCurrentParams,
+  type WorkflowMarkCompleteNextParams,
 } from './types.js';
-import {
-  listTasks,
-  getTask,
-  createTask,
-  updateTask,
-  deleteTask,
-  moveTask,
-  findNextTask,
-  listFeatures,
-  getFeature,
-  createFeature,
-  updateFeature,
-  deleteFeature,
-  listAreas,
-  getArea,
-  createArea,
-  updateArea,
-  deleteArea,
-  listPhases,
-  createPhase,
-  updatePhase,
-  deletePhase,
-  Task,
-  TaskMetadata,
-  generateTaskId,
-  normalizePriority,
-  normalizeTaskStatus,
-  normalizePhaseStatus,
-  listTemplates
-} from '../core/index.js';
 
 /**
  * Handler for task_list method
@@ -78,7 +78,7 @@ export async function handleTaskList(params: TaskListParams) {
     subdirectory: params.subdirectory,
     is_overview: params.is_overview,
     include_content: params.include_content, // Only include content when explicitly set to true
-    include_completed: params.include_completed // Only include completed tasks when explicitly set to true
+    include_completed: params.include_completed, // Only include completed tasks when explicitly set to true
   });
 }
 
@@ -115,9 +115,7 @@ export async function handleTaskCreate(params: TaskCreateParams) {
   if (params.tags) metadata.tags = params.tags;
 
   // Handle special case for _overview.md files
-  const isOverview =
-    params.id === '_overview' ||
-    (params.id && params.id.endsWith('/_overview'));
+  const isOverview = params.id === '_overview' || params.id?.endsWith('/_overview');
 
   if (isOverview) {
     metadata.is_overview = true;
@@ -125,7 +123,9 @@ export async function handleTaskCreate(params: TaskCreateParams) {
 
   const task: Task = {
     metadata,
-    content: params.content || `## ${params.title}\n\n${isOverview ? 'Overview of this feature.\n\n## Tasks\n\n- [ ] Task 1\n' : 'Task description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n'}`
+    content:
+      params.content ||
+      `## ${params.title}\n\n${isOverview ? 'Overview of this feature.\n\n## Tasks\n\n- [ ] Task 1\n' : 'Task description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n'}`,
   };
 
   return await createTask(task, params.subdirectory);
@@ -137,27 +137,27 @@ export async function handleTaskCreate(params: TaskCreateParams) {
 export async function handleTaskUpdate(params: TaskUpdateParams) {
   // Normalize status and priority values if provided
   const updates = { ...params.updates };
-  
+
   // Normalize direct property updates
   if (updates.status !== undefined) {
     updates.status = normalizeTaskStatus(updates.status);
   }
-  
+
   if (updates.priority !== undefined) {
     updates.priority = normalizePriority(updates.priority);
   }
-  
+
   // Normalize metadata property updates if present
   if (updates.metadata) {
     if (updates.metadata.status !== undefined) {
       updates.metadata.status = normalizeTaskStatus(updates.metadata.status);
     }
-    
+
     if (updates.metadata.priority !== undefined) {
       updates.metadata.priority = normalizePriority(updates.metadata.priority);
     }
   }
-  
+
   return await updateTask(params.id, updates, params.phase, params.subdirectory);
 }
 
@@ -178,7 +178,7 @@ export async function handleTaskNext(params: TaskNextParams) {
 /**
  * Handler for phase_list method
  */
-export async function handlePhaseList(params: PhaseListParams) {
+export async function handlePhaseList(_params: PhaseListParams) {
   return await listPhases();
 }
 
@@ -192,9 +192,9 @@ export async function handlePhaseCreate(params: PhaseCreateParams) {
     description: params.description,
     status: normalizePhaseStatus(params.status || '🟡 Pending'),
     order: params.order,
-    tasks: []
+    tasks: [],
   };
-  
+
   return await createPhase(phase);
 }
 
@@ -204,11 +204,11 @@ export async function handlePhaseCreate(params: PhaseCreateParams) {
 export async function handlePhaseUpdate(params: PhaseUpdateParams) {
   // Normalize phase status if provided
   const updates = { ...params.updates };
-  
+
   if (updates.status !== undefined) {
     updates.status = normalizePhaseStatus(updates.status);
   }
-  
+
   return await updatePhase(params.id, updates);
 }
 
@@ -222,17 +222,17 @@ export async function handlePhaseDelete(params: PhaseDeleteParams) {
 /**
  * Handler for workflow_current method
  */
-export async function handleWorkflowCurrent(params: WorkflowCurrentParams) {
+export async function handleWorkflowCurrent(_params: WorkflowCurrentParams) {
   // Using the normalized status value means we'll find all in-progress tasks
   // regardless of their specific format
-  const inProgressResult = await listTasks({ 
-    status: normalizeTaskStatus('In Progress') 
+  const inProgressResult = await listTasks({
+    status: normalizeTaskStatus('In Progress'),
   });
-  
+
   if (!inProgressResult.success) {
     return inProgressResult;
   }
-  
+
   return inProgressResult;
 }
 
@@ -242,28 +242,28 @@ export async function handleWorkflowCurrent(params: WorkflowCurrentParams) {
 export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkCompleteNextParams) {
   // Get the next task before marking current as complete
   const nextTaskResult = await findNextTask(params.id);
-  
+
   // Mark current task as complete, using the normalized "Done" status
-  const updateResult = await updateTask(params.id, { 
-    metadata: { status: normalizeTaskStatus('Done') }
+  const updateResult = await updateTask(params.id, {
+    metadata: { status: normalizeTaskStatus('Done') },
   });
-  
+
   if (!updateResult.success) {
     return updateResult;
   }
-  
+
   if (!nextTaskResult.success) {
     return {
       success: true,
       data: { updated: updateResult.data, next: null },
-      message: `Task ${params.id} marked as Done. Error finding next task: ${nextTaskResult.error}`
+      message: `Task ${params.id} marked as Done. Error finding next task: ${nextTaskResult.error}`,
     };
   }
-  
+
   return {
     success: true,
     data: { updated: updateResult.data, next: nextTaskResult.data },
-    message: updateResult.message
+    message: updateResult.message,
   };
 }
 
@@ -271,7 +271,7 @@ export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkComplet
  * Handler for debug_code_path method
  * This is a diagnostic handler to verify which version of the code is running
  */
-export async function handleDebugCodePath(params: DebugCodePathParams) {
+export async function handleDebugCodePath(_params: DebugCodePathParams) {
   const version = '20250513-2110'; // Unique identifier for this specific version
   return {
     success: true,
@@ -289,14 +289,15 @@ export async function handleDebugCodePath(params: DebugCodePathParams) {
         feature_mcp_tools_complete: true,
         area_mcp_tools_complete: true,
         task_move: true,
-        overview_file_support: true
+        overview_file_support: true,
       },
       documentation: {
-        feature_area_tools: 'docs/mcp-tool-descriptions.md'
+        feature_area_tools: 'docs/mcp-tool-descriptions.md',
       },
-      message: "Debug code path handler is responding - this is the updated MCP server with complete feature/area management"
+      message:
+        'Debug code path handler is responding - this is the updated MCP server with complete feature/area management',
     },
-    message: `Debug code path handler is responding with version ${version}`
+    message: `Debug code path handler is responding with version ${version}`,
   };
 }
 
@@ -315,7 +316,7 @@ export async function handleFeatureList(params: FeatureListParams) {
     phase: params.phase,
     status: params.status,
     include_tasks: params.include_tasks,
-    include_progress: params.include_progress !== false // Default to true
+    include_progress: params.include_progress !== false, // Default to true
   });
 }
 
@@ -330,7 +331,9 @@ export async function handleFeatureGet(params: FeatureGetParams) {
  * Handler for feature_create method
  */
 export async function handleFeatureCreate(params: FeatureCreateParams) {
-  console.log(`[DEBUG] Feature Create: description=${params.description}, assignee=${params.assignee}`);
+  console.log(
+    `[DEBUG] Feature Create: description=${params.description}, assignee=${params.assignee}`
+  );
   return await createFeature(
     params.name,
     params.title,
@@ -346,11 +349,7 @@ export async function handleFeatureCreate(params: FeatureCreateParams) {
  * Handler for feature_update method
  */
 export async function handleFeatureUpdate(params: FeatureUpdateParams) {
-  return await updateFeature(
-    params.id,
-    params.updates,
-    params.phase
-  );
+  return await updateFeature(params.id, params.updates, params.phase);
 }
 
 /**
@@ -368,7 +367,7 @@ export async function handleAreaList(params: AreaListParams) {
     phase: params.phase,
     status: params.status,
     include_tasks: params.include_tasks,
-    include_progress: params.include_progress !== false // Default to true
+    include_progress: params.include_progress !== false, // Default to true
   });
 }
 
@@ -383,7 +382,9 @@ export async function handleAreaGet(params: AreaGetParams) {
  * Handler for area_create method
  */
 export async function handleAreaCreate(params: AreaCreateParams) {
-  console.log(`[DEBUG] Area Create: description=${params.description}, assignee=${params.assignee}`);
+  console.log(
+    `[DEBUG] Area Create: description=${params.description}, assignee=${params.assignee}`
+  );
   return await createArea(
     params.name,
     params.title,
@@ -399,11 +400,7 @@ export async function handleAreaCreate(params: AreaCreateParams) {
  * Handler for area_update method
  */
 export async function handleAreaUpdate(params: AreaUpdateParams) {
-  return await updateArea(
-    params.id,
-    params.updates,
-    params.phase
-  );
+  return await updateArea(params.id, params.updates, params.phase);
 }
 
 /**
@@ -416,18 +413,18 @@ export async function handleAreaDelete(params: AreaDeleteParams) {
 /**
  * Handler for template_list method
  */
-export async function handleTemplateList(params: TemplateListParams) {
+export async function handleTemplateList(_params: TemplateListParams) {
   try {
     const templates = listTemplates();
     return {
       success: true,
       data: templates,
-      message: `Found ${templates.length} templates`
+      message: `Found ${templates.length} templates`,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -460,5 +457,5 @@ export const methodRegistry: McpMethodRegistry = {
   [McpMethod.WORKFLOW_CURRENT]: handleWorkflowCurrent,
   [McpMethod.WORKFLOW_MARK_COMPLETE_NEXT]: handleWorkflowMarkCompleteNext,
   [McpMethod.TEMPLATE_LIST]: handleTemplateList,
-  [McpMethod.DEBUG_CODE_PATH]: handleDebugCodePath
+  [McpMethod.DEBUG_CODE_PATH]: handleDebugCodePath,
 };

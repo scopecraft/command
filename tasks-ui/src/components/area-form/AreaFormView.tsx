@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAreaContext } from '../../context/AreaContext';
-import { Button } from '../ui/button';
-import { routes } from '../../lib/routes';
-import { useToast } from '../../hooks/useToast';
 import { usePhaseContext } from '../../context/PhaseContext';
+import { useToast } from '../../hooks/useToast';
+import { routes } from '../../lib/routes';
 import type { Area } from '../../lib/types';
+import { Button } from '../ui/button';
 
 interface AreaFormProps {
   areaId?: string;
@@ -17,7 +17,7 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
   const { phases } = usePhaseContext();
   const [, navigate] = useLocation();
   const toast = useToast();
-  
+
   // Form state
   const [formData, setFormData] = useState<Partial<Area>>({
     name: '',
@@ -25,13 +25,13 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
     description: '',
     status: '🟡 To Do',
     phase: phases[0]?.id || '',
-    tags: []
+    tags: [],
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [tagInput, setTagInput] = useState('');
-  
+
   // Load area data if editing
   useEffect(() => {
     if (isEdit && areaId) {
@@ -44,7 +44,7 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
           description: area.description || '',
           status: area.status || '🟡 To Do',
           phase: area.phase || phases[0]?.id || '',
-          tags: area.tags || []
+          tags: area.tags || [],
         });
       } else {
         toast.error('Area not found');
@@ -52,99 +52,98 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
       }
     }
   }, [isEdit, areaId, getAreaById, phases, navigate, toast]);
-  
+
   // Handle form input changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Clear error for this field if there was one
     if (errors[name]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
       });
     }
   };
-  
+
   // Add a tag
   const handleAddTag = () => {
     if (!tagInput.trim()) return;
-    
+
     // Don't add duplicate tags
     if (formData.tags?.includes(tagInput.trim())) {
       toast.warning('Tag already exists');
       return;
     }
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      tags: [...(prev.tags || []), tagInput.trim()]
+      tags: [...(prev.tags || []), tagInput.trim()],
     }));
-    
+
     setTagInput('');
   };
-  
+
   // Remove a tag
   const handleRemoveTag = (tag: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      tags: prev.tags?.filter(t => t !== tag) || []
+      tags: prev.tags?.filter((t) => t !== tag) || [],
     }));
   };
-  
+
   // Validate form
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name) {
       newErrors.name = 'Name is required';
-    } else if (
-      !isEdit && 
-      areas.some(a => a.name.toLowerCase() === formData.name.toLowerCase())
-    ) {
+    } else if (!isEdit && areas.some((a) => a.name.toLowerCase() === formData.name.toLowerCase())) {
       newErrors.name = 'An area with this name already exists';
     }
-    
+
     if (!formData.title) {
       newErrors.title = 'Title is required';
     }
-    
+
     if (!formData.phase) {
       newErrors.phase = 'Phase is required';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       // Generate proper ID for new areas if not editing
-      let areaData = { ...formData } as Area;
-      
+      const areaData = { ...formData } as Area;
+
       if (!isEdit) {
         // Format name for ID
         const nameForId = formData.name.replace(/[^a-zA-Z0-9]/g, '');
         areaData.id = `AREA_${nameForId}`;
       }
-      
+
       const operation = isEdit ? updateArea : createArea;
       const result = await operation(areaData as Area);
-      
+
       if (result.success) {
         toast.success(`Area ${isEdit ? 'updated' : 'created'} successfully`);
         navigate(isEdit ? routes.areaDetail(areaData.id.replace('AREA_', '')) : routes.home);
@@ -157,21 +156,16 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
       setLoading(false);
     }
   };
-  
+
   // Cancel form
   const handleCancel = () => {
-    navigate(isEdit && areaId 
-      ? routes.areaDetail(areaId.replace('AREA_', '')) 
-      : routes.home
-    );
+    navigate(isEdit && areaId ? routes.areaDetail(areaId.replace('AREA_', '')) : routes.home);
   };
-  
+
   return (
     <div className="container mx-auto p-4 max-w-3xl">
-      <h1 className="text-xl font-semibold mb-6">
-        {isEdit ? 'Edit Area' : 'Create Area'}
-      </h1>
-      
+      <h1 className="text-xl font-semibold mb-6">{isEdit ? 'Edit Area' : 'Create Area'}</h1>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">
@@ -189,14 +183,12 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
             } bg-background`}
             placeholder="MyAreaName"
           />
-          {errors.name && (
-            <p className="text-red-500 text-xs">{errors.name}</p>
-          )}
+          {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
           <p className="text-xs text-muted-foreground">
             Used to identify the area in the system. Should be short, without spaces.
           </p>
         </div>
-        
+
         <div className="space-y-2">
           <label className="text-sm font-medium">
             Display Title
@@ -212,18 +204,12 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
             } bg-background`}
             placeholder="My Area"
           />
-          {errors.title && (
-            <p className="text-red-500 text-xs">{errors.title}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Human-readable title for the area.
-          </p>
+          {errors.title && <p className="text-red-500 text-xs">{errors.title}</p>}
+          <p className="text-xs text-muted-foreground">Human-readable title for the area.</p>
         </div>
-        
+
         <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Description
-          </label>
+          <label className="text-sm font-medium">Description</label>
           <textarea
             name="description"
             value={formData.description}
@@ -232,12 +218,10 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
             placeholder="Describe the area..."
           />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Status
-            </label>
+            <label className="text-sm font-medium">Status</label>
             <select
               name="status"
               value={formData.status}
@@ -250,7 +234,7 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
               <option value="⭕ Cancelled">⭕ Cancelled</option>
             </select>
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium">
               Phase
@@ -265,22 +249,18 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
               } bg-background`}
             >
               <option value="">Select a phase</option>
-              {phases.map(phase => (
+              {phases.map((phase) => (
                 <option key={phase.id} value={phase.id}>
                   {phase.name}
                 </option>
               ))}
             </select>
-            {errors.phase && (
-              <p className="text-red-500 text-xs">{errors.phase}</p>
-            )}
+            {errors.phase && <p className="text-red-500 text-xs">{errors.phase}</p>}
           </div>
         </div>
-        
+
         <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Tags
-          </label>
+          <label className="text-sm font-medium">Tags</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -295,17 +275,13 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
                 }
               }}
             />
-            <Button 
-              type="button" 
-              onClick={handleAddTag}
-              disabled={!tagInput.trim()}
-            >
+            <Button type="button" onClick={handleAddTag} disabled={!tagInput.trim()}>
               Add
             </Button>
           </div>
-          
+
           <div className="flex flex-wrap gap-2 mt-2">
-            {formData.tags?.map(tag => (
+            {formData.tags?.map((tag) => (
               <div
                 key={tag}
                 className="bg-accent/80 flex items-center gap-1 text-sm px-2 py-1 rounded-md"
@@ -322,20 +298,12 @@ export function AreaFormView({ areaId, isEdit = false }: AreaFormProps) {
             ))}
           </div>
         </div>
-        
+
         <div className="flex justify-end gap-2 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-            disabled={loading}
-          >
+          <Button type="button" variant="outline" onClick={handleCancel} disabled={loading}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={loading}
-          >
+          <Button type="submit" disabled={loading}>
             {loading ? 'Saving...' : isEdit ? 'Update Area' : 'Create Area'}
           </Button>
         </div>

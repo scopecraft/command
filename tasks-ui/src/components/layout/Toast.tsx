@@ -5,7 +5,7 @@ import { cn } from '../../lib/utils';
 
 export function ToastContainer() {
   const { ui, removeToast } = useUIContext();
-  
+
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
       {ui.toasts.map((toast) => (
@@ -26,10 +26,10 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
     const timeout = setTimeout(() => {
       onClose();
     }, toast.duration || 5000);
-    
+
     return () => clearTimeout(timeout);
   }, [toast, onClose]);
-  
+
   const getIconByType = () => {
     switch (toast.type) {
       case 'success':
@@ -42,7 +42,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
         return <InfoIcon className="h-5 w-5" />;
     }
   };
-  
+
   const getColorByType = () => {
     switch (toast.type) {
       case 'success':
@@ -55,7 +55,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
         return 'border-blue-500 bg-blue-500/10';
     }
   };
-  
+
   return (
     <div
       className={cn(

@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useTaskContext } from '../../context/TaskContext';
-import type { Task } from '../../lib/types';
-import { DataTable } from '../task-list/table/data-table';
-import { columns } from '../task-list/table/columns';
-import { Button } from '../ui/button';
 import { useLocation } from 'wouter';
+import { useTaskContext } from '../../context/TaskContext';
 import { routes } from '../../lib/routes';
+import type { Task } from '../../lib/types';
 import { formatDate } from '../../lib/utils/format';
+import { columns } from '../task-list/table/columns';
+import { DataTable } from '../task-list/table/data-table';
+import { Button } from '../ui/button';
 
 type EntityType = 'feature' | 'area' | 'phase';
 
@@ -17,7 +17,7 @@ interface EntityGroupSectionProps {
     type: EntityType;
     name: string;
   };
-  
+
   // Child entity (the one being displayed in this section)
   childEntity: {
     id: string;
@@ -36,7 +36,7 @@ interface EntityGroupSectionProps {
       percentage: number;
     };
   };
-  
+
   // Entity relationship specific
   tasks: Task[];
   overviewContent?: string;
@@ -52,21 +52,21 @@ export function EntityGroupSection({
   childEntity,
   tasks,
   overviewContent,
-  onCreateTask
+  onCreateTask,
 }: EntityGroupSectionProps) {
   const { tasks: allTasks } = useTaskContext();
   const [, navigate] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
+
   // Calculate progress metrics if not provided
   const progress = childEntity.progress || calculateProgress(tasks);
-  
+
   // Calculate status breakdown
   const taskStatusGroups = groupTasksByStatus(tasks);
-  
+
   // Generate colors based on entity type
   const colors = getEntityColors(childEntity.type);
-  
+
   // Check if we're in a phase-specific context
   // If parent is a feature/area and child is a phase, pass the phase ID as context
   // If parent is a phase and child is a feature/area, pass the parent ID as context
@@ -76,22 +76,20 @@ export function EntityGroupSection({
   } else if (childEntity.type === 'phase') {
     phaseContext = childEntity.id;
   }
-  
+
   // Generate parameterized route based on entity type
   const detailRoute = getEntityDetailRoute(childEntity.type, childEntity.id, phaseContext);
-  
+
   return (
     <div className="mb-8 border border-border rounded-md overflow-hidden">
       {/* Header section */}
-      <div 
+      <div
         className={`${colors.headerBg} p-4 flex justify-between items-center cursor-pointer`}
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <div className="flex flex-1 items-center">
-          <span className={`${colors.icon} mr-2 text-xl`}>
-            {getEntityIcon(childEntity.type)}
-          </span>
-          
+          <span className={`${colors.icon} mr-2 text-xl`}>{getEntityIcon(childEntity.type)}</span>
+
           <div className="flex-1">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold flex items-center">
@@ -100,14 +98,16 @@ export function EntityGroupSection({
                   <span className="ml-2 text-sm text-muted-foreground">({childEntity.title})</span>
                 )}
               </h3>
-              
+
               <div className="flex items-center text-sm space-x-3">
                 {childEntity.status && (
-                  <span className={`${getStatusBadgeColor(childEntity.status)} px-2 py-0.5 rounded text-xs font-medium`}>
+                  <span
+                    className={`${getStatusBadgeColor(childEntity.status)} px-2 py-0.5 rounded text-xs font-medium`}
+                  >
                     {childEntity.status}
                   </span>
                 )}
-                
+
                 {childEntity.assigned_to && (
                   <span className="text-xs text-muted-foreground">
                     Assigned: <span className="font-mono">{childEntity.assigned_to}</span>
@@ -115,15 +115,15 @@ export function EntityGroupSection({
                 )}
               </div>
             </div>
-            
+
             <div className="flex justify-between items-center mt-1">
               <div className="text-sm text-muted-foreground">
                 {progress.percentage}% complete - {progress.completed}/{progress.total} tasks
               </div>
-              
+
               <div className="flex items-center">
                 <div className="w-32 h-2 bg-muted rounded-full overflow-hidden mr-3">
-                  <div 
+                  <div
                     className={`h-full ${colors.progressBar}`}
                     style={{ width: `${progress.percentage}%` }}
                   />
@@ -132,7 +132,7 @@ export function EntityGroupSection({
             </div>
           </div>
         </div>
-        
+
         <Button
           variant="ghost"
           size="sm"
@@ -145,7 +145,7 @@ export function EntityGroupSection({
           {isCollapsed ? '▼' : '▲'}
         </Button>
       </div>
-      
+
       {/* Content section (only shown when not collapsed) */}
       {!isCollapsed && (
         <div className="p-4">
@@ -157,24 +157,21 @@ export function EntityGroupSection({
                 <span>{formatDate(childEntity.created_date)}</span>
               </div>
             )}
-            
+
             {childEntity.updated_date && (
               <div>
                 <span className="text-muted-foreground">Updated:</span>{' '}
                 <span>{formatDate(childEntity.updated_date)}</span>
               </div>
             )}
-            
+
             {/* Tags display */}
             {childEntity.tags && childEntity.tags.length > 0 && (
               <div className="col-span-2">
                 <span className="text-muted-foreground mr-2">Tags:</span>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {childEntity.tags.map(tag => (
-                    <span 
-                      key={tag} 
-                      className="bg-accent/20 text-xs px-2 py-0.5 rounded-md"
-                    >
+                  {childEntity.tags.map((tag) => (
+                    <span key={tag} className="bg-accent/20 text-xs px-2 py-0.5 rounded-md">
                       {tag}
                     </span>
                   ))}
@@ -182,7 +179,7 @@ export function EntityGroupSection({
               </div>
             )}
           </div>
-          
+
           {/* Entity-specific description */}
           {childEntity.description && (
             <div className="mb-4 px-3 py-2 bg-card/50 border border-border/50 rounded-md text-sm">
@@ -190,16 +187,14 @@ export function EntityGroupSection({
               <p className="text-muted-foreground">{childEntity.description}</p>
             </div>
           )}
-          
+
           {/* Overview content specific to this relationship */}
           {overviewContent && (
             <div className="mb-4 p-3 bg-card border border-border rounded-md">
-              <div className="text-sm prose max-w-none">
-                {overviewContent}
-              </div>
+              <div className="text-sm prose max-w-none">{overviewContent}</div>
             </div>
           )}
-          
+
           {/* Status breakdown */}
           {tasks.length > 0 && (
             <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -207,15 +202,17 @@ export function EntityGroupSection({
                 const count = statusTasks.length;
                 const percentage = Math.round((count / tasks.length) * 100);
                 const statusColor = getStatusColor(status);
-                
+
                 return (
                   <div key={status} className="bg-card p-2 rounded-md border border-border">
                     <div className="flex justify-between text-xs mb-1">
                       <span>{status}</span>
-                      <span>{count} ({percentage}%)</span>
+                      <span>
+                        {count} ({percentage}%)
+                      </span>
                     </div>
                     <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full ${statusColor}`}
                         style={{ width: `${percentage}%` }}
                       />
@@ -225,7 +222,7 @@ export function EntityGroupSection({
               })}
             </div>
           )}
-          
+
           {/* View entity link */}
           <div className="mb-4 flex justify-end">
             <Button
@@ -240,12 +237,12 @@ export function EntityGroupSection({
               View {childEntity.type} details
             </Button>
           </div>
-          
+
           {/* Task list */}
           <div>
             <div className="flex justify-between items-center mb-3">
               <h4 className="text-md font-medium">Tasks</h4>
-              
+
               <Button
                 size="sm"
                 onClick={() => {
@@ -260,12 +257,12 @@ export function EntityGroupSection({
                 + Add Task
               </Button>
             </div>
-            
+
             {tasks.length === 0 ? (
               <div className="text-center p-4 border border-border rounded-md">
                 <p className="text-muted-foreground">No tasks in this {childEntity.type} yet</p>
-                <Button 
-                  className="mt-2" 
+                <Button
+                  className="mt-2"
                   onClick={() => {
                     if (onCreateTask) {
                       onCreateTask();
@@ -279,12 +276,12 @@ export function EntityGroupSection({
                 </Button>
               </div>
             ) : (
-              <DataTable 
-                columns={columns} 
+              <DataTable
+                columns={columns}
                 data={tasks}
                 onRowClick={(row) => {
                   // When navigating to task detail, preserve phase context if available
-                  const url = phaseContext 
+                  const url = phaseContext
                     ? `${routes.taskDetail(row.id)}?phase=${phaseContext}`
                     : routes.taskDetail(row.id);
                   navigate(url);
@@ -303,28 +300,29 @@ export function EntityGroupSection({
 // Calculate progress metrics
 function calculateProgress(tasks: Task[]) {
   const total = tasks.length;
-  const completed = tasks.filter(task => 
-    task.status.includes('Done') || task.status.includes('Complete')).length;
+  const completed = tasks.filter(
+    (task) => task.status.includes('Done') || task.status.includes('Complete')
+  ).length;
   const percentage = total > 0 ? Math.floor((completed / total) * 100) : 0;
-  
+
   return {
     total,
     completed,
-    percentage
+    percentage,
   };
 }
 
 // Group tasks by status
 function groupTasksByStatus(tasks: Task[]) {
   const statusGroups: Record<string, Task[]> = {};
-  
-  tasks.forEach(task => {
+
+  tasks.forEach((task) => {
     if (!statusGroups[task.status]) {
       statusGroups[task.status] = [];
     }
     statusGroups[task.status].push(task);
   });
-  
+
   return statusGroups;
 }
 
@@ -376,7 +374,7 @@ function getEntityIcon(entityType: EntityType) {
 function getEntityDetailRoute(entityType: EntityType, id: string, phaseContext?: string) {
   // Extract the ID without the prefix if needed
   const cleanId = id.replace(/^(FEATURE_|AREA_|PHASE_)/, '');
-  
+
   let route = '';
   switch (entityType) {
     case 'feature':
@@ -391,12 +389,12 @@ function getEntityDetailRoute(entityType: EntityType, id: string, phaseContext?:
     default:
       return null;
   }
-  
+
   // Add phase context to the URL if provided
   if (phaseContext) {
     route += `?phase=${phaseContext}`;
   }
-  
+
   return route;
 }
 
@@ -404,38 +402,42 @@ function getEntityDetailRoute(entityType: EntityType, id: string, phaseContext?:
 function getStatusColor(status: string) {
   if (status.includes('Done') || status.includes('Complete')) {
     return 'bg-green-500';
-  } else if (status.includes('Progress')) {
-    return 'bg-blue-500';
-  } else if (status.includes('To Do')) {
-    return 'bg-yellow-500';
-  } else if (status.includes('Block') || status.includes('Issue')) {
-    return 'bg-red-500';
-  } else {
-    return 'bg-gray-500';
   }
+  if (status.includes('Progress')) {
+    return 'bg-blue-500';
+  }
+  if (status.includes('To Do')) {
+    return 'bg-yellow-500';
+  }
+  if (status.includes('Block') || status.includes('Issue')) {
+    return 'bg-red-500';
+  }
+  return 'bg-gray-500';
 }
 
 // Get status-specific color for badges
 function getStatusBadgeColor(status: string) {
   if (status.includes('Done') || status.includes('Complete')) {
     return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
-  } else if (status.includes('Progress')) {
-    return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
-  } else if (status.includes('To Do')) {
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100';
-  } else if (status.includes('Block') || status.includes('Issue')) {
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
-  } else {
-    return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100';
   }
+  if (status.includes('Progress')) {
+    return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
+  }
+  if (status.includes('To Do')) {
+    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100';
+  }
+  if (status.includes('Block') || status.includes('Issue')) {
+    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
+  }
+  return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100';
 }
 
 // Create task with parent-child relationship
 function createTask(
-  parentEntity: { id: string; type: EntityType; name: string; },
-  childEntity: { 
-    id: string; 
-    type: EntityType; 
+  parentEntity: { id: string; type: EntityType; name: string },
+  childEntity: {
+    id: string;
+    type: EntityType;
     name: string;
     title?: string;
     description?: string;
@@ -448,7 +450,7 @@ function createTask(
   navigate: (route: string) => void
 ) {
   const params = new URLSearchParams();
-  
+
   // Determine which entity defines the phase and which defines the subdirectory
   if (childEntity.type === 'phase') {
     params.append('phase', childEntity.id);
@@ -461,14 +463,14 @@ function createTask(
     if (parentEntity.type === 'phase') {
       params.append('phase', parentEntity.id);
     }
-    
+
     if (childEntity.type === 'feature') {
       params.append('feature', childEntity.id);
     } else if (childEntity.type === 'area') {
       params.append('area', childEntity.id);
     }
   }
-  
+
   // Navigate to task create with entity and phase context
   navigate(`${routes.taskCreate}?${params.toString()}`);
 }

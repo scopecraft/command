@@ -1,17 +1,17 @@
 /**
  * Types specific to the MCP server
  */
-import { 
-  Task, 
-  Phase, 
-  Feature, 
-  Area, 
-  TaskFilterOptions, 
-  TaskUpdateOptions, 
-  FeatureFilterOptions, 
+import {
+  Area,
   AreaFilterOptions,
+  AreaUpdateOptions,
+  Feature,
+  FeatureFilterOptions,
   FeatureUpdateOptions,
-  AreaUpdateOptions
+  Phase,
+  Task,
+  type TaskFilterOptions,
+  type TaskUpdateOptions,
 } from '../core/types.js';
 
 // MCP method names
@@ -53,7 +53,7 @@ export enum McpMethod {
   TEMPLATE_LIST = 'template_list',
 
   // Debug method (temporary)
-  DEBUG_CODE_PATH = 'debug_code_path'
+  DEBUG_CODE_PATH = 'debug_code_path',
 }
 
 // Base request interface
@@ -269,9 +269,7 @@ export interface WorkflowMarkCompleteNextParams {
 }
 
 // Debug code path params
-export interface DebugCodePathParams {
-  // No parameters needed
-}
+export type DebugCodePathParams = {};
 
 // Template list request params
 export interface TemplateListParams {

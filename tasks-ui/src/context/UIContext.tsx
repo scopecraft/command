@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { UIState, Toast } from '../lib/types';
+import type { Toast, UIState } from '../lib/types';
 
 interface UIContextType {
   ui: UIState;
@@ -61,28 +61,28 @@ export function UIProvider({ children }: { children: ReactNode }) {
   }, [ui.sidebarOpen, ui.darkMode]);
 
   const toggleSidebar = () => {
-    setUI(prev => ({
+    setUI((prev) => ({
       ...prev,
       sidebarOpen: !prev.sidebarOpen,
     }));
   };
 
   const toggleDarkMode = () => {
-    setUI(prev => ({
+    setUI((prev) => ({
       ...prev,
       darkMode: !prev.darkMode,
     }));
   };
 
   const setActiveView = (view: 'home' | 'list' | 'detail' | 'form' | 'create' | 'graph') => {
-    setUI(prev => ({
+    setUI((prev) => ({
       ...prev,
       activeView: view,
     }));
   };
 
   const setActiveTaskId = (taskId: string | null) => {
-    setUI(prev => ({
+    setUI((prev) => ({
       ...prev,
       activeTaskId: taskId,
       // If a task is selected, switch to detail view
@@ -93,8 +93,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const addToast = (toast: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substring(2, 9);
     const newToast = { ...toast, id };
-    
-    setUI(prev => ({
+
+    setUI((prev) => ({
       ...prev,
       toasts: [...prev.toasts, newToast],
     }));
@@ -107,9 +107,9 @@ export function UIProvider({ children }: { children: ReactNode }) {
   };
 
   const removeToast = (id: string) => {
-    setUI(prev => ({
+    setUI((prev) => ({
       ...prev,
-      toasts: prev.toasts.filter(toast => toast.id !== id),
+      toasts: prev.toasts.filter((toast) => toast.id !== id),
     }));
   };
 

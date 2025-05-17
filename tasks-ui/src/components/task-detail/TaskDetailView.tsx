@@ -1,15 +1,15 @@
+import { useEffect, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
-import { useQueryParams } from '../../hooks/useQueryParams';
-import { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
-import { Button } from '../ui/button';
+import { useQueryParams } from '../../hooks/useQueryParams';
 import { routes } from '../../lib/routes';
 import { formatDate, hasDependencies } from '../../lib/utils/format';
-import { TaskRelationships } from './TaskRelationships';
-import { TaskMetadata } from './TaskMetadata';
-import { TaskContent } from './TaskContent';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
+import { Button } from '../ui/button';
+import { TaskContent } from './TaskContent';
 import { TaskDetailFallback } from './TaskDetailFallback';
+import { TaskMetadata } from './TaskMetadata';
+import { TaskRelationships } from './TaskRelationships';
 
 export function TaskDetailViewInner() {
   const [, params] = useRoute<{ id: string }>(routes.taskDetail(':id'));
@@ -17,18 +17,18 @@ export function TaskDetailViewInner() {
   const { tasks, loading, error } = useTaskContext();
   const [, navigate] = useLocation();
   const { getParams } = useQueryParams();
-  const [task, setTask] = useState(tasks.find(t => t.id === id));
+  const [task, setTask] = useState(tasks.find((t) => t.id === id));
 
   // Update task when tasks list changes
   useEffect(() => {
-    const foundTask = tasks.find(t => t.id === id);
+    const foundTask = tasks.find((t) => t.id === id);
     setTask(foundTask);
   }, [tasks, id]);
 
   const handleEditClick = () => {
     navigate(routes.taskEdit(id));
   };
-  
+
   const handlePromptClick = () => {
     navigate(routes.promptWithId(id));
   };
@@ -64,7 +64,7 @@ export function TaskDetailViewInner() {
   }
 
   // Get related tasks (dependencies, blockers, children, etc.)
-  const relatedTasks = tasks.filter(t => {
+  const relatedTasks = tasks.filter((t) => {
     // Find dependencies
     if (task.depends_on?.includes(t.id)) return true;
     // Find tasks that depend on this task
@@ -76,7 +76,7 @@ export function TaskDetailViewInner() {
     // Find previous/next tasks
     if (task.previous_task === t.id || task.next_task === t.id) return true;
     if (t.previous_task === task.id || t.next_task === task.id) return true;
-    
+
     return false;
   });
 
@@ -84,11 +84,7 @@ export function TaskDetailViewInner() {
     <div className="container mx-auto p-4">
       <div className="mb-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleBackClick}
-          >
+          <Button variant="outline" size="sm" onClick={handleBackClick}>
             Back
           </Button>
           <h1 className="text-xl font-semibold">{task.title}</h1>
@@ -117,10 +113,7 @@ export function TaskDetailViewInner() {
       {relatedTasks.length > 0 && (
         <div className="mt-8">
           <h2 className="text-lg font-semibold mb-4">Related Tasks</h2>
-          <TaskRelationships 
-            task={task} 
-            relatedTasks={relatedTasks} 
-          />
+          <TaskRelationships task={task} relatedTasks={relatedTasks} />
         </div>
       )}
     </div>

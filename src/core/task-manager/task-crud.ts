@@ -1,24 +1,29 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
 import {
-  Task,
-  TaskMetadata,
-  TaskFilterOptions,
-  TaskUpdateOptions,
-  OperationResult
-} from '../types.js';
-import { parseTaskFile, formatTaskFile, generateTaskId } from '../task-parser.js';
-import { projectConfig } from '../project-config.js';
-import { getTasksDirectory, getPhasesDirectory, ensureDirectoryExists, getAllFiles } from './index.js';
-import { updateRelationships } from './task-relationships.js';
-import { 
-  normalizePriority, 
-  normalizeTaskStatus,
-  normalizePhaseStatus,
+  getPriorityOrder,
   isCompletedTaskStatus,
-  getPriorityOrder
+  normalizePhaseStatus,
+  normalizePriority,
+  normalizeTaskStatus,
 } from '../field-normalizers.js';
+import { projectConfig } from '../project-config.js';
+import { formatTaskFile, generateTaskId, parseTaskFile } from '../task-parser.js';
+import {
+  type OperationResult,
+  type Task,
+  type TaskFilterOptions,
+  TaskMetadata,
+  type TaskUpdateOptions,
+} from '../types.js';
+import {
+  ensureDirectoryExists,
+  getAllFiles,
+  getPhasesDirectory,
+  getTasksDirectory,
+} from './index.js';
+import { updateRelationships } from './task-relationships.js';
 
 /**
  * Lists all tasks with optional filtering
@@ -32,7 +37,7 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
     if (!fs.existsSync(tasksDir)) {
       return {
         success: false,
-        error: `Tasks directory not found: ${tasksDir}`
+        error: `Tasks directory not found: ${tasksDir}`,
       };
     }
 
@@ -66,12 +71,13 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
           const normalizedTaskStatus = normalizeTaskStatus(task.metadata.status);
           if (normalizedTaskStatus !== normalizedFilterStatus) continue;
         }
-        
+
         if (options.type && task.metadata.type !== options.type) continue;
         if (options.assignee && task.metadata.assigned_to !== options.assignee) continue;
         if (options.phase && task.metadata.phase !== options.phase) continue;
         if (options.subdirectory && task.metadata.subdirectory !== options.subdirectory) continue;
-        if (options.is_overview !== undefined && task.metadata.is_overview !== options.is_overview) continue;
+        if (options.is_overview !== undefined && task.metadata.is_overview !== options.is_overview)
+          continue;
 
         // Filter out completed tasks by default, UNLESS explicitly requested to include them
         if (options.include_completed !== true) {
@@ -83,9 +89,9 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
         // Filter by tags if provided
         if (options.tags && options.tags.length > 0) {
           if (!task.metadata.tags || !Array.isArray(task.metadata.tags)) continue;
-          
+
           const taskTags = task.metadata.tags;
-          const hasAllTags = options.tags.every(tag => taskTags.includes(tag));
+          const hasAllTags = options.tags.every((tag) => taskTags.includes(tag));
           if (!hasAllTags) continue;
         }
 
@@ -96,7 +102,9 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
 
         tasks.push(task);
       } catch (error) {
-        errors.push(`Error parsing ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(
+          `Error parsing ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     }
 
@@ -118,12 +126,12 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
     return {
       success: true,
       data: tasks,
-      warnings: errors.length > 0 ? errors : undefined
+      warnings: errors.length > 0 ? errors : undefined,
     };
   } catch (error) {
     return {
       success: false,
-      error: `Error listing tasks: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error listing tasks: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }
@@ -135,7 +143,11 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
  * @param subdirectory Optional subdirectory to look in
  * @returns Operation result with task if found
  */
-export async function getTask(id: string, phase?: string, subdirectory?: string): Promise<OperationResult<Task>> {
+export async function getTask(
+  id: string,
+  phase?: string,
+  subdirectory?: string
+): Promise<OperationResult<Task>> {
   try {
     // If phase and subdirectory are provided, try direct path lookup first
     if (phase && subdirectory) {
@@ -163,15 +175,15 @@ export async function getTask(id: string, phase?: string, subdirectory?: string)
     if (!tasksResult.success || !tasksResult.data) {
       return {
         success: false,
-        error: tasksResult.error || 'Failed to list tasks'
+        error: tasksResult.error || 'Failed to list tasks',
       };
     }
 
-    const task = tasksResult.data.find(task => task.metadata.id === id);
+    const task = tasksResult.data.find((task) => task.metadata.id === id);
     if (!task) {
       return {
         success: false,
-        error: `Task with ID ${id} not found`
+        error: `Task with ID ${id} not found`,
       };
     }
 
@@ -179,7 +191,7 @@ export async function getTask(id: string, phase?: string, subdirectory?: string)
   } catch (error) {
     return {
       success: false,
-      error: `Error getting task: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error getting task: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }
@@ -190,7 +202,10 @@ export async function getTask(id: string, phase?: string, subdirectory?: string)
  * @param subdirectory Optional subdirectory within phase (e.g., "FEATURE_Authentication")
  * @returns Operation result with the created task
  */
-export async function createTask(task: Task, subdirectory?: string): Promise<OperationResult<Task>> {
+export async function createTask(
+  task: Task,
+  subdirectory?: string
+): Promise<OperationResult<Task>> {
   try {
     const tasksDir = getTasksDirectory();
 
@@ -251,23 +266,23 @@ export async function createTask(task: Task, subdirectory?: string): Promise<Ope
 
     // Update relationships
     if (
-      task.metadata.parent_task || 
-      task.metadata.depends || 
-      task.metadata.next_task || 
+      task.metadata.parent_task ||
+      task.metadata.depends ||
+      task.metadata.next_task ||
       task.metadata.previous_task
     ) {
       await updateRelationships(task);
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: task,
-      message: `Task ${task.metadata.id} created successfully` 
+      message: `Task ${task.metadata.id} created successfully`,
     };
   } catch (error) {
     return {
       success: false,
-      error: `Error creating task: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error creating task: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }
@@ -276,7 +291,7 @@ export async function createTask(task: Task, subdirectory?: string): Promise<Ope
  * Updates a task
  * @param id Task id
  * @param updates Updates to apply
- * @param searchPhase Optional phase to search for the task in 
+ * @param searchPhase Optional phase to search for the task in
  * @param searchSubdirectory Optional subdirectory to search for the task in
  * @returns Operation result with updated task
  */
@@ -292,7 +307,7 @@ export async function updateTask(
     if (!taskResult.success || !taskResult.data) {
       return {
         success: false,
-        error: taskResult.error || `Task with ID ${id} not found`
+        error: taskResult.error || `Task with ID ${id} not found`,
       };
     }
 
@@ -302,58 +317,60 @@ export async function updateTask(
     // Check if updating phase or subdirectory (requires file move)
     const targetPhase = updates.metadata?.phase || updates.phase;
     const targetSubdirectory = updates.metadata?.subdirectory || updates.subdirectory;
-    const needsFileMove = 
-      (targetPhase && targetPhase !== task.metadata.phase) || 
+    const needsFileMove =
+      (targetPhase && targetPhase !== task.metadata.phase) ||
       (targetSubdirectory && targetSubdirectory !== task.metadata.subdirectory);
 
     // Set updated date to today
     const today = new Date();
     const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD
-    
+
     // Update metadata fields with normalization
     if (updates.metadata) {
       // Create a normalized copy of the updates
       const normalizedMetadata = { ...updates.metadata };
-      
+
       // Apply normalizations to relevant fields
       if (normalizedMetadata.status !== undefined) {
         normalizedMetadata.status = normalizeTaskStatus(normalizedMetadata.status);
       }
-      
+
       if (normalizedMetadata.priority !== undefined) {
         normalizedMetadata.priority = normalizePriority(normalizedMetadata.priority);
       }
-      
+
       // Update the task metadata with normalized values
       task.metadata = {
         ...task.metadata,
         ...normalizedMetadata,
         // Always update the updated_date
-        updated_date: todayString
+        updated_date: todayString,
       };
-      
+
       // Check if any relationship fields were updated
-      if (updates.metadata.parent_task !== undefined || 
-          updates.metadata.depends !== undefined || 
-          updates.metadata.next_task !== undefined || 
-          updates.metadata.previous_task !== undefined) {
+      if (
+        updates.metadata.parent_task !== undefined ||
+        updates.metadata.depends !== undefined ||
+        updates.metadata.next_task !== undefined ||
+        updates.metadata.previous_task !== undefined
+      ) {
         needsRelationshipUpdate = true;
       }
     }
-    
+
     // Handle direct property updates (not nested in metadata) with normalization
     if (updates.status !== undefined) {
       task.metadata.status = normalizeTaskStatus(updates.status);
     }
-    
+
     if (updates.priority !== undefined) {
       task.metadata.priority = normalizePriority(updates.priority);
     }
-    
+
     if (updates.phase !== undefined) {
       task.metadata.phase = updates.phase;
     }
-    
+
     if (updates.subdirectory !== undefined) {
       task.metadata.subdirectory = updates.subdirectory;
     }
@@ -367,13 +384,13 @@ export async function updateTask(
 
     // Handle ID change
     if (updates.metadata?.new_id || updates.new_id) {
-      const oldId = task.metadata.id;
+      const _oldId = task.metadata.id;
       task.metadata.id = updates.metadata?.new_id || updates.new_id;
 
       // Update relationships for new ID
       needsRelationshipUpdate = true;
     }
-    
+
     // Set updated date if it wasn't already updated in metadata
     if (!updates.metadata) {
       task.metadata.updated_date = todayString;
@@ -419,7 +436,7 @@ export async function updateTask(
   } catch (error) {
     return {
       success: false,
-      error: `Error updating task: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error updating task: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }
@@ -431,14 +448,18 @@ export async function updateTask(
  * @param subdirectory Optional subdirectory to look in
  * @returns Operation result
  */
-export async function deleteTask(id: string, phase?: string, subdirectory?: string): Promise<OperationResult<void>> {
+export async function deleteTask(
+  id: string,
+  phase?: string,
+  subdirectory?: string
+): Promise<OperationResult<void>> {
   try {
     const taskResult = await getTask(id, phase, subdirectory);
 
     if (!taskResult.success || !taskResult.data) {
       return {
         success: false,
-        error: taskResult.error || `Task with ID ${id} not found`
+        error: taskResult.error || `Task with ID ${id} not found`,
       };
     }
 
@@ -450,7 +471,7 @@ export async function deleteTask(id: string, phase?: string, subdirectory?: stri
     } else {
       return {
         success: false,
-        error: `Task file not found: ${task.filePath}`
+        error: `Task file not found: ${task.filePath}`,
       };
     }
 
@@ -458,7 +479,7 @@ export async function deleteTask(id: string, phase?: string, subdirectory?: stri
   } catch (error) {
     return {
       success: false,
-      error: `Error deleting task: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error deleting task: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }

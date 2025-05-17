@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { Task, OperationResult } from '../lib/types';
-import { fetchTasks, saveTask, removeTask, moveTask } from '../lib/api/core-client';
 import { useToast } from '../hooks/useToast';
+import { fetchTasks, moveTask, removeTask, saveTask } from '../lib/api/core-client';
+import type { OperationResult, Task } from '../lib/types';
 
 interface TaskContextType {
   tasks: Task[];
@@ -13,11 +13,11 @@ interface TaskContextType {
   updateTask: (task: Task) => Promise<OperationResult<Task>>;
   deleteTask: (id: string) => Promise<OperationResult<void>>;
   moveTaskToFeatureOrArea: (
-    taskId: string, 
+    taskId: string,
     options: { targetFeature?: string; targetArea?: string; targetPhase?: string }
   ) => Promise<OperationResult<Task>>;
   bulkMoveTasks: (
-    taskIds: string[], 
+    taskIds: string[],
     options: { targetFeature?: string; targetArea?: string; targetPhase?: string }
   ) => Promise<{ success: boolean; message?: string; completedCount: number }>;
 }
@@ -36,12 +36,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       const result = await fetchTasks();
       if (result.success) {
         // Process tasks to ensure consistent format
-        const processedTasks = (result.data || []).map(task => {
+        const processedTasks = (result.data || []).map((task) => {
           // Flatten task structure if needed (API returns {metadata, content})
           if (task.metadata) {
             return {
               ...task.metadata,
-              content: task.content
+              content: task.content,
             };
           }
           return task;
@@ -72,12 +72,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       if (result.success) {
         refreshTasks();
         toast.success(`Task "${task.title}" created successfully`);
-        
+
         // Process task response if needed
-        if (result.data && result.data.metadata) {
+        if (result.data?.metadata) {
           result.data = {
             ...result.data.metadata,
-            content: result.data.content
+            content: result.data.content,
           };
         }
       } else {
@@ -100,12 +100,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       if (result.success) {
         refreshTasks();
         toast.success(`Task "${task.title}" updated successfully`);
-        
+
         // Process task response if needed
-        if (result.data && result.data.metadata) {
+        if (result.data?.metadata) {
           result.data = {
             ...result.data.metadata,
-            content: result.data.content
+            content: result.data.content,
           };
         }
       } else {
@@ -125,7 +125,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const deleteTask = async (id: string) => {
     try {
       // Find the task to display its title in the success message
-      const taskToDelete = tasks.find(t => t.id === id);
+      const taskToDelete = tasks.find((t) => t.id === id);
       const taskTitle = taskToDelete ? taskToDelete.title : 'Task';
 
       const result = await removeTask(id);
@@ -148,16 +148,20 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
   // Move a task to a feature or area
   const moveTaskToFeatureOrArea = async (
-    taskId: string, 
+    taskId: string,
     options: { targetFeature?: string; targetArea?: string; targetPhase?: string }
   ) => {
     try {
       const result = await moveTask(taskId, options);
       if (result.success) {
         refreshTasks();
-        const destination = options.targetFeature ? 'feature' : 
-                           options.targetArea ? 'area' : 
-                           options.targetPhase ? 'phase' : 'location';
+        const destination = options.targetFeature
+          ? 'feature'
+          : options.targetArea
+            ? 'area'
+            : options.targetPhase
+              ? 'phase'
+              : 'location';
         toast.success(`Task moved to new ${destination} successfully`);
       } else {
         const errorMessage = result.message || 'Failed to move task';
@@ -175,7 +179,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
   // Move multiple tasks at once
   const bulkMoveTasks = async (
-    taskIds: string[], 
+    taskIds: string[],
     options: { targetFeature?: string; targetArea?: string; targetPhase?: string }
   ) => {
     let completedCount = 0;
@@ -202,23 +206,27 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     refreshTasks();
 
     // Determine the success message
-    const destination = options.targetFeature ? 'feature' : 
-                       options.targetArea ? 'area' : 
-                       options.targetPhase ? 'phase' : 'location';
+    const destination = options.targetFeature
+      ? 'feature'
+      : options.targetArea
+        ? 'area'
+        : options.targetPhase
+          ? 'phase'
+          : 'location';
 
     if (completedCount === taskIds.length) {
       const message = `Successfully moved ${completedCount} task${completedCount !== 1 ? 's' : ''} to new ${destination}`;
       toast.success(message);
       return { success: true, completedCount, message };
-    } else if (completedCount > 0) {
+    }
+    if (completedCount > 0) {
       const message = `Moved ${completedCount} of ${taskIds.length} tasks to new ${destination}. ${failedCount} failed.`;
       toast.warning(message);
       return { success: false, completedCount, message };
-    } else {
-      const message = `Failed to move tasks: ${lastError}`;
-      toast.error(message);
-      return { success: false, completedCount: 0, message };
     }
+    const message = `Failed to move tasks: ${lastError}`;
+    toast.error(message);
+    return { success: false, completedCount: 0, message };
   };
 
   const value = {

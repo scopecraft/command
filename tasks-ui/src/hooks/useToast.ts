@@ -4,16 +4,16 @@ import type { Toast } from '../lib/types';
 
 export function useToast() {
   const { addToast } = useUIContext();
-  
+
   const toast = useCallback(
     (props: Omit<Toast, 'id'>) => {
       addToast(props);
     },
     [addToast]
   );
-  
+
   // Predefined toast types for convenience
-  
+
   const success = useCallback(
     (message: string, title = 'Success', duration?: number) => {
       toast({
@@ -25,7 +25,7 @@ export function useToast() {
     },
     [toast]
   );
-  
+
   const error = useCallback(
     (message: string, title = 'Error', duration?: number) => {
       toast({
@@ -37,7 +37,7 @@ export function useToast() {
     },
     [toast]
   );
-  
+
   const info = useCallback(
     (message: string, title = 'Info', duration?: number) => {
       toast({
@@ -49,7 +49,7 @@ export function useToast() {
     },
     [toast]
   );
-  
+
   const warning = useCallback(
     (message: string, title = 'Warning', duration?: number) => {
       toast({
@@ -61,7 +61,7 @@ export function useToast() {
     },
     [toast]
   );
-  
+
   return {
     toast,
     success,

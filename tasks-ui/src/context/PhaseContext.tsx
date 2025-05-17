@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { Phase, OperationResult } from '../lib/types';
-import { fetchPhases, savePhase } from '../lib/api/core-client';
 import { useToast } from '../hooks/useToast';
+import { fetchPhases, savePhase } from '../lib/api/core-client';
+import type { OperationResult, Phase } from '../lib/types';
 
 interface PhaseContextType {
   phases: Phase[];
@@ -78,7 +78,7 @@ export function PhaseProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const phase = phases.find(p => p.id === phaseId);
+    const phase = phases.find((p) => p.id === phaseId);
     if (phase) {
       setCurrentPhase(phase);
     } else {

@@ -106,10 +106,10 @@ export interface TaskUpdateOptions {
   phase?: string;
   subdirectory?: string;
   new_id?: string;
-  
+
   // Nested metadata updates (for full control)
   metadata?: Partial<TaskMetadata>;
-  
+
   // Content updates
   content?: string;
 }
@@ -131,7 +131,14 @@ export interface AreaUpdateOptions {
 }
 
 // Output formats for various displays
-export type OutputFormat = 'table' | 'json' | 'minimal' | 'workflow' | 'markdown' | 'default' | 'full';
+export type OutputFormat =
+  | 'table'
+  | 'json'
+  | 'minimal'
+  | 'workflow'
+  | 'markdown'
+  | 'default'
+  | 'full';
 
 // Response type for operations
 export interface OperationResult<T> {

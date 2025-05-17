@@ -2,16 +2,16 @@
  * Tests for field normalization utilities
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import {
-  normalizePriority,
-  normalizeTaskStatus,
-  normalizePhaseStatus,
-  isCompletedTaskStatus,
-  getPriorityOrder,
+  PHASE_STATUS_VALUES,
   PRIORITY_VALUES,
   TASK_STATUS_VALUES,
-  PHASE_STATUS_VALUES
+  getPriorityOrder,
+  isCompletedTaskStatus,
+  normalizePhaseStatus,
+  normalizePriority,
+  normalizeTaskStatus,
 } from '../src/core/field-normalizers.js';
 
 describe('Field Normalizers', () => {
@@ -206,7 +206,7 @@ describe('Field Normalizers', () => {
       expect(getPriorityOrder('high')).toBe(3);
       expect(getPriorityOrder('medium')).toBe(2);
       expect(getPriorityOrder('low')).toBe(1);
-      
+
       expect(getPriorityOrder('critical')).toBe(4);
       expect(getPriorityOrder('important')).toBe(3);
       expect(getPriorityOrder('normal')).toBe(2);

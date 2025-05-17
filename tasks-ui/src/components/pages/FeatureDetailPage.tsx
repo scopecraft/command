@@ -1,16 +1,16 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { useFeatureContext } from '../../context/FeatureContext';
-import { useTaskContext } from '../../context/TaskContext';
 import { usePhaseContext } from '../../context/PhaseContext';
-import { Button } from '../ui/button';
+import { useTaskContext } from '../../context/TaskContext';
+import { useQueryParams } from '../../hooks/useQueryParams';
 import { routes } from '../../lib/routes';
 import { formatDate } from '../../lib/utils/format';
-import { DataTable } from '../task-list/table/data-table';
-import { columns } from '../task-list/table/columns';
-import { ErrorBoundary } from '../layout/ErrorBoundary';
 import { EntityGroupSection, PhaseSelector } from '../entity-group';
-import { useQueryParams } from '../../hooks/useQueryParams';
+import { ErrorBoundary } from '../layout/ErrorBoundary';
+import { columns } from '../task-list/table/columns';
+import { DataTable } from '../task-list/table/data-table';
+import { Button } from '../ui/button';
 
 function FeatureDetailViewInner() {
   const [, params] = useRoute<{ id: string }>(routes.featureDetail(':id'));
@@ -21,40 +21,41 @@ function FeatureDetailViewInner() {
   const { phases } = usePhaseContext();
   const [, navigate] = useLocation();
   const [feature, setFeature] = useState(getFeatureById(featureId));
-  
+
   // Get phase from query params for direct phase filtering
   const { getParam, setParam } = useQueryParams();
   const queryPhase = getParam('phase');
-  
+
   // Track the selected phase for filtering sections (null means show all phases)
   const [selectedPhase, setSelectedPhase] = useState<string | null>(queryPhase || null);
   const [isInitialized, setIsInitialized] = useState(false);
-  
+
   // Filter tasks that belong to this feature
-  const featureTasks = useMemo(() => 
-    tasks.filter(task => task.subdirectory === featureId),
+  const featureTasks = useMemo(
+    () => tasks.filter((task) => task.subdirectory === featureId),
     [tasks, featureId]
   );
-  
+
   // Calculate progress
   const totalTasks = featureTasks.length;
-  const completedTasks = featureTasks.filter(task => 
-    task.status.includes('Done') || task.status.includes('Complete')).length;
-  const progressPercentage = totalTasks > 0 ? Math.floor((completedTasks / totalTasks) * 100) : 0;
-  
+  const completedTasks = featureTasks.filter(
+    (task) => task.status.includes('Done') || task.status.includes('Complete')
+  ).length;
+  const _progressPercentage = totalTasks > 0 ? Math.floor((completedTasks / totalTasks) * 100) : 0;
+
   // Group tasks by phase, filtered by selected phase if applicable
   const tasksByPhase = useMemo(() => {
     const result = groupTasksByPhase(featureTasks);
-    
+
     // If no phase is selected, return all phase groups
     if (!selectedPhase) return result;
-    
+
     // Otherwise, only return the selected phase group
     const filteredResult: Record<string, any[]> = {};
     if (result[selectedPhase]) {
       filteredResult[selectedPhase] = result[selectedPhase];
     }
-    
+
     return filteredResult;
   }, [featureTasks, selectedPhase]);
 
@@ -64,10 +65,10 @@ function FeatureDetailViewInner() {
       const foundFeature = getFeatureById(featureId);
       if (foundFeature) {
         setFeature(foundFeature);
-        
+
         // Only initialize from query parameter, otherwise keep selectedPhase as null (All Phases)
         if (!isInitialized) {
-          setIsInitialized(true);  // Mark as initialized even if we don't set a specific phase
+          setIsInitialized(true); // Mark as initialized even if we don't set a specific phase
         }
       } else {
         // Feature not found, navigate to tasks view
@@ -110,21 +111,17 @@ function FeatureDetailViewInner() {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="sm"
           onClick={() => navigate(routes.taskList)}
           className="mr-2"
         >
           ← Back to Tasks
         </Button>
-        
+
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(routes.featureEdit(id))}
-          >
+          <Button variant="outline" size="sm" onClick={() => navigate(routes.featureEdit(id))}>
             Edit Feature
           </Button>
           <Button
@@ -133,27 +130,23 @@ function FeatureDetailViewInner() {
               // Navigate to create task with the feature pre-selected
               const params = new URLSearchParams();
               params.append('feature', featureId);
-              
+
               // Include phase if one is selected
               if (selectedPhase) {
                 params.append('phase', selectedPhase);
               }
-              
+
               navigate(`${routes.taskCreate}?${params}`);
             }}
           >
             Add Task
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(routes.comparison)}
-          >
+          <Button variant="outline" size="sm" onClick={() => navigate(routes.comparison)}>
             Compare
           </Button>
         </div>
       </div>
-      
+
       <div className="bg-card p-6 rounded-md border border-border mb-6">
         <div className="flex justify-between items-center">
           <div>
@@ -191,32 +184,29 @@ function FeatureDetailViewInner() {
           )}
         </div>
       </div>
-      
+
       {/* Phase-specific sections */}
       <div className="mb-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">
-            {selectedPhase 
-              ? `Tasks in ${phases.find(p => p.id === selectedPhase)?.name || selectedPhase} Phase`
+            {selectedPhase
+              ? `Tasks in ${phases.find((p) => p.id === selectedPhase)?.name || selectedPhase} Phase`
               : 'Tasks by Phase'}
           </h2>
         </div>
-        
+
         {featureTasks.length === 0 ? (
           <div className="text-center p-4 border border-border rounded-md">
             <p className="text-muted-foreground">No tasks in this feature yet</p>
-            <Button 
-              className="mt-2" 
-              onClick={() => navigate(routes.taskCreate)}
-            >
+            <Button className="mt-2" onClick={() => navigate(routes.taskCreate)}>
               Create Task
             </Button>
           </div>
         ) : Object.keys(tasksByPhase).length === 0 ? (
           <div className="text-center p-4 border border-border rounded-md">
             <p className="text-muted-foreground">No tasks in the selected phase</p>
-            <Button 
-              className="mt-2" 
+            <Button
+              className="mt-2"
               onClick={() => {
                 // Create task in this feature and the selected phase
                 const params = new URLSearchParams();
@@ -234,24 +224,24 @@ function FeatureDetailViewInner() {
           <div className="space-y-4">
             {Object.entries(tasksByPhase).map(([phaseId, phaseTasks]) => {
               // Find the phase object
-              const phase = phases.find(p => p.id === phaseId) || {
+              const phase = phases.find((p) => p.id === phaseId) || {
                 id: phaseId,
                 name: phaseId === 'unassigned' ? 'Unassigned' : phaseId,
-                order: 999
+                order: 999,
               };
-              
+
               // Get phase-specific feature data if available
-              const phaseSpecificFeature = features.find(f => 
-                f.id === featureId && f.phase === phaseId
+              const phaseSpecificFeature = features.find(
+                (f) => f.id === featureId && f.phase === phaseId
               );
-              
+
               return (
                 <EntityGroupSection
                   key={phaseId}
                   parentEntity={{
                     id: featureId,
                     type: 'feature',
-                    name: feature.name
+                    name: feature.name,
                   }}
                   childEntity={{
                     id: phase.id,
@@ -263,7 +253,7 @@ function FeatureDetailViewInner() {
                     tags: phaseSpecificFeature?.tags,
                     assigned_to: phaseSpecificFeature?.assigned_to,
                     created_date: phaseSpecificFeature?.created_date,
-                    updated_date: phaseSpecificFeature?.updated_date
+                    updated_date: phaseSpecificFeature?.updated_date,
                   }}
                   tasks={phaseTasks}
                   // Can include phase-specific overview content here if needed
@@ -279,13 +269,15 @@ function FeatureDetailViewInner() {
 
 export function FeatureDetailView() {
   const { refreshFeatures } = useFeatureContext();
-  
+
   return (
     <ErrorBoundary
-      fallback={<div className="p-4 text-center">
-        <p className="text-red-500 mb-2">Error loading feature details</p>
-        <Button onClick={refreshFeatures}>Retry</Button>
-      </div>}
+      fallback={
+        <div className="p-4 text-center">
+          <p className="text-red-500 mb-2">Error loading feature details</p>
+          <Button onClick={refreshFeatures}>Retry</Button>
+        </div>
+      }
     >
       <FeatureDetailViewInner />
     </ErrorBoundary>
@@ -295,15 +287,15 @@ export function FeatureDetailView() {
 // Helper function to group tasks by phase
 function groupTasksByPhase(tasks: any[]) {
   const taskGroups: Record<string, any[]> = {};
-  
+
   // First collect all tasks by phase
-  tasks.forEach(task => {
+  tasks.forEach((task) => {
     const phase = task.phase || 'unassigned';
     if (!taskGroups[phase]) {
       taskGroups[phase] = [];
     }
     taskGroups[phase].push(task);
   });
-  
+
   return taskGroups;
 }

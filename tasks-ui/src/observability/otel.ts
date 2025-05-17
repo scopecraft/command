@@ -1,17 +1,21 @@
 // otel.ts
-import { diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
-import { LoggerProvider, BatchLogRecordProcessor, SimpleLogRecordProcessor } from "@opentelemetry/sdk-logs";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api';
+import {
+  BatchLogRecordProcessor,
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 // Simple file exporter for now
-import { appendFileSync, mkdirSync } from "fs";
-import { join } from "path";
+import { appendFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 // Console exporter for development
 class ConsoleLogExporter {
   export(logs: any[], resultCallback: (result: any) => void): void {
-    logs.forEach(log => {
-      console.log("[OTel]", {
+    logs.forEach((log) => {
+      console.log('[OTel]', {
         timestamp: new Date(log.hrTime[0] * 1000).toISOString(),
         name: log.instrumentationScope.name,
         body: log.body,
@@ -33,21 +37,21 @@ class SimpleFileLogRecordExporter {
   constructor(options: { directory: string }) {
     this.logDir = options.directory;
     this.logFile = join(this.logDir, `logs-${new Date().toISOString().split('T')[0]}.log`);
-    
+
     // Ensure log directory exists
     mkdirSync(this.logDir, { recursive: true });
   }
 
   export(logs: any[], resultCallback: (result: any) => void): void {
-    logs.forEach(log => {
+    logs.forEach((log) => {
       const timestamp = new Date(log.hrTime[0] * 1000).toISOString();
-      const logLine = JSON.stringify({
+      const logLine = `${JSON.stringify({
         timestamp,
         name: log.instrumentationScope.name,
         body: log.body,
         attributes: log.attributes,
-      }) + '\n';
-      
+      })}\n`;
+
       try {
         appendFileSync(this.logFile, logLine);
       } catch (error) {
@@ -63,20 +67,20 @@ class SimpleFileLogRecordExporter {
 }
 
 // 0. Verbose SDK diagnostics in dev
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== 'production') {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 }
 
 // 1. Describe this service
 const resource = {
-  [SemanticResourceAttributes.SERVICE_NAME]: "scopecraft-ui",
-  [SemanticResourceAttributes.SERVICE_VERSION]: "1.0.0",
+  [SemanticResourceAttributes.SERVICE_NAME]: 'scopecraft-ui',
+  [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
 };
 
 // 2. Pick local exporter(s)
 const consoleExporter = new ConsoleLogExporter();
 const fileExporter = new SimpleFileLogRecordExporter({
-  directory: "./logs",
+  directory: './logs',
 });
 
 // 3. Build provider
@@ -85,4 +89,4 @@ provider.addLogRecordProcessor(new SimpleLogRecordProcessor(consoleExporter));
 provider.addLogRecordProcessor(new BatchLogRecordProcessor(fileExporter));
 
 // 4. Get logger directly from provider
-export const logger = provider.getLogger("scopecraft-ui");
+export const logger = provider.getLogger('scopecraft-ui');

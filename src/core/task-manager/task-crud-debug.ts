@@ -1,23 +1,28 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
-import {
-  Task,
-  TaskMetadata,
-  TaskFilterOptions,
-  TaskUpdateOptions,
-  OperationResult
-} from '../types.js';
-import { parseTaskFile, formatTaskFile, generateTaskId } from '../task-parser.js';
 import { projectConfig } from '../project-config.js';
-import { getTasksDirectory, getPhasesDirectory, ensureDirectoryExists, getAllFiles } from './index.js';
+import { formatTaskFile, generateTaskId, parseTaskFile } from '../task-parser.js';
+import {
+  type OperationResult,
+  type Task,
+  TaskFilterOptions,
+  TaskMetadata,
+  type TaskUpdateOptions,
+} from '../types.js';
+import {
+  ensureDirectoryExists,
+  getAllFiles,
+  getPhasesDirectory,
+  getTasksDirectory,
+} from './index.js';
 import { updateRelationships } from './task-relationships.js';
 
 /**
  * Updated task with debug logging
  * @param id Task id
  * @param updates Updates to apply
- * @param searchPhase Optional phase to search for the task in 
+ * @param searchPhase Optional phase to search for the task in
  * @param searchSubdirectory Optional subdirectory to search for the task in
  * @returns Operation result with updated task
  */
@@ -30,33 +35,33 @@ export async function updateTaskDebug(
   try {
     console.log('[DEBUG] Starting updateTask');
     console.log('[DEBUG] Updates:', JSON.stringify(updates, null, 2));
-    
+
     // Get the task, using phase and subdirectory if provided
     const taskResult = await getTask(id, searchPhase, searchSubdirectory);
     if (!taskResult.success || !taskResult.data) {
       console.log('[DEBUG] Failed to get task:', taskResult.error);
       return {
         success: false,
-        error: taskResult.error || `Task with ID ${id} not found`
+        error: taskResult.error || `Task with ID ${id} not found`,
       };
     }
 
     const task = taskResult.data;
     console.log('[DEBUG] Original task metadata:', JSON.stringify(task.metadata, null, 2));
-    
+
     let needsRelationshipUpdate = false;
 
     // Check if updating phase or subdirectory (requires file move)
     const targetPhase = updates.metadata?.phase || updates.phase;
     const targetSubdirectory = updates.metadata?.subdirectory || updates.subdirectory;
-    
+
     console.log('[DEBUG] Target phase:', targetPhase);
     console.log('[DEBUG] Target subdirectory:', targetSubdirectory);
-    
-    const needsFileMove = 
-      (targetPhase && targetPhase !== task.metadata.phase) || 
+
+    const needsFileMove =
+      (targetPhase && targetPhase !== task.metadata.phase) ||
       (targetSubdirectory && targetSubdirectory !== task.metadata.subdirectory);
-    
+
     console.log('[DEBUG] Needs file move:', needsFileMove);
 
     // Update metadata fields from updates.metadata object
@@ -64,7 +69,12 @@ export async function updateTaskDebug(
       console.log('[DEBUG] Updating from metadata object');
       for (const [key, value] of Object.entries(updates.metadata)) {
         console.log(`[DEBUG] Setting metadata[${key}] = ${value}`);
-        if (key === 'parent_task' || key === 'depends' || key === 'next_task' || key === 'previous_task') {
+        if (
+          key === 'parent_task' ||
+          key === 'depends' ||
+          key === 'next_task' ||
+          key === 'previous_task'
+        ) {
           needsRelationshipUpdate = true;
         }
 
@@ -72,18 +82,18 @@ export async function updateTaskDebug(
         (task.metadata as any)[key] = value;
       }
     }
-    
+
     // Update metadata fields from direct properties
     if (updates.status !== undefined) {
       console.log(`[DEBUG] Setting status = ${updates.status}`);
       task.metadata.status = updates.status;
     }
-    
+
     if (updates.phase !== undefined) {
       console.log(`[DEBUG] Setting phase = ${updates.phase}`);
       task.metadata.phase = updates.phase;
     }
-    
+
     if (updates.subdirectory !== undefined) {
       console.log(`[DEBUG] Setting subdirectory = ${updates.subdirectory}`);
       task.metadata.subdirectory = updates.subdirectory;
@@ -124,7 +134,7 @@ export async function updateTaskDebug(
         targetPhase || task.metadata.phase,
         targetSubdirectory || task.metadata.subdirectory
       );
-      
+
       console.log('[DEBUG] Old file path:', oldFilePath);
       console.log('[DEBUG] New file path:', newFilePath);
 
@@ -159,16 +169,16 @@ export async function updateTaskDebug(
     }
 
     console.log('[DEBUG] Update task completed successfully');
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: task,
-      message: `Task ${id} updated successfully` 
+      message: `Task ${id} updated successfully`,
     };
   } catch (error) {
     console.log('[DEBUG] Error updating task:', error);
     return {
       success: false,
-      error: `Error updating task: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error updating task: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }

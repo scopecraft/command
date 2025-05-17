@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { Area, OperationResult } from '../lib/types';
-import { fetchAreas, fetchArea, saveArea, removeArea } from '../lib/api/core-client';
 import { useToast } from '../hooks/useToast';
+import { fetchArea, fetchAreas, removeArea, saveArea } from '../lib/api/core-client';
+import type { Area, OperationResult } from '../lib/types';
 import { deduplicateByName } from '../lib/utils';
 
 interface AreaContextType {
@@ -111,7 +111,7 @@ export function AreaProvider({ children }: { children: ReactNode }) {
   const deleteArea = async (id: string, force = false) => {
     try {
       // Find the area to display its name in the success message
-      const areaToDelete = areas.find(a => a.id === id);
+      const areaToDelete = areas.find((a) => a.id === id);
       const areaName = areaToDelete ? areaToDelete.name : 'Area';
 
       const result = await removeArea(id, force);
@@ -138,7 +138,7 @@ export function AreaProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const area = areas.find(a => a.id === areaId);
+    const area = areas.find((a) => a.id === areaId);
     if (area) {
       setCurrentArea(area);
     } else {
@@ -149,12 +149,12 @@ export function AreaProvider({ children }: { children: ReactNode }) {
   const getAreaById = (id: string, phase?: string) => {
     // If phase is specified, try to find an area with the exact ID and phase first
     if (phase) {
-      const areaInPhase = areas.find(a => a.id === id && a.phase === phase);
+      const areaInPhase = areas.find((a) => a.id === id && a.phase === phase);
       if (areaInPhase) return areaInPhase;
     }
-    
+
     // Otherwise, find by ID only
-    return areas.find(a => a.id === id);
+    return areas.find((a) => a.id === id);
   };
 
   const value = {

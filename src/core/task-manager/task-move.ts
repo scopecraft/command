@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { OperationResult } from '../types.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import type { OperationResult } from '../types.js';
 import { getTasksDirectory } from './directory-utils.js';
 import { getTask, updateTask } from './task-crud.js';
 
@@ -15,7 +15,7 @@ import { getTask, updateTask } from './task-crud.js';
  * @returns Operation result
  */
 export async function moveTask(
-  id: string, 
+  id: string,
   options: {
     targetSubdirectory: string;
     targetPhase?: string;
@@ -30,45 +30,45 @@ export async function moveTask(
     if (!taskResult.success || !taskResult.data) {
       return {
         success: false,
-        error: taskResult.error || `Task with ID ${id} not found`
+        error: taskResult.error || `Task with ID ${id} not found`,
       };
     }
 
     const task = taskResult.data;
-    
+
     // Get the current phase
     const currentPhase = task.metadata.phase;
-    
+
     // Set target phase to current if not specified
     const targetPhase = options.targetPhase || currentPhase;
-    
+
     // Update the task using the task-crud updateTask function
     // This will handle file movement, path updates, etc.
     const updateResult = await updateTask(
-      id, 
+      id,
       {
         phase: targetPhase,
-        subdirectory: options.targetSubdirectory
+        subdirectory: options.targetSubdirectory,
       },
       options.searchPhase,
       options.searchSubdirectory
     );
-    
+
     if (!updateResult.success) {
       return {
         success: false,
-        error: updateResult.error || `Failed to move task ${id}`
+        error: updateResult.error || `Failed to move task ${id}`,
       };
     }
-    
+
     return {
       success: true,
-      message: `Task ${id} moved to ${options.targetSubdirectory} in phase ${targetPhase}`
+      message: `Task ${id} moved to ${options.targetSubdirectory} in phase ${targetPhase}`,
     };
   } catch (error) {
     return {
       success: false,
-      error: `Error moving task: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error moving task: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }

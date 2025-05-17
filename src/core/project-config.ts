@@ -2,8 +2,8 @@
  * Project configuration manager
  * Handles project type detection and path resolution
  */
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * Enum for project mode detection
@@ -29,33 +29,33 @@ export interface ProjectPaths {
 export class ProjectConfig {
   private mode: ProjectMode;
   private paths: ProjectPaths;
-  
+
   constructor() {
     this.mode = this.detectProjectMode();
     this.paths = this.buildProjectPaths();
   }
-  
+
   /**
    * Detect project mode based on directory structure
    * @returns ProjectMode based on detected directories
    */
   private detectProjectMode(): ProjectMode {
     const ruruDir = path.join(process.cwd(), '.ruru');
-    
+
     if (fs.existsSync(ruruDir)) {
       return ProjectMode.ROO_COMMANDER;
     }
-    
+
     // Check for standalone mode - look for .tasks directory
     const tasksDir = path.join(process.cwd(), '.tasks');
     if (fs.existsSync(tasksDir)) {
       return ProjectMode.STANDALONE;
     }
-    
+
     // Default to standalone mode if neither exists
     return ProjectMode.STANDALONE;
   }
-  
+
   /**
    * Build project paths based on detected mode
    * @returns ProjectPaths object with all necessary paths
@@ -67,15 +67,14 @@ export class ProjectConfig {
         phasesRoot: path.join(process.cwd(), '.ruru', 'tasks'), // In Roo Commander, phases are structured as subdirectories
         configRoot: path.join(process.cwd(), '.ruru', 'config'),
       };
-    } else {
-      return {
-        tasksRoot: path.join(process.cwd(), '.tasks'),
-        phasesRoot: path.join(process.cwd(), '.tasks', 'phases'),
-        configRoot: path.join(process.cwd(), '.tasks', 'config'),
-      };
     }
+    return {
+      tasksRoot: path.join(process.cwd(), '.tasks'),
+      phasesRoot: path.join(process.cwd(), '.tasks', 'phases'),
+      configRoot: path.join(process.cwd(), '.tasks', 'config'),
+    };
   }
-  
+
   /**
    * Get current project mode
    * @returns Current project mode
@@ -83,7 +82,7 @@ export class ProjectConfig {
   getMode(): ProjectMode {
     return this.mode;
   }
-  
+
   /**
    * Get tasks directory
    * @returns Path to the tasks directory
@@ -91,7 +90,7 @@ export class ProjectConfig {
   getTasksDirectory(): string {
     return this.paths.tasksRoot;
   }
-  
+
   /**
    * Get phases directory
    * @returns Path to the phases directory
@@ -99,7 +98,7 @@ export class ProjectConfig {
   getPhasesDirectory(): string {
     return this.paths.phasesRoot;
   }
-  
+
   /**
    * Get configuration directory
    * @returns Path to the configuration directory
@@ -107,7 +106,7 @@ export class ProjectConfig {
   getConfigDirectory(): string {
     return this.paths.configRoot;
   }
-  
+
   /**
    * Get phases config file path
    * @returns Path to the phases configuration file
@@ -115,15 +114,16 @@ export class ProjectConfig {
   getPhasesConfigPath(): string {
     return path.join(this.paths.configRoot, 'phases.toml');
   }
-  
+
   /**
    * Initialize project structure
    * Creates necessary directories for the current mode
    */
   initializeProjectStructure(): void {
-    const rootDir = this.mode === ProjectMode.ROO_COMMANDER ?
-      path.join(process.cwd(), '.ruru') :
-      path.join(process.cwd(), '.tasks');
+    const rootDir =
+      this.mode === ProjectMode.ROO_COMMANDER
+        ? path.join(process.cwd(), '.ruru')
+        : path.join(process.cwd(), '.tasks');
 
     // Create root directory if it doesn't exist
     if (!fs.existsSync(rootDir)) {
@@ -153,7 +153,7 @@ export class ProjectConfig {
       }
     }
   }
-  
+
   /**
    * Force a specific project mode
    * @param mode The project mode to force
@@ -162,7 +162,7 @@ export class ProjectConfig {
     this.mode = mode;
     this.paths = this.buildProjectPaths();
   }
-  
+
   /**
    * Validate if project structure exists
    * @returns Whether the project structure is valid
@@ -171,11 +171,10 @@ export class ProjectConfig {
     if (this.mode === ProjectMode.ROO_COMMANDER) {
       const ruruDir = path.join(process.cwd(), '.ruru');
       return fs.existsSync(ruruDir);
-    } else {
-      return fs.existsSync(this.paths.tasksRoot);
     }
+    return fs.existsSync(this.paths.tasksRoot);
   }
-  
+
   /**
    * Get task file path in appropriate directory
    * @param taskId Task ID
@@ -252,16 +251,16 @@ export class ProjectConfig {
     if (pathParts.length === 1) {
       // Only filename, no phase or subdirectory
       return {};
-    } else if (pathParts.length === 2) {
+    }
+    if (pathParts.length === 2) {
       // Has phase but no subdirectory
       return { phase: pathParts[0] };
-    } else {
-      // Has both phase and subdirectory (or more levels)
-      const phase = pathParts[0];
-      // Combine all middle directories as the subdirectory path
-      const subdirectory = pathParts.slice(1, -1).join(path.sep);
-      return { phase, subdirectory };
     }
+    // Has both phase and subdirectory (or more levels)
+    const phase = pathParts[0];
+    // Combine all middle directories as the subdirectory path
+    const subdirectory = pathParts.slice(1, -1).join(path.sep);
+    return { phase, subdirectory };
   }
 }
 

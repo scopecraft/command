@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Button } from '../ui/button';
+import { useEffect, useState } from 'react';
 import { usePhaseContext } from '../../context/PhaseContext';
+import { Button } from '../ui/button';
 
 interface PhaseSelectorProps {
   entityType: 'feature' | 'area';
@@ -17,22 +17,24 @@ export function PhaseSelector({
   entityType,
   phases,
   currentPhase,
-  onPhaseSelect
+  onPhaseSelect,
 }: PhaseSelectorProps) {
   const { phases: allPhases } = usePhaseContext();
-  const [sortedPhases, setSortedPhases] = useState<Array<{id: string, name: string, order: number}>>([]);
+  const [sortedPhases, setSortedPhases] = useState<
+    Array<{ id: string; name: string; order: number }>
+  >([]);
 
   useEffect(() => {
     // Map phase IDs to phase objects and sort by order
     const phaseObjects = phases
-      .map(phaseId => {
-        const phaseObj = allPhases.find(p => p.id === phaseId);
-        return phaseObj 
-          ? { id: phaseId, name: phaseObj.name, order: phaseObj.order } 
+      .map((phaseId) => {
+        const phaseObj = allPhases.find((p) => p.id === phaseId);
+        return phaseObj
+          ? { id: phaseId, name: phaseObj.name, order: phaseObj.order }
           : { id: phaseId, name: phaseId, order: 999 };
       })
       .sort((a, b) => a.order - b.order);
-    
+
     setSortedPhases(phaseObjects);
   }, [phases, allPhases]);
 
@@ -49,7 +51,7 @@ export function PhaseSelector({
           <Button
             key={phase.id}
             size="sm"
-            variant={currentPhase === phase.id ? "default" : "outline"}
+            variant={currentPhase === phase.id ? 'default' : 'outline'}
             className={`px-2 py-1 text-xs ${
               entityType === 'feature'
                 ? currentPhase === phase.id

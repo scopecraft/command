@@ -4,7 +4,7 @@
 // Use direct import from source instead of compiled output
 const { applyTemplate } = require('../src/core/template-manager.js');
 const { parseTaskFile } = require('../src/core/task-parser.js');
-const assert = require('assert');
+const assert = require('node:assert');
 
 describe('Template parsing', () => {
   it('should handle empty id in template', () => {
@@ -23,14 +23,17 @@ Task description
     const values = {
       id: 'TASK-123',
       title: 'Test Task',
-      type: '🌟 Feature'
+      type: '🌟 Feature',
     };
 
     const appliedTemplate = applyTemplate(templateContent, values);
-    
+
     // Should have successfully applied the ID
-    assert.ok(appliedTemplate.includes(`id = "TASK-123"`), 'Applied template should include the ID');
-    
+    assert.ok(
+      appliedTemplate.includes(`id = "TASK-123"`),
+      'Applied template should include the ID'
+    );
+
     try {
       // Should be able to parse without error
       const task = parseTaskFile(appliedTemplate);
@@ -55,14 +58,17 @@ Task description
     const values = {
       id: 'TASK-ABC',
       title: 'Missing ID Task',
-      type: '🌟 Feature'
+      type: '🌟 Feature',
     };
 
     const appliedTemplate = applyTemplate(templateContent, values);
-    
+
     // Should have forcibly added the ID field
-    assert.ok(appliedTemplate.includes(`id = "TASK-ABC"`), 'Applied template should include the added ID');
-    
+    assert.ok(
+      appliedTemplate.includes(`id = "TASK-ABC"`),
+      'Applied template should include the added ID'
+    );
+
     try {
       // Should be able to parse without error
       const task = parseTaskFile(appliedTemplate);
@@ -102,23 +108,39 @@ What is the problem?
       updated_date: '2025-05-12',
       assigned_to: 'David',
       tags: ['test', 'bug'],
-      content: 'Custom content here'
+      content: 'Custom content here',
     };
 
     const appliedTemplate = applyTemplate(templateContent, values);
-    
+
     // Should have successfully applied all fields
-    assert.ok(appliedTemplate.includes(`id = "TASK-BUG-001"`), 'Applied template should include the ID');
-    assert.ok(appliedTemplate.includes(`status = "🔵 In Progress"`), 'Applied template should include the status');
-    assert.ok(appliedTemplate.includes(`priority = "🔼 High"`), 'Applied template should include the priority');
-    assert.ok(appliedTemplate.includes(`type = "🐞 Bug"`), 'Applied template should include the type');
+    assert.ok(
+      appliedTemplate.includes(`id = "TASK-BUG-001"`),
+      'Applied template should include the ID'
+    );
+    assert.ok(
+      appliedTemplate.includes(`status = "🔵 In Progress"`),
+      'Applied template should include the status'
+    );
+    assert.ok(
+      appliedTemplate.includes(`priority = "🔼 High"`),
+      'Applied template should include the priority'
+    );
+    assert.ok(
+      appliedTemplate.includes(`type = "🐞 Bug"`),
+      'Applied template should include the type'
+    );
     // TOML stringify will use a different format for arrays, so we check for both possible formats
-    const hasTags = appliedTemplate.includes(`tags = ["test", "bug"]`) || 
-                    appliedTemplate.includes(`tags = [ "test", "bug" ]`) ||
-                    appliedTemplate.includes(`tags = ["test","bug"]`);
+    const hasTags =
+      appliedTemplate.includes(`tags = ["test", "bug"]`) ||
+      appliedTemplate.includes(`tags = [ "test", "bug" ]`) ||
+      appliedTemplate.includes(`tags = ["test","bug"]`);
     assert.ok(hasTags, 'Applied template should include the tags');
-    assert.ok(appliedTemplate.includes('Custom content here'), 'Applied template should include custom content');
-    
+    assert.ok(
+      appliedTemplate.includes('Custom content here'),
+      'Applied template should include custom content'
+    );
+
     try {
       // Should be able to parse without error
       const task = parseTaskFile(appliedTemplate);

@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { TaskProvider } from './TaskContext';
-import { PhaseProvider } from './PhaseContext';
-import { UIProvider } from './UIContext';
-import { FeatureProvider } from './FeatureContext';
 import { AreaProvider } from './AreaContext';
+import { FeatureProvider } from './FeatureContext';
+import { PhaseProvider } from './PhaseContext';
+import { TaskProvider } from './TaskContext';
+import { UIProvider } from './UIContext';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -15,9 +15,7 @@ export function AppProviders({ children }: AppProvidersProps) {
       <PhaseProvider>
         <FeatureProvider>
           <AreaProvider>
-            <TaskProvider>
-              {children}
-            </TaskProvider>
+            <TaskProvider>{children}</TaskProvider>
           </AreaProvider>
         </FeatureProvider>
       </PhaseProvider>

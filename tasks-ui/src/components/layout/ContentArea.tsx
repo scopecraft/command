@@ -8,10 +8,6 @@ interface ContentAreaProps {
 export function ContentArea({ children }: ContentAreaProps) {
   // Using UIContext but not using ui directly yet
   useUIContext();
-  
-  return (
-    <main className="flex-1 h-full overflow-auto p-4 bg-background">
-      {children}
-    </main>
-  );
+
+  return <main className="flex-1 h-full overflow-auto p-4 bg-background">{children}</main>;
 }

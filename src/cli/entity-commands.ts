@@ -4,29 +4,29 @@
  */
 import { Command } from 'commander';
 import {
-  handleListCommand,
-  handleGetCommand,
-  handleCreateCommand,
-  handleUpdateCommand,
-  handleDeleteCommand,
-  handleNextTaskCommand,
-  handleMarkCompleteNextCommand,
-  handlePhasesCommand,
-  handlePhaseCreateCommand,
-  handlePhaseUpdateCommand,
-  handlePhaseDeleteCommand,
-  handleCurrentTaskCommand,
-  handleInitCommand,
-  handleListTemplatesCommand,
-  handleFeatureListCommand,
-  handleFeatureGetCommand,
-  handleFeatureUpdateCommand,
-  handleFeatureDeleteCommand,
-  handleAreaListCommand,
-  handleAreaGetCommand,
-  handleAreaUpdateCommand,
   handleAreaDeleteCommand,
-  handleTaskMoveCommand
+  handleAreaGetCommand,
+  handleAreaListCommand,
+  handleAreaUpdateCommand,
+  handleCreateCommand,
+  handleCurrentTaskCommand,
+  handleDeleteCommand,
+  handleFeatureDeleteCommand,
+  handleFeatureGetCommand,
+  handleFeatureListCommand,
+  handleFeatureUpdateCommand,
+  handleGetCommand,
+  handleInitCommand,
+  handleListCommand,
+  handleListTemplatesCommand,
+  handleMarkCompleteNextCommand,
+  handleNextTaskCommand,
+  handlePhaseCreateCommand,
+  handlePhaseDeleteCommand,
+  handlePhaseUpdateCommand,
+  handlePhasesCommand,
+  handleTaskMoveCommand,
+  handleUpdateCommand,
 } from './commands.js';
 
 /**
@@ -65,8 +65,13 @@ export function setupTaskCommands(program: Command): void {
   // task create command
   taskCommand
     .command('create')
-    .description('Create a new task (Example: sc task create --title "New feature" --type "🌟 Feature" --phase "release-v1")')
-    .option('--id <id>', 'Task ID (generated if not provided, use "_overview" for feature overview files)')
+    .description(
+      'Create a new task (Example: sc task create --title "New feature" --type "🌟 Feature" --phase "release-v1")'
+    )
+    .option(
+      '--id <id>',
+      'Task ID (generated if not provided, use "_overview" for feature overview files)'
+    )
     .option('--title <title>', 'Task title')
     .option('--type <type>', 'Task type (e.g., "🌟 Feature", "🐛 Bug")')
     .option('--status <status>', 'Task status (default: "🟡 To Do")')
@@ -144,15 +149,20 @@ export function setupTaskCommands(program: Command): void {
     .action(async (id) => {
       await handleUpdateCommand(id, { status: '🟣 Review' });
     });
-    
+
   // task move command
   taskCommand
     .command('move <id>')
-    .description('Move a task to a different feature or area subdirectory (Example: sc task move TASK-123 --subdirectory "FEATURE_NewFeature")')
+    .description(
+      'Move a task to a different feature or area subdirectory (Example: sc task move TASK-123 --subdirectory "FEATURE_NewFeature")'
+    )
     .requiredOption('--subdirectory <subdirectory>', 'Target subdirectory to move the task to')
     .option('--phase <phase>', 'Target phase (if moving between phases)')
     .option('--search-phase <searchPhase>', 'Source phase to search for the task')
-    .option('--search-subdirectory <searchSubdirectory>', 'Source subdirectory to search for the task')
+    .option(
+      '--search-subdirectory <searchSubdirectory>',
+      'Source subdirectory to search for the task'
+    )
     .action(handleTaskMoveCommand);
 
   // Add task group to root program
@@ -201,12 +211,14 @@ export function setupPhaseCommands(program: Command): void {
   // phase create command
   phaseCommand
     .command('create')
-    .description('Create a new phase (Example: sc phase create --id "release-v2" --name "Release 2.0")')
+    .description(
+      'Create a new phase (Example: sc phase create --id "release-v2" --name "Release 2.0")'
+    )
     .requiredOption('--id <id>', 'Phase ID')
     .requiredOption('--name <n>', 'Phase name')
     .option('--description <description>', 'Phase description')
     .option('--status <status>', 'Phase status (default: "🟡 Pending")')
-    .option('--order <order>', 'Phase order (number)', parseInt)
+    .option('--order <order>', 'Phase order (number)', Number.parseInt)
     .action(handlePhaseCreateCommand);
 
   // phase update command
@@ -217,7 +229,7 @@ export function setupPhaseCommands(program: Command): void {
     .option('--name <n>', 'New phase name')
     .option('--description <description>', 'New phase description')
     .option('--status <status>', 'New phase status')
-    .option('--order <order>', 'New phase order (number)', parseInt)
+    .option('--order <order>', 'New phase order (number)', Number.parseInt)
     .action(handlePhaseUpdateCommand);
 
   // phase delete command
@@ -280,7 +292,9 @@ export function setupFeatureAreaCommands(program: Command): void {
   // feature create command (creates an overview file in a FEATURE_ subdirectory)
   featureCommand
     .command('create')
-    .description('Create a new feature (Example: sc feature create --name "Authentication" --title "User Auth" --phase "release-v1")')
+    .description(
+      'Create a new feature (Example: sc feature create --name "Authentication" --title "User Auth" --phase "release-v1")'
+    )
     .requiredOption('--name <name>', 'Feature name (will be prefixed with FEATURE_)')
     .requiredOption('--title <title>', 'Feature title')
     .requiredOption('--phase <phase>', 'Phase to create the feature in')
@@ -292,10 +306,10 @@ export function setupFeatureAreaCommands(program: Command): void {
     .option('--tags <tags...>', 'Tags for the feature')
     .action(async (options) => {
       const subdirectory = `FEATURE_${options.name.replace(/\s+/g, '')}`;
-      
+
       try {
         // Create feature overview file
-        const result = await handleCreateCommand({
+        const _result = await handleCreateCommand({
           id: '_overview',
           title: options.title,
           type: options.type || '🌟 Feature',
@@ -305,14 +319,14 @@ export function setupFeatureAreaCommands(program: Command): void {
           phase: options.phase,
           subdirectory,
           tags: options.tags,
-          content: options.description ? 
-            `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1` : 
-            `# ${options.title}\n\nOverview of this feature.\n\n## Tasks\n\n- [ ] Task 1`
+          content: options.description
+            ? `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1`
+            : `# ${options.title}\n\nOverview of this feature.\n\n## Tasks\n\n- [ ] Task 1`,
         });
-        
+
         // The message will be printed by handleCreateCommand
         console.log(`Feature '${options.name}' created successfully with overview file.`);
-      } catch (error) {
+      } catch (_error) {
         // Error will be handled by handleCreateCommand
       }
     });
@@ -334,7 +348,7 @@ export function setupFeatureAreaCommands(program: Command): void {
     .option('-p, --phase <phase>', 'Phase to look in')
     .option('-f, --format <format>', 'Output format: default, json', 'default')
     .action(handleFeatureGetCommand);
-    
+
   // feature update command
   featureCommand
     .command('update <id>')
@@ -345,7 +359,7 @@ export function setupFeatureAreaCommands(program: Command): void {
     .option('--new-id <newId>', 'New feature ID (will rename directory)')
     .option('-p, --phase <phase>', 'Phase to look in')
     .action(handleFeatureUpdateCommand);
-    
+
   // feature delete command
   featureCommand
     .command('delete <id>')
@@ -377,10 +391,10 @@ export function setupFeatureAreaCommands(program: Command): void {
     .option('--tags <tags...>', 'Tags for the area')
     .action(async (options) => {
       const subdirectory = `AREA_${options.name.replace(/\s+/g, '')}`;
-      
+
       try {
         // Create area overview file
-        const result = await handleCreateCommand({
+        const _result = await handleCreateCommand({
           id: '_overview',
           title: options.title,
           type: options.type || '🧹 Chore',
@@ -390,14 +404,14 @@ export function setupFeatureAreaCommands(program: Command): void {
           phase: options.phase,
           subdirectory,
           tags: options.tags,
-          content: options.description ? 
-            `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1` : 
-            `# ${options.title}\n\nOverview of this cross-cutting area.\n\n## Tasks\n\n- [ ] Task 1`
+          content: options.description
+            ? `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1`
+            : `# ${options.title}\n\nOverview of this cross-cutting area.\n\n## Tasks\n\n- [ ] Task 1`,
         });
-        
+
         // The message will be printed by handleCreateCommand
         console.log(`Area '${options.name}' created successfully with overview file.`);
-      } catch (error) {
+      } catch (_error) {
         // Error will be handled by handleCreateCommand
       }
     });
@@ -419,7 +433,7 @@ export function setupFeatureAreaCommands(program: Command): void {
     .option('-p, --phase <phase>', 'Phase to look in')
     .option('-f, --format <format>', 'Output format: default, json', 'default')
     .action(handleAreaGetCommand);
-    
+
   // area update command
   areaCommand
     .command('update <id>')
@@ -430,7 +444,7 @@ export function setupFeatureAreaCommands(program: Command): void {
     .option('--new-id <newId>', 'New area ID (will rename directory)')
     .option('-p, --phase <phase>', 'Phase to look in')
     .action(handleAreaUpdateCommand);
-    
+
   // area delete command
   areaCommand
     .command('delete <id>')

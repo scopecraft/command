@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { Feature, OperationResult } from '../lib/types';
-import { fetchFeatures, fetchFeature, saveFeature, removeFeature } from '../lib/api/core-client';
 import { useToast } from '../hooks/useToast';
+import { fetchFeature, fetchFeatures, removeFeature, saveFeature } from '../lib/api/core-client';
+import type { Feature, OperationResult } from '../lib/types';
 import { deduplicateByName } from '../lib/utils';
 
 interface FeatureContextType {
@@ -111,7 +111,7 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
   const deleteFeature = async (id: string, force = false) => {
     try {
       // Find the feature to display its name in the success message
-      const featureToDelete = features.find(f => f.id === id);
+      const featureToDelete = features.find((f) => f.id === id);
       const featureName = featureToDelete ? featureToDelete.name : 'Feature';
 
       const result = await removeFeature(id, force);
@@ -138,7 +138,7 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const feature = features.find(f => f.id === featureId);
+    const feature = features.find((f) => f.id === featureId);
     if (feature) {
       setCurrentFeature(feature);
     } else {
@@ -149,12 +149,12 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
   const getFeatureById = (id: string, phase?: string) => {
     // If phase is specified, try to find a feature with the exact ID and phase first
     if (phase) {
-      const featureInPhase = features.find(f => f.id === id && f.phase === phase);
+      const featureInPhase = features.find((f) => f.id === id && f.phase === phase);
       if (featureInPhase) return featureInPhase;
     }
-    
+
     // Otherwise, find by ID only
-    return features.find(f => f.id === id);
+    return features.find((f) => f.id === id);
   };
 
   const value = {

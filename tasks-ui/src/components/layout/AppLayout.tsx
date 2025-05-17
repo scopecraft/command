@@ -1,10 +1,10 @@
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
+import { useUIContext } from '../../context/UIContext';
+import { ContentArea } from './ContentArea';
+import { ErrorBoundary } from './ErrorBoundary';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
-import { ContentArea } from './ContentArea';
 import { ToastContainer } from './Toast';
-import { ErrorBoundary } from './ErrorBoundary';
-import { useUIContext } from '../../context/UIContext';
 
 interface AppLayoutProps {
   children: ReactNode;

@@ -1,44 +1,44 @@
+import fs from 'node:fs';
+import path from 'node:path';
 /**
  * Core MCP server implementation using the official SDK
  * This file contains the core server logic that can be reused across different transports
  */
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import fs from 'fs';
-import path from 'path';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 
 // Import core functionality
-import { 
-  listTasks,
-  getTask,
+import {
+  type AreaFilterOptions,
+  type AreaUpdateOptions,
+  type FeatureFilterOptions,
+  type FeatureUpdateOptions,
+  type Task,
+  type TaskFilterOptions,
+  type TaskMetadata,
+  createArea,
+  createFeature,
+  createPhase,
   createTask,
-  updateTask,
+  deleteArea,
+  deleteFeature,
+  deletePhase,
   deleteTask,
   findNextTask,
-  moveTask,
-  listFeatures,
-  getFeature,
-  createFeature,
-  updateFeature,
-  deleteFeature,
-  listAreas,
-  getArea,
-  createArea,
-  updateArea,
-  deleteArea,
-  listPhases,
-  createPhase,
-  updatePhase,
-  deletePhase,
-  Task,
-  TaskMetadata,
-  TaskFilterOptions,
-  FeatureFilterOptions,
-  AreaFilterOptions,
-  FeatureUpdateOptions,
-  AreaUpdateOptions,
   generateTaskId,
-  listTemplates
+  getArea,
+  getFeature,
+  getTask,
+  listAreas,
+  listFeatures,
+  listPhases,
+  listTasks,
+  listTemplates,
+  moveTask,
+  updateArea,
+  updateFeature,
+  updatePhase,
+  updateTask,
 } from '../core/index.js';
 
 /**
@@ -50,19 +50,18 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
   // Read package version from package.json
   let version = '0.2.0'; // Default
   try {
-    const packageJson = JSON.parse(fs.readFileSync(
-      path.join(process.cwd(), 'package.json'),
-      'utf-8'
-    ));
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
+    );
     version = packageJson.version || version;
-  } catch (error) {
+  } catch (_error) {
     // Silently fail and use default version
   }
 
   // Create an MCP server instance
   const server = new McpServer({
-    name: "Scopecraft Command MCP Server",
-    version
+    name: 'Scopecraft Command MCP Server',
+    version,
   });
 
   if (options.verbose) {
@@ -78,10 +77,10 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
 /**
  * Register all tools with the MCP server
  */
-function registerTools(server: McpServer, verbose: boolean = false): void {
+function registerTools(server: McpServer, verbose = false): void {
   // Task list tool
   server.tool(
-    "task_list",
+    'task_list',
     {
       status: z.string().optional(),
       type: z.string().optional(),
@@ -92,7 +91,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       include_content: z.boolean().optional(),
       include_completed: z.boolean().optional(),
       subdirectory: z.string().optional(),
-      is_overview: z.boolean().optional()
+      is_overview: z.boolean().optional(),
     },
     async (params) => {
       const filterOptions: TaskFilterOptions = {
@@ -104,7 +103,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
         include_content: params.include_content,
         include_completed: params.include_completed,
         subdirectory: params.subdirectory,
-        is_overview: params.is_overview
+        is_overview: params.is_overview,
       };
 
       try {
@@ -118,10 +117,10 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task get tool
   server.tool(
-    "task_get",
+    'task_get',
     {
       id: z.string(),
-      format: z.string().optional()
+      format: z.string().optional(),
     },
     async (params) => {
       try {
@@ -135,7 +134,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task create tool
   server.tool(
-    "task_create",
+    'task_create',
     {
       id: z.string().optional(),
       title: z.string(),
@@ -150,7 +149,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       previous: z.string().optional(),
       next: z.string().optional(),
       tags: z.array(z.string()).optional(),
-      content: z.string().optional()
+      content: z.string().optional(),
     },
     async (params) => {
       try {
@@ -165,7 +164,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           updated_date: new Date().toISOString().split('T')[0],
           assigned_to: params.assignee || '',
         };
-        
+
         // Add optional fields
         if (params.phase) metadata.phase = params.phase;
         if (params.subdirectory) metadata.subdirectory = params.subdirectory;
@@ -174,12 +173,14 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
         if (params.previous) metadata.previous_task = params.previous;
         if (params.next) metadata.next_task = params.next;
         if (params.tags) metadata.tags = params.tags;
-        
+
         const task: Task = {
           metadata,
-          content: params.content || `## ${params.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`
+          content:
+            params.content ||
+            `## ${params.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`,
         };
-        
+
         const result = await createTask(task, params.subdirectory);
         return formatResponse(result);
       } catch (error) {
@@ -190,32 +191,39 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task update tool
   server.tool(
-    "task_update",
+    'task_update',
     {
       id: z.string(),
-      updates: z.object({
-        // Add direct field updates to match TaskUpdateOptions interface
-        status: z.string().optional(),
-        priority: z.string().optional(),
-        phase: z.string().optional(),
-        subdirectory: z.string().optional(),
-        new_id: z.string().optional(),
-        
-        // Keep existing metadata and content fields
-        metadata: z.record(z.any()).optional(),
-        content: z.string().optional()
-      }).optional(),
+      updates: z
+        .object({
+          // Add direct field updates to match TaskUpdateOptions interface
+          status: z.string().optional(),
+          priority: z.string().optional(),
+          phase: z.string().optional(),
+          subdirectory: z.string().optional(),
+          new_id: z.string().optional(),
+
+          // Keep existing metadata and content fields
+          metadata: z.record(z.any()).optional(),
+          content: z.string().optional(),
+        })
+        .optional(),
       phase: z.string().optional(),
-      subdirectory: z.string().optional()
+      subdirectory: z.string().optional(),
     },
     async (params) => {
       try {
         // Validate updates object
         if (!params.updates) {
-          return formatError(new Error("No updates provided"));
+          return formatError(new Error('No updates provided'));
         }
-        
-        const result = await updateTask(params.id, params.updates, params.phase, params.subdirectory);
+
+        const result = await updateTask(
+          params.id,
+          params.updates,
+          params.phase,
+          params.subdirectory
+        );
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -225,9 +233,9 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task delete tool
   server.tool(
-    "task_delete",
+    'task_delete',
     {
-      id: z.string()
+      id: z.string(),
     },
     async (params) => {
       try {
@@ -241,10 +249,10 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task next tool
   server.tool(
-    "task_next",
+    'task_next',
     {
       id: z.string().optional(),
-      format: z.string().optional()
+      format: z.string().optional(),
     },
     async (params) => {
       try {
@@ -258,9 +266,9 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Phase list tool
   server.tool(
-    "phase_list",
+    'phase_list',
     {
-      format: z.string().optional()
+      format: z.string().optional(),
     },
     async () => {
       try {
@@ -274,13 +282,13 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Phase create tool
   server.tool(
-    "phase_create",
+    'phase_create',
     {
       id: z.string(),
       name: z.string(),
       description: z.string().optional(),
       status: z.string().optional(),
-      order: z.number().optional()
+      order: z.number().optional(),
     },
     async (params) => {
       try {
@@ -290,9 +298,9 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           description: params.description,
           status: params.status || '🟡 Pending',
           order: params.order,
-          tasks: []
+          tasks: [],
         };
-        
+
         const result = await createPhase(phase);
         return formatResponse(result);
       } catch (error) {
@@ -303,7 +311,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Phase update tool
   server.tool(
-    "phase_update",
+    'phase_update',
     {
       id: z.string(),
       updates: z.object({
@@ -311,8 +319,8 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
         name: z.string().optional(),
         description: z.string().optional(),
         status: z.string().optional(),
-        order: z.number().optional()
-      })
+        order: z.number().optional(),
+      }),
     },
     async (params) => {
       try {
@@ -326,10 +334,10 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Phase delete tool
   server.tool(
-    "phase_delete",
+    'phase_delete',
     {
       id: z.string(),
-      force: z.boolean().optional()
+      force: z.boolean().optional(),
     },
     async (params) => {
       try {
@@ -343,24 +351,24 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Workflow current tool
   server.tool(
-    "workflow_current",
+    'workflow_current',
     {
-      format: z.string().optional()
+      format: z.string().optional(),
     },
     async () => {
       try {
         const inProgressResult = await listTasks({ status: '🔵 In Progress' });
-        
+
         if (!inProgressResult.success) {
           return formatResponse(inProgressResult);
         }
-        
+
         if (inProgressResult.data && inProgressResult.data.length === 0) {
           // Try alternative status text
           const alternativeResult = await listTasks({ status: 'In Progress' });
           return formatResponse(alternativeResult);
         }
-        
+
         return formatResponse(inProgressResult);
       } catch (error) {
         return formatError(error);
@@ -370,45 +378,57 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Workflow mark complete next tool
   server.tool(
-    "workflow_mark_complete_next",
+    'workflow_mark_complete_next',
     {
       id: z.string(),
-      format: z.string().optional()
+      format: z.string().optional(),
     },
     async (params) => {
       try {
         // Get the next task before marking current as complete
         const nextTaskResult = await findNextTask(params.id);
-        
+
         // Mark current task as complete
         const updateResult = await updateTask(params.id, { metadata: { status: '🟢 Done' } });
-        
+
         if (!updateResult.success) {
           return formatResponse(updateResult);
         }
-        
+
         if (!nextTaskResult.success) {
           return {
-            content: [{ 
-              type: "text", 
-              text: JSON.stringify({ 
-                success: true, 
-                data: { updated: updateResult.data, next: null },
-                message: `Task ${params.id} marked as Done. Error finding next task: ${nextTaskResult.error}`
-              }, null, 2) 
-            }]
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    success: true,
+                    data: { updated: updateResult.data, next: null },
+                    message: `Task ${params.id} marked as Done. Error finding next task: ${nextTaskResult.error}`,
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
           };
         }
-        
+
         return {
-          content: [{ 
-            type: "text", 
-            text: JSON.stringify({ 
-              success: true, 
-              data: { updated: updateResult.data, next: nextTaskResult.data },
-              message: updateResult.message
-            }, null, 2) 
-          }]
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  success: true,
+                  data: { updated: updateResult.data, next: nextTaskResult.data },
+                  message: updateResult.message,
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
       } catch (error) {
         return formatError(error);
@@ -418,13 +438,13 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Task move tool
   server.tool(
-    "task_move",
+    'task_move',
     {
       id: z.string(),
       target_subdirectory: z.string(),
       target_phase: z.string().optional(),
       search_phase: z.string().optional(),
-      search_subdirectory: z.string().optional()
+      search_subdirectory: z.string().optional(),
     },
     async (params) => {
       try {
@@ -432,7 +452,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           targetSubdirectory: params.target_subdirectory,
           targetPhase: params.target_phase,
           searchPhase: params.search_phase,
-          searchSubdirectory: params.search_subdirectory
+          searchSubdirectory: params.search_subdirectory,
         });
         return formatResponse(result);
       } catch (error) {
@@ -443,13 +463,13 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Feature list tool
   server.tool(
-    "feature_list",
+    'feature_list',
     {
       phase: z.string().optional(),
       status: z.string().optional(),
       format: z.string().optional(),
       include_tasks: z.boolean().optional(),
-      include_progress: z.boolean().optional()
+      include_progress: z.boolean().optional(),
     },
     async (params) => {
       try {
@@ -457,9 +477,9 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           phase: params.phase,
           status: params.status,
           include_tasks: params.include_tasks,
-          include_progress: params.include_progress !== false // Default to true
+          include_progress: params.include_progress !== false, // Default to true
         };
-        
+
         const result = await listFeatures(filterOptions);
         return formatResponse(result);
       } catch (error) {
@@ -470,11 +490,11 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Feature get tool
   server.tool(
-    "feature_get",
+    'feature_get',
     {
       id: z.string(),
       phase: z.string().optional(),
-      format: z.string().optional()
+      format: z.string().optional(),
     },
     async (params) => {
       try {
@@ -488,7 +508,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Feature create tool
   server.tool(
-    "feature_create",
+    'feature_create',
     {
       name: z.string(),
       title: z.string(),
@@ -497,11 +517,13 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       status: z.string().optional(),
       description: z.string().optional(),
       assignee: z.string().optional(),
-      tags: z.array(z.string()).optional()
+      tags: z.array(z.string()).optional(),
     },
     async (params) => {
       try {
-        console.log(`[DEBUG] Feature Create (core-server): description=${params.description}, assignee=${params.assignee}`);
+        console.log(
+          `[DEBUG] Feature Create (core-server): description=${params.description}, assignee=${params.assignee}`
+        );
         const result = await createFeature(
           params.name,
           params.title,
@@ -520,16 +542,16 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Feature update tool
   server.tool(
-    "feature_update",
+    'feature_update',
     {
       id: z.string(),
       updates: z.object({
         name: z.string().optional(),
         title: z.string().optional(),
         description: z.string().optional(),
-        status: z.string().optional()
+        status: z.string().optional(),
       }),
-      phase: z.string().optional()
+      phase: z.string().optional(),
     },
     async (params) => {
       try {
@@ -537,9 +559,9 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           name: params.updates.name,
           title: params.updates.title,
           description: params.updates.description,
-          status: params.updates.status
+          status: params.updates.status,
         };
-        
+
         const result = await updateFeature(params.id, updateOptions, params.phase);
         return formatResponse(result);
       } catch (error) {
@@ -550,11 +572,11 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Feature delete tool
   server.tool(
-    "feature_delete",
+    'feature_delete',
     {
       id: z.string(),
       phase: z.string().optional(),
-      force: z.boolean().optional()
+      force: z.boolean().optional(),
     },
     async (params) => {
       try {
@@ -568,13 +590,13 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Area list tool
   server.tool(
-    "area_list",
+    'area_list',
     {
       phase: z.string().optional(),
       status: z.string().optional(),
       format: z.string().optional(),
       include_tasks: z.boolean().optional(),
-      include_progress: z.boolean().optional()
+      include_progress: z.boolean().optional(),
     },
     async (params) => {
       try {
@@ -582,9 +604,9 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           phase: params.phase,
           status: params.status,
           include_tasks: params.include_tasks,
-          include_progress: params.include_progress !== false // Default to true
+          include_progress: params.include_progress !== false, // Default to true
         };
-        
+
         const result = await listAreas(filterOptions);
         return formatResponse(result);
       } catch (error) {
@@ -595,11 +617,11 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Area get tool
   server.tool(
-    "area_get",
+    'area_get',
     {
       id: z.string(),
       phase: z.string().optional(),
-      format: z.string().optional()
+      format: z.string().optional(),
     },
     async (params) => {
       try {
@@ -613,7 +635,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Area create tool
   server.tool(
-    "area_create",
+    'area_create',
     {
       name: z.string(),
       title: z.string(),
@@ -622,11 +644,13 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
       status: z.string().optional(),
       description: z.string().optional(),
       assignee: z.string().optional(),
-      tags: z.array(z.string()).optional()
+      tags: z.array(z.string()).optional(),
     },
     async (params) => {
       try {
-        console.log(`[DEBUG] Area Create (core-server): description=${params.description}, assignee=${params.assignee}`);
+        console.log(
+          `[DEBUG] Area Create (core-server): description=${params.description}, assignee=${params.assignee}`
+        );
         const result = await createArea(
           params.name,
           params.title,
@@ -645,16 +669,16 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Area update tool
   server.tool(
-    "area_update",
+    'area_update',
     {
       id: z.string(),
       updates: z.object({
         name: z.string().optional(),
         title: z.string().optional(),
         description: z.string().optional(),
-        status: z.string().optional()
+        status: z.string().optional(),
       }),
-      phase: z.string().optional()
+      phase: z.string().optional(),
     },
     async (params) => {
       try {
@@ -662,9 +686,9 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
           name: params.updates.name,
           title: params.updates.title,
           description: params.updates.description,
-          status: params.updates.status
+          status: params.updates.status,
         };
-        
+
         const result = await updateArea(params.id, updateOptions, params.phase);
         return formatResponse(result);
       } catch (error) {
@@ -675,11 +699,11 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Area delete tool
   server.tool(
-    "area_delete",
+    'area_delete',
     {
       id: z.string(),
       phase: z.string().optional(),
-      force: z.boolean().optional()
+      force: z.boolean().optional(),
     },
     async (params) => {
       try {
@@ -693,17 +717,17 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 
   // Template list tool
   server.tool(
-    "template_list",
+    'template_list',
     {
-      format: z.string().optional()
+      format: z.string().optional(),
     },
-    async (params) => {
+    async (_params) => {
       try {
         const templates = listTemplates();
         return formatResponse({
           success: true,
           data: templates,
-          message: `Found ${templates.length} templates`
+          message: `Found ${templates.length} templates`,
         });
       } catch (error) {
         return formatError(error);
@@ -712,7 +736,7 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
   );
 
   if (verbose) {
-    console.log("Registered all MCP tools");
+    console.log('Registered all MCP tools');
   }
 
   return server;
@@ -726,26 +750,38 @@ function registerTools(server: McpServer, verbose: boolean = false): void {
 export function formatResponse(result: any) {
   if (!result.success) {
     return {
-      content: [{ 
-        type: "text", 
-        text: JSON.stringify({ 
-          success: false, 
-          error: result.error 
-        }, null, 2) 
-      }],
-      isError: true
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              success: false,
+              error: result.error,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+      isError: true,
     };
   }
 
   return {
-    content: [{ 
-      type: "text", 
-      text: JSON.stringify({ 
-        success: true, 
-        data: result.data,
-        message: result.message
-      }, null, 2) 
-    }]
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify(
+          {
+            success: true,
+            data: result.data,
+            message: result.message,
+          },
+          null,
+          2
+        ),
+      },
+    ],
   };
 }
 
@@ -756,13 +792,19 @@ export function formatResponse(result: any) {
  */
 export function formatError(error: unknown) {
   return {
-    content: [{ 
-      type: "text", 
-      text: JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }, null, 2) 
-    }],
-    isError: true
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify(
+          {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          },
+          null,
+          2
+        ),
+      },
+    ],
+    isError: true,
   };
 }

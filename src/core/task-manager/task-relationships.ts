@@ -1,9 +1,6 @@
-import fs from 'fs';
-import {
-  Task,
-  OperationResult
-} from '../types.js';
-import { parseTaskFile, formatTaskFile } from '../task-parser.js';
+import fs from 'node:fs';
+import { formatTaskFile, parseTaskFile } from '../task-parser.js';
+import type { OperationResult, Task } from '../types.js';
 import { getTask } from './task-crud.js';
 
 /**
@@ -13,7 +10,7 @@ import { getTask } from './task-crud.js';
  */
 export async function updateRelationships(task: Task): Promise<OperationResult<void>> {
   const errors: string[] = [];
-  
+
   // Update parent task if specified
   if (task.metadata.parent_task) {
     try {
@@ -25,7 +22,7 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
         }
         if (!parentTask.metadata.subtasks.includes(task.metadata.id)) {
           parentTask.metadata.subtasks.push(task.metadata.id);
-          
+
           // Update parent task file
           const fileContent = formatTaskFile(parentTask);
           if (parentTask.filePath) {
@@ -33,13 +30,17 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
           }
         }
       } else {
-        errors.push(`Could not update parent task ${task.metadata.parent_task}: ${parentResult.error}`);
+        errors.push(
+          `Could not update parent task ${task.metadata.parent_task}: ${parentResult.error}`
+        );
       }
     } catch (error) {
-      errors.push(`Could not update parent task ${task.metadata.parent_task}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Could not update parent task ${task.metadata.parent_task}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
-  
+
   // Update previous task's next_task field if specified
   if (task.metadata.previous_task) {
     try {
@@ -48,7 +49,7 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
         const previousTask = previousResult.data;
         if (previousTask.metadata.next_task !== task.metadata.id) {
           previousTask.metadata.next_task = task.metadata.id;
-          
+
           // Update previous task file
           const fileContent = formatTaskFile(previousTask);
           if (previousTask.filePath) {
@@ -56,13 +57,17 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
           }
         }
       } else {
-        errors.push(`Could not update previous task ${task.metadata.previous_task}: ${previousResult.error}`);
+        errors.push(
+          `Could not update previous task ${task.metadata.previous_task}: ${previousResult.error}`
+        );
       }
     } catch (error) {
-      errors.push(`Could not update previous task ${task.metadata.previous_task}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Could not update previous task ${task.metadata.previous_task}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
-  
+
   // Update next task's previous_task field if specified
   if (task.metadata.next_task) {
     try {
@@ -71,7 +76,7 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
         const nextTask = nextResult.data;
         if (nextTask.metadata.previous_task !== task.metadata.id) {
           nextTask.metadata.previous_task = task.metadata.id;
-          
+
           // Update next task file
           const fileContent = formatTaskFile(nextTask);
           if (nextTask.filePath) {
@@ -82,10 +87,12 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
         errors.push(`Could not update next task ${task.metadata.next_task}: ${nextResult.error}`);
       }
     } catch (error) {
-      errors.push(`Could not update next task ${task.metadata.next_task}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Could not update next task ${task.metadata.next_task}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
-  
+
   // Handle task dependencies if specified
   if (task.metadata.depends && Array.isArray(task.metadata.depends)) {
     for (const dependId of task.metadata.depends) {
@@ -96,12 +103,12 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
         }
         // We don't need to update the dependent task, just verify it exists
       } catch (error) {
-        errors.push(`Error checking dependency task ${dependId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(
+          `Error checking dependency task ${dependId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     }
   }
-  
-  return errors.length > 0 
-    ? { success: false, error: errors.join('; ') }
-    : { success: true };
+
+  return errors.length > 0 ? { success: false, error: errors.join('; ') } : { success: true };
 }

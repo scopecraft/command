@@ -36,7 +36,13 @@
     }
   },
   "files": {
-    "include": ["src/**/*.ts", "test/**/*.ts", "test/**/*.js"],
-    "ignore": ["dist", "node_modules", "**/*.d.ts"]
+    "include": [
+      "src/**/*.ts",
+      "test/**/*.ts",
+      "test/**/*.js",
+      "tasks-ui/src/**/*.ts",
+      "tasks-ui/src/**/*.tsx"
+    ],
+    "ignore": ["dist", "node_modules", "**/*.d.ts", "tasks-ui/dist", "tasks-ui/node_modules"]
   }
 }

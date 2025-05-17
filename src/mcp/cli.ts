@@ -1,23 +1,27 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
 /**
  * MCP server CLI
  * Command-line interface for starting the MCP server
  */
 import { Command } from 'commander';
+import {
+  ProjectMode,
+  ensureDirectoryExists,
+  getTasksDirectory,
+  projectConfig,
+} from '../core/index.js';
 import { startServer } from './server.js';
-import fs from 'fs';
-import path from 'path';
-import { getTasksDirectory, ensureDirectoryExists, projectConfig, ProjectMode } from '../core/index.js';
 
 // Read package version from package.json
 let version = '0.8.0-template-list'; // Default
 try {
-  const packageJson = JSON.parse(fs.readFileSync(
-    path.join(process.cwd(), 'package.json'),
-    'utf-8'
-  ));
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
+  );
   version = packageJson.version || version;
-} catch (error) {
+} catch (_error) {
   // Silently fail and use default version
 }
 
@@ -28,7 +32,7 @@ program
   .name('scopecraft-mcp')
   .description('MCP server for Markdown-Driven Task Management (MDTM)')
   .version(version)
-  .option('-p, --port <port>', 'Port to listen on', value => parseInt(value, 10), 3500)
+  .option('-p, --port <port>', 'Port to listen on', (value) => Number.parseInt(value, 10), 3500)
   .option('--mode <mode>', 'Force project mode (roo or standalone)')
   .action(async (options) => {
     // Set specific mode if requested
@@ -50,7 +54,9 @@ program
       const rootDir = mode === ProjectMode.ROO_COMMANDER ? '.ruru' : '.tasks';
 
       console.error(`Error: ${rootDir} directory structure not found in the current directory`);
-      console.error(`Initialize the project first with "sc init${mode === ProjectMode.STANDALONE ? ' --mode standalone' : ''}"`);
+      console.error(
+        `Initialize the project first with "sc init${mode === ProjectMode.STANDALONE ? ' --mode standalone' : ''}"`
+      );
 
       // Attempt to create the directory structure if it doesn't exist
       try {
@@ -58,7 +64,9 @@ program
         projectConfig.initializeProjectStructure();
         console.log(`${rootDir} directory structure created successfully.`);
       } catch (error) {
-        console.error(`Failed to create directory structure: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error(
+          `Failed to create directory structure: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
         process.exit(1);
       }
     }
@@ -68,7 +76,8 @@ program
     ensureDirectoryExists(tasksDir);
 
     // Start server
-    const modeText = projectConfig.getMode() === ProjectMode.ROO_COMMANDER ? 'Roo Commander' : 'Standalone';
+    const modeText =
+      projectConfig.getMode() === ProjectMode.ROO_COMMANDER ? 'Roo Commander' : 'Standalone';
     console.log(`Starting MCP server in ${modeText} mode...`);
     await startServer(options.port);
   });

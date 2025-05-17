@@ -1,5 +1,5 @@
-import { mkdirSync, appendFileSync } from 'fs';
-import { join } from 'path';
+import { appendFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 class SimpleLogger {
   private logDir: string;
@@ -17,14 +17,14 @@ class SimpleLogger {
       timestamp,
       level,
       message,
-      data
+      data,
     };
     return JSON.stringify(logEntry);
   }
 
   private writeToFile(logLine: string): void {
     try {
-      appendFileSync(this.logFile, logLine + '\n');
+      appendFileSync(this.logFile, `${logLine}\n`);
     } catch (error) {
       console.error('Failed to write log:', error);
     }

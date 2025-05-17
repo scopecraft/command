@@ -3,49 +3,49 @@
  * Bridging between CLI options and core task manager
  */
 import {
-  listTasks,
-  getTask,
+  Area,
+  Feature,
+  type Phase,
+  type Task,
+  createArea,
+  createFeature,
+  createPhase,
   createTask,
-  updateTask,
+  deleteArea,
+  deleteFeature,
+  deletePhase,
   deleteTask,
   findNextTask,
-  listPhases,
-  createPhase,
-  updatePhase,
-  deletePhase,
-  listFeatures,
-  getFeature,
-  createFeature,
-  updateFeature,
-  deleteFeature,
-  listAreas,
-  getArea,
-  createArea,
-  updateArea,
-  deleteArea,
-  moveTask,
-  Task,
-  Phase,
-  Feature,
-  Area,
-  formatTasksList,
-  formatTaskDetail,
   formatPhasesList,
-  generateTaskId
+  formatTaskDetail,
+  formatTasksList,
+  generateTaskId,
+  getArea,
+  getFeature,
+  getTask,
+  listAreas,
+  listFeatures,
+  listPhases,
+  listTasks,
+  moveTask,
+  updateArea,
+  updateFeature,
+  updatePhase,
+  updateTask,
 } from '../core/index.js';
 
 /**
  * Handles the 'list' command
  */
 export async function handleListCommand(options: {
-  status?: string,
-  type?: string,
-  assignee?: string,
-  tags?: string[],
-  phase?: string,
-  subdirectory?: string,
-  overview?: boolean,
-  format?: 'table' | 'json' | 'minimal' | 'workflow'
+  status?: string;
+  type?: string;
+  assignee?: string;
+  tags?: string[];
+  phase?: string;
+  subdirectory?: string;
+  overview?: boolean;
+  format?: 'table' | 'json' | 'minimal' | 'workflow';
 }): Promise<void> {
   try {
     const result = await listTasks({
@@ -55,7 +55,7 @@ export async function handleListCommand(options: {
       tags: options.tags,
       phase: options.phase,
       subdirectory: options.subdirectory,
-      is_overview: options.overview
+      is_overview: options.overview,
     });
 
     if (!result.success) {
@@ -78,11 +78,14 @@ export async function handleListCommand(options: {
 /**
  * Handles the 'get' command
  */
-export async function handleGetCommand(id: string, options: {
-  format?: 'default' | 'json' | 'markdown' | 'full',
-  phase?: string,
-  subdirectory?: string
-}): Promise<void> {
+export async function handleGetCommand(
+  id: string,
+  options: {
+    format?: 'default' | 'json' | 'markdown' | 'full';
+    phase?: string;
+    subdirectory?: string;
+  }
+): Promise<void> {
   try {
     const result = await getTask(id, options.phase, options.subdirectory);
 
@@ -102,22 +105,22 @@ export async function handleGetCommand(id: string, options: {
  * Handles the 'create' command
  */
 export async function handleCreateCommand(options: {
-  id?: string,
-  title: string,
-  type: string,
-  status?: string,
-  priority?: string,
-  assignee?: string,
-  phase?: string,
-  subdirectory?: string,
-  parent?: string,
-  depends?: string[],
-  previous?: string,
-  next?: string,
-  tags?: string[],
-  content?: string,
-  file?: string,
-  template?: string
+  id?: string;
+  title: string;
+  type: string;
+  status?: string;
+  priority?: string;
+  assignee?: string;
+  phase?: string;
+  subdirectory?: string;
+  parent?: string;
+  depends?: string[];
+  previous?: string;
+  next?: string;
+  tags?: string[];
+  content?: string;
+  file?: string;
+  template?: string;
 }): Promise<void> {
   try {
     let task: Task;
@@ -137,7 +140,9 @@ export async function handleCreateCommand(options: {
           // Try parsing as TOML+Markdown
           task = parseTaskFile(fileContent);
         } catch (error) {
-          throw new Error(`Invalid file format: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          throw new Error(
+            `Invalid file format: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
         }
       }
 
@@ -155,7 +160,6 @@ export async function handleCreateCommand(options: {
       if (options.previous) task.metadata.previous_task = options.previous;
       if (options.next) task.metadata.next_task = options.next;
       if (options.content) task.content = options.content;
-
     } else if (options.template) {
       // Create from template
       const { getTemplate, applyTemplate } = await import('../core/index.js');
@@ -164,7 +168,9 @@ export async function handleCreateCommand(options: {
       const templateContent = getTemplate(options.template);
 
       if (!templateContent) {
-        throw new Error(`Template '${options.template}' not found. Use 'list-templates' command to see available templates.`);
+        throw new Error(
+          `Template '${options.template}' not found. Use 'list-templates' command to see available templates.`
+        );
       }
 
       const today = new Date().toISOString().split('T')[0];
@@ -181,7 +187,7 @@ export async function handleCreateCommand(options: {
         priority: options.priority || '▶️ Medium',
         created_date: today,
         updated_date: today,
-        assigned_to: options.assignee || ''
+        assigned_to: options.assignee || '',
       };
 
       // Add optional relationship fields
@@ -212,11 +218,13 @@ export async function handleCreateCommand(options: {
               priority: options.priority || '▶️ Medium',
               created_date: today,
               updated_date: today,
-              assigned_to: options.assignee || ''
+              assigned_to: options.assignee || '',
             },
-            content: options.content || `## ${options.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`
+            content:
+              options.content ||
+              `## ${options.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`,
           };
-          
+
           // Add optional relationship fields
           if (options.phase) task.metadata.phase = options.phase;
           if (options.subdirectory) task.metadata.subdirectory = options.subdirectory;
@@ -236,7 +244,6 @@ export async function handleCreateCommand(options: {
       task.metadata.title = options.title;
       task.metadata.created_date = today;
       task.metadata.updated_date = today;
-
     } else {
       // Create from scratch
       const today = new Date().toISOString().split('T')[0];
@@ -257,9 +264,11 @@ export async function handleCreateCommand(options: {
           created_date: today,
           updated_date: today,
           assigned_to: options.assignee || '',
-          is_overview: isOverview
+          is_overview: isOverview,
         },
-        content: options.content || `## ${options.title}\n\n${isOverview ? 'Overview of this feature.\n\n## Tasks\n\n- [ ] Task 1\n' : 'Task description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n'}`
+        content:
+          options.content ||
+          `## ${options.title}\n\n${isOverview ? 'Overview of this feature.\n\n## Tasks\n\n- [ ] Task 1\n' : 'Task description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n'}`,
       };
 
       // Add optional relationship fields
@@ -303,24 +312,27 @@ export async function handleCreateCommand(options: {
 /**
  * Handles the 'update' command
  */
-export async function handleUpdateCommand(id: string, options: {
-  title?: string,
-  status?: string,
-  type?: string,
-  priority?: string,
-  assignee?: string,
-  phase?: string,
-  subdirectory?: string,
-  parent?: string,
-  depends?: string[],
-  previous?: string,
-  next?: string,
-  tags?: string[],
-  content?: string,
-  file?: string,
-  searchPhase?: string,
-  searchSubdirectory?: string
-}): Promise<void> {
+export async function handleUpdateCommand(
+  id: string,
+  options: {
+    title?: string;
+    status?: string;
+    type?: string;
+    priority?: string;
+    assignee?: string;
+    phase?: string;
+    subdirectory?: string;
+    parent?: string;
+    depends?: string[];
+    previous?: string;
+    next?: string;
+    tags?: string[];
+    content?: string;
+    file?: string;
+    searchPhase?: string;
+    searchSubdirectory?: string;
+  }
+): Promise<void> {
   try {
     if (options.file) {
       // Update from file
@@ -336,13 +348,20 @@ export async function handleUpdateCommand(id: string, options: {
 
         // Ensure ID matches
         if (fileTask.metadata.id !== id) {
-          throw new Error(`Task ID in file (${fileTask.metadata.id}) does not match the specified ID (${id})`);
+          throw new Error(
+            `Task ID in file (${fileTask.metadata.id}) does not match the specified ID (${id})`
+          );
         }
 
-        const result = await updateTask(id, {
-          metadata: fileTask.metadata,
-          content: fileTask.content
-        }, options.searchPhase, options.searchSubdirectory);
+        const result = await updateTask(
+          id,
+          {
+            metadata: fileTask.metadata,
+            content: fileTask.content,
+          },
+          options.searchPhase,
+          options.searchSubdirectory
+        );
 
         if (!result.success) {
           console.error(`Error: ${result.error}`);
@@ -350,19 +369,25 @@ export async function handleUpdateCommand(id: string, options: {
         }
 
         console.log(result.message);
-
-      } catch (parseError) {
+      } catch (_parseError) {
         // Not valid JSON, try as TOML+Markdown
         try {
           const task = parseTaskFile(fileContent);
           if (task.metadata.id !== id) {
-            throw new Error(`Task ID in file (${task.metadata.id}) does not match the specified ID (${id})`);
+            throw new Error(
+              `Task ID in file (${task.metadata.id}) does not match the specified ID (${id})`
+            );
           }
 
-          const result = await updateTask(id, {
-            metadata: task.metadata,
-            content: task.content
-          }, options.searchPhase, options.searchSubdirectory);
+          const result = await updateTask(
+            id,
+            {
+              metadata: task.metadata,
+              content: task.content,
+            },
+            options.searchPhase,
+            options.searchSubdirectory
+          );
 
           if (!result.success) {
             console.error(`Error: ${result.error}`);
@@ -370,9 +395,14 @@ export async function handleUpdateCommand(id: string, options: {
           }
 
           console.log(result.message);
-        } catch (error) {
+        } catch (_error) {
           // If all parsing fails, just use as content
-          const result = await updateTask(id, { content: fileContent }, options.searchPhase, options.searchSubdirectory);
+          const result = await updateTask(
+            id,
+            { content: fileContent },
+            options.searchPhase,
+            options.searchSubdirectory
+          );
 
           if (!result.success) {
             console.error(`Error: ${result.error}`);
@@ -382,10 +412,9 @@ export async function handleUpdateCommand(id: string, options: {
           console.log(result.message);
         }
       }
-
     } else {
       // Update from options
-      const updates: { metadata?: Partial<TaskMetadata>, content?: string } = {};
+      const updates: { metadata?: Partial<TaskMetadata>; content?: string } = {};
 
       if (
         options.title ||
@@ -444,10 +473,13 @@ export async function handleUpdateCommand(id: string, options: {
 /**
  * Handles the 'delete' command
  */
-export async function handleDeleteCommand(id: string, options: {
-  phase?: string,
-  subdirectory?: string
-}): Promise<void> {
+export async function handleDeleteCommand(
+  id: string,
+  options: {
+    phase?: string;
+    subdirectory?: string;
+  }
+): Promise<void> {
   try {
     const result = await deleteTask(id, options.phase, options.subdirectory);
 
@@ -466,23 +498,26 @@ export async function handleDeleteCommand(id: string, options: {
 /**
  * Handles the 'next-task' command
  */
-export async function handleNextTaskCommand(id?: string, options: { 
-  format?: 'default' | 'json' | 'markdown' | 'full'
-} = {}): Promise<void> {
+export async function handleNextTaskCommand(
+  id?: string,
+  options: {
+    format?: 'default' | 'json' | 'markdown' | 'full';
+  } = {}
+): Promise<void> {
   try {
     const result = await findNextTask(id);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     if (!result.data) {
       console.log(`No next task found${id ? ` after ${id}` : ''}.`);
       return;
     }
-    
-    console.log(`Next task to work on:`);
+
+    console.log('Next task to work on:');
     console.log(formatTaskDetail(result.data, options.format || 'default'));
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -493,26 +528,29 @@ export async function handleNextTaskCommand(id?: string, options: {
 /**
  * Handles the 'mark-complete-next' command
  */
-export async function handleMarkCompleteNextCommand(id: string, options: { 
-  format?: 'default' | 'json' | 'markdown' | 'full'
-} = {}): Promise<void> {
+export async function handleMarkCompleteNextCommand(
+  id: string,
+  options: {
+    format?: 'default' | 'json' | 'markdown' | 'full';
+  } = {}
+): Promise<void> {
   try {
     // Get the next task before marking current as complete
     const nextTaskResult = await findNextTask(id);
-    
+
     // Mark current task as complete
     const updateResult = await updateTask(id, { metadata: { status: '🟢 Done' } });
-    
+
     if (!updateResult.success) {
       console.error(`Error: ${updateResult.error}`);
       process.exit(1);
     }
-    
+
     console.log(updateResult.message);
-    
+
     // Show next task if found
     if (nextTaskResult.success && nextTaskResult.data) {
-      console.log(`\nNext task to work on:`);
+      console.log('\nNext task to work on:');
       console.log(formatTaskDetail(nextTaskResult.data, options.format || 'default'));
     } else if (nextTaskResult.success) {
       console.log(`No next task found after ${id}.`);
@@ -528,17 +566,19 @@ export async function handleMarkCompleteNextCommand(id: string, options: {
 /**
  * Handles the 'phases' command
  */
-export async function handlePhasesCommand(options: { 
-  format?: 'table' | 'json'
-} = {}): Promise<void> {
+export async function handlePhasesCommand(
+  options: {
+    format?: 'table' | 'json';
+  } = {}
+): Promise<void> {
   try {
     const result = await listPhases();
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(formatPhasesList(result.data!, options.format || 'table'));
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -550,11 +590,11 @@ export async function handlePhasesCommand(options: {
  * Handles the 'phase-create' command
  */
 export async function handlePhaseCreateCommand(options: {
-  id: string,
-  name: string,
-  description?: string,
-  status?: string,
-  order?: number
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  order?: number;
 }): Promise<void> {
   try {
     const phase: Phase = {
@@ -563,16 +603,16 @@ export async function handlePhaseCreateCommand(options: {
       description: options.description,
       status: options.status || '🟡 Pending',
       order: options.order,
-      tasks: []
+      tasks: [],
     };
-    
+
     const result = await createPhase(phase);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(result.message);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -583,41 +623,44 @@ export async function handlePhaseCreateCommand(options: {
 /**
  * Handles the 'phase-update' command
  */
-export async function handlePhaseUpdateCommand(id: string, options: {
-  newId?: string,
-  name?: string,
-  description?: string,
-  status?: string,
-  order?: number
-}): Promise<void> {
+export async function handlePhaseUpdateCommand(
+  id: string,
+  options: {
+    newId?: string;
+    name?: string;
+    description?: string;
+    status?: string;
+    order?: number;
+  }
+): Promise<void> {
   try {
     // Prepare updates object
     const updates: Partial<Phase> = {};
-    
+
     // Handle ID change through newId option
     if (options.newId) {
       updates.id = options.newId;
     }
-    
+
     // Add other optional updates
     if (options.name) updates.name = options.name;
     if (options.description !== undefined) updates.description = options.description;
     if (options.status) updates.status = options.status;
     if (options.order !== undefined) updates.order = options.order;
-    
+
     // Verify we have at least one update
     if (Object.keys(updates).length === 0) {
       console.log('No updates specified');
       return;
     }
-    
+
     const result = await updatePhase(id, updates);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(result.message);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -628,17 +671,20 @@ export async function handlePhaseUpdateCommand(id: string, options: {
 /**
  * Handles the 'phase-delete' command
  */
-export async function handlePhaseDeleteCommand(id: string, options: {
-  force?: boolean
-}): Promise<void> {
+export async function handlePhaseDeleteCommand(
+  id: string,
+  options: {
+    force?: boolean;
+  }
+): Promise<void> {
   try {
     const result = await deletePhase(id, { force: options.force });
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(result.message);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -649,31 +695,33 @@ export async function handlePhaseDeleteCommand(id: string, options: {
 /**
  * Handles the 'current-task' command
  */
-export async function handleCurrentTaskCommand(options: {
-  format?: 'table' | 'json' | 'minimal' | 'workflow'
-} = {}): Promise<void> {
+export async function handleCurrentTaskCommand(
+  options: {
+    format?: 'table' | 'json' | 'minimal' | 'workflow';
+  } = {}
+): Promise<void> {
   try {
     const inProgressResult = await listTasks({ status: '🔵 In Progress' });
-    
+
     if (!inProgressResult.success) {
       console.error(`Error: ${inProgressResult.error}`);
       process.exit(1);
     }
-    
+
     if (inProgressResult.data && inProgressResult.data.length === 0) {
       // Try alternative status text
       const alternativeResult = await listTasks({ status: 'In Progress' });
-      
+
       if (!alternativeResult.success) {
         console.error(`Error: ${alternativeResult.error}`);
         process.exit(1);
       }
-      
+
       if (alternativeResult.data && alternativeResult.data.length === 0) {
         console.log('No tasks currently in progress');
         return;
       }
-      
+
       console.log(formatTasksList(alternativeResult.data, options.format || 'table'));
     } else {
       console.log(formatTasksList(inProgressResult.data!, options.format || 'table'));
@@ -688,7 +736,7 @@ export async function handleCurrentTaskCommand(options: {
  * Handles the 'init' command to initialize project structure
  */
 export async function handleInitCommand(options: {
-  mode?: string
+  mode?: string;
 }): Promise<void> {
   try {
     // Import projectConfig here to avoid circular dependencies
@@ -707,7 +755,7 @@ export async function handleInitCommand(options: {
 
     // Initialize project structure
     projectConfig.initializeProjectStructure();
-    
+
     // Initialize templates
     initializeTemplates();
 
@@ -726,21 +774,21 @@ export async function handleInitCommand(options: {
 export async function handleListTemplatesCommand(): Promise<void> {
   try {
     const { listTemplates } = await import('../core/index.js');
-    
+
     const templates = listTemplates();
-    
+
     if (templates.length === 0) {
       console.log('No templates found. Run "sc init" to set up templates.');
       return;
     }
-    
+
     console.log('Available templates:');
     console.log('-----------------');
-    
+
     for (const template of templates) {
       console.log(`${template.id} - ${template.description}`);
     }
-    
+
     console.log('\nUse with: sc create --template <template-id> --title "Task Title" ...');
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -749,22 +797,22 @@ export async function handleListTemplatesCommand(): Promise<void> {
 }
 
 // Import here to avoid circular dependencies
-import fs from 'fs';
+import fs from 'node:fs';
 
 /**
  * Handles the 'feature list' command
  */
 export async function handleFeatureListCommand(options: {
-  phase?: string,
-  format?: string,
-  include_tasks?: boolean,
-  include_progress?: boolean
+  phase?: string;
+  format?: string;
+  include_tasks?: boolean;
+  include_progress?: boolean;
 }): Promise<void> {
   try {
     const result = await listFeatures({
       phase: options.phase,
       include_tasks: options.include_tasks === true,
-      include_progress: options.include_progress !== false
+      include_progress: options.include_progress !== false,
     });
 
     if (!result.success) {
@@ -794,7 +842,7 @@ export async function handleFeatureListCommand(options: {
       if (feature.phase) console.log(`  Phase: ${feature.phase}`);
       if (options.include_tasks && feature.tasks) {
         console.log(`  Tasks: ${feature.tasks.length}`);
-        feature.tasks.forEach(taskId => console.log(`    - ${taskId}`));
+        feature.tasks.forEach((taskId) => console.log(`    - ${taskId}`));
       }
       console.log(); // Empty line between features
     }
@@ -807,10 +855,13 @@ export async function handleFeatureListCommand(options: {
 /**
  * Handles the 'feature get' command
  */
-export async function handleFeatureGetCommand(id: string, options: {
-  phase?: string,
-  format?: string
-}): Promise<void> {
+export async function handleFeatureGetCommand(
+  id: string,
+  options: {
+    phase?: string;
+    format?: string;
+  }
+): Promise<void> {
   try {
     if (!id) {
       console.error('Error: Feature ID is required');
@@ -841,11 +892,11 @@ export async function handleFeatureGetCommand(id: string, options: {
     if (feature.phase) console.log(`Phase: ${feature.phase}`);
     if (feature.tasks) {
       console.log(`Tasks: ${feature.tasks.length}`);
-      feature.tasks.forEach(taskId => console.log(`  - ${taskId}`));
+      feature.tasks.forEach((taskId) => console.log(`  - ${taskId}`));
     }
 
     // Show overview content if available
-    if (feature.overview && feature.overview.content) {
+    if (feature.overview?.content) {
       console.log('\nOverview:');
       console.log('-----------------');
       console.log(feature.overview.content);
@@ -859,10 +910,13 @@ export async function handleFeatureGetCommand(id: string, options: {
 /**
  * Handles the 'feature delete' command
  */
-export async function handleFeatureDeleteCommand(id: string, options: {
-  phase?: string,
-  force?: boolean
-}): Promise<void> {
+export async function handleFeatureDeleteCommand(
+  id: string,
+  options: {
+    phase?: string;
+    force?: boolean;
+  }
+): Promise<void> {
   try {
     if (!id) {
       console.error('Error: Feature ID is required');
@@ -886,12 +940,15 @@ export async function handleFeatureDeleteCommand(id: string, options: {
 /**
  * Handles the 'feature update' command
  */
-export async function handleFeatureUpdateCommand(id: string, updates: {
-  title?: string,
-  description?: string,
-  status?: string,
-  new_id?: string
-}): Promise<void> {
+export async function handleFeatureUpdateCommand(
+  id: string,
+  updates: {
+    title?: string;
+    description?: string;
+    status?: string;
+    new_id?: string;
+  }
+): Promise<void> {
   try {
     if (!id) {
       console.error('Error: Feature ID is required');
@@ -902,7 +959,7 @@ export async function handleFeatureUpdateCommand(id: string, updates: {
       title: updates.title,
       description: updates.description,
       status: updates.status,
-      newId: updates.new_id
+      newId: updates.new_id,
     });
 
     if (!result.success) {
@@ -921,16 +978,16 @@ export async function handleFeatureUpdateCommand(id: string, updates: {
  * Handles the 'area list' command
  */
 export async function handleAreaListCommand(options: {
-  phase?: string,
-  format?: string,
-  include_tasks?: boolean,
-  include_progress?: boolean
+  phase?: string;
+  format?: string;
+  include_tasks?: boolean;
+  include_progress?: boolean;
 }): Promise<void> {
   try {
     const result = await listAreas({
       phase: options.phase,
       include_tasks: options.include_tasks === true,
-      include_progress: options.include_progress !== false
+      include_progress: options.include_progress !== false,
     });
 
     if (!result.success) {
@@ -960,7 +1017,7 @@ export async function handleAreaListCommand(options: {
       if (area.phase) console.log(`  Phase: ${area.phase}`);
       if (options.include_tasks && area.tasks) {
         console.log(`  Tasks: ${area.tasks.length}`);
-        area.tasks.forEach(taskId => console.log(`    - ${taskId}`));
+        area.tasks.forEach((taskId) => console.log(`    - ${taskId}`));
       }
       console.log(); // Empty line between areas
     }
@@ -973,10 +1030,13 @@ export async function handleAreaListCommand(options: {
 /**
  * Handles the 'area get' command
  */
-export async function handleAreaGetCommand(id: string, options: {
-  phase?: string,
-  format?: string
-}): Promise<void> {
+export async function handleAreaGetCommand(
+  id: string,
+  options: {
+    phase?: string;
+    format?: string;
+  }
+): Promise<void> {
   try {
     if (!id) {
       console.error('Error: Area ID is required');
@@ -1007,11 +1067,11 @@ export async function handleAreaGetCommand(id: string, options: {
     if (area.phase) console.log(`Phase: ${area.phase}`);
     if (area.tasks) {
       console.log(`Tasks: ${area.tasks.length}`);
-      area.tasks.forEach(taskId => console.log(`  - ${taskId}`));
+      area.tasks.forEach((taskId) => console.log(`  - ${taskId}`));
     }
 
     // Show overview content if available
-    if (area.overview && area.overview.content) {
+    if (area.overview?.content) {
       console.log('\nOverview:');
       console.log('-----------------');
       console.log(area.overview.content);
@@ -1025,10 +1085,13 @@ export async function handleAreaGetCommand(id: string, options: {
 /**
  * Handles the 'area delete' command
  */
-export async function handleAreaDeleteCommand(id: string, options: {
-  phase?: string,
-  force?: boolean
-}): Promise<void> {
+export async function handleAreaDeleteCommand(
+  id: string,
+  options: {
+    phase?: string;
+    force?: boolean;
+  }
+): Promise<void> {
   try {
     if (!id) {
       console.error('Error: Area ID is required');
@@ -1052,12 +1115,15 @@ export async function handleAreaDeleteCommand(id: string, options: {
 /**
  * Handles the 'area update' command
  */
-export async function handleAreaUpdateCommand(id: string, updates: {
-  title?: string,
-  description?: string,
-  status?: string,
-  new_id?: string
-}): Promise<void> {
+export async function handleAreaUpdateCommand(
+  id: string,
+  updates: {
+    title?: string;
+    description?: string;
+    status?: string;
+    new_id?: string;
+  }
+): Promise<void> {
   try {
     if (!id) {
       console.error('Error: Area ID is required');
@@ -1068,7 +1134,7 @@ export async function handleAreaUpdateCommand(id: string, updates: {
       title: updates.title,
       description: updates.description,
       status: updates.status,
-      newId: updates.new_id
+      newId: updates.new_id,
     });
 
     if (!result.success) {
@@ -1086,12 +1152,15 @@ export async function handleAreaUpdateCommand(id: string, updates: {
 /**
  * Handles the 'task move' command
  */
-export async function handleTaskMoveCommand(id: string, options: {
-  phase?: string,
-  subdirectory?: string,
-  search_phase?: string,
-  search_subdirectory?: string
-}): Promise<void> {
+export async function handleTaskMoveCommand(
+  id: string,
+  options: {
+    phase?: string;
+    subdirectory?: string;
+    search_phase?: string;
+    search_subdirectory?: string;
+  }
+): Promise<void> {
   try {
     if (!id) {
       console.error('Error: Task ID is required');
@@ -1107,7 +1176,7 @@ export async function handleTaskMoveCommand(id: string, options: {
       targetSubdirectory: options.subdirectory,
       targetPhase: options.phase,
       searchPhase: options.search_phase,
-      searchSubdirectory: options.search_subdirectory
+      searchSubdirectory: options.search_subdirectory,
     });
 
     if (!result.success) {
@@ -1121,5 +1190,5 @@ export async function handleTaskMoveCommand(id: string, options: {
     process.exit(1);
   }
 }
-import path from 'path';
-import { parseTaskFile, TaskMetadata } from '../core/index.js';
+import path from 'node:path';
+import { type TaskMetadata, parseTaskFile } from '../core/index.js';

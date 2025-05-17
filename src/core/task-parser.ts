@@ -2,7 +2,7 @@
  * Functions for parsing and formatting task files (TOML+Markdown)
  */
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
-import { Task, TaskMetadata } from './types.js';
+import type { Task, TaskMetadata } from './types.js';
 
 /**
  * Extracts TOML frontmatter and markdown content from a task file
@@ -18,15 +18,15 @@ export function parseTaskFile(fileContent: string): Task {
   }
 
   const [, tomlContent, markdownContent] = match;
-  
+
   try {
     const metadata = parseToml(tomlContent) as TaskMetadata;
-    
+
     // Ensure required fields
     if (!metadata.id) {
       throw new Error('Missing required field: id');
     }
-    
+
     // Extract title from content if missing
     if (!metadata.title && markdownContent) {
       const titleMatch = markdownContent.match(/^#\s+(.+)$/m);
@@ -36,13 +36,15 @@ export function parseTaskFile(fileContent: string): Task {
         metadata.title = 'Untitled Task';
       }
     }
-    
+
     return {
       metadata,
-      content: markdownContent.trim()
+      content: markdownContent.trim(),
     };
   } catch (error) {
-    throw new Error(`Failed to parse TOML frontmatter: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to parse TOML frontmatter: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -61,10 +63,8 @@ export function formatTaskFile(task: Task): string {
  * @param prefix Optional prefix for the ID (default: "TASK")
  * @returns A unique task ID
  */
-export function generateTaskId(prefix: string = 'TASK'): string {
-  const timestamp = new Date().toISOString()
-    .replace(/[-:]/g, '')
-    .replace(/\..+/, '');
-  
+export function generateTaskId(prefix = 'TASK'): string {
+  const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '');
+
   return `${prefix}-${timestamp}`;
 }

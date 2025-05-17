@@ -1,13 +1,13 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
 /**
  * Main CLI entry point
  * Sets up commands and validates environment
  */
 import { Command } from 'commander';
+import { ensureDirectoryExists, getTasksDirectory, projectConfig } from '../core/index.js';
 import { setupEntityCommands } from './entity-commands.js';
-import { getTasksDirectory, ensureDirectoryExists, projectConfig } from '../core/index.js';
-import fs from 'fs';
-import path from 'path';
 
 // Create the main command
 const program = new Command();
@@ -15,22 +15,25 @@ const program = new Command();
 // Read package version from package.json
 let version = '0.8.0-template-list'; // Default
 try {
-  const packageJson = JSON.parse(fs.readFileSync(
-    path.join(process.cwd(), 'package.json'), 
-    'utf-8'
-  ));
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
+  );
   version = packageJson.version || version;
-} catch (error) {
+} catch (_error) {
   // Silently fail and use default version
 }
 
 program
   .name('scopecraft')
-  .description('CLI for managing Markdown-Driven Task Management (MDTM) files with TOML/YAML frontmatter')
+  .description(
+    'CLI for managing Markdown-Driven Task Management (MDTM) files with TOML/YAML frontmatter'
+  )
   .version(version);
 
 // Add structured help overview
-program.addHelpText('beforeAll', `
+program.addHelpText(
+  'beforeAll',
+  `
 USAGE: sc [entity] [command] [options]
 
 Available entity types:
@@ -46,7 +49,8 @@ Examples:
   sc task create --title "New task" --type "🌟 Feature"   Create a new task
   sc phase list                    List all phases
   sc workflow next                 Find next task to work on
-`);
+`
+);
 
 // Set up entity commands (task, phase, feature, area, workflow)
 setupEntityCommands(program);
@@ -59,7 +63,9 @@ setupEntityCommands(program);
 function validateEnvironment() {
   if (!projectConfig.validateEnvironment()) {
     console.error('Error: Task directory structure not found in the current directory');
-    console.error('Please run "scopecraft init" or "sc init" first to set up the necessary structure');
+    console.error(
+      'Please run "scopecraft init" or "sc init" first to set up the necessary structure'
+    );
     process.exit(1);
   }
 

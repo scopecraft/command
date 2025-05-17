@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * Recursively get all files from a directory
@@ -9,10 +9,12 @@ import path from 'path';
 export function getAllFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
 
-  return entries.flatMap(entry => {
+  return entries.flatMap((entry) => {
     const fullPath = path.join(dir, entry.name);
     return entry.isDirectory()
       ? getAllFiles(fullPath)
-      : entry.name.endsWith('.md') ? [fullPath] : [];
+      : entry.name.endsWith('.md')
+        ? [fullPath]
+        : [];
   });
 }

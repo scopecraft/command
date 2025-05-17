@@ -1,6 +1,6 @@
-import { useState, type ChangeEvent } from "react";
-import { Button } from "../ui/button";
-import type { TaskListFilter } from "../../lib/types";
+import { type ChangeEvent, useState } from 'react';
+import type { TaskListFilter } from '../../lib/types';
+import { Button } from '../ui/button';
 
 interface FiltersProps {
   filters: TaskListFilter;
@@ -28,7 +28,7 @@ export function TaskFilters({
   areaOptions = [],
 }: FiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(filters.searchTerm || "");
+  const [searchTerm, setSearchTerm] = useState(filters.searchTerm || '');
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -61,12 +61,12 @@ export function TaskFilters({
   const handlePhaseChange = (phase: string | undefined) => {
     onFilterChange({ ...filters, phase });
   };
-  
+
   const handleFeatureChange = (feature: string | undefined) => {
     // Clear area selection if a feature is selected
     const newFilters = { ...filters, feature };
     if (feature) {
-      delete newFilters.area;
+      newFilters.area = undefined;
     }
     onFilterChange(newFilters);
   };
@@ -75,13 +75,13 @@ export function TaskFilters({
     // Clear feature selection if an area is selected
     const newFilters = { ...filters, area };
     if (area) {
-      delete newFilters.feature;
+      newFilters.feature = undefined;
     }
     onFilterChange(newFilters);
   };
 
   const clearFilters = () => {
-    setSearchTerm("");
+    setSearchTerm('');
     onFilterChange({});
   };
 
@@ -94,30 +94,24 @@ export function TaskFilters({
             placeholder="Search tasks..."
             value={searchTerm}
             onChange={handleSearchChange}
-            onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
             className="flex-1 px-3 py-2 text-sm rounded-md border border-border bg-background"
           />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSearchSubmit}
-          >
+          <Button variant="ghost" size="sm" onClick={handleSearchSubmit}>
             Search
           </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          {isExpanded ? "Hide Filters" : "Show Filters"}
+        <Button variant="outline" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
+          {isExpanded ? 'Hide Filters' : 'Show Filters'}
         </Button>
-        {(filters.status || filters.priority || filters.type || filters.searchTerm || filters.assignedTo || filters.tag || filters.phase) && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={clearFilters}
-          >
+        {(filters.status ||
+          filters.priority ||
+          filters.type ||
+          filters.searchTerm ||
+          filters.assignedTo ||
+          filters.tag ||
+          filters.phase) && (
+          <Button variant="outline" size="sm" onClick={clearFilters}>
             Clear Filters
           </Button>
         )}
@@ -136,7 +130,9 @@ export function TaskFilters({
                   onChange={() => handleStatusChange(undefined)}
                   className="mr-2"
                 />
-                <label htmlFor="status-all" className="text-sm">All</label>
+                <label htmlFor="status-all" className="text-sm">
+                  All
+                </label>
               </div>
               {statusOptions.map((status) => (
                 <div key={status} className="flex items-center">
@@ -147,7 +143,9 @@ export function TaskFilters({
                     onChange={() => handleStatusChange(status)}
                     className="mr-2"
                   />
-                  <label htmlFor={`status-${status}`} className="text-sm">{status}</label>
+                  <label htmlFor={`status-${status}`} className="text-sm">
+                    {status}
+                  </label>
                 </div>
               ))}
             </div>
@@ -164,7 +162,9 @@ export function TaskFilters({
                   onChange={() => handlePriorityChange(undefined)}
                   className="mr-2"
                 />
-                <label htmlFor="priority-all" className="text-sm">All</label>
+                <label htmlFor="priority-all" className="text-sm">
+                  All
+                </label>
               </div>
               {priorityOptions.map((priority) => (
                 <div key={priority} className="flex items-center">
@@ -175,7 +175,9 @@ export function TaskFilters({
                     onChange={() => handlePriorityChange(priority)}
                     className="mr-2"
                   />
-                  <label htmlFor={`priority-${priority}`} className="text-sm">{priority}</label>
+                  <label htmlFor={`priority-${priority}`} className="text-sm">
+                    {priority}
+                  </label>
                 </div>
               ))}
             </div>
@@ -192,7 +194,9 @@ export function TaskFilters({
                   onChange={() => handleTypeChange(undefined)}
                   className="mr-2"
                 />
-                <label htmlFor="type-all" className="text-sm">All</label>
+                <label htmlFor="type-all" className="text-sm">
+                  All
+                </label>
               </div>
               {typeOptions.map((type) => (
                 <div key={type} className="flex items-center">
@@ -203,7 +207,9 @@ export function TaskFilters({
                     onChange={() => handleTypeChange(type)}
                     className="mr-2"
                   />
-                  <label htmlFor={`type-${type}`} className="text-sm">{type}</label>
+                  <label htmlFor={`type-${type}`} className="text-sm">
+                    {type}
+                  </label>
                 </div>
               ))}
             </div>
@@ -221,7 +227,9 @@ export function TaskFilters({
                     onChange={() => handleAssigneeChange(undefined)}
                     className="mr-2"
                   />
-                  <label htmlFor="assignee-all" className="text-sm">All</label>
+                  <label htmlFor="assignee-all" className="text-sm">
+                    All
+                  </label>
                 </div>
                 {assigneeOptions.map((assignee) => (
                   <div key={assignee} className="flex items-center">
@@ -232,7 +240,9 @@ export function TaskFilters({
                       onChange={() => handleAssigneeChange(assignee)}
                       className="mr-2"
                     />
-                    <label htmlFor={`assignee-${assignee}`} className="text-sm font-mono">{assignee}</label>
+                    <label htmlFor={`assignee-${assignee}`} className="text-sm font-mono">
+                      {assignee}
+                    </label>
                   </div>
                 ))}
               </div>
@@ -251,7 +261,9 @@ export function TaskFilters({
                     onChange={() => handleFeatureChange(undefined)}
                     className="mr-2"
                   />
-                  <label htmlFor="feature-all" className="text-sm">All</label>
+                  <label htmlFor="feature-all" className="text-sm">
+                    All
+                  </label>
                 </div>
                 {featureOptions.map((feature) => (
                   <div key={feature} className="flex items-center">
@@ -262,7 +274,9 @@ export function TaskFilters({
                       onChange={() => handleFeatureChange(feature)}
                       className="mr-2"
                     />
-                    <label htmlFor={`feature-${feature}`} className="text-sm">{feature.replace('FEATURE_', '')}</label>
+                    <label htmlFor={`feature-${feature}`} className="text-sm">
+                      {feature.replace('FEATURE_', '')}
+                    </label>
                   </div>
                 ))}
               </div>
@@ -281,7 +295,9 @@ export function TaskFilters({
                     onChange={() => handleAreaChange(undefined)}
                     className="mr-2"
                   />
-                  <label htmlFor="area-all" className="text-sm">All</label>
+                  <label htmlFor="area-all" className="text-sm">
+                    All
+                  </label>
                 </div>
                 {areaOptions.map((area) => (
                   <div key={area} className="flex items-center">
@@ -292,7 +308,9 @@ export function TaskFilters({
                       onChange={() => handleAreaChange(area)}
                       className="mr-2"
                     />
-                    <label htmlFor={`area-${area}`} className="text-sm">{area.replace('AREA_', '')}</label>
+                    <label htmlFor={`area-${area}`} className="text-sm">
+                      {area.replace('AREA_', '')}
+                    </label>
                   </div>
                 ))}
               </div>
@@ -311,7 +329,9 @@ export function TaskFilters({
                     onChange={() => handleTagChange(undefined)}
                     className="mr-2"
                   />
-                  <label htmlFor="tag-all" className="text-sm">All</label>
+                  <label htmlFor="tag-all" className="text-sm">
+                    All
+                  </label>
                 </div>
                 {tagOptions.map((tag) => (
                   <div key={tag} className="flex items-center">
@@ -322,7 +342,9 @@ export function TaskFilters({
                       onChange={() => handleTagChange(tag)}
                       className="mr-2"
                     />
-                    <label htmlFor={`tag-${tag}`} className="text-sm">{tag}</label>
+                    <label htmlFor={`tag-${tag}`} className="text-sm">
+                      {tag}
+                    </label>
                   </div>
                 ))}
               </div>
@@ -341,7 +363,9 @@ export function TaskFilters({
                     onChange={() => handlePhaseChange(undefined)}
                     className="mr-2"
                   />
-                  <label htmlFor="phase-all" className="text-sm">All</label>
+                  <label htmlFor="phase-all" className="text-sm">
+                    All
+                  </label>
                 </div>
                 {phaseOptions.map((phase) => (
                   <div key={phase} className="flex items-center">
@@ -352,7 +376,9 @@ export function TaskFilters({
                       onChange={() => handlePhaseChange(phase)}
                       className="mr-2"
                     />
-                    <label htmlFor={`phase-${phase}`} className="text-sm">{phase}</label>
+                    <label htmlFor={`phase-${phase}`} className="text-sm">
+                      {phase}
+                    </label>
                   </div>
                 ))}
               </div>
