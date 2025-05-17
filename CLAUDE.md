@@ -17,4 +17,26 @@ The system is designed to be versatile:
 
 - When creating tasks for testing purpose, always created them in a TEST phase.
 
+## Code Quality Checks
+
+BEFORE committing any code changes, you MUST run:
+
+```bash
+bun run code-check
+```
+
+This command will:
+1. Auto-detect whether to check staged or changed files
+2. Run Biome on the appropriate files
+3. Run TypeScript check on the full project (to catch cross-file issues)
+4. Report results in a clear format
+
+Options:
+- `--staged`: Check only staged files
+- `--changed`: Check only changed files 
+- `--all`: Check all files
+- `--format=json`: Output results in JSON format
+
+The build will FAIL if these checks don't pass.
+
 (Rest of the existing content remains the same)

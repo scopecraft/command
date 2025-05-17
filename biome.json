@@ -44,5 +44,11 @@
       "tasks-ui/src/**/*.tsx"
     ],
     "ignore": ["dist", "node_modules", "**/*.d.ts", "tasks-ui/dist", "tasks-ui/node_modules"]
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "defaultBranch": "main"
   }
 }

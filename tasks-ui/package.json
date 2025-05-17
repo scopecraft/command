@@ -7,11 +7,11 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "check-imports": "bun ./scripts/import-checker.js",
-    "build": "npm run typecheck && npm run check-imports && vite build",
+    "build": "bun run ../code-check --all && bun run check-imports && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "bun server.ts",
-    "deploy": "npm run typecheck && npm run check-imports && bun run build && bun run start",
+    "deploy": "bun run ../code-check --all && bun run check-imports && bun run build && bun run start",
     "prepare": "cd .. && husky install tasks-ui/.husky",
     "test:api": "bun ./scripts/test-api.js",
     "test:feature-area": "bun ./scripts/test-feature-area-api.js"

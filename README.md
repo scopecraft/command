@@ -299,8 +299,19 @@ bun run dev:mcp
 The project uses Biome for linting and formatting, and TypeScript for type checking.
 
 ```bash
-# Typecheck the code
-bun run typecheck
+# Run quality checks (auto-detects staged/changed files)
+bun run code-check
+
+# Check all files
+bun run code-check --all
+
+# Check specific files
+bun run code-check --staged   # Only staged files
+bun run code-check --changed  # Only changed files
+
+# Individual tools
+bun run typecheck               # TypeScript only
+bun run check                   # Biome only
 
 # Lint the code with Biome
 bun run lint
