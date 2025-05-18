@@ -154,11 +154,21 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
   const worktreeDir = path.join(WORKTREES_DIR, taskId);
 
   try {
-    // Create worktree with branch
+    // Mark task as in progress and commit before creating worktree
+    const updateResult = await updateTask(taskId, { metadata: { status: '🔵 In Progress' } });
+    
+    if (updateResult.success && updateResult.data) {
+      // Get the relative path to the task file
+      const relativeFilePath = path.relative(REPO_ROOT, updateResult.data.filePath);
+      
+      // Add and commit the status update
+      execSync(`git add "${relativeFilePath}"`);
+      execSync(`git commit -m "Start task ${taskId} - mark as in progress"`);
+      console.log(`Committed task status update for ${taskId}`);
+    }
+    
+    // Create worktree with branch (after committing the status change)
     execSync(`git worktree add -b ${branchName} ${worktreeDir}`);
-
-    // Mark task as in progress
-    await updateTask(taskId, { metadata: { status: '🔵 In Progress' } });
 
     console.log(`Worktree created at ${worktreeDir}`);
 
