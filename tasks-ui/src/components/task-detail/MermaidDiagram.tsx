@@ -97,9 +97,9 @@ export function MermaidDiagram({ code, className = '' }: MermaidDiagramProps) {
       </div>
 
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] w-full h-full p-0">
-          <div className="w-full h-full p-8">
-            <MermaidDiagramInner code={code} className="h-full" />
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-8">
+          <div className="w-full h-full bg-card p-4 rounded-lg">
+            <MermaidDiagramInner code={code} className="h-full w-full" />
           </div>
         </DialogContent>
       </Dialog>
@@ -163,8 +163,8 @@ function MermaidDiagramInner({ code, className = '' }: MermaidDiagramProps) {
   }, [code, ui.darkMode]);
 
   return (
-    <div className={`w-full h-full flex items-center justify-center ${className}`}>
-      <div ref={containerRef} className="overflow-auto max-w-full max-h-full" />
+    <div className={`mermaid-modal-container ${className}`}>
+      <div ref={containerRef} className="mermaid-modal-content" />
     </div>
   );
 }
