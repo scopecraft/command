@@ -1,5 +1,21 @@
 # Product Requirements Document (PRD) Guide
 
+## Solo Developer Context
+This guide is optimized for solo pre-v1 development with AI assistance. PRDs are created as DRAFTS for review and discussion.
+
+### Draft PRD Philosophy
+- PRDs are starting points for discussion, not final specs
+- Assumptions should be validated with the user
+- Technical decisions need human review
+- Iteration is expected and encouraged
+
+### What to Avoid
+- Time estimates (they don't apply to LLM development)
+- Rollout strategies and deployment plans
+- Over-engineered platform requirements
+- Complex architectural patterns
+- Business justifications
+
 ## PRD Best Practices for Solo Developers
 - Focus on technical clarity for LLM sessions
 - Include implementation hints and gotchas
@@ -75,8 +91,8 @@ Test Tasks:
 4. **Technical Design** - Architecture decisions
 5. **Implementation Notes** - Helpful hints
 6. **Testing Approach** - What needs testing
-7. **Rollout Strategy** - How to deploy safely
-8. **Task Breakdown Preview** - Rough task list
+7. **Task Breakdown Preview** - Rough task list
+8. **Human Review Required** - Track assumptions
 
 ## Tips for LLM-Friendly PRDs
 - Be explicit about file paths and component names
@@ -84,6 +100,8 @@ Test Tasks:
 - Reference existing patterns to follow
 - Note security or performance considerations
 - Add links to related documentation
+- Mark TypeScript interfaces as conceptual examples
+- Avoid time estimates and deadlines
 
 ## What to Avoid
 - Vague requirements like "improve performance"
@@ -91,9 +109,10 @@ Test Tasks:
 - Lengthy background explanations
 - Business justifications (save for proposal)
 - Speculative features
+- Treating the PRD as final - it's a draft!
 
 ## Template Checklist
-Before finalizing a PRD, ensure it:
+Before sharing a DRAFT PRD, ensure it:
 - [ ] Has clear, numbered requirements
 - [ ] Identifies all affected components
 - [ ] Includes implementation hints
@@ -101,3 +120,6 @@ Before finalizing a PRD, ensure it:
 - [ ] Notes testing approach
 - [ ] Addresses edge cases
 - [ ] References existing code patterns
+- [ ] Includes human review section
+- [ ] Flags key assumptions for discussion
+- [ ] Invites feedback on technical approach

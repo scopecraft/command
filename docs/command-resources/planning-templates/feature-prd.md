@@ -1,4 +1,6 @@
-# Feature Specification: {Title}
+<!-- Template for solo pre-v1 development with AI assistance -->
+<!-- This creates a DRAFT PRD for review and discussion -->
+# Feature Specification: {Title} [DRAFT]
 
 ## Overview
 {1-2 sentence summary of the feature}
@@ -29,6 +31,8 @@
 ### Data Model Changes
 {New fields, tables, or structures}
 
+*Note: TypeScript interfaces shown are illustrative examples, not prescriptive*
+
 ### API Changes
 {New endpoints or modifications}
 
@@ -41,12 +45,30 @@
 - {What needs testing}
 - {Critical test cases}
 
-## Rollout Strategy
-{How to deploy safely}
-
 ## Task Breakdown Preview
 - UI: {Main UI tasks}
 - Core: {Core logic tasks}
 - API: {API tasks}
 - Tests: {Testing tasks}
 - Docs: {Documentation tasks}
+
+## Human Review Required
+
+*Note: This section helps track assumptions and decisions made during PRD creation*
+
+### Technical decisions needing verification:
+- [ ] Component architecture assumptions
+- [ ] Data model design choices
+- [ ] API interface decisions
+- [ ] Performance optimization approaches
+
+### Design decisions to confirm:
+- [ ] UI/UX flow assumptions
+- [ ] User interaction patterns
+- [ ] Error handling strategies
+- [ ] Edge case coverage
+
+### Implementation concerns:
+- [ ] Task breakdown completeness
+- [ ] Dependency identification
+- [ ] Testing strategy adequacy

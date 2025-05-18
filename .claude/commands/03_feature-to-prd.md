@@ -1,7 +1,7 @@
 # Feature PRD Creator
 
 <task>
-Transform a feature proposal into a detailed Product Requirements Document (PRD) that provides clear technical specifications for implementation.
+Transform a feature proposal into a DRAFT Product Requirements Document (PRD) that provides clear technical specifications for implementation. This draft is meant for review and discussion before finalization.
 </task>
 
 <context>
@@ -33,6 +33,11 @@ Load PRD template from:
 `/docs/command-resources/planning-templates/feature-prd.md`
 
 ## Step 3: Detail Each Section
+
+### Title Update
+- Remove "Feature Proposal:" prefix if present
+- Keep the descriptive feature name
+- The title should be clear and action-oriented
 
 ### Overview
 - One paragraph summary
@@ -78,6 +83,7 @@ Load PRD template from:
 If proposal was a task:
 - Use mcp__scopecraft-cmd__task_update to convert to PRD
 - Update type to "prd" or "specification"
+- Update title by removing "Feature Proposal:" prefix
 - Update content with expanded PRD
 - Maintain phase and area assignments
 - Add relevant tags
@@ -96,6 +102,18 @@ For solo pre-v1 project:
 - Reference specific files/components
 - Keep it actionable, not theoretical
 - Optimize for LLM understanding
+
+AVOID enterprise patterns:
+- NO rollout strategies or deployment plans
+- NO time estimates or deadlines
+- NO platform-agnostic requirements unless critical
+- NO over-architected solutions
+- Keep testing approach practical
+
+Remember: This is a DRAFT for discussion
+- Flag assumptions for validation
+- Note decisions that need review
+- Invite user feedback on approach
 </prd_principles>
 
 <example_expansion>
@@ -122,19 +140,22 @@ For solo pre-v1 project:
 
 <quality_checklist>
 Before finalizing PRD:
+- [ ] Title updated (removed "Feature Proposal:" prefix)
 - [ ] All requirements are numbered and specific
 - [ ] Technical design references actual components
 - [ ] Implementation notes include helpful hints
 - [ ] Edge cases are addressed
 - [ ] Task breakdown is realistic
 - [ ] Testing approach is clear
+- [ ] Human review section included
 </quality_checklist>
 
 <output_format>
-PRD created/updated:
+DRAFT PRD created/updated:
 - Task ID: {ID}
 - Title: {Feature Title}
 - Type: specification
+- Status: Draft - Ready for Review
 
 Key sections completed:
 - ✓ Requirements (functional & technical)
@@ -142,8 +163,20 @@ Key sections completed:
 - ✓ Technical specifications
 - ✓ Implementation notes
 - ✓ Task breakdown preview
+- ✓ Human review section
 
-Next step:
+Key assumptions to discuss:
+- {List 2-3 major technical assumptions}
+- {List any architectural decisions made}
+- {Note any scope interpretations}
+
+Please review the PRD and provide feedback on:
+1. Technical approach appropriateness
+2. Missing requirements or edge cases
+3. Implementation complexity assessment
+4. Any assumptions that need correction
+
+Once reviewed and refined:
 Create implementation tasks: `/project:04_feature-planning {ID}`
 </output_format>
 
