@@ -6,6 +6,7 @@ import path from 'node:path';
  * Command-line interface for starting the MCP server with STDIO transport
  */
 import { Command } from 'commander';
+import { ConfigurationManager } from '../core/config/configuration-manager.js';
 import { ProjectMode, projectConfig } from '../core/index.js';
 import { startStdioServer } from './stdio-server.js';
 
@@ -29,7 +30,30 @@ program
   .version(version)
   .option('-v, --verbose', 'Enable verbose logging')
   .option('--mode <mode>', 'Force project mode (roo or standalone)')
+  .option('--root-dir <path>', 'Set project root directory')
+  .option('--config <path>', 'Path to configuration file (default: ~/.scopecraft/config.json)')
   .action(async (options) => {
+    const configManager = ConfigurationManager.getInstance();
+
+    // Handle --root-dir parameter
+    if (options.rootDir) {
+      try {
+        configManager.setRootFromCLI(options.rootDir);
+        console.log(`Using project root from CLI: ${options.rootDir}`);
+      } catch (error) {
+        console.error(
+          `Error setting root directory: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+        process.exit(1);
+      }
+    }
+
+    // Handle --config parameter
+    if (options.config) {
+      configManager.setConfigFilePath(options.config);
+      console.log(`Using config file: ${options.config}`);
+    }
+
     // Set specific mode if requested
     if (options.mode) {
       const mode = options.mode.toLowerCase();

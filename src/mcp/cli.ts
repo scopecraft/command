@@ -6,6 +6,7 @@ import path from 'node:path';
  * Command-line interface for starting the MCP server
  */
 import { Command } from 'commander';
+import { ConfigurationManager } from '../core/config/configuration-manager.js';
 import {
   ProjectMode,
   ensureDirectoryExists,
@@ -34,7 +35,30 @@ program
   .version(version)
   .option('-p, --port <port>', 'Port to listen on', (value) => Number.parseInt(value, 10), 3500)
   .option('--mode <mode>', 'Force project mode (roo or standalone)')
+  .option('--root-dir <path>', 'Set project root directory (overrides all other sources)')
+  .option('--config <path>', 'Path to configuration file (default: ~/.scopecraft/config.json)')
   .action(async (options) => {
+    const configManager = ConfigurationManager.getInstance();
+
+    // Handle --root-dir parameter
+    if (options.rootDir) {
+      try {
+        configManager.setRootFromCLI(options.rootDir);
+        console.log(`Using project root from CLI: ${options.rootDir}`);
+      } catch (error) {
+        console.error(
+          `Error setting root directory: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+        process.exit(1);
+      }
+    }
+
+    // Handle --config parameter
+    if (options.config) {
+      configManager.setConfigFilePath(options.config);
+      console.log(`Using config file: ${options.config}`);
+    }
+
     // Set specific mode if requested
     if (options.mode) {
       const mode = options.mode.toLowerCase();

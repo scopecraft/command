@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import type { OperationResult } from '../types.js';
 import {
   CONFIG_CONSTANTS,
   type ConfigSource,
@@ -17,7 +18,6 @@ import {
   type RuntimeConfig,
   type ScopecraftConfig,
 } from './types.js';
-import { type OperationResult } from '../types.js';
 
 /**
  * Configuration Manager singleton implementation
@@ -27,6 +27,7 @@ export class ConfigurationManager implements IConfigurationManager {
   private cliRootPath: string | null = null;
   private sessionConfig: RootConfig | null = null;
   private configFilePath: string;
+  private customConfigFilePath: string | null = null;
 
   // Cache for resolved configuration
   private resolvedConfig: RootConfig | null = null;
@@ -250,6 +251,14 @@ export class ConfigurationManager implements IConfigurationManager {
     this.clearCache();
   }
 
+  /**
+   * Set custom config file path
+   */
+  public setConfigFilePath(path: string): void {
+    this.customConfigFilePath = path;
+    this.clearCache();
+  }
+
   // Private helper methods
 
   private clearCache(): void {
@@ -315,11 +324,14 @@ export class ConfigurationManager implements IConfigurationManager {
 
   private loadConfigFile(): ScopecraftConfig | null {
     try {
-      if (!fs.existsSync(this.configFilePath)) {
+      // Use custom config file path if set, otherwise default
+      const configPath = this.customConfigFilePath || this.configFilePath;
+
+      if (!fs.existsSync(configPath)) {
         return null;
       }
 
-      const content = fs.readFileSync(this.configFilePath, 'utf-8');
+      const content = fs.readFileSync(configPath, 'utf-8');
       const config = JSON.parse(content) as ScopecraftConfig;
 
       // Basic validation
