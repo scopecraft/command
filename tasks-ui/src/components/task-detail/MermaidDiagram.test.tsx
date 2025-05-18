@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, fireEvent } from '@testing-library/react';
 import { MermaidDiagram } from './MermaidDiagram';
 import { UIProvider } from '../../context/UIContext';
 
@@ -6,6 +6,12 @@ import { UIProvider } from '../../context/UIContext';
 jest.mock('mermaid', () => ({
   initialize: jest.fn(),
   render: jest.fn().mockResolvedValue({ svg: '<svg>Mock Diagram</svg>' }),
+}));
+
+// Mock Dialog components
+jest.mock('../ui/dialog', () => ({
+  Dialog: ({ children, open }: any) => open ? <div data-testid="dialog">{children}</div> : null,
+  DialogContent: ({ children }: any) => <div data-testid="dialog-content">{children}</div>,
 }));
 
 describe('MermaidDiagram', () => {
@@ -80,6 +86,63 @@ describe('MermaidDiagram', () => {
 
     await waitFor(() => {
       expect(mermaid.render).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('shows expand button on hover', async () => {
+    const { container, getByRole } = render(
+      <MermaidDiagram code={mockCode} />,
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      const svg = container.querySelector('svg');
+      expect(svg).toBeTruthy();
+    });
+
+    // The expand button should be present but hidden initially
+    const expandButton = getByRole('button', { name: /expand diagram/i });
+    expect(expandButton).toBeTruthy();
+    expect(expandButton.classList.contains('opacity-0')).toBe(true);
+  });
+
+  it('opens dialog when expand button is clicked', async () => {
+    const { container, getByRole, queryByTestId } = render(
+      <MermaidDiagram code={mockCode} />,
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      const svg = container.querySelector('svg');
+      expect(svg).toBeTruthy();
+    });
+
+    // Initially, dialog should not be present
+    expect(queryByTestId('dialog')).toBeNull();
+
+    // Click the expand button
+    const expandButton = getByRole('button', { name: /expand diagram/i });
+    fireEvent.click(expandButton);
+
+    // Dialog should now be present
+    await waitFor(() => {
+      expect(queryByTestId('dialog')).toBeTruthy();
+      expect(queryByTestId('dialog-content')).toBeTruthy();
+    });
+  });
+
+  it('does not show expand button when there is an error', async () => {
+    const mermaid = require('mermaid');
+    mermaid.render.mockRejectedValueOnce(new Error('Invalid syntax'));
+
+    const { queryByRole } = render(
+      <MermaidDiagram code="invalid code" />,
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      const expandButton = queryByRole('button', { name: /expand diagram/i });
+      expect(expandButton).toBeNull();
     });
   });
 });
