@@ -5,7 +5,7 @@ You are a command creation specialist. Help create new Claude commands by unders
 </task>
 
 <context>
-CRITICAL: Read the command creation guide first: @/Users/davidpaquet/Projects/roo-task-cli/docs/claude-commands-guide.md
+CRITICAL: Read the command creation guide first: @/docs/claude-commands-guide.md
 
 This meta-command helps create other commands by:
 1. Understanding the command's purpose
@@ -22,29 +22,29 @@ This meta-command helps create other commands by:
    - Complex workflows with distinct stages
    - Interactive, conversational style
    - Create documentation artifacts
-   - Examples: @/Users/davidpaquet/Projects/roo-task-cli/.claude/commands/brainstorm-feature.md
-             @/Users/davidpaquet/Projects/roo-task-cli/.claude/commands/feature-proposal.md
+   - Examples: @/.claude/commands/brainstorm-feature.md
+             @/.claude/commands/feature-proposal.md
 
 2. **Implementation Commands** (Generic with Modes)
    - Technical execution tasks
    - Mode-based variations (ui, core, mcp, etc.)
    - Follow established patterns
    - Update task states
-   - Example: @/Users/davidpaquet/Projects/roo-task-cli/.claude/commands/implement.md
+   - Example: @/.claude/commands/implement.md
 
 3. **Analysis Commands** (Specialized)
    - Review, audit, analyze
    - Generate reports or insights
    - Read-heavy operations
    - Provide recommendations
-   - Example: @/Users/davidpaquet/Projects/roo-task-cli/.claude/commands/review.md
+   - Example: @/.claude/commands/review.md
 
 4. **Workflow Commands** (Specialized)
    - Orchestrate multiple steps
    - Coordinate between areas
    - Manage dependencies
    - Track progress
-   - Example: @/Users/davidpaquet/Projects/roo-task-cli/.claude/commands/feature-planning.md
+   - Example: @/.claude/commands/feature-planning.md
 
 5. **Utility Commands** (Generic or Specialized)
    - Tools, helpers, maintenance
