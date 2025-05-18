@@ -194,11 +194,19 @@ mcp__scopecraft-cmd__task_create
 - title: Clear, actionable description
 - type: research/design/implementation/test/documentation
 - status: planning (initially)
+- phase: backlog  # REQUIRED - always specify explicitly
 - tags: ["AREA:core", "AREA:cli", etc.] # Use tags for area designation
 - parent: Feature name (without FEATURE_ prefix)
-- content: Detailed requirements from template
-- metadata: Link to original PRD task if applicable
+- content: Detailed requirements with todo lists
 ```
+
+**IMPORTANT: Phase Assignment**
+- Always specify the `phase` parameter when creating tasks
+- Tasks must belong to a phase for proper file organization
+- Child tasks do NOT automatically inherit parent feature's phase
+- If unsure, use the current active phase or "backlog"
+
+**Note on subdirectory**: The `subdirectory` parameter places the task in a metadata field only, not a physical folder. Always use `phase` to control file location.
 
 **Task Content Best Practices:**
 For research tasks, always include:
@@ -280,6 +288,66 @@ Use to maintain project knowledge:
 - Create developer documentation
 - Document architecture decisions
 - Example: "Document WebSocket protocol for collaborators"
+
+## Task Granularity: When to Use Todo Lists vs Separate Tasks
+
+**Create SEPARATE tasks when:**
+- Work spans different technical domains (CLI vs MCP vs UI)
+- Different expertise is required
+- Work could be done in parallel by different team members
+- Clear architectural boundaries exist
+
+**Use TODO LISTS within a task when:**
+- Activities are sequential and related
+- Same technical context applies
+- Natural progression of work (research → implement → test → document)
+- Combined work fits within one AI session
+
+### Examples:
+
+**Good - Single Task with Todos:**
+```
+Task: Research and Design Authentication System
+## Todo List
+- [ ] Research OAuth2 best practices
+- [ ] Research JWT implementation patterns
+- [ ] Design authentication schema
+- [ ] Create architecture diagram
+- [ ] Document design decisions
+```
+
+**Good - Separate Tasks for Different Domains:**
+```
+Task 1: Implement CLI Authentication Commands
+Task 2: Implement MCP Authentication Tools
+Task 3: Create UI Login Components
+```
+
+**Bad - Too Granular:**
+```
+Task 1: Research OAuth2 patterns
+Task 2: Research JWT patterns  
+Task 3: Design auth schema
+Task 4: Write design docs
+```
+
+## Working Example for Feature Planning:
+
+Instead of creating 14 separate tasks, organize as:
+
+1. **Research/Design Phase** (1-2 tasks)
+   - Combined research task with multiple queries
+   - Combined design task for architecture/schema
+
+2. **Implementation Phase** (3-4 tasks)
+   - One task per client (CLI, MCP, UI)
+   - Separate core implementation task
+
+3. **Testing/Documentation** (1-2 tasks)
+   - Integration testing task
+   - Comprehensive documentation task
+
+Remember: Each task creates a new AI context. Minimize context switches by combining related work into todo lists.
 
 ## Task Sequencing Best Practices
 
@@ -403,11 +471,74 @@ Usage examples:
 
 # Traditional feature description
 /project:feature-planning "Add real-time collaboration to task editor"
+
+# Complex feature with proper granularity
+/project:feature-planning "Real-time collaboration system"
+
+## Resulting Task Structure:
+1. Task: Research Real-time Collaboration
+   - Todo: Research WebSocket patterns
+   - Todo: Research conflict resolution
+   - Todo: Research state synchronization
+   - Todo: Document findings
+
+2. Task: Design Collaboration Architecture
+   - Todo: Design message protocol
+   - Todo: Design state management
+   - Todo: Create system diagrams
+   - Todo: Document architecture
+
+3. Task: Implement Core Collaboration Engine
+   - Todo: Create WebSocket server
+   - Todo: Implement message handlers
+   - Todo: Add state synchronization
+   - Todo: Write unit tests
+   
+4. Task: Add CLI Collaboration Commands
+   - Todo: Implement `collab start`
+   - Todo: Implement `collab join`
+   - Todo: Write CLI tests
+
+5. Task: Build UI Collaboration Features
+   - Todo: Create presence indicators
+   - Todo: Add real-time updates
+   - Todo: Implement conflict UI
+   - Todo: Write component tests
+
+6. Task: Integration and Documentation
+   - Todo: Full system testing
+   - Todo: Write user guide
+   - Todo: Create API docs
 ```
 </examples>
 
+<common_mistakes>
+## Common Mistakes to Avoid:
+
+1. **Creating too many granular tasks**
+   - Wrong: Separate tasks for research, implement, test, document
+   - Right: One task with research→implement→test→document todos
+
+2. **Forgetting to specify phase**
+   - Wrong: Relying on parent inheritance
+   - Right: Always explicitly set phase parameter
+
+3. **Confusing subdirectory behavior**
+   - Wrong: Expecting subdirectory to control file location
+   - Right: Use phase for location, subdirectory for metadata
+
+4. **Not considering AI context switches**
+   - Wrong: 14 small tasks for one feature
+   - Right: 5-6 larger tasks with todo lists
+</common_mistakes>
+
 <best_practices>
 - Keep task granularity consistent (1-3 days of work for solo dev)
+- Group related activities into single tasks with todo lists
+- Create separate tasks only for different technical domains
+- Always specify phase explicitly - never rely on inheritance
+- Use feature subdirectory for grouping metadata, not file placement
+- Remember: fewer tasks = fewer context switches = better continuity
 - Start with research tasks when unknowns exist
 - Include design tasks before UI implementation
 - Create architecture tasks for complex features
