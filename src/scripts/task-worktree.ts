@@ -25,80 +25,11 @@ const WORKTREES_DIR = path.resolve(path.dirname(REPO_ROOT), 'roo-task-cli.worktr
 
 // No need to initialize task manager - using imported functions directly
 
-// Helper function to launch Claude for task finishing
-async function launchClaudeFinish(taskId: string, mergePreference: string, worktreeDir: string) {
-  // Create context for Claude
-  const context = {
-    taskId,
-    mergePreference,
-    worktreeDir,
-  };
-
-  // Launch Claude with the task-finish command
-  console.log(`Launching Claude to finish task ${taskId}...`);
-
-  try {
-    // Launch Claude from the main repository instead of the worktree
-    const claudeProcess = Bun.spawn(['claude', `/project:task-finish ${JSON.stringify(context)}`], {
-      stdio: ['inherit', 'inherit', 'inherit'],
-      // No cwd specified - will run from current directory (main repository)
-    });
-
-    // Wait for Claude process to complete
-    await claudeProcess.exited;
-
-    console.log(`Task ${taskId} finishing process completed.`);
-    return true;
-  } catch (error) {
-    console.error('Failed to launch Claude for task finishing:', error);
-    return false;
-  }
-}
-
-// Helper function to update task status
-async function updateTaskStatus(taskId: string, worktreeDir: string) {
-  const task = await getTask(taskId);
-
-  // Check if already completed
-  if (task.success && task.data?.metadata.status === '🟢 Done') {
-    console.log('Task already marked as completed');
-    return true;
-  }
-
-  // Update task
-  const result = await updateTask(taskId, {
-    metadata: {
-      status: '🟢 Done',
-      updated_date: new Date().toISOString().split('T')[0],
-    },
-  });
-
-  if (result.success) {
-    // Commit the task status update
-    try {
-      // Get the relative path from worktree to the task file
-      const relativeFilePath = path.relative(REPO_ROOT, result.data.filePath);
-      // Add and commit the task status update
-      execSync(
-        `cd "${worktreeDir}" && git add "${relativeFilePath}" && git commit -m "Mark task ${taskId} as completed"`,
-        { stdio: 'inherit' }
-      );
-      return true;
-    } catch (error) {
-      console.error('Failed to commit task status update:', error);
-      return false;
-    }
-  }
-
-  return false;
-}
-
 // Add commands
 program
   .command('start')
   .description('Start working on a task in a new worktree')
   .argument('[taskId]', 'Optional task ID to work on')
-  .option('-n, --no-claude', 'Do not launch Claude after creating worktree')
   .action(startWorktree);
 
 program
@@ -111,19 +42,17 @@ program
 program.command('list').description('List all current task worktrees').action(listWorktrees);
 
 // Start command implementation
-async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
-  const launchClaude = options?.claude !== false;
-
+async function startWorktree(taskId?: string) {
   // If no task ID provided, show available tasks and prompt
   if (!taskId) {
-    const tasks = await listTasks({ status: '🟡 To Do' });
+    const tasks = await listTasks({ status: '🟡 To Do', include_content: true });
     console.log('Available tasks:');
-    console.log(formatTaskList(tasks.data || []));
+    console.log(formatTasksList(tasks.data || [], 'table'));
 
     const nextTask = await findNextTask();
     console.log('\nRecommended next task:');
-    if (nextTask.data) {
-      console.log(formatTask(nextTask.data));
+    if (nextTask.data && nextTask.data !== null) {
+      console.log(formatTaskDetail(nextTask.data));
     } else {
       console.log('No next task found.');
     }
@@ -141,7 +70,7 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
   }
 
   const task = taskResult.data;
-  console.log(`Creating worktree for task: ${taskId} - ${task.title}`);
+  console.log(`Creating worktree for task: ${taskId} - ${task.metadata.title}`);
 
   // Create branch name from task ID
   const branchName = taskId;
@@ -156,47 +85,33 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
   try {
     // Mark task as in progress and commit before creating worktree
     const updateResult = await updateTask(taskId, { metadata: { status: '🔵 In Progress' } });
-    
+
     if (updateResult.success && updateResult.data) {
       // Get the relative path to the task file
-      const relativeFilePath = path.relative(REPO_ROOT, updateResult.data.filePath);
-      
-      // Add and commit the status update
-      execSync(`git add "${relativeFilePath}"`);
-      execSync(`git commit -m "Start task ${taskId} - mark as in progress"`);
-      console.log(`Committed task status update for ${taskId}`);
+      if (updateResult.data?.filePath) {
+        const relativeFilePath = path.relative(REPO_ROOT, updateResult.data.filePath);
+
+        // Add and commit the status update
+        execSync(`git add "${relativeFilePath}"`);
+        execSync(`git commit -m "Start task ${taskId} - mark as in progress"`);
+        console.log(`Committed task status update for ${taskId}`);
+      }
     }
-    
+
     // Create worktree with branch (after committing the status change)
     execSync(`git worktree add -b ${branchName} ${worktreeDir}`);
 
     console.log(`Worktree created at ${worktreeDir}`);
 
-    if (launchClaude) {
-      console.log('Installing dependencies in the worktree directory...');
+    // Install dependencies in the worktree regardless of Claude launch option
+    console.log('Installing dependencies in the worktree directory...');
+    execSync('bun install', {
+      stdio: 'inherit',
+      cwd: worktreeDir,
+    });
 
-      // Install dependencies in the worktree
-      execSync('bun install', {
-        stdio: 'inherit',
-        cwd: worktreeDir,
-      });
-
-      console.log('Launching Claude in the worktree directory...');
-
-      // Use Bun.spawn to change directory and launch Claude
-      process.chdir(worktreeDir);
-
-      const claudeProcess = Bun.spawn(['claude', `/project:task-context ${taskId}`], {
-        stdio: ['inherit', 'inherit', 'inherit'],
-        cwd: worktreeDir,
-      });
-
-      // Wait for Claude process to complete
-      await claudeProcess.exited;
-    } else {
-      console.log('To start working on this task with Claude, run:');
-      console.log(`cd ${worktreeDir} && bun install && claude "/project:task-context ${taskId}"`);
-    }
+    // Output the worktree directory to stdout for shell integration
+    process.stdout.write(worktreeDir);
   } catch (error) {
     console.error('Error creating worktree:', error);
     process.exit(1);
@@ -204,7 +119,8 @@ async function startWorktree(taskId?: string, options?: { claude?: boolean }) {
 }
 
 // Finish command implementation
-async function finishWorktree(taskId?: string, _options?: { merge?: string }) {
+async function finishWorktree(providedTaskId?: string, _options?: { merge?: string }) {
+  let taskId = providedTaskId;
   // Check if we're running from a worktree
   const isInWorktree =
     fs.existsSync('.git') &&

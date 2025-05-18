@@ -357,6 +357,33 @@ bun run build
 npm publish
 ```
 
+## Task Worktree Management
+
+The project includes specialized scripts for managing task-specific Git worktrees, allowing you to work on multiple tasks in isolation.
+
+### Commands
+
+- `bun run tw-start [taskId]` - Create a worktree for a task and set it to "In Progress"
+- `bun run tw-finish [taskId]` - Complete a task, merge changes, and clean up the worktree
+- `bun run tw-list` - List all active task worktrees
+
+### Fish Shell Integration
+
+For fish shell users, there's a special integration that allows the `tw-start` command to change your terminal's directory to the new worktree:
+
+1. Install the fish function:
+   ```bash
+   bun scripts/setup-fish-integration.sh
+   ```
+
+2. Use the function:
+   ```fish
+   tw-start TASK-20241231T123456
+   # Your terminal will automatically cd to the worktree directory
+   ```
+
+The integration works by having the bun script output the worktree path, which the fish function captures and uses with `cd`.
+
 ## Contributing Guidelines
 
 1. **Code Style**: Run `bun run format:fix` before committing
