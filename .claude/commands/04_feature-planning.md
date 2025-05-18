@@ -184,7 +184,8 @@ Based on task analysis AND clarification responses:
 4. **Establish Relationships**
    - Set parent-child relationships with the feature
    - Create task dependencies based on technical requirements
-   - Link related tasks that should be done together
+   - Link sequential tasks using previous/next parameters
+   - Group parallel tasks that can be done together
 </planning_process>
 
 <task_creation_patterns>
@@ -197,7 +198,55 @@ mcp__scopecraft-cmd__task_create
 - phase: backlog  # REQUIRED - always specify explicitly
 - tags: ["AREA:core", "AREA:cli", etc.] # Use tags for area designation
 - parent: Feature name (without FEATURE_ prefix)
+- previous: ID of task that must complete before this one
+- next: ID of task that follows this one (update after creation)
+- depends: [Array of task IDs that are prerequisites]
 - content: Detailed requirements with todo lists
+```
+
+**Task Linking Examples:**
+
+```
+# Sequential tasks (research → design → implement)
+mcp__scopecraft-cmd__task_create
+- title: "Research authentication patterns"
+- type: "research"
+- phase: "backlog"
+- parent: "user-authentication"
+
+# Returns: TASK-001
+
+mcp__scopecraft-cmd__task_create  
+- title: "Design authentication flow"
+- type: "design"
+- phase: "backlog"
+- parent: "user-authentication"
+- previous: "TASK-001"  # Must come after research
+
+# Returns: TASK-002
+
+# Parallel tasks (CLI and UI can be done simultaneously)
+mcp__scopecraft-cmd__task_create
+- title: "Implement authentication CLI"
+- type: "implementation"
+- phase: "backlog"
+- parent: "user-authentication"
+- depends: ["TASK-002"]  # Needs design but not sequential
+
+mcp__scopecraft-cmd__task_create
+- title: "Implement authentication UI"
+- type: "implementation"
+- phase: "backlog"  
+- parent: "user-authentication"
+- depends: ["TASK-002"]  # Also needs design
+
+# Task with multiple dependencies
+mcp__scopecraft-cmd__task_create
+- title: "Integration testing for authentication"
+- type: "test"
+- phase: "backlog"
+- parent: "user-authentication"
+- depends: ["TASK-003", "TASK-004"]  # Needs both implementations
 ```
 
 **IMPORTANT: Phase Assignment**
@@ -357,6 +406,118 @@ Remember: Each task creates a new AI context. Minimize context switches by combi
 4. **Tests alongside or after Implementation**
 5. **Documentation throughout the process**
 
+## Creating Task Chains and Dependencies
+
+### When to Use Previous/Next vs Dependencies
+
+**Use Previous/Next for:**
+- Sequential workflows where one task must complete before the next
+- Linear progression through phases (research → design → implementation)
+- When order matters for logical flow
+- Example: Research must finish before Design can start
+
+**Use Dependencies for:**
+- Tasks that need multiple prerequisites
+- Cross-area dependencies (UI needs Core API)
+- Non-linear relationships
+- Example: Documentation depends on Implementation AND Testing
+
+### Creating Linked Task Sequences
+
+**Step 1: Create Tasks in Order**
+```
+# Create research task first
+Task1_ID = mcp__scopecraft-cmd__task_create(
+  title: "Research real-time collaboration patterns",
+  type: "research",
+  phase: "backlog"
+)
+
+# Create design task with previous link
+Task2_ID = mcp__scopecraft-cmd__task_create(
+  title: "Design collaboration architecture", 
+  type: "design",
+  phase: "backlog",
+  previous: Task1_ID  # Links to research task
+)
+
+# Create implementation with previous link
+Task3_ID = mcp__scopecraft-cmd__task_create(
+  title: "Implement core collaboration engine",
+  type: "implementation", 
+  phase: "backlog",
+  previous: Task2_ID  # Links to design task
+)
+```
+
+**Step 2: Update First Task with Next Link**
+```
+mcp__scopecraft-cmd__task_update(
+  id: Task1_ID,
+  updates: {
+    metadata: {
+      next_task: Task2_ID
+    }
+  }
+)
+```
+
+### Example: Complex Feature with Mixed Dependencies
+
+```
+Research Phase:
+1. Task: Research WebSocket patterns (TASK-001)
+2. Task: Research state sync strategies (TASK-002)
+   - No direct link to TASK-001 (parallel research)
+
+Design Phase:
+3. Task: Design collaboration architecture (TASK-003)
+   - previous: TASK-001 
+   - depends: [TASK-001, TASK-002]  # Needs both research tasks
+
+Implementation Phase:
+4. Task: Implement core engine (TASK-004)
+   - previous: TASK-003
+5. Task: Implement CLI commands (TASK-005)
+   - depends: [TASK-004]  # Needs core but not previous
+6. Task: Implement UI components (TASK-006)
+   - depends: [TASK-004]  # Also needs core, parallel to CLI
+
+Testing Phase:
+7. Task: Integration testing (TASK-007)
+   - depends: [TASK-005, TASK-006]  # Needs both implementations
+```
+
+### Best Practices for Task Linking
+
+1. **Create tasks in logical order** - This makes it easier to reference previous tasks
+2. **Use previous/next for strict sequences** - When order is mandatory
+3. **Use dependencies for prerequisites** - When multiple tasks must complete first
+4. **Update bidirectional links** - After creating all tasks, update earlier tasks with next links
+5. **Document the flow** - Include a task flow diagram in the feature description
+
+### Common Patterns
+
+**Linear Flow:**
+```
+Research → Design → Implement → Test → Document
+(each with previous/next links)
+```
+
+**Branching Flow:**
+```
+Research → Design → [Core Implementation]
+                  ↘ [CLI Implementation] → Integration Test
+                  ↘ [UI Implementation]  ↗
+```
+
+**Parallel Research:**
+```
+[Research Option A] ↘
+                     Synthesis → Design → Implementation
+[Research Option B] ↗
+```
+
 ## Default Organization Patterns
 - Place tasks in feature folder
 - Use area tags for technical domain tracking
@@ -475,40 +636,57 @@ Usage examples:
 # Complex feature with proper granularity
 /project:feature-planning "Real-time collaboration system"
 
-## Resulting Task Structure:
-1. Task: Research Real-time Collaboration
+## Resulting Task Structure with Linking:
+
+1. Task: Research Real-time Collaboration (TASK-001)
    - Todo: Research WebSocket patterns
    - Todo: Research conflict resolution
    - Todo: Research state synchronization
    - Todo: Document findings
+   - Next: TASK-002
 
-2. Task: Design Collaboration Architecture
+2. Task: Design Collaboration Architecture (TASK-002)
    - Todo: Design message protocol
    - Todo: Design state management
    - Todo: Create system diagrams
    - Todo: Document architecture
+   - Previous: TASK-001
+   - Next: TASK-003
 
-3. Task: Implement Core Collaboration Engine
+3. Task: Implement Core Collaboration Engine (TASK-003)
    - Todo: Create WebSocket server
    - Todo: Implement message handlers
    - Todo: Add state synchronization
    - Todo: Write unit tests
+   - Previous: TASK-002
    
-4. Task: Add CLI Collaboration Commands
+4. Task: Add CLI Collaboration Commands (TASK-004)
    - Todo: Implement `collab start`
    - Todo: Implement `collab join`
    - Todo: Write CLI tests
+   - Depends: [TASK-003]
 
-5. Task: Build UI Collaboration Features
+5. Task: Build UI Collaboration Features (TASK-005)
    - Todo: Create presence indicators
    - Todo: Add real-time updates
    - Todo: Implement conflict UI
    - Todo: Write component tests
+   - Depends: [TASK-003]
 
-6. Task: Integration and Documentation
+6. Task: Integration and Documentation (TASK-006)
    - Todo: Full system testing
    - Todo: Write user guide
    - Todo: Create API docs
+   - Depends: [TASK-004, TASK-005]
+
+## Task Flow Visualization:
+```
+Research (001) → Design (002) → Core Implementation (003)
+                                        ↓
+                              CLI Commands (004) ⟶
+                                                   Integration & Docs (006)
+                              UI Features (005)  ⟶
+```
 ```
 </examples>
 
@@ -549,6 +727,11 @@ Usage examples:
 - Consider task type dependencies (research → design → implementation)
 - For solo dev pre-v1: focus on MVP, combine small related tasks
 - Prefer proven libraries over custom solutions when researching
+- **ALWAYS create task links**: Use previous/next for sequences, depends for prerequisites
+- Create tasks in logical order to simplify referencing
+- Update bidirectional links after all tasks are created
+- Include a task flow diagram in the feature description
+- Test the workflow by following the task chain
 </best_practices>
 
 <human_review_section>
