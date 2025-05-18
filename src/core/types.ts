@@ -2,6 +2,8 @@
  * Core types used across the task management system
  */
 
+import type { RuntimeConfig } from './config/types.js';
+
 // Task metadata schema
 export interface TaskMetadata {
   id: string;
@@ -96,6 +98,7 @@ export interface TaskFilterOptions {
   is_overview?: boolean;
   include_content?: boolean; // Controls whether task content is included in the response (default: true)
   include_completed?: boolean; // Controls whether completed tasks are included in the response (default: true)
+  config?: RuntimeConfig; // Runtime configuration support
 }
 
 // Update options for task
@@ -112,6 +115,9 @@ export interface TaskUpdateOptions {
 
   // Content updates
   content?: string;
+
+  // Runtime configuration
+  config?: RuntimeConfig;
 }
 
 // Update options for feature
