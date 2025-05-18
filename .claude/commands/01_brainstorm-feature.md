@@ -167,64 +167,37 @@ User: "Yesterday specifically. If it's Monday morning, I need to see Friday's wo
 </example_session>
 
 <output_format>
-After brainstorming, create a proposal task and provide confirmation:
+After brainstorming, provide a summary structured for the next step:
 
-1. Create a task using `mcp__scopecraft-cmd__task_create` with:
-   - Title: "Proposal: [Brief description of the solution]"
-   - Type: "feature"
-   - Phase: "backlog"
-   - Status: "🔵 In Progress"
-   - Tags: ["proposal", "feature", "requirements"]
-   - Area: [Determine based on solution - cli, mcp, ui, core, etc.]
-   - Feature: [If applicable, based on solution]
+## Brainstorming Summary
 
-2. Task content should include:
-   ```markdown
-   # Feature Proposal: [Solution Name]
-   
-   ## Problem Statement
-   [2-3 sentences clearly describing the problem]
-   
-   ## Recommended Solution
-   [Clear description of chosen approach]
-   
-   ## Why This Approach
-   [Brief rationale for the recommendation]
-   
-   ## Success Criteria
-   - [Measurable outcomes]
-   - [User-facing requirements]
-   
-   ## Constraints & Assumptions
-   - [Known limitations]
-   - [Assumptions about user needs]
-   
-   ## Complexity Assessment
-   **Overall Complexity**: [Simple/Medium/Complex]
-   
-   Factors considered:
-   - [What makes this simple or complex]
-   - [Key challenges identified]
-   - [Integration points]
-   
-   ## Human Review Required
-   - [ ] Assumption: [what was assumed about user needs]
-   - [ ] Derived requirement: [what requirement was inferred]
-   - [ ] Success criteria: [what outcomes need validation]
-   
-   ## Next Step
-   Use `/project:02_feature-proposal` with this content to create a formal proposal.
-   ```
+### Problem Statement
+[2-3 sentences clearly describing the problem]
 
-3. After creating the task, provide confirmation:
-   ```
-   ✅ Created proposal task: TASK-[ID]
-   📂 Area: [assigned area]
-   🏷️ Tags: proposal, feature, requirements
-   📑 Phase: backlog
-   
-   Next step: Review and refine with `/project:02_feature-proposal TASK-[ID]`
-   ```
+### Recommended Solution
+[Clear description of chosen approach]
+
+### Why This Approach
+[Brief rationale for the recommendation]
+
+### Success Criteria
+- [Measurable outcomes]
+- [User-facing requirements]
+
+### Constraints & Assumptions
+- [Known limitations]
+- [Assumptions about user needs]
+
+### Complexity Assessment
+**Overall Complexity**: [Simple/Medium/Complex]
+
+Factors considered:
+- [What makes this simple or complex]
+- [Key challenges identified]
+- [Integration points]
+
+### Next Step
+Use `/project:02_feature-proposal` with this summary to create a formal proposal.
 </output_format>
 
 <human_review_needed>
