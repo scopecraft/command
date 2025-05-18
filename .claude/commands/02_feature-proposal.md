@@ -14,6 +14,9 @@ References:
 
 <input_parsing>
 Input: "$ARGUMENTS"
+- If contains task ID: Check if existing proposal/brainstorm
+- If contains "phase:X": Use specified phase
+- If contains "area:X": Use specified area
 - If contains brainstorming summary: Use as starting point
 - If contains rough idea: Conduct mini-brainstorming first
 - If empty: Ask for feature idea or problem to solve
@@ -73,16 +76,61 @@ Load the proposal template from:
 - Technical unknowns
 - Design choices
 
-## Step 4: Create Proposal Task
-Use mcp__scopecraft-cmd__task_create to create a proposal task:
-- Type: "proposal" or "planning"
-- Status: "planning"
+## Step 3.5: Determine Entity Type
+Analyze the proposal scope to decide between task or feature:
+
+### Create as Feature if:
+- Multiple sub-tasks or implementation phases needed
+- Spans multiple technical areas significantly
+- Requires 5+ days of work
+- Has distinct sub-features or components
+
+### Create as Task if:
+- Can be completed as a single unit of work
+- Focused on one primary area
+- Less than 5 days of work
+- No logical sub-divisions
+
+Use mcp__scopecraft-cmd__feature_create for features, task_create for single tasks.
+
+## Step 4: Create Proposal Entity
+
+Based on the entity type decision:
+
+### For Single Task Proposals:
+Use mcp__scopecraft-cmd__task_create:
+- Type: "proposal"
+- Status: "🟡 To Do"
+- Phase: "backlog" (unless user specified otherwise)
+- subdirectory: Primary area affected (use actual area ID from mcp__scopecraft-cmd__area_list)
 - Content: The filled template
-- Phase: Current/active phase (use mcp__scopecraft-cmd__phase_list)
-- Area: Primary area affected (from organizational structure)
 - Title: Clear, descriptive proposal title
-- Tags: ["proposal", "feature", affected areas]
+- Tags: ["proposal", affected area names]
+
+### For Feature Proposals:
+Use mcp__scopecraft-cmd__feature_create:
+- Name: Short identifier (e.g., "command-discovery")
+- Title: Full descriptive title
+- Phase: "backlog" (unless user specified otherwise)
+- Status: "🟡 To Do"
+- Type: "proposal"
+- Description: The filled template content
+- Tags: ["proposal", affected areas]
+
+### Phase Selection:
+- Default to "backlog" unless:
+  - User explicitly mentions a phase
+  - Proposal is urgent/time-sensitive (then current active phase)
+  - Connected to existing work in specific phase
 </proposal_creation_process>
+
+<validation_steps>
+Before creating the entity:
+1. Check if proposal already exists (search for similar titles)
+2. Verify area exists using mcp__scopecraft-cmd__area_list
+3. Confirm phase exists (default to backlog if unsure)
+4. For features, validate if breakdown into tasks is needed
+</validation_steps>
 
 <quality_checks>
 Before finalizing:
@@ -129,23 +177,27 @@ Add a "Recently Modified" filter to the task list view that shows all tasks chan
 
 <output_format>
 Created proposal with:
-- Task ID: {ID}
+- Entity Type: {Task or Feature}
+- ID: {ID}
 - Title: {Proposal Title}
-- Status: planning
+- Status: To Do
+- Phase: {Selected Phase}
 
 Summary:
 {Brief description of the proposed feature}
 
 Next steps:
-1. Review the proposal: `scopecraft task get {ID}`
-2. If approved, create PRD: `/project:feature-to-prd {ID}`
-3. Or jump to planning: `/project:feature-planning {ID}`
+1. Review the proposal: `scopecraft {task/feature} get {ID}`
+2. If approved, create PRD: `/project:03_feature-to-prd {ID}`
+3. Or jump to planning: `/project:04_feature-planning {ID}`
 </output_format>
 
 <mcp_usage>
 Always use MCP tools:
-- mcp__scopecraft-cmd__task_create for creating proposal
-- mcp__scopecraft-cmd__task_update for revisions
+- mcp__scopecraft-cmd__task_create for single task proposals
+- mcp__scopecraft-cmd__feature_create for feature proposals
+- mcp__scopecraft-cmd__task_update for task revisions
+- mcp__scopecraft-cmd__feature_update for feature revisions
 - mcp__scopecraft-cmd__phase_list to find active phase
 - mcp__scopecraft-cmd__area_list to verify areas
 </mcp_usage>
