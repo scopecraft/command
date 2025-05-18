@@ -19,24 +19,23 @@ The **entire content** of your command file becomes the prompt sent to Claude. T
 - Every line of text
 - All XML tags
 - Any markdown formatting
-- Everything except HTML comments
 
 ### What Gets Sent to Claude
 
 When a user runs `/project:mycommand`, Claude receives the **complete content** of `.claude/commands/mycommand.md` with any `$ARGUMENTS` replaced.
 
-### HTML Comments for Documentation
+### HTML Comments Are Also Part of the Prompt
 
-To include documentation that shouldn't be part of the prompt, use HTML comments:
+HTML comments are included in the prompt just like everything else in the file:
 
 ```markdown
-<!-- This is documentation for humans, not part of the prompt -->
+<!-- This comment will be seen by Claude -->
 
 <task>
-This is the actual prompt that Claude will see
+This is also part of the prompt that Claude will see
 </task>
 
-<!-- More documentation that won't be sent to Claude -->
+<!-- This comment is also sent to Claude -->
 ```
 
 ## File Structure
@@ -126,8 +125,6 @@ Focus on file: $ARGUMENTS
 2. Look for security issues
 3. Verify code style
 </instructions>
-
-<!-- Usage: /project:simple-review filename.ts -->
 ```
 
 ### Step 2: Test It
@@ -180,18 +177,22 @@ Use tool: mcp__scopecraft-cmd__task_list
 
 ## Common Mistakes
 
-### Mistake 1: Documenting Usage Inside the Prompt
+### Mistake 1: Not Escaping Special Characters
 
 ❌ **Wrong:**
 ```markdown
-<usage>
-To use this command: /project:review TASK-123
-</usage>
+<task>
+Process file: $ARGUMENTS
+Note: Be careful with regex patterns that contain $
+</task>
 ```
 
 ✅ **Correct:**
 ```markdown
-<!-- Usage: /project:review TASK-123 -->
+<task>
+Process file: $ARGUMENTS
+Note: Be careful with regex patterns that contain \$
+</task>
 ```
 
 ### Mistake 2: Not Understanding $ARGUMENTS Scope
@@ -208,7 +209,6 @@ The TEST placeholder will be replaced...
 
 ✅ **Correct:**
 ```markdown
-<!-- Documentation: $ARGUMENTS gets replaced -->
 <task>
 Process the input: $ARGUMENTS
 </task>
@@ -270,7 +270,6 @@ If no target specified above, analyze all recent changes
 ```markdown
 <parse_input>
 Input received: "$ARGUMENTS"
-<!-- Claude will parse this, e.g., "type:bug priority:high" -->
 </parse_input>
 ```
 
@@ -282,18 +281,16 @@ Review code changes for: $ARGUMENTS
 </task>
 
 <context>
-<!-- Claude has access to git status, file contents, etc. -->
 Use available tools to understand the codebase context
 </context>
 ```
 
 ## Summary
 
-1. **The entire file is the prompt** - everything except HTML comments
+1. **The entire file is the prompt** - everything in the file becomes the prompt
 2. **$ARGUMENTS is literally replaced** throughout the entire file
 3. **Use XML tags** for clear structure
-4. **Document usage in HTML comments** to keep it out of the prompt
-5. **Use MCP tools**, not CLI commands
-6. **Test with and without arguments** to ensure robustness
+4. **Use MCP tools**, not CLI commands
+5. **Test with and without arguments** to ensure robustness
 
 Remember: When creating a command, you're writing the exact prompt that Claude will receive, with `$ARGUMENTS` as a placeholder for user input.
