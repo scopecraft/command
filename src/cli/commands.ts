@@ -19,7 +19,6 @@ import {
   formatPhasesList,
   formatTaskDetail,
   formatTasksList,
-  generateTaskId,
   getArea,
   getFeature,
   getTask,

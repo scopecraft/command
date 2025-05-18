@@ -10,7 +10,6 @@ import {
   deletePhase,
   deleteTask,
   findNextTask,
-  generateTaskId,
   getArea,
   getFeature,
   getTask,
@@ -95,7 +94,7 @@ export async function handleTaskGet(params: TaskGetParams) {
 export async function handleTaskCreate(params: TaskCreateParams) {
   // Create the task object from the parameters with normalization
   const metadata: TaskMetadata = {
-    id: params.id || generateTaskId(),
+    id: params.id || '', // Let task-crud generate the ID
     title: params.title,
     type: params.type,
     status: normalizeTaskStatus(params.status || '🟡 To Do'),
