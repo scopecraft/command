@@ -5,40 +5,49 @@
 2. [Core Concepts](#core-concepts)
    - [Hierarchy Levels](#hierarchy-levels)
    - [Key Principles](#key-principles)
-3. [Phases: Project and Release Management](#phases-project-and-release-management)
+3. [File System Structure](#file-system-structure)
+   - [Phase-Based Organization](#phase-based-organization)
+   - [Feature and Area Duplication](#feature-and-area-duplication)
+   - [File Naming Conventions](#file-naming-conventions)
+4. [Phases: Project and Release Management](#phases-project-and-release-management)
    - [Example Phases](#example-phases)
    - [Phase Usage Guidelines](#phase-usage-guidelines)
-4. [Task Statuses: Work Progress Tracking](#task-statuses-work-progress-tracking)
+5. [Task Statuses: Work Progress Tracking](#task-statuses-work-progress-tracking)
    - [Standard Statuses](#standard-statuses)
    - [Special Statuses](#special-statuses)
    - [Status Usage Guidelines](#status-usage-guidelines)
-5. [Areas: Functional Domains](#areas-functional-domains)
+6. [Areas: Functional Domains](#areas-functional-domains)
    - [Technical Areas](#technical-areas)
    - [Orchestrator Area](#orchestrator-area)
    - [Area Guidelines](#area-guidelines)
-6. [Features: Deliverable Capabilities](#features-deliverable-capabilities)
+7. [Features: Deliverable Capabilities](#features-deliverable-capabilities)
    - [Feature Characteristics](#feature-characteristics)
    - [Feature Examples](#feature-examples)
    - [Feature Planning](#feature-planning)
-7. [Tasks: Atomic Work Units](#tasks-atomic-work-units)
+8. [Tasks: Atomic Work Units and Communication Logs](#tasks-atomic-work-units-and-communication-logs)
+   - [Task Dual Purpose](#task-dual-purpose)
    - [Task Properties](#task-properties)
+   - [Task Internal Structure](#task-internal-structure)
    - [Task Relationships](#task-relationships)
    - [Task Lifecycle](#task-lifecycle)
-8. [Organizational Examples](#organizational-examples)
+9. [Organizational Examples](#organizational-examples)
    - [Simple Feature](#simple-feature)
    - [Complex Cross-Area Feature](#complex-cross-area-feature)
    - [Orchestrated Workflow](#orchestrated-workflow)
-9. [Best Practices](#best-practices)
-   - [When to Create Features](#when-to-create-features)
-   - [Area Assignment](#area-assignment)
-   - [Status Transitions](#status-transitions)
-10. [Integration with Tools](#integration-with-tools)
+   - [File System Example](#file-system-example)
+10. [Best Practices](#best-practices)
+    - [When to Create Features](#when-to-create-features)
+    - [Area Assignment](#area-assignment)
+    - [Status Transitions](#status-transitions)
+    - [Task Sizing](#task-sizing)
+11. [Integration with Tools](#integration-with-tools)
     - [CLI Commands](#cli-commands)
     - [MCP Tools](#mcp-tools)
     - [Claude Commands](#claude-commands)
-11. [Important Distinctions](#important-distinctions)
+12. [Important Distinctions](#important-distinctions)
     - [Scopecraft Phases = MDTM Phases](#scopecraft-phases--mdtm-phases)
     - [Features vs Areas](#features-vs-areas)
+    - [Tasks vs Documentation](#tasks-vs-documentation)
 
 ## Overview
 
@@ -61,6 +70,57 @@ The Scopecraft organizational structure operates at four distinct levels:
 - **Features** group related work toward user-facing goals
 - **Areas** represent technical boundaries and expertise domains
 - **Tasks** are the atomic units of work that progress through statuses
+
+## File System Structure
+
+### Phase-Based Organization
+
+Scopecraft organizes all tasks under phase directories, creating a structure that mirrors project progression:
+
+```
+.tasks/
+├── backlog/          # Future work not yet scheduled
+├── v1/               # Initial release
+├── v1.1/            # Point release
+└── performance-opt/  # Special initiative
+```
+
+### Feature and Area Duplication
+
+When features or areas span multiple phases, they are duplicated in the file system:
+
+```
+.tasks/
+├── backlog/
+│   ├── FEATURE_user-auth/
+│   │   ├── _overview.md
+│   │   └── TASK-20250101-120000.md
+│   └── AREA_Core/
+│       └── TASK-20250102-150000.md
+├── v1/
+│   ├── FEATURE_user-auth/    # Same feature, different phase
+│   │   ├── _overview.md      # Phase-specific overview
+│   │   └── TASK-20250110-090000.md
+│   └── AREA_Core/           # Same area, different phase
+│       └── TASK-20250111-140000.md
+└── v1.1/
+    └── FEATURE_user-auth/    # Feature continues across phases
+        ├── _overview.md
+        └── TASK-20250120-110000.md
+```
+
+Key points:
+- Each phase maintains its own directory structure
+- Features/areas are duplicated when work spans phases
+- The `_overview.md` file in each phase is unique to that phase's scope
+- This structure allows clear phase-based planning while maintaining feature continuity
+
+### File Naming Conventions
+
+- **Features**: `FEATURE_[descriptive-name]/`
+- **Areas**: `AREA_[technical-domain]/`
+- **Tasks**: `TASK-YYYYMMDD-HHMMSS.md`
+- **Overviews**: `_overview.md` (within feature/area folders)
 
 ## Phases: Project and Release Management
 
@@ -194,19 +254,56 @@ Features represent user-facing capabilities that deliver value. They typically s
 - Consider dependencies between tasks
 - Document feature requirements and success criteria
 
-## Tasks: Atomic Work Units
+## Tasks: Atomic Work Units and Communication Logs
 
-Tasks are the fundamental units of work in Scopecraft. They represent specific, actionable items that can be completed independently.
+Tasks are the fundamental units of work in Scopecraft. They serve a dual purpose as both work units and persistent logs.
+
+### Task Dual Purpose
+
+Tasks fulfill two critical functions:
+
+1. **Work Unit**: 
+   - Scoped to fit within a single AI session
+   - Sized appropriately for the context window
+   - Represents a discrete piece of functionality
+
+2. **Communication Log**:
+   - Records decisions made during implementation
+   - Captures work done for future reference
+   - Provides context for related tasks
+   - Serves as a knowledge base across sessions
 
 ### Task Properties
 
-- **ID**: Unique identifier (format: `TASK-YYYYMMDD-HHMMSS`)
+- **ID**: Unique identifier (format: `TASK-YYYYMMDDHMMSS`)
 - **Title**: Clear, action-oriented description
 - **Type**: Category (feature, bug, enhancement, etc.)
 - **Status**: Current lifecycle state (planning, implementation, done, etc.)
 - **Phase**: Project/release milestone (v1, v1.1, backlog, etc.)
 - **Area**: Primary functional domain
 - **Feature**: Parent feature (if applicable)
+
+### Task Internal Structure
+
+Tasks contain sequential todo lists that guide AI execution:
+
+```markdown
+# Task: Implement User Authentication
+
+## Todo List
+- [ ] 1. Design authentication schema
+- [ ] 2. Implement database models
+- [ ] 3. Create authentication API endpoints
+- [ ] 4. Write unit tests for auth logic
+- [ ] 5. Document API endpoints
+- [ ] 6. Update developer guide with auth flow
+```
+
+Key aspects:
+- Todos are completed sequentially due to dependencies
+- Each todo represents a specific action the AI should take
+- The list provides structure for work that's too large for a single step
+- Avoids confusion with "phases" by using the term "todo list"
 
 ### Task Relationships
 
@@ -263,6 +360,32 @@ Orchestrator Management:
     └── Dependency management
 ```
 
+### File System Example
+
+```
+.tasks/
+├── backlog/
+│   ├── FEATURE_real-time-collab/
+│   │   ├── _overview.md
+│   │   ├── TASK-20250115-100000.md  # Research collaboration protocols
+│   │   └── TASK-20250116-140000.md  # Design system architecture
+│   └── AREA_Core/
+│       └── TASK-20250117-090000.md  # Refactor event system
+│
+├── v1/
+│   └── FEATURE_real-time-collab/
+│       ├── _overview.md              # v1 scope-specific overview
+│       ├── TASK-20250120-110000.md  # Implement WebSocket server
+│       └── TASK-20250121-150000.md  # Create presence tracking
+│
+└── v1.1/
+    ├── FEATURE_real-time-collab/
+    │   ├── _overview.md              # v1.1 enhancements
+    │   └── TASK-20250201-130000.md  # Add conflict resolution
+    └── AREA_UI/
+        └── TASK-20250202-100000.md  # Improve collaboration indicators
+```
+
 ## Best Practices
 
 ### When to Create Features
@@ -285,6 +408,13 @@ Orchestrator Management:
 - Ensure prerequisites are met before transitions
 - Use `blocked` status to indicate dependencies
 - Complete status requirements before moving forward
+
+### Task Sizing
+
+- Size tasks to fit within a single AI session
+- Consider context window limitations
+- Break large work into sequential todo lists
+- Create separate tasks when work spans sessions
 
 ## Integration with Tools
 
@@ -336,14 +466,24 @@ Scopecraft follows the MDTM standard where phases organize work at the project/r
 
 Features cross areas to deliver value, while areas maintain technical boundaries and expertise domains.
 
+### Tasks vs Documentation
+
+- **Tasks**: Session-scoped work units that create logs and artifacts
+- **Documentation**: Permanent references created from task outcomes
+
+Tasks serve as both work units and communication logs, but dedicated documentation tasks create the permanent documentation that lives outside the task system.
+
 ## Summary
 
 The Scopecraft organizational structure provides a flexible yet structured approach to managing development work. By understanding the relationships between phases, areas, features, and tasks, teams can efficiently organize work, maintain context across sessions, and deliver value consistently.
 
 Key takeaways:
 - Use phases to organize releases and initiatives
+- Features and areas duplicate across phases in the file system
+- Tasks serve dual purposes as work units and communication logs
 - Use statuses to track individual task progress
 - Organize work by technical areas
 - Group deliverables as features
+- Size tasks for AI sessions with sequential todo lists
 - Leverage orchestrator for parallel work
 - Maintain clear boundaries and documentation
