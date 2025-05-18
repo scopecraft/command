@@ -1,5 +1,7 @@
 # Scopecraft Command - Development Documentation
 
+This guide is for developers contributing to Scopecraft Command. For user documentation, see the main README.
+
 ## Project Overview
 
 Scopecraft Command is a toolset designed to manipulate Markdown-Driven Task Management (MDTM) files. It provides both a command-line interface (CLI) and a Model Context Protocol (MCP) server for working with tasks directly.
@@ -167,6 +169,201 @@ The project uses several tools to ensure code quality:
    - `bun run ci`: Run all checks and tests (typecheck, lint, test)
 
 The configuration for Biome is in `biome.json` in the project root.
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js 16+ or Bun 1.0+
+- Git for version control
+- TypeScript knowledge
+
+### Getting Started
+
+```bash
+# Clone repository
+git clone https://github.com/scopecraft-ai/scopecraft-command.git
+cd scopecraft-command
+
+# Install dependencies
+bun install
+
+# Run development mode
+bun run dev:cli -- list
+bun run dev:mcp
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+bun test
+
+# Run specific test file
+bun test task-parser.test.ts
+
+# Watch mode
+bun test --watch
+```
+
+## Code Quality
+
+The project uses Biome for linting and formatting, and TypeScript for type checking.
+
+### Available Commands
+
+```bash
+# Run quality checks (auto-detects staged/changed files)
+bun run code-check
+
+# Check all files
+bun run code-check --all
+
+# Check specific files
+bun run code-check --staged   # Only staged files
+bun run code-check --changed  # Only changed files
+
+# Individual tools
+bun run typecheck               # TypeScript only
+bun run check                   # Biome only
+
+# Lint the code with Biome
+bun run lint
+
+# Check code formatting with Biome
+bun run format
+
+# Format code with Biome (applies changes)
+bun run format:fix
+
+# Check (lint + format) the code with Biome
+bun run check
+
+# Run all checks and tests (CI workflow)
+bun run ci
+```
+
+### Before Committing
+
+Always run code quality checks before committing:
+
+```bash
+bun run code-check
+```
+
+This command will:
+1. Auto-detect whether to check staged or changed files
+2. Run Biome on the appropriate files
+3. Run TypeScript check on the full project
+4. Report results in a clear format
+
+## Project Structure
+
+```
+src/
+├── core/                  # Shared core functionality
+│   ├── types.ts           # Common type definitions
+│   ├── task-parser.ts     # TOML+MD parsing utilities
+│   ├── task-manager/      # Modular task operations
+│   │   ├── index.ts       # Re-exports from all modules
+│   │   ├── directory-utils.ts  # Directory operations
+│   │   ├── task-crud.ts   # Basic task CRUD operations
+│   │   ├── task-relationships.ts # Relationship management
+│   │   ├── task-workflow.ts # Next task finder and workflow
+│   │   ├── phase-crud.ts  # Phase management
+│   │   ├── feature-crud.ts # Feature operations
+│   │   ├── area-crud.ts   # Area operations
+│   │   ├── task-move.ts   # Task movement operations
+│   │   └── utils.ts       # Shared utilities
+│   ├── formatters.ts      # Output formatting
+│   └── index.ts           # Core module exports
+├── cli/                   # Command-line interface
+│   ├── cli.ts             # CLI entry point
+│   ├── commands.ts        # CLI command handlers
+│   └── entity-commands.ts # Entity-command pattern implementation
+└── mcp/                   # MCP server
+    ├── cli.ts             # MCP CLI entry point
+    ├── handlers.ts        # MCP method handlers
+    ├── server.ts          # HTTP server implementation
+    └── types.ts           # MCP-specific types
+```
+
+### Module Architecture
+
+The project follows a modular architecture:
+
+1. **Core Module**: All business logic, completely standalone
+2. **CLI Module**: Command-line interface using Commander.js
+3. **MCP Module**: Server implementing Model Context Protocol
+
+Each module has clear boundaries and responsibilities. The core module has no dependencies on CLI or MCP code.
+
+## Entity-Command Pattern
+
+The CLI follows an intuitive entity-command pattern:
+
+```
+<entity> <command> [options]
+```
+
+Entity types:
+- `task` - Task management operations
+- `phase` - Phase management operations
+- `feature` - Feature directory operations
+- `area` - Area directory operations
+- `workflow` - Task workflow and sequence operations
+- `template` - Template management operations
+
+Implementation in `entity-commands.ts` provides:
+- Automatic command grouping
+- Consistent error handling
+- Shared options across commands
+- Backward compatibility with legacy format
+
+## Building and Publishing
+
+### Build Process
+
+```bash
+# Clean build
+bun run clean
+bun run build
+
+# Watch mode
+bun run build:watch
+```
+
+### Testing Locally
+
+```bash
+# Install globally from local build
+bun run install:global
+
+# Test CLI
+sc task list
+
+# Test MCP server
+scopecraft-mcp
+```
+
+### Publishing to NPM
+
+```bash
+# Update version
+bun run version:patch  # or minor/major
+
+# Build and publish
+bun run build
+npm publish
+```
+
+## Contributing Guidelines
+
+1. **Code Style**: Run `bun run format:fix` before committing
+2. **Type Safety**: Ensure no TypeScript errors with `bun run typecheck`
+3. **Testing**: Add tests for new features
+4. **Documentation**: Update docs for API changes
+5. **Commit Messages**: Follow conventional commits format
 
 ## Credits and Attribution
 
