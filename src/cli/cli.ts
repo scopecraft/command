@@ -13,7 +13,7 @@ import { setupEntityCommands } from './entity-commands.js';
 const program = new Command();
 
 // Read package version from package.json
-let version = '0.8.0-template-list'; // Default
+let version = '0.9.0'; // Default
 try {
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
