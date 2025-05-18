@@ -97,6 +97,22 @@ sc phase list
 sc task move TASK-123 --target-phase v1.1
 ```
 
+### Worktree Management
+
+```bash
+# Start a task worktree
+tw-start TASK-123
+
+# Start a feature worktree
+tw-feat-start FEATURE_auth
+
+# List active worktrees
+tw-list
+
+# Finish and merge work
+tw-finish TASK-123
+```
+
 ## Entity-Command Pattern
 
 Commands follow an intuitive pattern:
@@ -152,6 +168,10 @@ Scopecraft includes specialized Claude commands for structured development:
 
 # Execute tasks
 /project:implement ui TASK-20250517-234567
+
+# Automatically find and implement next task in feature
+/project:implement-next FEATURE_auth
+/project:implement-next  # Auto-detect from current worktree
 ```
 
 ## MCP Server Usage

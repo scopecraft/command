@@ -19,6 +19,16 @@ These resources are referenced by Claude commands to provide:
 - Planning templates
 - Reusable structures
 
+## Available Commands
+
+The following commands use these resources:
+- `/project:01_brainstorm-feature` - Uses planning templates
+- `/project:02_feature-proposal` - Uses planning templates
+- `/project:03_feature-to-prd` - Uses planning templates 
+- `/project:04_feature-planning` - Uses planning templates
+- `/project:implement` - Uses mode-specific guidance from implement-modes/
+- `/project:implement-next` - Automated feature implementation that uses implement modes
+
 ## Customization
 
 Projects can override these defaults by creating a parallel structure in:

@@ -5,9 +5,11 @@ import path from 'node:path';
 import { Command } from 'commander';
 import {
   findNextTask,
-  formatTaskDetail as formatTask,
-  formatTasksList as formatTaskList,
+  formatTaskDetail,
+  formatTasksList,
+  getFeature,
   getTask,
+  listFeatures,
   listTasks,
   projectConfig,
   updateTask,
@@ -41,6 +43,12 @@ program
 
 program.command('list').description('List all current task worktrees').action(listWorktrees);
 
+program
+  .command('feat-start')
+  .description('Start working on a feature in a new worktree')
+  .argument('[featureId]', 'Optional feature ID to work on')
+  .action(startFeatureWorktree);
+
 // Start command implementation
 async function startWorktree(taskId?: string) {
   // If no task ID provided, show available tasks and prompt
@@ -52,7 +60,7 @@ async function startWorktree(taskId?: string) {
     const nextTask = await findNextTask();
     console.log('\nRecommended next task:');
     if (nextTask.data && nextTask.data !== null) {
-      console.log(formatTaskDetail(nextTask.data));
+      console.log(formatTaskDetail(nextTask.data, 'default'));
     } else {
       console.log('No next task found.');
     }
@@ -289,6 +297,61 @@ function listWorktrees() {
   console.log('Current task worktrees:');
   const output = execSync('git worktree list').toString();
   console.log(output);
+}
+
+// Feature start command implementation
+async function startFeatureWorktree(featureId?: string) {
+  // If no feature ID provided, show available features
+  if (!featureId) {
+    const features = await listFeatures({ include_tasks: true });
+    console.log('Available features:');
+    // Simple feature list format since formatFeaturesList doesn't exist
+    features.data?.forEach(feature => {
+      console.log(`${feature.id} - ${feature.title} (${feature.tasks.length} tasks)`);
+    });
+
+    throw new Error('Please provide a feature ID when running this command');
+  }
+
+  // Get feature details
+  const featureResult = await getFeature(featureId);
+  if (!featureResult.success || !featureResult.data) {
+    console.error(`Feature ${featureId} not found.`);
+    process.exit(1);
+  }
+
+  const feature = featureResult.data;
+  console.log(`Creating worktree for feature: ${featureId} - ${feature.title}`);
+
+  // Create branch name from feature ID
+  // Convert FEATURE_name to feature-name format for git branch
+  const branchName = featureId.toLowerCase().replace(/_/g, '-');
+
+  // Ensure worktrees directory exists
+  if (!fs.existsSync(WORKTREES_DIR)) {
+    fs.mkdirSync(WORKTREES_DIR, { recursive: true });
+  }
+
+  const worktreeDir = path.join(WORKTREES_DIR, featureId);
+
+  try {
+    // Create worktree with branch
+    execSync(`git worktree add -b ${branchName} ${worktreeDir}`);
+    console.log(`Worktree created at ${worktreeDir}`);
+
+    // Install dependencies in the worktree
+    console.log('Installing dependencies in the worktree directory...');
+    execSync('bun install', {
+      stdio: 'inherit',
+      cwd: worktreeDir,
+    });
+
+    // Output the worktree directory to stdout for shell integration
+    process.stdout.write(worktreeDir);
+  } catch (error) {
+    console.error('Error creating worktree:', error);
+    process.exit(1);
+  }
 }
 
 // Run the program

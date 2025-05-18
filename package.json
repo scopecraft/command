@@ -48,6 +48,7 @@
     "tw-start": "bun ./src/scripts/task-worktree.ts start",
     "tw-finish": "bun ./src/scripts/task-worktree.ts finish",
     "tw-list": "bun ./src/scripts/task-worktree.ts list",
+    "tw-feat-start": "bun ./src/scripts/task-worktree.ts feat-start",
     "prepublishOnly": "bun run build",
     "update-version": "bun scripts/update-cli-version.ts",
     "version": "bun run update-version && git add src/cli/cli.ts src/mcp/cli.ts",
