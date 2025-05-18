@@ -61,10 +61,12 @@ Load the proposal template from:
 - Which areas are affected
 - Reuse existing patterns where possible
 
-### Implementation Estimate
-- Be realistic (lean pessimistic)
-- Include testing and documentation
-- Use days/weeks for pre-v1 project
+### Complexity Assessment
+- Rate as Simple/Medium/Complex
+- Consider technical unknowns
+- Note integration challenges
+- Identify learning curves
+- NO time estimates (AI-assisted development makes them obsolete)
 
 ### Dependencies & Risks
 - Technical challenges expected
@@ -76,52 +78,27 @@ Load the proposal template from:
 - Technical unknowns
 - Design choices
 
-## Step 3.5: Determine Entity Type
-Analyze the proposal scope to decide between task or feature:
+## Step 3.5: Proposal Format
+All proposals are created as tasks at this stage. The decision to convert to a feature happens later during planning (command 04).
 
-### Create as Feature if:
-- Multiple sub-tasks or implementation phases needed
-- Spans multiple technical areas significantly
-- Requires 5+ days of work
-- Has distinct sub-features or components
+## Step 4: Create Proposal Task
 
-### Create as Task if:
-- Can be completed as a single unit of work
-- Focused on one primary area
-- Less than 5 days of work
-- No logical sub-divisions
-
-Use mcp__scopecraft-cmd__feature_create for features, task_create for single tasks.
-
-## Step 4: Create Proposal Entity
-
-Based on the entity type decision:
-
-### For Single Task Proposals:
 Use mcp__scopecraft-cmd__task_create:
 - Type: "proposal"
 - Status: "🟡 To Do"
 - Phase: "backlog" (unless user specified otherwise)
 - subdirectory: Primary area affected (use actual area ID from mcp__scopecraft-cmd__area_list)
 - Content: The filled template
-- Title: Clear, descriptive proposal title
+- Title: Clear, descriptive proposal title (e.g., "Feature Proposal: Full-Text Search")
 - Tags: ["proposal", affected area names]
-
-### For Feature Proposals:
-Use mcp__scopecraft-cmd__feature_create:
-- Name: Short identifier (e.g., "command-discovery")
-- Title: Full descriptive title
-- Phase: "backlog" (unless user specified otherwise)
-- Status: "🟡 To Do"
-- Type: "proposal"
-- Description: The filled template content
-- Tags: ["proposal", affected areas]
 
 ### Phase Selection:
 - Default to "backlog" unless:
   - User explicitly mentions a phase
   - Proposal is urgent/time-sensitive (then current active phase)
   - Connected to existing work in specific phase
+
+Note: The decision to create a feature vs. keeping it as a single task happens during planning (command 04).
 </proposal_creation_process>
 
 <validation_steps>
@@ -137,7 +114,7 @@ Before finalizing:
 1. Is the problem clearly defined?
 2. Is the solution specific enough to implement?
 3. Is the scope realistic for solo dev?
-4. Are estimates reasonable?
+4. Is complexity assessment justified?
 5. Are risks acknowledged?
 </quality_checks>
 
@@ -171,35 +148,50 @@ Add a "Recently Modified" filter to the task list view that shows all tasks chan
 - Activity log view
 - Modification history details
 
+## Technical Approach
+Utilize existing filter infrastructure with new date-based criteria. Modify TaskListView component and useTaskFilter hook.
+
+## Complexity Assessment
+**Overall Complexity**: Simple
+
+Factors:
+- Leverages existing filter system
+- Minimal UI changes required
+- Standard date comparison logic
+- No new dependencies needed
+
 [... continued ...]
 ```
 </example_transformation>
 
 <output_format>
-Created proposal with:
-- Entity Type: {Task or Feature}
-- ID: {ID}
+Created proposal task:
+- Task ID: {ID}
 - Title: {Proposal Title}
+- Type: proposal
 - Status: To Do
 - Phase: {Selected Phase}
+- Area: {Primary area affected}
 
 Summary:
-{Brief description of the proposed feature}
+{Brief description of the proposed functionality}
 
 Next steps:
-1. Review the proposal: `scopecraft {task/feature} get {ID}`
+1. Review the proposal: `scopecraft task get {ID}`
 2. If approved, create PRD: `/project:03_feature-to-prd {ID}`
 3. Or jump to planning: `/project:04_feature-planning {ID}`
+
+Note: During planning (step 04), we'll decide whether this becomes a feature with multiple tasks or remains a single implementation task.
 </output_format>
 
 <mcp_usage>
 Always use MCP tools:
-- mcp__scopecraft-cmd__task_create for single task proposals
-- mcp__scopecraft-cmd__feature_create for feature proposals
-- mcp__scopecraft-cmd__task_update for task revisions
-- mcp__scopecraft-cmd__feature_update for feature revisions
+- mcp__scopecraft-cmd__task_create for all proposals (proposals are always tasks)
+- mcp__scopecraft-cmd__task_update for proposal revisions
 - mcp__scopecraft-cmd__phase_list to find active phase
 - mcp__scopecraft-cmd__area_list to verify areas
+
+Note: Features are only created during planning phase (command 04), not at proposal stage.
 </mcp_usage>
 
 <human_review_needed>
@@ -211,7 +203,8 @@ Flag decisions that need verification:
 - [ ] Technical approach assumptions
 - [ ] Area assignments that span multiple domains
 - [ ] Risk assessments based on limited information
-- [ ] Effort estimates without detailed analysis
+- [ ] Complexity assessment accuracy based on current codebase
+- [ ] Hidden dependencies or integration challenges
 
 This section will be included in the task content for later review.
 </human_review_needed>
