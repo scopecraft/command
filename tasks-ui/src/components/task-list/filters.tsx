@@ -91,7 +91,7 @@ export function TaskFilters({
         <div className="flex-1 flex gap-2">
           <input
             type="text"
-            placeholder="Search tasks..."
+            placeholder="Search by title or ID..."
             value={searchTerm}
             onChange={handleSearchChange}
             onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}

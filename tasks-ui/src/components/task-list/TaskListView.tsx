@@ -150,7 +150,8 @@ export function TaskListViewInner() {
       if (filters.type && task.type !== filters.type) return false;
       if (
         filters.searchTerm &&
-        !task.title.toLowerCase().includes(filters.searchTerm.toLowerCase())
+        !task.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) &&
+        !task.id.toLowerCase().includes(filters.searchTerm.toLowerCase())
       )
         return false;
       if (filters.tag && (!task.tags || !task.tags.includes(filters.tag))) return false;
