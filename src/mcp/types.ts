@@ -52,18 +52,23 @@ export enum McpMethod {
   // Template methods
   TEMPLATE_LIST = 'template_list',
 
+  // Configuration methods
+  CONFIG_INIT_ROOT = 'init_root',
+  CONFIG_GET_CURRENT_ROOT = 'get_current_root',
+  CONFIG_LIST_PROJECTS = 'list_projects',
+
   // Debug method (temporary)
   DEBUG_CODE_PATH = 'debug_code_path',
 }
 
 // Base request interface
-export interface McpRequest<T = any> {
+export interface McpRequest<T = unknown> {
   method: McpMethod;
   params: T;
 }
 
 // Base response interface
-export interface McpResponse<T = any> {
+export interface McpResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -269,17 +274,28 @@ export interface WorkflowMarkCompleteNextParams {
 }
 
 // Debug code path params
-export type DebugCodePathParams = {};
+export type DebugCodePathParams = Record<string, never>;
 
 // Template list request params
 export interface TemplateListParams {
   format?: string;
 }
 
+// Configuration init root request params
+export interface ConfigInitRootParams {
+  path: string;
+}
+
+// Configuration get current root request params
+export type ConfigGetCurrentRootParams = Record<string, never>;
+
+// Configuration list projects request params
+export type ConfigListProjectsParams = Record<string, never>;
+
 // MCP method handler type
-export type McpMethodHandler<T = any, R = any> = (params: T) => Promise<McpResponse<R>>;
+export type McpMethodHandler<T = unknown, R = unknown> = (params: T) => Promise<McpResponse<R>>;
 
 // Registry of method handlers
 export interface McpMethodRegistry {
-  [key: string]: McpMethodHandler;
+  [key: string]: McpMethodHandler<any, any>;
 }
