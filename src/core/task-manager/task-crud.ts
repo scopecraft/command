@@ -252,8 +252,8 @@ export async function createTask(
         }
       } else {
         // Use old timestamp format only if explicitly configured
-        const { generateTaskId: generateOldTaskId } = await import('../task-parser.js');
-        task.metadata.id = generateOldTaskId();
+        const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '');
+        task.metadata.id = `TASK-${timestamp}`;
       }
     }
 

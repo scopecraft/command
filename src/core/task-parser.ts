@@ -58,14 +58,3 @@ export function formatTaskFile(task: Task): string {
   return `+++\n${tomlContent}+++\n\n${task.content}\n`;
 }
 
-/**
- * Generates a unique task ID
- * @param prefix Optional prefix for the ID (default: "TASK")
- * @returns A unique task ID
- * @deprecated Use generateTaskId from id-generator module instead
- */
-export function generateTaskId(prefix = 'TASK'): string {
-  const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '');
-
-  return `${prefix}-${timestamp}`;
-}
