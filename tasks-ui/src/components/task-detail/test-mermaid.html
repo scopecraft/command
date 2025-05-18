@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mermaid Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .content {
+            background: white;
+            padding: 2rem;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="mermaid">
+            flowchart TD
+                A[Start] --> B{Is it working?}
+                B -->|Yes| C[Great!]
+                B -->|No| D[Debug]
+                D --> B
+                C --> E[End]
+        </div>
+    </div>
+    
+    <div class="modal">
+        <div class="content">
+            <div class="mermaid">
+                flowchart TD
+                    A[Start] --> B{Is it working?}
+                    B -->|Yes| C[Great!]
+                    B -->|No| D[Debug]
+                    D --> B
+                    C --> E[End]
+            </div>
+        </div>
+    </div>
+</body>
+</html>
