@@ -388,6 +388,45 @@ src/
     └── types.ts           # MCP-specific types
 ```
 
+## Claude Commands
+
+Scopecraft includes specialized Claude commands for a structured feature development workflow:
+
+### Available Commands
+
+- `/project:brainstorm-feature` - Interactive ideation and problem exploration  
+- `/project:feature-proposal` - Create formal feature proposals
+- `/project:feature-to-prd` - Expand proposals into detailed PRDs
+- `/project:feature-planning` - Break features into actionable tasks
+- `/project:implement {mode} {task-id}` - Execute with domain-specific guidance
+  - Modes: `typescript`, `ui`, `mcp`, `cli`, `devops`, etc.
+- `/project:review` - Review tasks and project state
+
+### Documentation
+
+- [Claude Commands Guide](docs/claude-commands-guide.md) - Complete guide to creating and using Claude commands
+- [Feature Development Workflow](docs/feature-development-workflow.md) - Detailed workflow from idea to implementation
+- [Organizational Structure Guide](docs/organizational-structure-guide.md) - Understanding phases, areas, features, and tasks
+
+### Example Workflow
+
+```bash
+# Start with an idea
+/project:brainstorm-feature "better task filtering"
+
+# Create formal proposal
+/project:feature-proposal
+
+# Expand to PRD
+/project:feature-to-prd TASK-20250517-123456
+
+# Plan implementation
+/project:feature-planning FEATURE-20250517-123456
+
+# Execute tasks
+/project:implement ui TASK-20250517-234567
+```
+
 ## Integration Options
 
 This project is designed to be versatile and can be used in different ways:

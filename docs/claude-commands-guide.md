@@ -7,9 +7,12 @@ This guide explains how to create custom slash commands for Claude Code. If you'
 2. [File Structure](#file-structure)
 3. [How $ARGUMENTS Works](#how-arguments-works)
 4. [Creating Your First Command](#creating-your-first-command)
-5. [Best Practices](#best-practices)
-6. [Common Mistakes](#common-mistakes)
-7. [Testing Commands](#testing-commands)
+5. [Command Design Patterns](#command-design-patterns)
+6. [Best Practices](#best-practices)
+7. [Common Mistakes](#common-mistakes)
+8. [Testing Commands](#testing-commands)
+9. [Advanced Patterns](#advanced-patterns)
+10. [Workflow Commands](#workflow-commands)
 
 ## Key Concepts
 
@@ -132,6 +135,63 @@ Focus on file: $ARGUMENTS
 - Run `/project:simple-review utils.ts`
 - Claude receives the prompt with `$ARGUMENTS` replaced by `utils.ts`
 
+## Command Design Patterns
+
+When building commands for Scopecraft, we use two main approaches based on the nature of the commands:
+
+### Hybrid Approach: Specialized vs Generic Commands
+
+**1. Specialized Commands (Major Workflow Differences)**
+
+Use specialized commands for operations with fundamentally different purposes:
+- `/project:brainstorm-feature` - Interactive ideation
+- `/project:feature-proposal` - Formal documentation  
+- `/project:feature-to-prd` - Detailed specifications
+- `/project:feature-planning` - Task breakdown
+
+These commands have distinct prompts tailored to their specific workflows.
+
+**2. Generic Commands with Modes (Technical Variations)**
+
+Use generic commands with mode detection for technical domain variations:
+- `/project:implement typescript TASK-123`
+- `/project:implement ui TASK-123`
+- `/project:implement mcp TASK-123`
+- `/project:test TASK-123`
+- `/project:integrate TASK-123`
+
+These share common patterns but apply domain-specific guidance.
+
+### Mode Detection Pattern
+
+```markdown
+<mode_detection>
+Parse arguments: "$ARGUMENTS"
+Extract mode (first word) and remaining parameters
+</mode_detection>
+
+<guidance_loading>
+Based on mode "{mode}", load:
+- Domain-specific patterns from /docs/command-resources/implement-modes/{mode}.md
+- Apply specialized knowledge for that technical area
+</guidance_loading>
+```
+
+### Resource Organization
+
+Store command resources in a structured directory:
+```
+/docs/command-resources/
+├── implement-modes/       # Mode-specific guidance
+├── planning-templates/    # Template documents
+└── README.md             # Resource documentation
+```
+
+This enables:
+- Future tooling integration
+- Project-specific overrides
+- Consistent patterns across commands
+
 ## Best Practices
 
 ### 1. Use XML Tags for Structure
@@ -173,6 +233,47 @@ Run: scopecraft task list
 
 <!-- CORRECT - Use MCP tools -->
 Use tool: mcp__scopecraft-cmd__task_list
+```
+
+### 5. Include Human Review Sections
+
+For complex commands, add sections to track assumptions and decisions:
+
+```markdown
+<human_review_needed>
+Flag decisions needing verification:
+- [ ] Assumptions about workflows
+- [ ] Technical approach choices
+- [ ] Pattern-based suggestions
+</human_review_needed>
+```
+
+### 6. Reference Organizational Structure
+
+Commands should understand Scopecraft's organizational model:
+
+```markdown
+<context>
+Key Reference: /docs/organizational-structure-guide.md
+- Phases = releases (v1, v1.1), NOT task statuses
+- Statuses = task lifecycle (planning, implementation, done)
+- Areas = technical domains
+- Features = user-facing capabilities
+</context>
+```
+
+### 7. Update Task State Appropriately
+
+Commands that work with tasks should update their status and logs:
+
+```markdown
+<task_updates>
+After implementation:
+1. Update task status to appropriate state
+2. Add implementation log entries
+3. Mark checklist items as complete
+4. Document any decisions made
+</task_updates>
 ```
 
 ## Common Mistakes
@@ -285,12 +386,70 @@ Use available tools to understand the codebase context
 </context>
 ```
 
+## Workflow Commands
+
+Scopecraft includes specialized commands for feature development workflow:
+
+### Feature Development Lifecycle
+
+1. **Brainstorming**: `/project:brainstorm-feature`
+   - Interactive exploration of problems and solutions
+   - Generates ideas ready for proposal
+
+2. **Proposal**: `/project:feature-proposal`
+   - Creates formal feature proposals
+   - Documents the "why" and high-level "how"
+
+3. **PRD Creation**: `/project:feature-to-prd`
+   - Expands proposals into detailed specifications
+   - Includes technical design and requirements
+
+4. **Planning**: `/project:feature-planning`
+   - Breaks features into actionable tasks
+   - Creates task hierarchy with dependencies
+
+5. **Implementation**: `/project:implement {mode} {task-id}`
+   - Mode-specific guidance (typescript, ui, mcp, cli)
+   - Follows domain best practices
+
+### Example Workflow
+
+```bash
+# Start with an idea
+/project:brainstorm-feature "better task filtering"
+
+# Create formal proposal
+/project:feature-proposal
+
+# Expand to detailed PRD
+/project:feature-to-prd TASK-20250517-123456
+
+# Break down into tasks
+/project:feature-planning FEATURE-20250517-123456
+
+# Implement specific tasks
+/project:implement ui TASK-20250517-234567
+/project:implement core TASK-20250517-345678
+```
+
+### Command Patterns
+
+All workflow commands follow consistent patterns:
+- Reference organizational structure guide
+- Use MCP tools for task operations
+- Include human review sections
+- Update task states appropriately
+- Create proper documentation trails
+
 ## Summary
 
 1. **The entire file is the prompt** - everything in the file becomes the prompt
 2. **$ARGUMENTS is literally replaced** throughout the entire file
 3. **Use XML tags** for clear structure
 4. **Use MCP tools**, not CLI commands
-5. **Test with and without arguments** to ensure robustness
+5. **Design commands with hybrid approach** - specialized for workflows, generic with modes for variations
+6. **Include human review tracking** for assumptions and decisions
+7. **Update task states** during command execution
+8. **Test with and without arguments** to ensure robustness
 
-Remember: When creating a command, you're writing the exact prompt that Claude will receive, with `$ARGUMENTS` as a placeholder for user input.
+Remember: When creating a command, you're writing the exact prompt that Claude will receive, with `$ARGUMENTS` as a placeholder for user input. Follow the established patterns for consistency and maintainability.
