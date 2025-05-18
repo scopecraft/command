@@ -22,8 +22,8 @@ This meta-command helps create other commands by:
    - Complex workflows with distinct stages
    - Interactive, conversational style
    - Create documentation artifacts
-   - Examples: @/.claude/commands/brainstorm-feature.md
-             @/.claude/commands/feature-proposal.md
+   - Examples: @/.claude/commands/01_brainstorm-feature.md
+             @/.claude/commands/02_feature-proposal.md
 
 2. **Implementation Commands** (Generic with Modes)
    - Technical execution tasks
@@ -44,7 +44,7 @@ This meta-command helps create other commands by:
    - Coordinate between areas
    - Manage dependencies
    - Track progress
-   - Example: @/.claude/commands/feature-planning.md
+   - Example: @/.claude/commands/04_feature-planning.md
 
 5. **Utility Commands** (Generic or Specialized)
    - Tools, helpers, maintenance
@@ -226,7 +226,7 @@ Before generating, read similar commands and note:
 <creation_checklist>
 Before finalizing:
 - [ ] Studied similar commands in the category
-- [ ] Command follows naming conventions
+- [ ] Command follows naming conventions (use numeric prefix for ordered workflows)
 - [ ] Includes proper task/context structure
 - [ ] References @organizational-structure-guide.md
 - [ ] Uses MCP tools (not CLI) - check existing patterns

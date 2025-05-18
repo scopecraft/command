@@ -144,10 +144,10 @@ When building commands for Scopecraft, we use two main approaches based on the n
 **1. Specialized Commands (Major Workflow Differences)**
 
 Use specialized commands for operations with fundamentally different purposes:
-- `/project:brainstorm-feature` - Interactive ideation
-- `/project:feature-proposal` - Formal documentation  
-- `/project:feature-to-prd` - Detailed specifications
-- `/project:feature-planning` - Task breakdown
+- `/project:01_brainstorm-feature` - Interactive ideation (Step 1)
+- `/project:02_feature-proposal` - Formal documentation (Step 2)
+- `/project:03_feature-to-prd` - Detailed specifications (Step 3)
+- `/project:04_feature-planning` - Task breakdown (Step 4)
 
 These commands have distinct prompts tailored to their specific workflows.
 
@@ -392,19 +392,19 @@ Scopecraft includes specialized commands for feature development workflow:
 
 ### Feature Development Lifecycle
 
-1. **Brainstorming**: `/project:brainstorm-feature`
+1. **Brainstorming**: `/project:01_brainstorm-feature`
    - Interactive exploration of problems and solutions
    - Generates ideas ready for proposal
 
-2. **Proposal**: `/project:feature-proposal`
+2. **Proposal**: `/project:02_feature-proposal`
    - Creates formal feature proposals
    - Documents the "why" and high-level "how"
 
-3. **PRD Creation**: `/project:feature-to-prd`
+3. **PRD Creation**: `/project:03_feature-to-prd`
    - Expands proposals into detailed specifications
    - Includes technical design and requirements
 
-4. **Planning**: `/project:feature-planning`
+4. **Planning**: `/project:04_feature-planning`
    - Breaks features into actionable tasks
    - Creates task hierarchy with dependencies
 
@@ -415,17 +415,17 @@ Scopecraft includes specialized commands for feature development workflow:
 ### Example Workflow
 
 ```bash
-# Start with an idea
-/project:brainstorm-feature "better task filtering"
+# Step 1: Start with an idea
+/project:01_brainstorm-feature "better task filtering"
 
-# Create formal proposal
-/project:feature-proposal
+# Step 2: Create formal proposal
+/project:02_feature-proposal
 
-# Expand to detailed PRD
-/project:feature-to-prd TASK-20250517-123456
+# Step 3: Expand to detailed PRD
+/project:03_feature-to-prd TASK-20250517-123456
 
-# Break down into tasks
-/project:feature-planning FEATURE-20250517-123456
+# Step 4: Break down into tasks
+/project:04_feature-planning FEATURE-20250517-123456
 
 # Implement specific tasks
 /project:implement ui TASK-20250517-234567

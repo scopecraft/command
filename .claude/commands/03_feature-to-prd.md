@@ -144,7 +144,7 @@ Key sections completed:
 - ✓ Task breakdown preview
 
 Next step:
-Create implementation tasks: `/project:feature-planning {ID}`
+Create implementation tasks: `/project:04_feature-planning {ID}`
 </output_format>
 
 <mcp_usage>

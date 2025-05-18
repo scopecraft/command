@@ -16,17 +16,17 @@ The Scopecraft feature development workflow consists of five main stages:
 
 ### Stage 1: Brainstorming
 
-**Command**: `/project:brainstorm-feature`
+**Command**: `/project:01_brainstorm-feature`
 
 **Purpose**: Interactive exploration of problems and potential solutions
 
 **Usage**:
 ```bash
 # With initial idea
-/project:brainstorm-feature "better task filtering"
+/project:01_brainstorm-feature "better task filtering"
 
 # Without arguments (open-ended)
-/project:brainstorm-feature
+/project:01_brainstorm-feature
 ```
 
 **Output**: 
@@ -37,17 +37,17 @@ The Scopecraft feature development workflow consists of five main stages:
 
 ### Stage 2: Feature Proposal
 
-**Command**: `/project:feature-proposal`
+**Command**: `/project:02_feature-proposal`
 
 **Purpose**: Transform ideas into structured proposals
 
 **Usage**:
 ```bash
 # From brainstorming summary
-/project:feature-proposal
+/project:02_feature-proposal
 
 # With direct idea
-/project:feature-proposal "add real-time collaboration"
+/project:02_feature-proposal "add real-time collaboration"
 ```
 
 **Creates**: Task with type "proposal" containing:
@@ -60,14 +60,14 @@ The Scopecraft feature development workflow consists of five main stages:
 
 ### Stage 3: PRD Creation
 
-**Command**: `/project:feature-to-prd`
+**Command**: `/project:03_feature-to-prd`
 
 **Purpose**: Expand proposals into detailed specifications
 
 **Usage**:
 ```bash
 # Using proposal task ID
-/project:feature-to-prd TASK-20250517-123456
+/project:03_feature-to-prd TASK-20250517-123456
 ```
 
 **Produces**: Comprehensive PRD with:
@@ -80,17 +80,17 @@ The Scopecraft feature development workflow consists of five main stages:
 
 ### Stage 4: Feature Planning
 
-**Command**: `/project:feature-planning`
+**Command**: `/project:04_feature-planning`
 
 **Purpose**: Create task hierarchy with proper organization
 
 **Usage**:
 ```bash
 # From feature description
-/project:feature-planning "implement user authentication"
+/project:04_feature-planning "implement user authentication"
 
 # From existing feature
-/project:feature-planning FEATURE-20250517-123456
+/project:04_feature-planning FEATURE-20250517-123456
 ```
 
 **Creates**:
@@ -132,7 +132,7 @@ Here's a complete walkthrough of developing a task filtering feature:
 ### 1. Start with Brainstorming
 
 ```bash
-/project:brainstorm-feature "I need better ways to filter tasks"
+/project:01_brainstorm-feature "I need better ways to filter tasks"
 ```
 
 **Claude explores**:
@@ -146,7 +146,7 @@ Here's a complete walkthrough of developing a task filtering feature:
 ### 2. Create Proposal
 
 ```bash
-/project:feature-proposal
+/project:02_feature-proposal
 ```
 
 **Creates**: TASK-20250517-100000 with:
@@ -158,7 +158,7 @@ Here's a complete walkthrough of developing a task filtering feature:
 ### 3. Expand to PRD
 
 ```bash
-/project:feature-to-prd TASK-20250517-100000
+/project:03_feature-to-prd TASK-20250517-100000
 ```
 
 **Updates task with**:
@@ -170,7 +170,7 @@ Here's a complete walkthrough of developing a task filtering feature:
 ### 4. Plan Implementation
 
 ```bash
-/project:feature-planning TASK-20250517-100000
+/project:04_feature-planning TASK-20250517-100000
 ```
 
 **Creates tasks**:
