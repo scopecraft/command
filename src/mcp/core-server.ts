@@ -25,7 +25,6 @@ import {
   deletePhase,
   deleteTask,
   findNextTask,
-  generateTaskId,
   getArea,
   getFeature,
   getTask,
@@ -155,7 +154,7 @@ function registerTools(server: McpServer, verbose = false): void {
       try {
         // Create the task object from the parameters
         const metadata: TaskMetadata = {
-          id: params.id || generateTaskId(),
+          id: params.id || '', // Let task-crud generate the ID
           title: params.title,
           type: params.type,
           status: params.status || '🟡 To Do',

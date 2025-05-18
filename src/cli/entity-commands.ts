@@ -28,6 +28,13 @@ import {
   handleTaskMoveCommand,
   handleUpdateCommand,
 } from './commands.js';
+import {
+  migrateIds,
+  setIdFormat,
+  setMaxContextLength,
+  setStopWords,
+  showConfig,
+} from './config-commands.js';
 
 /**
  * Set up task commands
@@ -526,6 +533,53 @@ export function setupInitCommands(program: Command): void {
 }
 
 /**
+ * Set up configuration commands
+ * @param program Root commander program
+ */
+export function setupConfigCommands(program: Command): void {
+  // Create config command group
+  const configCommand = new Command('config')
+    .description('Configuration management commands')
+    .addHelpText('before', '\nCONFIGURATION COMMANDS\n====================\n');
+
+  // config show command
+  configCommand
+    .command('show')
+    .description('Show current configuration')
+    .option('-f, --format <format>', 'Output format: default, json', 'default')
+    .action((options) => showConfig(options.format));
+
+  // config id-format command
+  configCommand
+    .command('id-format <format>')
+    .description('Set task ID format (concise or timestamp)')
+    .action(setIdFormat);
+
+  // config stop-words command
+  configCommand
+    .command('stop-words <words>')
+    .description('Set custom stop words for context extraction (comma-separated)')
+    .action(setStopWords);
+
+  // config context-length command
+  configCommand
+    .command('context-length <length>')
+    .description('Set maximum context length for ID generation (1-5)')
+    .action(setMaxContextLength);
+
+  // config migrate-ids command
+  configCommand
+    .command('migrate-ids')
+    .description('Migrate existing task IDs to new format')
+    .option('--dry-run', 'Preview changes without modifying files', true)
+    .option('--apply', 'Apply changes to files')
+    .action((options) => migrateIds(options.dryRun && !options.apply));
+
+  // Add config group to root program
+  program.addCommand(configCommand);
+}
+
+/**
  * Set up all entity commands
  * @param program Root commander program
  */
@@ -535,5 +589,6 @@ export function setupEntityCommands(program: Command): void {
   setupFeatureAreaCommands(program);
   setupWorkflowCommands(program);
   setupTemplateCommands(program);
+  setupConfigCommands(program);
   setupInitCommands(program);
 }

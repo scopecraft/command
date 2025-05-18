@@ -19,7 +19,6 @@ import {
   formatPhasesList,
   formatTaskDetail,
   formatTasksList,
-  generateTaskId,
   getArea,
   getFeature,
   getTask,
@@ -175,12 +174,9 @@ export async function handleCreateCommand(options: {
 
       const today = new Date().toISOString().split('T')[0];
 
-      // Generate ID if not provided
-      const id = options.id || generateTaskId();
-
       // Prepare values to apply to template
       const values: Record<string, any> = {
-        id,
+        id: options.id || '', // Let task-crud generate the ID
         title: options.title,
         status: options.status || '🟡 To Do',
         type: options.type,
@@ -248,8 +244,8 @@ export async function handleCreateCommand(options: {
       // Create from scratch
       const today = new Date().toISOString().split('T')[0];
 
-      // Generate ID if not provided
-      const id = options.id || generateTaskId();
+      // Use provided ID or let task-crud generate it
+      const id = options.id || '';
 
       // Handle special case for _overview.md files
       const isOverview = id === '_overview' || id.endsWith('/_overview');

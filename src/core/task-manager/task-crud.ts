@@ -9,7 +9,7 @@ import {
   normalizeTaskStatus,
 } from '../field-normalizers.js';
 import { projectConfig } from '../project-config.js';
-import { formatTaskFile, generateTaskId, parseTaskFile } from '../task-parser.js';
+import { formatTaskFile, parseTaskFile } from '../task-parser.js';
 import {
   type OperationResult,
   type Task,
@@ -17,6 +17,7 @@ import {
   TaskMetadata,
   type TaskUpdateOptions,
 } from '../types.js';
+import { generateTaskId as generateNewTaskId, validateTaskId } from './id-generator.js';
 import {
   ensureDirectoryExists,
   getAllFiles,
@@ -220,7 +221,40 @@ export async function createTask(
 
     // Generate ID if not provided
     if (!task.metadata.id) {
-      task.metadata.id = generateTaskId();
+      // Use new concise format by default, unless explicitly set to timestamp
+      const config = projectConfig.getConfig();
+      const useOldFormat = config?.idFormat === 'timestamp';
+
+      if (!useOldFormat) {
+        // Generate new concise ID with collision retry (default behavior)
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        while (attempts < maxAttempts) {
+          const newId = generateNewTaskId({
+            type: task.metadata.type,
+            title: task.metadata.title,
+          });
+
+          // Check if ID already exists
+          const existingTask = await getTask(newId);
+          if (!existingTask.success) {
+            // ID doesn't exist, we can use it
+            task.metadata.id = newId;
+            break;
+          }
+
+          attempts++;
+        }
+
+        if (!task.metadata.id) {
+          throw new Error('Failed to generate unique task ID after multiple attempts');
+        }
+      } else {
+        // Use old timestamp format only if explicitly configured
+        const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '');
+        task.metadata.id = `TASK-${timestamp}`;
+      }
     }
 
     // Normalize priority and status values if present
