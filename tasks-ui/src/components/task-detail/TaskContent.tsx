@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { useTaskContext } from '../../context/TaskContext';
 import type { Task } from '../../lib/types';
 import { Button } from '../ui/button';
+import { MermaidDiagram } from './MermaidDiagram';
 
 interface TaskContentProps {
   task: Task;
@@ -107,7 +108,28 @@ export function TaskContent({ task }: TaskContentProps) {
         </Button>
       </div>
       <div className="prose prose-sm dark:prose-invert max-w-none">
-        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw]}
+          components={{
+            code({ node, className, children, ...props }) {
+              const match = /language-(\w+)/.exec(className || '');
+              const language = match ? match[1] : '';
+
+              if (language === 'mermaid') {
+                return (
+                  <MermaidDiagram code={String(children).replace(/\n$/, '')} className="my-4" />
+                );
+              }
+
+              return (
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              );
+            },
+          }}
+        >
           {task.content || ''}
         </ReactMarkdown>
       </div>

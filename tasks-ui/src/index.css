@@ -225,3 +225,29 @@
     --tw-prose-invert-td-borders: hsl(var(--border)) !important;
   }
 }
+
+/* Mermaid diagram styling */
+.mermaid-container {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: calc(var(--radius) - 2px);
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+}
+
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure Mermaid text is readable in both themes */
+.dark .mermaid-container .nodeLabel {
+  fill: currentColor;
+  color: hsl(var(--foreground));
+}
+
+.dark .mermaid-container .edgeLabel {
+  fill: currentColor;
+  color: hsl(var(--foreground));
+}
