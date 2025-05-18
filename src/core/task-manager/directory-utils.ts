@@ -10,10 +10,11 @@ import { projectConfig } from '../project-config.js';
  * @returns Path to the tasks directory
  */
 export function getTasksDirectory(config?: RuntimeConfig): string {
-  if (config?.rootPath) {
-    const configManager = ConfigurationManager.getInstance();
-    const rootConfig = configManager.getRootConfig(config);
+  const configManager = ConfigurationManager.getInstance();
+  const rootConfig = configManager.getRootConfig(config);
 
+  // Check if we have a configured root (from CLI, config file, etc.)
+  if (rootConfig.path && rootConfig.source !== 'auto_detect') {
     // Determine task directory based on project type in root
     if (fs.existsSync(path.join(rootConfig.path, '.ruru'))) {
       return path.join(rootConfig.path, '.ruru', 'tasks');
@@ -31,10 +32,11 @@ export function getTasksDirectory(config?: RuntimeConfig): string {
  * @returns Path to the phases directory
  */
 export function getPhasesDirectory(config?: RuntimeConfig): string {
-  if (config?.rootPath) {
-    const configManager = ConfigurationManager.getInstance();
-    const rootConfig = configManager.getRootConfig(config);
+  const configManager = ConfigurationManager.getInstance();
+  const rootConfig = configManager.getRootConfig(config);
 
+  // Check if we have a configured root (from CLI, config file, etc.)
+  if (rootConfig.path && rootConfig.source !== 'auto_detect') {
     // Determine phases directory based on project type in root
     if (fs.existsSync(path.join(rootConfig.path, '.ruru'))) {
       return path.join(rootConfig.path, '.ruru', 'tasks'); // Roo Commander uses tasks dir for phases

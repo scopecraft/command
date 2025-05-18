@@ -7,6 +7,7 @@ import path from 'node:path';
  */
 import { Command } from 'commander';
 import { ensureDirectoryExists, getTasksDirectory, projectConfig } from '../core/index.js';
+import { ConfigurationManager } from '../core/config/configuration-manager.js';
 import { setupEntityCommands } from './entity-commands.js';
 
 // Create the main command
@@ -28,7 +29,32 @@ program
   .description(
     'CLI for managing Markdown-Driven Task Management (MDTM) files with TOML/YAML frontmatter'
   )
-  .version(version);
+  .version(version)
+  .option('--root-dir <path>', 'Set project root directory (overrides all other sources)')
+  .option('--config <path>', 'Path to configuration file (default: ~/.scopecraft/config.json)');
+
+// Configure global options handler
+program.hook('preAction', () => {
+  const options = program.opts();
+  const configManager = ConfigurationManager.getInstance();
+
+  // Handle --root-dir parameter
+  if (options.rootDir) {
+    try {
+      configManager.setRootFromCLI(options.rootDir);
+      console.log(`Using project root from CLI: ${options.rootDir}`);
+    } catch (error) {
+      console.error(`Error setting root directory: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      process.exit(1);
+    }
+  }
+
+  // Handle --config parameter
+  if (options.config) {
+    configManager.setConfigFilePath(options.config);
+    console.log(`Using config file: ${options.config}`);
+  }
+});
 
 // Add structured help overview
 program.addHelpText(
