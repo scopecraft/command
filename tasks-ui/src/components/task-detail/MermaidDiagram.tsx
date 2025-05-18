@@ -98,7 +98,7 @@ export function MermaidDiagram({ code, className = '' }: MermaidDiagramProps) {
 
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-w-[90vw] max-h-[90vh] p-8">
-          <div className="w-full h-full bg-card p-4 rounded-lg">
+          <div className="w-full h-full bg-background p-4 rounded-lg border border-border">
             <MermaidDiagramInner code={code} className="h-full w-full" />
           </div>
         </DialogContent>
