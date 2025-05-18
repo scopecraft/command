@@ -55,6 +55,40 @@ async function determineCheckMode() {
   return stagedFiles.trim() ? 'staged' : 'changed';
 }
 
+// Get changed files for Biome
+async function getChangedFiles(mode: string): Promise<string[]> {
+  const gitCmd = mode === 'staged' 
+    ? ['git', 'diff', '--staged', '--name-only']
+    : ['git', 'diff', '--name-only'];
+    
+  const proc = Bun.spawn(gitCmd, {
+    stdout: 'pipe'
+  });
+  
+  let stdout = '';
+  if (proc.stdout) {
+    const reader = proc.stdout.getReader();
+    const decoder = new TextDecoder();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        stdout += decoder.decode(value);
+      }
+    } catch (error) {
+      // Ignore read errors
+    }
+  }
+  
+  await proc.exited;
+  
+  // Filter for TypeScript/JavaScript files that match Biome patterns
+  return stdout.trim().split('\n').filter(file => {
+    if (!file) return false;
+    return file.match(/\.(ts|tsx|js|jsx|json)$/);
+  });
+}
+
 // Run a command and capture output
 async function runCommand(cmd: string[], description: string) {
   console.log(`\n${description}`);
@@ -124,11 +158,26 @@ async function runChecks() {
   };
   
   // Run Biome check
-  const biomeCmd = mode === 'all' 
-    ? ['bun', 'x', 'biome', 'check', '.']
-    : ['bun', 'x', 'biome', 'check', `--${mode}`, '.'];
-    
-  results.biome = await runCommand(biomeCmd, '🧹 Biome Check:');
+  let biomeCmd: string[];
+  
+  if (mode === 'all') {
+    biomeCmd = ['bun', 'x', 'biome', 'check', '--write', '.'];
+  } else {
+    // For staged/changed modes, get the list of files and pass them directly
+    const changedFiles = await getChangedFiles(mode);
+    if (changedFiles.length > 0) {
+      biomeCmd = ['bun', 'x', 'biome', 'check', '--write', ...changedFiles];
+    } else {
+      console.log('🧹 Biome Check:');
+      console.log('No files to check.');
+      results.biome = { success: true, stdout: '', stderr: '', exitCode: 0 };
+      biomeCmd = []; // Skip running Biome
+    }
+  }
+  
+  if (biomeCmd.length > 0) {
+    results.biome = await runCommand(biomeCmd, '🧹 Biome Check:');
+  }
   
   // Run TypeScript check (always full project to catch cross-file errors)
   results.typescript = await runCommand(

@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 import { useLocation } from 'wouter';
 import { useTaskContext } from '../../context/TaskContext';
 import { routes } from '../../lib/routes';
@@ -184,14 +187,22 @@ export function EntityGroupSection({
           {childEntity.description && (
             <div className="mb-4 px-3 py-2 bg-card/50 border border-border/50 rounded-md text-sm">
               <h4 className="font-medium mb-1">Description</h4>
-              <p className="text-muted-foreground">{childEntity.description}</p>
+              <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                  {childEntity.description}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
 
           {/* Overview content specific to this relationship */}
           {overviewContent && (
             <div className="mb-4 p-3 bg-card border border-border rounded-md">
-              <div className="text-sm prose max-w-none">{overviewContent}</div>
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                  {overviewContent}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
 
