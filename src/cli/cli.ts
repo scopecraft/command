@@ -43,6 +43,7 @@ Available entity types:
   area       Area management operations
   workflow   Task workflow and sequence operations
   template   Template management operations
+  config     Configuration management operations
 
 Examples:
   sc task list                     List all tasks

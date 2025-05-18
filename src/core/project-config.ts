@@ -4,6 +4,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
 
 /**
  * Enum for project mode detection
@@ -23,16 +24,33 @@ export interface ProjectPaths {
 }
 
 /**
+ * Interface for project configuration
+ */
+export interface ProjectConfigData {
+  idFormat?: 'concise' | 'timestamp';
+  customStopWords?: string[];
+  maxContextLength?: number;
+}
+
+// Default configuration values
+const DEFAULT_CONFIG: ProjectConfigData = {
+  idFormat: 'concise',
+  maxContextLength: 2,
+};
+
+/**
  * Project configuration class
  * Handles project type detection and path resolution
  */
 export class ProjectConfig {
   private mode: ProjectMode;
   private paths: ProjectPaths;
+  private config: ProjectConfigData = { ...DEFAULT_CONFIG };
 
   constructor() {
     this.mode = this.detectProjectMode();
     this.paths = this.buildProjectPaths();
+    this.loadConfig();
   }
 
   /**
@@ -261,6 +279,79 @@ export class ProjectConfig {
     // Combine all middle directories as the subdirectory path
     const subdirectory = pathParts.slice(1, -1).join(path.sep);
     return { phase, subdirectory };
+  }
+
+  /**
+   * Load project configuration from file
+   */
+  private loadConfig(): void {
+    const configPath = this.getProjectConfigPath();
+
+    if (fs.existsSync(configPath)) {
+      try {
+        const content = fs.readFileSync(configPath, 'utf-8');
+        const fileConfig = parseToml(content) as ProjectConfigData;
+        // Merge with defaults (file config overrides defaults)
+        this.config = { ...DEFAULT_CONFIG, ...fileConfig };
+      } catch (error) {
+        console.warn(`Failed to load project config: ${error}`);
+      }
+    }
+    // If no config file exists, we already have the defaults
+  }
+
+  /**
+   * Get project configuration data
+   * @returns Project configuration
+   */
+  getConfig(): ProjectConfigData {
+    return this.config;
+  }
+
+  /**
+   * Update project configuration
+   * @param updates Configuration updates
+   */
+  updateConfig(updates: Partial<ProjectConfigData>): void {
+    this.config = { ...this.config, ...updates };
+    this.saveConfig();
+  }
+
+  /**
+   * Save project configuration to file
+   */
+  private saveConfig(): void {
+    const configPath = this.getProjectConfigPath();
+    const configDir = path.dirname(configPath);
+
+    try {
+      // Ensure config directory exists
+      if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
+      }
+
+      // Only save non-default values
+      const configToSave: Partial<ProjectConfigData> = {};
+      
+      for (const [key, value] of Object.entries(this.config)) {
+        if (value !== DEFAULT_CONFIG[key as keyof ProjectConfigData]) {
+          configToSave[key as keyof ProjectConfigData] = value;
+        }
+      }
+
+      const content = stringifyToml(configToSave);
+      fs.writeFileSync(configPath, content);
+    } catch (error) {
+      console.error(`Failed to save project config: ${error}`);
+    }
+  }
+
+  /**
+   * Get project configuration file path
+   * @returns Path to the project configuration file
+   */
+  getProjectConfigPath(): string {
+    return path.join(this.paths.configRoot, 'project.toml');
   }
 }
 
