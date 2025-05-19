@@ -1,18 +1,12 @@
 /**
  * Project configuration manager
- * Handles project type detection and path resolution
+ * Uses ConfigurationManager for root resolution and handles project-specific config
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
-
-/**
- * Enum for project mode detection
- */
-export enum ProjectMode {
-  ROO_COMMANDER = 'roo_commander',
-  STANDALONE = 'standalone',
-}
+import { ConfigurationManager } from './config/configuration-manager.js';
+import type { RuntimeConfig } from './config/types.js';
 
 /**
  * Interface for project paths
@@ -21,6 +15,7 @@ export interface ProjectPaths {
   tasksRoot: string;
   phasesRoot: string;
   configRoot: string;
+  templatesRoot: string;
 }
 
 /**
@@ -38,247 +33,72 @@ const DEFAULT_CONFIG: ProjectConfigData = {
   maxContextLength: 2,
 };
 
+// Default directory structure
+const DEFAULT_DIRECTORIES = {
+  tasks: '.tasks',
+  phases: '.tasks/phases',
+  config: '.tasks/config',
+  templates: '.tasks/templates',
+};
+
 /**
  * Project configuration class
- * Handles project type detection and path resolution
+ * Handles project configuration and path resolution
  */
 export class ProjectConfig {
-  private mode: ProjectMode;
+  private configManager: ConfigurationManager;
   private paths: ProjectPaths;
   private config: ProjectConfigData = { ...DEFAULT_CONFIG };
+  private runtime?: RuntimeConfig;
 
-  constructor() {
-    this.mode = this.detectProjectMode();
+  constructor(runtime?: RuntimeConfig) {
+    this.configManager = ConfigurationManager.getInstance();
+    this.runtime = runtime;
     this.paths = this.buildProjectPaths();
     this.loadConfig();
   }
 
   /**
-   * Detect project mode based on directory structure
-   * @returns ProjectMode based on detected directories
+   * Get singleton instance (for backward compatibility)
    */
-  private detectProjectMode(): ProjectMode {
-    const ruruDir = path.join(process.cwd(), '.ruru');
-
-    if (fs.existsSync(ruruDir)) {
-      return ProjectMode.ROO_COMMANDER;
-    }
-
-    // Check for standalone mode - look for .tasks directory
-    const tasksDir = path.join(process.cwd(), '.tasks');
-    if (fs.existsSync(tasksDir)) {
-      return ProjectMode.STANDALONE;
-    }
-
-    // Default to standalone mode if neither exists
-    return ProjectMode.STANDALONE;
+  static getInstance(runtime?: RuntimeConfig): ProjectConfig {
+    return new ProjectConfig(runtime);
   }
 
   /**
-   * Build project paths based on detected mode
-   * @returns ProjectPaths object with all necessary paths
+   * Get the project root directory
+   */
+  private getRoot(): string {
+    return this.configManager.getRootConfig(this.runtime).path;
+  }
+
+  /**
+   * Build project paths based on configuration
    */
   private buildProjectPaths(): ProjectPaths {
-    if (this.mode === ProjectMode.ROO_COMMANDER) {
-      return {
-        tasksRoot: path.join(process.cwd(), '.ruru', 'tasks'),
-        phasesRoot: path.join(process.cwd(), '.ruru', 'tasks'), // In Roo Commander, phases are structured as subdirectories
-        configRoot: path.join(process.cwd(), '.ruru', 'config'),
-      };
-    }
+    const root = this.getRoot();
+    const project = this.getProjectDefinition();
+
+    const dirs = {
+      ...DEFAULT_DIRECTORIES,
+      ...project?.directories,
+    };
+
     return {
-      tasksRoot: path.join(process.cwd(), '.tasks'),
-      phasesRoot: path.join(process.cwd(), '.tasks', 'phases'),
-      configRoot: path.join(process.cwd(), '.tasks', 'config'),
+      tasksRoot: path.join(root, dirs.tasks),
+      phasesRoot: path.join(root, dirs.phases),
+      configRoot: path.join(root, dirs.config),
+      templatesRoot: path.join(root, dirs.templates),
     };
   }
 
   /**
-   * Get current project mode
-   * @returns Current project mode
+   * Get project definition from configuration
    */
-  getMode(): ProjectMode {
-    return this.mode;
-  }
-
-  /**
-   * Get tasks directory
-   * @returns Path to the tasks directory
-   */
-  getTasksDirectory(): string {
-    return this.paths.tasksRoot;
-  }
-
-  /**
-   * Get phases directory
-   * @returns Path to the phases directory
-   */
-  getPhasesDirectory(): string {
-    return this.paths.phasesRoot;
-  }
-
-  /**
-   * Get configuration directory
-   * @returns Path to the configuration directory
-   */
-  getConfigDirectory(): string {
-    return this.paths.configRoot;
-  }
-
-  /**
-   * Get phases config file path
-   * @returns Path to the phases configuration file
-   */
-  getPhasesConfigPath(): string {
-    return path.join(this.paths.configRoot, 'phases.toml');
-  }
-
-  /**
-   * Initialize project structure
-   * Creates necessary directories for the current mode
-   */
-  initializeProjectStructure(): void {
-    const rootDir =
-      this.mode === ProjectMode.ROO_COMMANDER
-        ? path.join(process.cwd(), '.ruru')
-        : path.join(process.cwd(), '.tasks');
-
-    // Create root directory if it doesn't exist
-    if (!fs.existsSync(rootDir)) {
-      fs.mkdirSync(rootDir, { recursive: true });
-    }
-
-    // Ensure tasks directory exists
-    if (!fs.existsSync(this.paths.tasksRoot)) {
-      fs.mkdirSync(this.paths.tasksRoot, { recursive: true });
-    }
-
-    // Ensure phases directory exists (only needed in standalone mode)
-    if (this.mode === ProjectMode.STANDALONE && !fs.existsSync(this.paths.phasesRoot)) {
-      fs.mkdirSync(this.paths.phasesRoot, { recursive: true });
-    }
-
-    // Ensure config directory exists
-    if (!fs.existsSync(this.paths.configRoot)) {
-      fs.mkdirSync(this.paths.configRoot, { recursive: true });
-    }
-
-    // In standalone mode, also create a templates directory
-    if (this.mode === ProjectMode.STANDALONE) {
-      const templatesDir = path.join(rootDir, 'templates');
-      if (!fs.existsSync(templatesDir)) {
-        fs.mkdirSync(templatesDir, { recursive: true });
-      }
-    }
-  }
-
-  /**
-   * Force a specific project mode
-   * @param mode The project mode to force
-   */
-  setMode(mode: ProjectMode): void {
-    this.mode = mode;
-    this.paths = this.buildProjectPaths();
-  }
-
-  /**
-   * Validate if project structure exists
-   * @returns Whether the project structure is valid
-   */
-  validateEnvironment(): boolean {
-    if (this.mode === ProjectMode.ROO_COMMANDER) {
-      const ruruDir = path.join(process.cwd(), '.ruru');
-      return fs.existsSync(ruruDir);
-    }
-    return fs.existsSync(this.paths.tasksRoot);
-  }
-
-  /**
-   * Get task file path in appropriate directory
-   * @param taskId Task ID
-   * @param phase Optional phase for nested location
-   * @param subdirectory Optional subdirectory within phase (e.g., "FEATURE_Login")
-   * @returns Path to the task file
-   */
-  getTaskFilePath(taskId: string, phase?: string, subdirectory?: string): string {
-    if (phase) {
-      const phaseDir = path.join(this.paths.tasksRoot, phase);
-      if (subdirectory) {
-        const featureDir = path.join(phaseDir, subdirectory);
-        return path.join(featureDir, `${taskId}.md`);
-      }
-      return path.join(phaseDir, `${taskId}.md`);
-    }
-    return path.join(this.paths.tasksRoot, `${taskId}.md`);
-  }
-
-  /**
-   * Builds task directory path based on phase and subdirectory
-   * @param phase Optional phase name
-   * @param subdirectory Optional subdirectory name
-   * @returns Path to the task directory
-   */
-  getTaskDirectory(phase?: string, subdirectory?: string): string {
-    let baseDir = this.paths.tasksRoot;
-
-    if (phase) {
-      baseDir = path.join(baseDir, phase);
-    }
-
-    if (subdirectory) {
-      baseDir = path.join(baseDir, subdirectory);
-    }
-
-    return baseDir;
-  }
-
-  /**
-   * Creates all directories needed for a task path
-   * @param phase Optional phase name
-   * @param subdirectory Optional subdirectory name
-   * @returns Path to the created directory
-   */
-  ensureTaskDirectory(phase?: string, subdirectory?: string): string {
-    const dirPath = this.getTaskDirectory(phase, subdirectory);
-
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-    }
-
-    return dirPath;
-  }
-
-  /**
-   * Parses a file path to extract phase and subdirectory
-   * @param filePath Path to a task file
-   * @returns Object with phase and subdirectory
-   */
-  parseTaskPath(filePath: string): { phase?: string; subdirectory?: string } {
-    const tasksRoot = this.paths.tasksRoot;
-
-    // Check if the path is relative to tasks root
-    if (!filePath.startsWith(tasksRoot)) {
-      return {};
-    }
-
-    // Remove tasks root from path and split by separator
-    const relativePath = filePath.substring(tasksRoot.length + 1);
-    const pathParts = relativePath.split(path.sep);
-
-    if (pathParts.length === 1) {
-      // Only filename, no phase or subdirectory
-      return {};
-    }
-    if (pathParts.length === 2) {
-      // Has phase but no subdirectory
-      return { phase: pathParts[0] };
-    }
-    // Has both phase and subdirectory (or more levels)
-    const phase = pathParts[0];
-    // Combine all middle directories as the subdirectory path
-    const subdirectory = pathParts.slice(1, -1).join(path.sep);
-    return { phase, subdirectory };
+  private getProjectDefinition() {
+    const root = this.getRoot();
+    const projects = this.configManager.getProjects();
+    return projects.find((p) => p.path === root);
   }
 
   /**
@@ -287,22 +107,82 @@ export class ProjectConfig {
   private loadConfig(): void {
     const configPath = this.getProjectConfigPath();
 
-    if (fs.existsSync(configPath)) {
-      try {
+    try {
+      if (fs.existsSync(configPath)) {
         const content = fs.readFileSync(configPath, 'utf-8');
-        const fileConfig = parseToml(content) as ProjectConfigData;
-        // Merge with defaults (file config overrides defaults)
-        this.config = { ...DEFAULT_CONFIG, ...fileConfig };
-      } catch (error) {
-        console.warn(`Failed to load project config: ${error}`);
+        const parsed = parseToml(content) as ProjectConfigData;
+        this.config = { ...DEFAULT_CONFIG, ...parsed };
       }
+    } catch (error) {
+      // Log error but continue with defaults
+      console.error(`Failed to load project config: ${error}`);
     }
-    // If no config file exists, we already have the defaults
+  }
+
+  /**
+   * Get tasks directory
+   */
+  getTasksDirectory(): string {
+    return this.paths.tasksRoot;
+  }
+
+  /**
+   * Get phases directory
+   */
+  getPhasesDirectory(): string {
+    return this.paths.phasesRoot;
+  }
+
+  /**
+   * Get configuration directory
+   */
+  getConfigDirectory(): string {
+    return this.paths.configRoot;
+  }
+
+  /**
+   * Get templates directory
+   */
+  getTemplatesDirectory(): string {
+    return this.paths.templatesRoot;
+  }
+
+  /**
+   * Get phases config file path
+   */
+  getPhasesConfigPath(): string {
+    return path.join(this.paths.configRoot, 'phases.toml');
+  }
+
+  /**
+   * Get project configuration file path
+   */
+  getProjectConfigPath(): string {
+    return path.join(this.paths.configRoot, 'project.toml');
+  }
+
+  /**
+   * Initialize project structure
+   * Creates necessary directories
+   */
+  initializeProjectStructure(): void {
+    // Create all directories
+    Object.values(this.paths).forEach((dirPath) => {
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+    });
+  }
+
+  /**
+   * Validate project environment
+   */
+  validateEnvironment(): boolean {
+    return this.configManager.validateRoot(this.getRoot());
   }
 
   /**
    * Get project configuration data
-   * @returns Project configuration
    */
   getConfig(): ProjectConfigData {
     return this.config;
@@ -310,7 +190,6 @@ export class ProjectConfig {
 
   /**
    * Update project configuration
-   * @param updates Configuration updates
    */
   updateConfig(updates: Partial<ProjectConfigData>): void {
     this.config = { ...this.config, ...updates };
@@ -332,7 +211,7 @@ export class ProjectConfig {
 
       // Only save non-default values
       const configToSave: Partial<ProjectConfigData> = {};
-      
+
       for (const [key, value] of Object.entries(this.config)) {
         if (value !== DEFAULT_CONFIG[key as keyof ProjectConfigData]) {
           configToSave[key as keyof ProjectConfigData] = value;
@@ -347,13 +226,37 @@ export class ProjectConfig {
   }
 
   /**
-   * Get project configuration file path
-   * @returns Path to the project configuration file
+   * Get task file path
    */
-  getProjectConfigPath(): string {
-    return path.join(this.paths.configRoot, 'project.toml');
+  getTaskFilePath(id: string, phase: string, subdirectory: string): string {
+    const baseDir = phase ? path.join(this.paths.tasksRoot, phase) : this.paths.tasksRoot;
+
+    return path.join(baseDir, subdirectory, `${id}.md`);
+  }
+
+  /**
+   * Parse task path to extract phase and subdirectory
+   */
+  parseTaskPath(filePath: string): { phase?: string; subdirectory?: string } {
+    const tasksRoot = this.paths.tasksRoot;
+    const relativePath = path.relative(tasksRoot, filePath);
+    const parts = relativePath.split(path.sep);
+
+    let phase: string | undefined;
+    let subdirectory: string | undefined;
+
+    // If under phases directory, first part is phase name
+    if (parts.length >= 3 && parts[0] === 'phases') {
+      phase = parts[1];
+      subdirectory = parts[2];
+    } else if (parts.length >= 2) {
+      // Direct subdirectory under tasks
+      subdirectory = parts[0];
+    }
+
+    return { phase, subdirectory };
   }
 }
 
-// Export a singleton instance
+// Export a singleton instance (for backward compatibility)
 export const projectConfig = new ProjectConfig();

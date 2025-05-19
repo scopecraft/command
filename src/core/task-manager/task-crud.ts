@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
+import type { RuntimeConfig } from '../config/types.js';
 import {
   getPriorityOrder,
   isCompletedTaskStatus,
@@ -16,7 +17,6 @@ import {
   type TaskFilterOptions,
   TaskMetadata,
   type TaskUpdateOptions,
-  type RuntimeConfig,
 } from '../types.js';
 import { generateTaskId as generateNewTaskId, validateTaskId } from './id-generator.js';
 import {
@@ -154,7 +154,7 @@ export async function getTask(
 ): Promise<OperationResult<Task>> {
   try {
     const { phase, subdirectory, config } = options;
-    
+
     // If phase and subdirectory are provided, try direct path lookup first
     if (phase && subdirectory) {
       // TODO: Update getTaskFilePath to use runtime config
@@ -338,12 +338,14 @@ export async function createTask(
 export async function updateTask(
   id: string,
   updates: TaskUpdateOptions,
-  searchPhase?: string,
-  searchSubdirectory?: string
+  options?: { phase?: string; subdirectory?: string }
 ): Promise<OperationResult<Task>> {
   try {
     // Get the task, using phase and subdirectory if provided
-    const taskResult = await getTask(id, searchPhase, searchSubdirectory);
+    const taskResult = await getTask(id, {
+      phase: options?.phase,
+      subdirectory: options?.subdirectory,
+    });
     if (!taskResult.success || !taskResult.data) {
       return {
         success: false,
@@ -490,11 +492,13 @@ export async function updateTask(
  */
 export async function deleteTask(
   id: string,
-  phase?: string,
-  subdirectory?: string
+  options?: { phase?: string; subdirectory?: string }
 ): Promise<OperationResult<void>> {
   try {
-    const taskResult = await getTask(id, phase, subdirectory);
+    const taskResult = await getTask(id, {
+      phase: options?.phase,
+      subdirectory: options?.subdirectory,
+    });
 
     if (!taskResult.success || !taskResult.data) {
       return {

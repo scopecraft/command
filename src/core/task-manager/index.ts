@@ -3,8 +3,15 @@
  * Export all task manager functionality
  */
 
-// Export utility functions
-export * from './directory-utils.js';
+// Export utility functions - specifically choose the one from directory-utils
+export {
+  getTasksDirectory,
+  getPhasesDirectory,
+  ensureDirectoryExists,
+  getAllFiles,
+} from './directory-utils.js';
+
+// Export from utils except getAllFiles (already exported from directory-utils)
 export * from './utils.js';
 
 // Forward declarations for circular dependencies

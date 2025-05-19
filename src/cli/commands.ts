@@ -86,7 +86,10 @@ export async function handleGetCommand(
   }
 ): Promise<void> {
   try {
-    const result = await getTask(id, options.phase, options.subdirectory);
+    const result = await getTask(id, {
+      phase: options.phase,
+      subdirectory: options.subdirectory,
+    });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -161,10 +164,10 @@ export async function handleCreateCommand(options: {
       if (options.content) task.content = options.content;
     } else if (options.template) {
       // Create from template
-      const { getTemplate, applyTemplate } = await import('../core/index.js');
+      const { getTemplateContent, applyTemplate } = await import('../core/index.js');
 
       // Get the template content
-      const templateContent = getTemplate(options.template);
+      const templateContent = getTemplateContent(options.template);
 
       if (!templateContent) {
         throw new Error(
@@ -207,7 +210,7 @@ export async function handleCreateCommand(options: {
         if (error instanceof Error && error.message.includes('Missing required field: id')) {
           task = {
             metadata: {
-              id: id,
+              id: options.id || '',
               title: options.title,
               type: options.type,
               status: options.status || '🟡 To Do',
@@ -236,7 +239,7 @@ export async function handleCreateCommand(options: {
       }
 
       // Ensure core metadata is correct (in case template didn't apply everything)
-      task.metadata.id = id;
+      task.metadata.id = options.id || task.metadata.id || '';
       task.metadata.title = options.title;
       task.metadata.created_date = today;
       task.metadata.updated_date = today;
@@ -355,8 +358,10 @@ export async function handleUpdateCommand(
             metadata: fileTask.metadata,
             content: fileTask.content,
           },
-          options.searchPhase,
-          options.searchSubdirectory
+          {
+            phase: options.searchPhase,
+            subdirectory: options.searchSubdirectory,
+          }
         );
 
         if (!result.success) {
@@ -381,8 +386,10 @@ export async function handleUpdateCommand(
               metadata: task.metadata,
               content: task.content,
             },
-            options.searchPhase,
-            options.searchSubdirectory
+            {
+              phase: options.searchPhase,
+              subdirectory: options.searchSubdirectory,
+            }
           );
 
           if (!result.success) {
@@ -731,23 +738,12 @@ export async function handleCurrentTaskCommand(
 /**
  * Handles the 'init' command to initialize project structure
  */
-export async function handleInitCommand(options: {
+export async function handleInitCommand(_options: {
   mode?: string;
 }): Promise<void> {
   try {
     // Import projectConfig here to avoid circular dependencies
-    const { projectConfig, ProjectMode, initializeTemplates } = await import('../core/index.js');
-
-    // Force mode if specified
-    if (options.mode) {
-      if (options.mode === 'roo') {
-        projectConfig.setMode(ProjectMode.ROO_COMMANDER);
-      } else if (options.mode === 'standalone') {
-        projectConfig.setMode(ProjectMode.STANDALONE);
-      } else {
-        throw new Error(`Invalid mode: ${options.mode}. Must be 'roo' or 'standalone'`);
-      }
-    }
+    const { projectConfig, initializeTemplates } = await import('../core/index.js');
 
     // Initialize project structure
     projectConfig.initializeProjectStructure();
@@ -755,7 +751,7 @@ export async function handleInitCommand(options: {
     // Initialize templates
     initializeTemplates();
 
-    console.log(`Project initialized in ${projectConfig.getMode()} mode`);
+    console.log('Project initialized');
     console.log(`Tasks directory: ${projectConfig.getTasksDirectory()}`);
     console.log(`Configuration directory: ${projectConfig.getConfigDirectory()}`);
   } catch (error) {
@@ -872,6 +868,11 @@ export async function handleFeatureGetCommand(
     }
 
     const feature = result.data;
+
+    if (!feature) {
+      console.error('Error: Feature not found');
+      process.exit(1);
+    }
 
     // Format output based on options
     if (options.format === 'json') {
@@ -1047,6 +1048,11 @@ export async function handleAreaGetCommand(
     }
 
     const area = result.data;
+
+    if (!area) {
+      console.error('Error: Area not found');
+      process.exit(1);
+    }
 
     // Format output based on options
     if (options.format === 'json') {

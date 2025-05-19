@@ -2,7 +2,7 @@
  * Core configuration types for project root configuration system
  */
 
-import { type OperationResult } from '../types.js';
+import type { OperationResult } from '../types.js';
 
 /**
  * Enumeration of configuration sources in order of precedence
@@ -40,6 +40,12 @@ export interface RuntimeConfig {
 export interface ProjectDefinition {
   name: string;
   path: string;
+  directories?: {
+    tasks?: string; // Default: ".tasks"
+    phases?: string; // Default: ".tasks/phases"
+    config?: string; // Default: ".tasks/config"
+    templates?: string; // Default: ".tasks/templates"
+  };
   description?: string;
   tags?: string[];
 }

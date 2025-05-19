@@ -89,7 +89,10 @@ export async function handleTaskList(params: TaskListParams) {
  * Handler for task_get method
  */
 export async function handleTaskGet(params: TaskGetParams) {
-  return await getTask(params.id, params.phase, params.subdirectory);
+  return await getTask(params.id, {
+    phase: params.phase,
+    subdirectory: params.subdirectory,
+  });
 }
 
 /**
@@ -161,14 +164,20 @@ export async function handleTaskUpdate(params: TaskUpdateParams) {
     }
   }
 
-  return await updateTask(params.id, updates, params.phase, params.subdirectory);
+  return await updateTask(params.id, updates, {
+    phase: params.phase,
+    subdirectory: params.subdirectory,
+  });
 }
 
 /**
  * Handler for task_delete method
  */
 export async function handleTaskDelete(params: TaskDeleteParams) {
-  return await deleteTask(params.id, params.phase, params.subdirectory);
+  return await deleteTask(params.id, {
+    phase: params.phase,
+    subdirectory: params.subdirectory,
+  });
 }
 
 /**
@@ -308,7 +317,10 @@ export async function handleDebugCodePath(_params: DebugCodePathParams) {
  * Handler for task_move method
  */
 export async function handleTaskMove(params: TaskMoveParams) {
-  return await moveTask(params.id, params.target_subdirectory, params.phase);
+  return await moveTask(params.id, {
+    targetSubdirectory: params.target_subdirectory,
+    targetPhase: params.phase,
+  });
 }
 
 /**

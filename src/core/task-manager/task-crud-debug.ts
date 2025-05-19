@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
 import { projectConfig } from '../project-config.js';
-import { formatTaskFile, generateTaskId, parseTaskFile } from '../task-parser.js';
+import { formatTaskFile, parseTaskFile } from '../task-parser.js';
 import {
   type OperationResult,
   type Task,
@@ -10,12 +10,14 @@ import {
   TaskMetadata,
   type TaskUpdateOptions,
 } from '../types.js';
+import { generateTaskId } from './id-generator.js';
 import {
   ensureDirectoryExists,
   getAllFiles,
   getPhasesDirectory,
   getTasksDirectory,
 } from './index.js';
+import { getTask } from './task-crud.js';
 import { updateRelationships } from './task-relationships.js';
 
 /**
@@ -37,7 +39,10 @@ export async function updateTaskDebug(
     console.log('[DEBUG] Updates:', JSON.stringify(updates, null, 2));
 
     // Get the task, using phase and subdirectory if provided
-    const taskResult = await getTask(id, searchPhase, searchSubdirectory);
+    const taskResult = await getTask(id, {
+      phase: searchPhase,
+      subdirectory: searchSubdirectory,
+    });
     if (!taskResult.success || !taskResult.data) {
       console.log('[DEBUG] Failed to get task:', taskResult.error);
       return {
@@ -183,5 +188,4 @@ export async function updateTaskDebug(
   }
 }
 
-// Import the original function for other operations
-import { getTask } from './task-crud.js';
+// getTask is already imported above

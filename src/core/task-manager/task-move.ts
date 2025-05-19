@@ -25,7 +25,10 @@ export async function moveTask(
 ): Promise<OperationResult<void>> {
   try {
     // Get the task
-    const taskResult = await getTask(id, options.searchPhase, options.searchSubdirectory);
+    const taskResult = await getTask(id, {
+      phase: options.searchPhase,
+      subdirectory: options.searchSubdirectory,
+    });
 
     if (!taskResult.success || !taskResult.data) {
       return {
@@ -50,8 +53,10 @@ export async function moveTask(
         phase: targetPhase,
         subdirectory: options.targetSubdirectory,
       },
-      options.searchPhase,
-      options.searchSubdirectory
+      {
+        phase: options.searchPhase,
+        subdirectory: options.searchSubdirectory,
+      }
     );
 
     if (!updateResult.success) {

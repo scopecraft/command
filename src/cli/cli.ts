@@ -6,8 +6,8 @@ import path from 'node:path';
  * Sets up commands and validates environment
  */
 import { Command } from 'commander';
-import { ensureDirectoryExists, getTasksDirectory, projectConfig } from '../core/index.js';
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
+import { ensureDirectoryExists, getTasksDirectory, projectConfig } from '../core/index.js';
 import { setupEntityCommands } from './entity-commands.js';
 
 // Create the main command
@@ -44,7 +44,9 @@ program.hook('preAction', () => {
       configManager.setRootFromCLI(options.rootDir);
       console.log(`Using project root from CLI: ${options.rootDir}`);
     } catch (error) {
-      console.error(`Error setting root directory: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(
+        `Error setting root directory: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       process.exit(1);
     }
   }
