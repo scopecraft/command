@@ -92,3 +92,26 @@ Currently, we have exceptions for special folders (config, templates) mixed with
 1. Implement Option 1 (dot-prefix for system folders)
 2. Fix the `parseTaskPath` logic to correctly extract phase and subdirectory
 3. Ensure subdirectory validation doesn't allow ".." values
+
+#### Original Refactor Issues (from AA task)
+
+**Function signatures that were changed** (already reverted):
+- `createPhase`, `createTask`, `updateTask`, `listTasks`, `getTask`, `deleteTask`
+- `createArea`, `updateArea`, `listAreas`, `getArea`, `deleteArea`
+- `createFeature`, `updateFeature`, `listFeatures`, `getFeature`, `deleteFeature`
+
+**What should remain**: Worktree support, root path configuration, .scopecraft.yaml detection
+
+#### Testing Plan
+
+1. **Unit Tests**: Verify path parsing works correctly with new dot-prefix system
+2. **E2E Tests**: Ensure root configuration works with worktrees
+3. **Manual Testing**: CLI commands, MCP server functionality
+4. **Regression Testing**: Full test suite, check for broken functionality
+
+#### Acceptance Criteria
+- [ ] Path parsing correctly identifies phases and subdirectories
+- [ ] System folders use dot-prefix (.config, .templates)
+- [ ] No invalid subdirectory values like ".."
+- [ ] E2E tests pass with correct phase filtering
+- [ ] Template system works with root configuration
