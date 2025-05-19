@@ -121,6 +121,13 @@ scopecraft-mcp
 - System-wide configuration
 - Works with all Scopecraft commands
 - Good for CI/CD environments
+- Gracefully falls back if invalid path
+
+**Verified Features:**
+- ✅ Environment variable is respected
+- ✅ CLI parameters override environment variable
+- ✅ Graceful fallback when path is invalid
+- ✅ Works with both CLI and MCP servers
 
 ## Configuration Precedence
 
