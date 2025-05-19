@@ -80,6 +80,7 @@ export interface TaskListParams extends TaskFilterOptions {
   format?: string;
   include_content?: boolean; // Controls whether task content is included in the response (default: false)
   include_completed?: boolean; // Controls whether completed tasks are included in the response (default: false)
+  root_dir?: string; // Override for tasks directory location
 }
 
 // Task get request params
@@ -88,10 +89,12 @@ export interface TaskGetParams {
   format?: string;
   phase?: string;
   subdirectory?: string;
+  root_dir?: string; // Override for tasks directory location
 }
 
 // Task create request params
 export interface TaskCreateParams {
+  root_dir?: string; // Override for tasks directory location
   id?: string;
   title: string;
   type: string;
@@ -110,6 +113,7 @@ export interface TaskCreateParams {
 
 // Task update request params
 export interface TaskUpdateParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   updates: TaskUpdateOptions;
   phase?: string;
@@ -118,6 +122,7 @@ export interface TaskUpdateParams {
 
 // Task delete request params
 export interface TaskDeleteParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   phase?: string;
   subdirectory?: string;
@@ -125,6 +130,7 @@ export interface TaskDeleteParams {
 
 // Task move request params
 export interface TaskMoveParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   target_subdirectory: string;
   phase?: string;
@@ -132,12 +138,14 @@ export interface TaskMoveParams {
 
 // Task next request params
 export interface TaskNextParams {
+  root_dir?: string; // Override for tasks directory location
   id?: string;
   format?: string;
 }
 
 // Feature list request params
 export interface FeatureListParams {
+  root_dir?: string; // Override for tasks directory location
   phase?: string;
   status?: string;
   format?: string;
@@ -147,6 +155,7 @@ export interface FeatureListParams {
 
 // Feature get request params
 export interface FeatureGetParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   phase?: string;
   format?: string;
@@ -154,6 +163,7 @@ export interface FeatureGetParams {
 
 // Feature create request params
 export interface FeatureCreateParams {
+  root_dir?: string; // Override for tasks directory location
   name: string;
   title: string;
   phase: string;
@@ -166,6 +176,7 @@ export interface FeatureCreateParams {
 
 // Feature update request params
 export interface FeatureUpdateParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   updates: {
     name?: string;
@@ -178,6 +189,7 @@ export interface FeatureUpdateParams {
 
 // Feature delete request params
 export interface FeatureDeleteParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   phase?: string;
   force?: boolean;
@@ -185,6 +197,7 @@ export interface FeatureDeleteParams {
 
 // Area list request params
 export interface AreaListParams {
+  root_dir?: string; // Override for tasks directory location
   phase?: string;
   status?: string;
   format?: string;
@@ -194,6 +207,7 @@ export interface AreaListParams {
 
 // Area get request params
 export interface AreaGetParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   phase?: string;
   format?: string;
@@ -201,6 +215,7 @@ export interface AreaGetParams {
 
 // Area create request params
 export interface AreaCreateParams {
+  root_dir?: string; // Override for tasks directory location
   name: string;
   title: string;
   phase: string;
@@ -213,6 +228,7 @@ export interface AreaCreateParams {
 
 // Area update request params
 export interface AreaUpdateParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   updates: {
     name?: string;
@@ -225,6 +241,7 @@ export interface AreaUpdateParams {
 
 // Area delete request params
 export interface AreaDeleteParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   phase?: string;
   force?: boolean;
@@ -232,11 +249,13 @@ export interface AreaDeleteParams {
 
 // Phase list request params
 export interface PhaseListParams {
+  root_dir?: string; // Override for tasks directory location
   format?: string;
 }
 
 // Phase create request params
 export interface PhaseCreateParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   name: string;
   description?: string;
@@ -246,6 +265,7 @@ export interface PhaseCreateParams {
 
 // Phase update request params
 export interface PhaseUpdateParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   updates: {
     id?: string;
@@ -258,17 +278,20 @@ export interface PhaseUpdateParams {
 
 // Phase delete request params
 export interface PhaseDeleteParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   force?: boolean;
 }
 
 // Workflow current request params
 export interface WorkflowCurrentParams {
+  root_dir?: string; // Override for tasks directory location
   format?: string;
 }
 
 // Workflow mark complete next request params
 export interface WorkflowMarkCompleteNextParams {
+  root_dir?: string; // Override for tasks directory location
   id: string;
   format?: string;
 }
@@ -278,6 +301,7 @@ export type DebugCodePathParams = Record<string, never>;
 
 // Template list request params
 export interface TemplateListParams {
+  root_dir?: string; // Override for tasks directory location
   format?: string;
 }
 
