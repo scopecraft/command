@@ -131,7 +131,7 @@ export async function handleTaskCreate(params: TaskCreateParams) {
       `## ${params.title}\n\n${isOverview ? 'Overview of this feature.\n\n## Tasks\n\n- [ ] Task 1\n' : 'Task description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n'}`,
   };
 
-  return await createTask(task, params.subdirectory);
+  return await createTask(task, { subdirectory: params.subdirectory });
 }
 
 /**
@@ -161,21 +161,21 @@ export async function handleTaskUpdate(params: TaskUpdateParams) {
     }
   }
 
-  return await updateTask(params.id, updates, params.phase, params.subdirectory);
+  return await updateTask(params.id, updates, { phase: params.phase, subdirectory: params.subdirectory });
 }
 
 /**
  * Handler for task_delete method
  */
 export async function handleTaskDelete(params: TaskDeleteParams) {
-  return await deleteTask(params.id, params.phase, params.subdirectory);
+  return await deleteTask(params.id, { phase: params.phase, subdirectory: params.subdirectory });
 }
 
 /**
  * Handler for task_next method
  */
 export async function handleTaskNext(params: TaskNextParams) {
-  return await findNextTask(params.id);
+  return await findNextTask(params.id, {});
 }
 
 /**
@@ -244,12 +244,12 @@ export async function handleWorkflowCurrent(_params: WorkflowCurrentParams) {
  */
 export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkCompleteNextParams) {
   // Get the next task before marking current as complete
-  const nextTaskResult = await findNextTask(params.id);
+  const nextTaskResult = await findNextTask(params.id, {});
 
   // Mark current task as complete, using the normalized "Done" status
   const updateResult = await updateTask(params.id, {
     metadata: { status: normalizeTaskStatus('Done') },
-  });
+  }, {});
 
   if (!updateResult.success) {
     return updateResult;

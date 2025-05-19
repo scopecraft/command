@@ -42,6 +42,14 @@ Complete refactoring of all CRUD operations across the codebase to use the optio
    - Fixed bug in task-crud.ts (config reference)
    - All task operations now working properly
 
+4. **MCP Task Handlers Updated**
+   - Updated handleTaskCreate to use options pattern
+   - Updated handleTaskUpdate to use options pattern
+   - Updated handleTaskDelete to use options pattern
+   - Updated handleTaskNext to use options pattern
+   - Updated handleWorkflowMarkCompleteNext to use options pattern
+   - All MCP task operations now using new signatures
+
 ## Important Discoveries and Learnings
 
 ### Key Issues Found During Implementation
@@ -83,11 +91,13 @@ Complete refactoring of all CRUD operations across the codebase to use the optio
 ### 🔲 Remaining Work - Signature Updates for Other Entities
 
 Still need to update signatures for:
-- Feature commands (createFeature, updateFeature, deleteFeature, getFeature)
-- Area commands (createArea, updateArea, deleteArea, getArea)  
-- Phase commands (createPhase, updatePhase, deletePhase, listPhases)
-- Helper functions (findNextTask already done, updateRelationships)
-- MCP handlers for all entities
+- Feature CLI commands (createFeature, updateFeature, deleteFeature, getFeature)
+- Feature MCP handlers 
+- Area CLI commands (createArea, updateArea, deleteArea, getArea)  
+- Area MCP handlers
+- Phase CLI commands (createPhase, updatePhase, deletePhase, listPhases)
+- Phase MCP handlers
+- Helper functions (updateRelationships)
 - Tests that use any of these functions
 
 ## Clear Instructions for Updating Callers
