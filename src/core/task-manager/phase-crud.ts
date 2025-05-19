@@ -4,7 +4,12 @@ import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
 import type { RuntimeConfig } from '../config/types.js';
 import { ProjectConfig } from '../project-config.js';
 import type { OperationResult, Phase, Task } from '../types.js';
-import { ensureDirectoryExists, getAllFiles, getTasksDirectory } from './index.js';
+import {
+  ensureDirectoryExists,
+  getAllFiles,
+  getTasksDirectory,
+  isSystemDirectory,
+} from './index.js';
 import { listTasks } from './task-crud.js';
 
 /**
@@ -24,13 +29,12 @@ export async function listPhases(options?: {
       };
     }
 
-    // Get all directories in tasks folder (except system dirs)
+    // Get all directories in tasks folder (except system dirs that start with dot)
     const entries = fs.readdirSync(tasksDir, { withFileTypes: true });
     const phases: Phase[] = [];
-    const systemDirs = ['config', 'templates']; // Directories to exclude
 
     for (const entry of entries) {
-      if (entry.isDirectory() && !systemDirs.includes(entry.name)) {
+      if (entry.isDirectory() && !isSystemDirectory(entry.name)) {
         const phaseDir = path.join(tasksDir, entry.name);
 
         // Attempt to load phase info from .phase.toml if it exists

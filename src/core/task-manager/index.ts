@@ -13,6 +13,7 @@ export {
   parseTaskPath,
   getTaskFilePath,
   migrateSystemDirectories,
+  isSystemDirectory,
 } from './directory-utils.js';
 
 // Export from utils except getAllFiles (already exported from directory-utils)
