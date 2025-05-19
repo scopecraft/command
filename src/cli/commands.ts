@@ -529,7 +529,7 @@ export async function handleNextTaskCommand(
   try {
     // Runtime config is handled internally by CRUD functions
     
-    const result = await findNextTask(id);
+    const result = await findNextTask(id, {});
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -562,7 +562,7 @@ export async function handleMarkCompleteNextCommand(
     // Runtime config is handled internally by CRUD functions
     
     // Get the next task before marking current as complete
-    const nextTaskResult = await findNextTask(id);
+    const nextTaskResult = await findNextTask(id, {});
 
     // Mark current task as complete
     const updateResult = await updateTask(id, { metadata: { status: '🟢 Done' } });
