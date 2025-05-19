@@ -1,6 +1,6 @@
 # Cursor IDE Setup Guide
 
-This guide helps you configure Scopecraft to work with Cursor IDE.
+This guide helps you configure Scopecraft to work with Cursor IDE using the Model Context Protocol (MCP).
 
 ## Prerequisites
 
@@ -8,18 +8,48 @@ This guide helps you configure Scopecraft to work with Cursor IDE.
 - Cursor IDE installed and configured
 - A project with `.tasks` directory
 
+## Configuration Location
+
+Cursor supports two configuration locations:
+- **Project-specific**: `.cursor/mcp.json` in your project directory
+- **Global**: `~/.cursor/mcp.json` in your home directory
+
 ## Configuration Steps
 
-### Step 1: Open Cursor Settings
+### Step 1: Create Configuration File
 
-1. Open Cursor IDE
-2. Press `Cmd+,` (Mac) or `Ctrl+,` (Windows/Linux)
-3. Search for "MCP" in settings
+Create the appropriate configuration file based on your needs:
 
-### Step 2: Add Scopecraft Server
+```bash
+# For project-specific configuration
+mkdir -p .cursor
+touch .cursor/mcp.json
 
-Add the following configuration to your MCP servers:
+# For global configuration
+mkdir -p ~/.cursor
+touch ~/.cursor/mcp.json
+```
 
+### Step 2: Add Scopecraft Server Configuration
+
+Edit the configuration file with the following JSON structure:
+
+#### Using CLI Server (Node.js)
+```json
+{
+  "mcpServers": {
+    "scopecraft": {
+      "command": "npx",
+      "args": ["-y", "@scopecraft/cmd", "mcp", "--root-dir", "/path/to/your/project"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+```
+
+#### Using Installed Binary
 ```json
 {
   "mcpServers": {
@@ -42,12 +72,13 @@ Add the following configuration to your MCP servers:
 ```json
 {
   "version": "1.0.0",
-  "projects": {
-    "my-project": {
+  "projects": [
+    {
+      "name": "my-project",
       "path": "/Users/username/projects/my-project",
       "description": "My main project"
     }
-  },
+  ],
   "defaultProject": "my-project"
 }
 ```
@@ -81,53 +112,77 @@ Add the following configuration to your MCP servers:
 
 ### Step 4: Verify Configuration
 
-1. Restart Cursor
-2. Open the AI assistant
-3. Type: `get_current_root`
-4. Should see your project path
+1. Restart Cursor IDE
+2. Navigate to Settings > MCP
+3. Check that Scopecraft appears under "Available Tools"
+4. In the chat interface, verify you can use Scopecraft commands
 
 ## Using Scopecraft in Cursor
+
+The Composer Agent will automatically use Scopecraft tools when relevant. You can also explicitly request tool usage:
 
 ### Basic Commands
 
 ```
 # List all tasks
-task list
+Use the task list tool
 
 # Create a new task
-task create "Implement new feature"
+Use task create to add "Implement new feature"
 
 # Get task details
-task get TASK-001
+Use task get to show TASK-001
 
 # Update task status
-task update TASK-001 --status "In Progress"
+Use task update to mark TASK-001 as "In Progress"
 ```
 
 ### Project Management
 
 ```
 # Switch projects (if using config file)
-init_root /path/to/other/project
+Use init_root to set /path/to/other/project
 
 # List available projects
-list_projects
+Use list_projects to show configured projects
 
 # Verify current project
-get_current_root
+Use get_current_root to check active project
 ```
 
 ### Feature Development
 
 ```
 # Create a new feature
-feature create "User Authentication"
+Use feature create to add "User Authentication"
 
 # List features
-feature list
+Use feature list to show all features
 
 # Work on a specific feature
-feature get FEATURE_auth
+Use feature get to show FEATURE_auth
+```
+
+## Transport Types
+
+### stdio Transport (Default)
+- Runs locally on your machine
+- Managed automatically by Cursor
+- Communicates via stdout
+- Only accessible locally
+
+### SSE Transport (Alternative)
+```json
+{
+  "mcpServers": {
+    "scopecraft": {
+      "url": "http://localhost:3000/sse",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
 ```
 
 ## Tips for Cursor Users
@@ -153,35 +208,19 @@ Set up multiple projects in your config:
 
 ### 2. Workspace Configuration
 
-For Cursor workspaces, add to `.cursor/settings.json`:
+For Cursor workspaces, add to `.cursor/mcp.json` in the workspace root:
 
 ```json
 {
-  "mcp.servers": {
+  "mcpServers": {
     "scopecraft": {
       "command": "scopecraft-mcp",
-      "args": ["--root-dir", "${workspaceFolder}"]
+      "args": ["--root-dir", "."],
+      "env": {
+        "NODE_ENV": "development"
+      }
     }
   }
-}
-```
-
-### 3. Custom Commands
-
-Create shortcuts in Cursor:
-
-```json
-{
-  "aiAssistant.customCommands": [
-    {
-      "name": "List Tasks",
-      "prompt": "task list --status 'In Progress'"
-    },
-    {
-      "name": "Create Task",
-      "prompt": "task create"
-    }
-  ]
 }
 ```
 
@@ -199,8 +238,9 @@ Create shortcuts in Cursor:
    scopecraft-mcp --root-dir /your/project
    ```
 
-3. Check Cursor logs:
-   - View → Output → MCP
+3. Check Cursor MCP settings:
+   - Settings > MCP > View available tools
+   - Ensure Scopecraft appears in the list
 
 ### Permission Issues
 
@@ -219,133 +259,17 @@ Create shortcuts in Cursor:
    test -d /path/to/project && echo "Path exists"
    ```
 
-## Advanced Configuration
-
-### Using STDIO Transport
-
-For better performance, use STDIO transport:
-
-```json
-{
-  "mcpServers": {
-    "scopecraft": {
-      "command": "scopecraft-stdio",
-      "args": ["--root-dir", "/path/to/project"],
-      "transport": "stdio"
-    }
-  }
-}
-```
-
-### Environment-Specific Settings
-
-```json
-{
-  "mcpServers": {
-    "scopecraft": {
-      "command": "scopecraft-mcp",
-      "args": ["--root-dir", "/path/to/project"],
-      "env": {
-        "NODE_ENV": "development",
-        "SCOPECRAFT_LOG_LEVEL": "debug"
-      }
-    }
-  }
-}
-```
-
-### Multiple Configurations
-
-Create different configurations for different contexts:
-
-```json
-{
-  "profiles": {
-    "development": {
-      "mcpServers": {
-        "scopecraft": {
-          "command": "scopecraft-mcp",
-          "args": ["--root-dir", "/dev/project"]
-        }
-      }
-    },
-    "production": {
-      "mcpServers": {
-        "scopecraft": {
-          "command": "scopecraft-mcp",
-          "args": ["--root-dir", "/prod/project"]
-        }
-      }
-    }
-  }
-}
-```
-
 ## Best Practices
 
-1. **Use project-specific configuration**: Keep settings in workspace
+1. **Use project-specific configuration**: Keep `.cursor/mcp.json` in your project
 2. **Document your setup**: Add README for team members
-3. **Use consistent paths**: Avoid mixing relative/absolute paths
+3. **Use consistent paths**: Always use absolute paths
 4. **Test configuration**: Verify before sharing with team
 5. **Keep configs in version control**: Track changes over time
-
-## Integration with Cursor Features
-
-### AI Code Generation
-
-When asking Cursor to generate code:
-
-```
-Create a component for the task TASK-001 that I'm working on
-```
-
-Cursor can access task details through Scopecraft.
-
-### Code Reviews
-
-Reference tasks in code reviews:
-
-```
-This PR implements TASK-001. Get the task details and verify all requirements are met.
-```
-
-### Documentation
-
-Generate documentation based on tasks:
-
-```
-Create documentation for FEATURE_auth based on all completed tasks
-```
-
-## Quick Start Template
-
-Save this as `.cursor/mcp-scopecraft.json`:
-
-```json
-{
-  "scopecraft": {
-    "command": "scopecraft-mcp",
-    "args": ["--root-dir", "${workspaceFolder}"],
-    "env": {
-      "NODE_ENV": "development"
-    },
-    "transport": "http",
-    "description": "Scopecraft task management for this project"
-  }
-}
-```
-
-Then reference in your Cursor settings:
-
-```json
-{
-  "mcp.servers": "$include(.cursor/mcp-scopecraft.json)"
-}
-```
 
 ## Getting Help
 
 - Check Cursor MCP documentation
-- View Scopecraft logs: `View → Output → MCP`
+- View Scopecraft logs in Cursor output panel
 - Report issues: [GitHub Issues](https://github.com/scopecraft/cmd/issues)
 - Join community: [Discord Server](https://discord.gg/scopecraft)
