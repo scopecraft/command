@@ -10,148 +10,69 @@ assigned_to = ""
 phase = "test"
 +++
 
-## Current State Summary
+This task is about fixing errors in the project configuration (project root and environmental variable processing).
 
-### What Was Done Correctly
-1. ✅ Removed ProjectMode enum
-2. ✅ Integrated ConfigurationManager into ProjectConfig  
-3. ✅ Removed hardcoded .ruru directory logic
-4. ✅ Created WIP commit with core changes
+#### Context
 
-### What Was Done Incorrectly
-1. ❌ Changed function signatures to options pattern (getTask, updateTask, deleteTask)
-2. ❌ Added configurable directories to ProjectDefinition
-3. ❌ Misunderstood the purpose of phase/subdirectory parameters
+I've been getting the following error when running `task list` from outside the project scope:
 
-### What Needs to Be Fixed
+```
+/Users/davidpaquet/Projects/roo-task-cli/src/core/task-manager/index.ts:152:30
+151 |     
+152 |       const tasks = files.map((file) => {
+TypeError: undefined is not iterable (cannot read property Symbol(Symbol.iterator))
+      at globToTasks (/Users/davidpaquet/Projects/roo-task-cli/src/core/task-manager/index.ts:152:30)
+      at processDirectory (/Users/davidpaquet/Projects/roo-task-cli/src/core/task-manager/index.ts:221:40)
+      at listTasks (/Users/davidpaquet/Projects/roo-task-cli/src/core/task-manager/index.ts:267:46)
+      at CommandManager.executeInternal (/Users/davidpaquet/Projects/roo-task-cli/src/cli/commands.ts:251:38)
+      at CommandManager.execute (/Users/davidpaquet/Projects/roo-task-cli/src/cli/commands.ts:107:36)
+      at main (/Users/davidpaquet/Projects/roo-task-cli/src/cli/cli.ts:31:28)
+```
 
-#### 1. Revert Function Signatures
-- Change back: `getTask(id, { phase?, subdirectory? })` → `getTask(id, phase?, subdirectory?)`
-- Same for: `updateTask`, `deleteTask`, and all related functions
-- Update all call sites in handlers.ts, commands.ts, etc.
-- The phase and subdirectory parameters are for querying, not configuration
+#### Investigation Points
 
-#### 2. Remove Configurable Directories
-- Remove `directories` field from `ProjectDefinition` interface in types.ts
-- Keep directory structure hardcoded:
-  - Tasks root: `.tasks`
-  - Phases: `.tasks/phases`
-  - Config: `.tasks/config`
-  - Templates: `.tasks/templates`
+1. The error occurs in `globToTasks` when trying to map over `files`
+2. The `files` variable is undefined, suggesting the glob call is failing or not being handled correctly
+3. This seems to happen when running the command outside the project scope
+4. May be related to project root detection or directory structure validation
 
-#### 3. Fix ProjectConfig
-- Keep ConfigurationManager integration for root path only
-- Remove any directory configuration logic
-- Ensure only the root path is configurable (for git worktree support)
+#### Affected Functionality
 
-### Implementation Steps
+- `task list` command when run outside project directories
+- Project root detection logic
+- Environmental variable processing
+- Directory structure validation
 
-1. **Revert function signatures in task-crud.ts and related files**
-2. **Update all call sites to use original signatures**
-3. **Remove directories configuration from types.ts**
-4. **Fix compilation errors**
-5. **Update tests for ProjectMode removal**
-6. **Test manually with git worktrees**
+#### Previously Found Issues
 
-### Key Insight
-We only need to make the root path configurable (for scenarios like git worktrees), not the entire internal directory structure. The phase/subdirectory parameters in functions are for querying within the fixed structure, not for configuration.
+1. Project root detection needs more robust error handling
+2. Environmental variables aren't properly inherited from parent configs
+3. Default file generation may create invalid files
 
-### Testing Plan
-1. Ensure function signatures match original API
-2. Verify directory structure remains fixed
-3. Test root path configuration with worktrees
-4. Run existing tests and fix failures
+#### Template System Issue Found (New)
 
-### Implementation Log (2025-05-19)
+In `src/core/task-manager/utils.ts`, discovered an issue with the task template:  
+- The `const TASK_TEMPLATE` has incorrect indentation that causes "tags" to be placed at the file level instead of inside the "metadata" section
+- This makes tags parsing fail and causes tests to break
+- Need to fix the template structure: https://github.com/davidpaquet/roo-task-cli/blob/main/src/core/task-manager/utils.ts#L20
 
-#### Completed Work
+#### Subdirectory ".." Issue Found
 
-1. **Reverted Function Signatures** ✅
-   - Changed `getTask`, `updateTask`, `deleteTask` back to original signatures
-   - Updated all call sites in handlers.ts, commands.ts, task-move.ts
-   - Removed options pattern that was incorrectly added
+During E2E testing, discovered that tasks with `subdirectory = ".."` are not being listed correctly. This affects:
+- Task listing (task not shown at all)
+- Phase filtering (task missing from TEST phase)
 
-2. **Removed Directory Configuration** ✅
-   - Removed `directories` field from `ProjectDefinition` interface
-   - Updated `ProjectConfig` to use only `DEFAULT_DIRECTORIES`
-   - Kept directory structure hardcoded as intended
+The file `TEST-ROOTCONFIG-001.md` has this invalid subdirectory value which needs investigation:
+- Why is ".." being set as subdirectory?
+- How should the system handle parent directory references?
+- Should we validate subdirectory values?
 
-3. **Fixed Compilation Issues** ✅
-   - Deleted unused `task-crud-debug.ts` file
-   - Fixed syntax error in task-crud.ts (extra `});`)
-   - Resolved immediate TypeScript errors related to refactor
+#### To Fix
 
-4. **Comprehensive E2E Testing** ✅
-   - Created test plan documenting all scenarios
-   - Built automated test script (run-root-dir-e2e.sh)
-   - Successfully tested:
-     - CLI parameter (--root-dir)
-     - Environment variable (SCOPECRAFT_ROOT)
-     - Config file (--config)
-     - Auto-detection
-     - Precedence (CLI > ENV > Config)
-     - CRUD operations
-     - Worktree simulation
-     - Error handling
-
-#### Key Findings
-
-1. Root configuration works correctly for all methods
-2. Function signatures are back to original API
-3. Directory structure remains fixed (only root is configurable)
-4. Git worktree scenario works as intended
-
-#### Template System Issue Found
-
-The template system has two problems:
-1. `template-manager.ts` still references `projectConfig.getMode()` which was removed
-2. `commands.ts` is importing `getTemplateContent` but the function is actually called `getTemplate`
-
-This needs to be fixed as part of the remaining work.
-
-### What's Left to Complete
-
-#### 1. Fix Template System Integration 🔴
-- [ ] Investigate getTemplateContent missing export error
-- [ ] Ensure template system works with configurable root paths
-- [ ] Update template directory resolution to use runtime config
-- [ ] Test template operations with different roots
-
-#### 2. Update Unit Tests 🟡
-- [ ] Fix tests that reference removed ProjectMode enum
-- [ ] Update test mocks to not use ProjectMode
-- [ ] Add tests for RuntimeConfig parameter flow
-- [ ] Ensure all existing tests pass
-
-#### 3. MCP Server Testing 🟡
-- [ ] Build MCP server with latest changes
-- [ ] Test init_root command
-- [ ] Test get_current_root command
-- [ ] Test list_projects command
-- [ ] Verify MCP works with git worktrees
-- [ ] Create dedicated testing session
-
-#### 4. Documentation Updates 🟢
-- [ ] Update README if needed
-- [ ] Review and update project configuration guide
-- [ ] Add notes about worktree support
-- [ ] Document template system changes (if any)
-
-#### 5. Final Cleanup 🟢
-- [ ] Remove any remaining ProjectMode references
-- [ ] Clean up any dead code
-- [ ] Run linting on affected files
-- [ ] Prepare for merge
-
-### Current Status
-
-The core refactor is complete and tested. Main remaining issues:
-1. Template system integration needs investigation
-2. Unit tests need updates for ProjectMode removal
-3. MCP server needs dedicated testing session
-
-The refactor successfully achieved its goals:
-- Removed ProjectMode enum
-- Integrated ConfigurationManager
-- Made only root path configurable
-- Maintained backward compatibility
+1. Add proper null/undefined checks in `globToTasks` function
+2. Improve error handling for glob operations
+3. Make project root detection more robust
+4. Fix environment variable inheritance from parent configs
+5. Validate generated files to prevent creation of invalid templates
+6. Fix the task template in utils.ts to have correct TOML structure
+7. Investigate and fix the subdirectory ".." issue
