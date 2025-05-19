@@ -42,7 +42,53 @@ Complete refactoring of all CRUD operations across the codebase to use the optio
    - Fixed bug in task-crud.ts (config reference)
    - All task operations now working properly
 
-### 🔲 Remaining Work - Signature Updates
+## Important Discoveries and Learnings
+
+### Key Issues Found During Implementation
+
+1. **ProjectMode Enum Removal**
+   - The ProjectMode enum was removed in a prior refactor but was still being imported by MCP CLI files
+   - Had to remove all references from `src/mcp/cli.ts` and `src/mcp/stdio-cli.ts`
+   - Mode detection is now handled automatically by ConfigurationManager
+
+2. **No getRuntimeConfig Method**
+   - ProjectConfig doesn't have a `getRuntimeConfig()` method
+   - Runtime config is passed through options but not available in CLI layer
+   - For now, pass undefined and let internal logic handle root resolution
+
+3. **Bug in createTask**
+   - Found reference to undefined `config` variable instead of `options?.config`
+   - Fixed in `src/core/task-manager/task-crud.ts` line 236
+
+4. **Missing Message in updateTask**
+   - updateTask was returning `{ success: true, data: task }` without a message
+   - CLI commands expected a message property
+   - Added `message: 'Task ${id} updated successfully'` to success response
+
+5. **listTasks Signature**
+   - listTasks uses a filter options object that includes config
+   - Pattern: `listTasks({ status, type, phase, subdirectory, config })`
+   - Don't need to wrap in another options object
+
+6. **Test Considerations**
+   - E2E tests can have ordering dependencies
+   - Test failures may be due to state changes from previous tests
+   - Always verify the actual cause of failures before assuming bugs
+
+7. **Pattern for CLI Commands**
+   - Don't need to get config: `const config = projectConfig.getRuntimeConfig();`
+   - Just pass options without config: `createTask(task, { subdirectory })`
+   - The CRUD layer will handle config resolution internally
+
+### 🔲 Remaining Work - Signature Updates for Other Entities
+
+Still need to update signatures for:
+- Feature commands (createFeature, updateFeature, deleteFeature, getFeature)
+- Area commands (createArea, updateArea, deleteArea, getArea)  
+- Phase commands (createPhase, updatePhase, deletePhase, listPhases)
+- Helper functions (findNextTask already done, updateRelationships)
+- MCP handlers for all entities
+- Tests that use any of these functions
 
 ## Clear Instructions for Updating Callers
 
@@ -129,10 +175,17 @@ Any existing tests that call these functions need the same signature updates.
 
 ### 4. Config Parameter
 
-For CLI, the config comes from the global context:
+For CLI commands - DO NOT pass config parameter:
 ```typescript
-const config = projectConfig.getRuntimeConfig(); // Or similar
+// Don't do this:
+// const config = projectConfig.getRuntimeConfig();  // This method doesn't exist
+
+// Do this instead - pass options without config:
+const result = await createTask(task, { subdirectory });
+const result = await updateTask(id, updates, { phase, subdirectory });
 ```
+
+The CRUD functions handle config resolution internally.
 
 ### Example CLI Update
 
