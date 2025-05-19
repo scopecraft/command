@@ -196,6 +196,9 @@ run_test "Configuration File" \
     "Using config file"
 
 # Test 4: Auto-detection
+run_test "Auto-detection" \
+    "cd e2e_test/worktree-test && bun run ../../src/cli/cli.ts task list" \
+    "TEST-ROOTCONFIG-001"
 
 # Test 5: Task Create with New Signatures
 run_test "Task Create with Options" \
@@ -206,9 +209,6 @@ run_test "Task Create with Options" \
 run_test "Task Update with Options" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task update TEST-ROOTCONFIG-001 --status 'Done' --search-phase TEST" \
     "successfully"
-run_test "Auto-detection" \
-    "cd e2e_test/worktree-test && bun run ../../src/cli/cli.ts task list" \
-    "TEST-ROOTCONFIG-001"
 
 # Test 5: CLI > ENV Precedence
 run_test "CLI > ENV Precedence" \
