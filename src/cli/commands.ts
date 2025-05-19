@@ -598,7 +598,7 @@ export async function handlePhasesCommand(
   } = {}
 ): Promise<void> {
   try {
-    const result = await listPhases();
+    const result = await listPhases({});
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -632,14 +632,14 @@ export async function handlePhaseCreateCommand(options: {
       tasks: [],
     };
 
-    const result = await createPhase(phase);
+    const result = await createPhase(phase, {});
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
 
-    console.log(result.message);
+    console.log(result.message || `Phase ${result.data?.id} created successfully`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -680,14 +680,14 @@ export async function handlePhaseUpdateCommand(
       return;
     }
 
-    const result = await updatePhase(id, updates);
+    const result = await updatePhase(id, updates, {});
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
 
-    console.log(result.message);
+    console.log(result.message || `Phase ${id} updated successfully`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);

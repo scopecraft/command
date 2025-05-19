@@ -182,7 +182,7 @@ export async function handleTaskNext(params: TaskNextParams) {
  * Handler for phase_list method
  */
 export async function handlePhaseList(_params: PhaseListParams) {
-  return await listPhases();
+  return await listPhases({});
 }
 
 /**
@@ -198,7 +198,7 @@ export async function handlePhaseCreate(params: PhaseCreateParams) {
     tasks: [],
   };
 
-  return await createPhase(phase);
+  return await createPhase(phase, {});
 }
 
 /**
@@ -212,7 +212,7 @@ export async function handlePhaseUpdate(params: PhaseUpdateParams) {
     updates.status = normalizePhaseStatus(updates.status);
   }
 
-  return await updatePhase(params.id, updates);
+  return await updatePhase(params.id, updates, {});
 }
 
 /**

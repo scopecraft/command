@@ -324,7 +324,22 @@ run_test "Area List" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test area list --phase TEST" \
     "AREA_"
 
-# Test 23: Invalid Root
+# Test 23: Phase Create
+run_test "Phase Create" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test phase create --id 'test-phase' --name 'Test Phase'" \
+    "Phase test-phase created successfully"
+
+# Test 24: Phase List
+run_test "Phase List" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test phase list" \
+    "test-phase"
+
+# Test 25: Phase Update
+run_test "Phase Update" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test phase update test-phase --name 'Updated Phase'" \
+    "Phase test-phase updated successfully"
+
+# Test 26: Invalid Root
 run_test "Invalid Root (Should Fail)" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/nonexistent task list" \
     "Invalid project root"
