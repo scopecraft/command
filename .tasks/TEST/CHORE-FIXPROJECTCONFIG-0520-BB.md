@@ -5,12 +5,12 @@ type = "chore"
 status = "🟡 To Do"
 priority = "🔼 High"
 created_date = "2025-05-19"
-updated_date = "2025-05-19"
+updated_date = "2025-05-20"
 assigned_to = ""
 phase = "test"
 +++
 
-This task is about fixing errors in the project configuration (project root and environmental variable processing).
+This task is about fixing the ProjectConfig refactor that went too far. Focus on reverting incorrect changes while keeping necessary root path configuration.
 
 #### Context
 
@@ -56,23 +56,39 @@ In `src/core/task-manager/utils.ts`, discovered an issue with the task template:
 - This makes tags parsing fail and causes tests to break
 - Need to fix the template structure: https://github.com/davidpaquet/roo-task-cli/blob/main/src/core/task-manager/utils.ts#L20
 
-#### Subdirectory ".." Issue Found
+#### Issues Fixed
 
-During E2E testing, discovered that tasks with `subdirectory = ".."` are not being listed correctly. This affects:
-- Task listing (task not shown at all)
-- Phase filtering (task missing from TEST phase)
+1. ✓ Fixed template function naming: `getTemplateContent` -> `getTemplate`
+2. ✓ Removed references to deleted `getMode()` method
+3. ✓ Fixed undefined subdirectory issue in task creation (added `|| ''` fallback)
+4. ✓ Template system now works with new root configuration
 
-The file `TEST-ROOTCONFIG-001.md` has this invalid subdirectory value which needs investigation:
-- Why is ".." being set as subdirectory?
-- How should the system handle parent directory references?
-- Should we validate subdirectory values?
+#### Issues Still to Investigate
 
-#### To Fix
+1. **Subdirectory Path Parsing**: Task `TEST-ROOTCONFIG-001` has incorrect `subdirectory = "e2e_test"` instead of empty
+   - Root cause: `parseTaskPath` incorrectly calculates relative paths
+   - Phase filter fails because tasks have wrong subdirectory values
+   
+2. **MCP Server Issues**: Still has references to `ProjectMode` that need removal (but out of scope for this fix)
 
-1. Add proper null/undefined checks in `globToTasks` function
-2. Improve error handling for glob operations
-3. Make project root detection more robust
-4. Fix environment variable inheritance from parent configs
-5. Validate generated files to prevent creation of invalid templates
-6. Fix the task template in utils.ts to have correct TOML structure
-7. Investigate and fix the subdirectory ".." issue
+#### Proposed Solution: Simplify Path Logic
+
+Currently, we have exceptions for special folders (config, templates) mixed with task folders. Two options:
+
+**Option 1: Dot-prefix system folders** ⭐ Recommended
+- Rename to `.config/` and `.templates/` 
+- Simple filter: ignore anything starting with `.`
+- Follows Unix convention
+- Minimal migration effort
+
+**Option 2: Separate content directory**
+- Move all tasks under `content/` or `phases/`
+- Complete separation of concerns
+- Bigger structural change
+- More complex migration
+
+#### Next Steps
+
+1. Implement Option 1 (dot-prefix for system folders)
+2. Fix the `parseTaskPath` logic to correctly extract phase and subdirectory
+3. Ensure subdirectory validation doesn't allow ".." values
