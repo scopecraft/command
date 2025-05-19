@@ -16,6 +16,7 @@ import {
   type TaskFilterOptions,
   TaskMetadata,
   type TaskUpdateOptions,
+  type RuntimeConfig,
 } from '../types.js';
 import { generateTaskId as generateNewTaskId, validateTaskId } from './id-generator.js';
 import {
@@ -33,7 +34,7 @@ import { updateRelationships } from './task-relationships.js';
  */
 export async function listTasks(options: TaskFilterOptions = {}): Promise<OperationResult<Task[]>> {
   try {
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options.config);
 
     if (!fs.existsSync(tasksDir)) {
       return {
@@ -140,18 +141,23 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
 /**
  * Gets a task by ID, optionally with phase and subdirectory information
  * @param id Task ID
- * @param phase Optional phase to look in
- * @param subdirectory Optional subdirectory to look in
+ * @param options Optional parameters including phase, subdirectory, and config
  * @returns Operation result with task if found
  */
 export async function getTask(
   id: string,
-  phase?: string,
-  subdirectory?: string
+  options: {
+    phase?: string;
+    subdirectory?: string;
+    config?: RuntimeConfig;
+  } = {}
 ): Promise<OperationResult<Task>> {
   try {
+    const { phase, subdirectory, config } = options;
+    
     // If phase and subdirectory are provided, try direct path lookup first
     if (phase && subdirectory) {
+      // TODO: Update getTaskFilePath to use runtime config
       const filePath = projectConfig.getTaskFilePath(id, phase, subdirectory);
 
       if (fs.existsSync(filePath)) {

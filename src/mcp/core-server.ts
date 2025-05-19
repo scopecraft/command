@@ -41,6 +41,54 @@ import {
 } from '../core/index.js';
 
 /**
+ * Create task metadata from parameters
+ */
+function createTaskMetadata(params: {
+  id?: string;
+  title: string;
+  type: string;
+  status?: string;
+  priority?: string;
+  assignee?: string;
+  phase?: string;
+  subdirectory?: string;
+  parent?: string;
+  depends?: string[];
+  previous?: string;
+  next?: string;
+  tags?: string[];
+}): TaskMetadata {
+  const metadata: TaskMetadata = {
+    id: params.id || '',
+    title: params.title,
+    type: params.type,
+    status: params.status || '🟡 To Do',
+    priority: params.priority || '▶️ Medium',
+    created_date: new Date().toISOString().split('T')[0],
+    updated_date: new Date().toISOString().split('T')[0],
+    assigned_to: params.assignee || '',
+  };
+
+  // Add optional fields
+  if (params.phase) metadata.phase = params.phase;
+  if (params.subdirectory) metadata.subdirectory = params.subdirectory;
+  if (params.parent) metadata.parent_task = params.parent;
+  if (params.depends) metadata.depends_on = params.depends;
+  if (params.previous) metadata.previous_task = params.previous;
+  if (params.next) metadata.next_task = params.next;
+  if (params.tags) metadata.tags = params.tags;
+
+  return metadata;
+}
+
+/**
+ * Get default task content
+ */
+function getDefaultTaskContent(title: string): string {
+  return `## ${title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`;
+}
+
+/**
  * Create a server instance with all tools registered
  * @param options Additional options
  * @returns A McpServer instance with all tools registered
@@ -76,7 +124,7 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
 /**
  * Register all tools with the MCP server
  */
-function registerTools(server: McpServer, verbose = false): void {
+function registerTools(server: McpServer, verbose = false): McpServer {
   // Task list tool
   server.tool(
     'task_list',
@@ -152,32 +200,10 @@ function registerTools(server: McpServer, verbose = false): void {
     },
     async (params) => {
       try {
-        // Create the task object from the parameters
-        const metadata: TaskMetadata = {
-          id: params.id || '', // Let task-crud generate the ID
-          title: params.title,
-          type: params.type,
-          status: params.status || '🟡 To Do',
-          priority: params.priority || '▶️ Medium',
-          created_date: new Date().toISOString().split('T')[0],
-          updated_date: new Date().toISOString().split('T')[0],
-          assigned_to: params.assignee || '',
-        };
-
-        // Add optional fields
-        if (params.phase) metadata.phase = params.phase;
-        if (params.subdirectory) metadata.subdirectory = params.subdirectory;
-        if (params.parent) metadata.parent_task = params.parent;
-        if (params.depends) metadata.depends_on = params.depends;
-        if (params.previous) metadata.previous_task = params.previous;
-        if (params.next) metadata.next_task = params.next;
-        if (params.tags) metadata.tags = params.tags;
-
+        const metadata = createTaskMetadata(params);
         const task: Task = {
           metadata,
-          content:
-            params.content ||
-            `## ${params.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`,
+          content: params.content || getDefaultTaskContent(params.title),
         };
 
         const result = await createTask(task, params.subdirectory);
@@ -203,7 +229,7 @@ function registerTools(server: McpServer, verbose = false): void {
           new_id: z.string().optional(),
 
           // Keep existing metadata and content fields
-          metadata: z.record(z.any()).optional(),
+          metadata: z.record(z.unknown()).optional(),
           content: z.string().optional(),
         })
         .optional(),
@@ -734,6 +760,80 @@ function registerTools(server: McpServer, verbose = false): void {
     }
   );
 
+  // Init root configuration tool
+  server.tool(
+    'init_root',
+    {
+      path: z.string(),
+    },
+    async (params) => {
+      try {
+        const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
+        const configManager = ConfigurationManager.getInstance();
+
+        if (!configManager.validateRoot(params.path)) {
+          return formatResponse({
+            success: false,
+            error: `Invalid project root: ${params.path} does not contain .tasks or .ruru directory`,
+          });
+        }
+
+        configManager.setRootFromSession(params.path);
+
+        return formatResponse({
+          success: true,
+          data: {
+            path: params.path,
+            source: 'session',
+            validated: true,
+          },
+          message: `Successfully set project root to: ${params.path}`,
+        });
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Get current root tool
+  server.tool('get_current_root', {}, async () => {
+    try {
+      const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
+      const configManager = ConfigurationManager.getInstance();
+      const rootConfig = configManager.getRootConfig();
+
+      return formatResponse({
+        success: true,
+        data: {
+          path: rootConfig.path,
+          source: rootConfig.source,
+          validated: rootConfig.validated,
+          projectName: rootConfig.projectName,
+        },
+        message: `Current root: ${rootConfig.path} (source: ${rootConfig.source})`,
+      });
+    } catch (error) {
+      return formatError(error);
+    }
+  });
+
+  // List projects tool
+  server.tool('list_projects', {}, async () => {
+    try {
+      const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
+      const configManager = ConfigurationManager.getInstance();
+      const projects = configManager.getProjects();
+
+      return formatResponse({
+        success: true,
+        data: projects,
+        message: `Found ${projects.length} configured projects`,
+      });
+    } catch (error) {
+      return formatError(error);
+    }
+  });
+
   if (verbose) {
     console.log('Registered all MCP tools');
   }
@@ -746,7 +846,12 @@ function registerTools(server: McpServer, verbose = false): void {
  * @param result The operation result
  * @returns Formatted response for the MCP SDK
  */
-export function formatResponse(result: any) {
+export function formatResponse(result: {
+  success: boolean;
+  data?: unknown;
+  error?: string;
+  message?: string;
+}) {
   if (!result.success) {
     return {
       content: [

@@ -1,3 +1,4 @@
+import { ConfigurationManager } from '../core/config/configuration-manager.js';
 import {
   type Task,
   type TaskMetadata,
@@ -37,6 +38,9 @@ import {
   type AreaGetParams,
   type AreaListParams,
   type AreaUpdateParams,
+  type ConfigGetCurrentRootParams,
+  type ConfigInitRootParams,
+  type ConfigListProjectsParams,
   type DebugCodePathParams,
   type FeatureCreateParams,
   type FeatureDeleteParams,
@@ -429,6 +433,88 @@ export async function handleTemplateList(_params: TemplateListParams) {
 }
 
 /**
+ * Handler for init_root method
+ */
+export async function handleInitRoot(params: ConfigInitRootParams) {
+  try {
+    const configManager = ConfigurationManager.getInstance();
+
+    // Validate the path exists
+    if (!configManager.validateRoot(params.path)) {
+      return {
+        success: false,
+        error: `Invalid project root: ${params.path} does not contain .tasks or .ruru directory`,
+      };
+    }
+
+    // Set the root for the current session
+    configManager.setRootFromSession(params.path);
+
+    return {
+      success: true,
+      data: {
+        path: params.path,
+        source: 'session',
+        validated: true,
+      },
+      message: `Successfully set project root to: ${params.path}`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Handler for get_current_root method
+ */
+export async function handleGetCurrentRoot(_params: ConfigGetCurrentRootParams) {
+  try {
+    const configManager = ConfigurationManager.getInstance();
+    const rootConfig = configManager.getRootConfig();
+
+    return {
+      success: true,
+      data: {
+        path: rootConfig.path,
+        source: rootConfig.source,
+        validated: rootConfig.validated,
+        projectName: rootConfig.projectName,
+      },
+      message: `Current root: ${rootConfig.path} (source: ${rootConfig.source})`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Handler for list_projects method
+ */
+export async function handleListProjects(_params: ConfigListProjectsParams) {
+  try {
+    const configManager = ConfigurationManager.getInstance();
+    const projects = configManager.getProjects();
+
+    return {
+      success: true,
+      data: projects,
+      message: `Found ${projects.length} configured projects`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
  * Registry of all MCP method handlers
  */
 export const methodRegistry: McpMethodRegistry = {
@@ -456,5 +542,8 @@ export const methodRegistry: McpMethodRegistry = {
   [McpMethod.WORKFLOW_CURRENT]: handleWorkflowCurrent,
   [McpMethod.WORKFLOW_MARK_COMPLETE_NEXT]: handleWorkflowMarkCompleteNext,
   [McpMethod.TEMPLATE_LIST]: handleTemplateList,
+  [McpMethod.CONFIG_INIT_ROOT]: handleInitRoot,
+  [McpMethod.CONFIG_GET_CURRENT_ROOT]: handleGetCurrentRoot,
+  [McpMethod.CONFIG_LIST_PROJECTS]: handleListProjects,
   [McpMethod.DEBUG_CODE_PATH]: handleDebugCodePath,
 };
