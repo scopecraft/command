@@ -5,9 +5,10 @@ type = "chore"
 status = "🟡 To Do"
 priority = "🔼 High"
 created_date = "2025-05-19"
-updated_date = "2025-05-20"
+updated_date = "2025-05-19"
 assigned_to = ""
 phase = "test"
+related_tasks = [ "TASK-FEATUREPROPOSAL-0519-TX" ]
 +++
 
 This task is about fixing the ProjectConfig refactor that went too far. Focus on reverting incorrect changes while keeping necessary root path configuration.

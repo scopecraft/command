@@ -10,6 +10,7 @@ assigned_to = ""
 phase = "backlog"
 subdirectory = "AREA_Core"
 tags = [ "proposal", "core", "path-management", "refactor" ]
+depends_on = [ "CHORE-FIXPROJECTCONFIG-0520-BB" ]
 +++
 
 # Feature Proposal: Fix Path Parsing in Existing Directory Utils
