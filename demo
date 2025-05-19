@@ -34,7 +34,8 @@ echo "   ./dispatch code-review TASK-456"
 echo
 
 echo "3. Available modes:"
-echo "   Dynamically loaded from .claude/commands/*.md files"
+echo "   - none (starts basic Claude without any command)"
+echo "   - Dynamically loaded from .claude/commands/*.md files"
 echo "   Examples:"
 echo "   - 01_brainstorm-feature"
 echo "   - 04_feature-planning"
@@ -43,7 +44,8 @@ echo "   - review"
 echo "   - add-react-feature"
 echo
 echo "4. Claude command format:"
-echo "   claude '/project:MODE TASK-ID [USER_PROMPT]'"
+echo "   none mode: claude"
+echo "   other modes: claude '/project:MODE TASK-ID [USER_PROMPT]'"
 echo
 
 echo "=== Try it now ==="

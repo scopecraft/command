@@ -66,12 +66,19 @@ create_window() {
     else
         gum spin --spinner dot --title "Creating window: $window_name" -- sleep 1
         
-        # Create window with command using /project format
+        # Create window with command using /project format or none
         local user_prompt="${@:3}"
-        local claude_command="claude '/project:$mode $task_id $user_prompt'"
+        local claude_command
         
-        tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
-            "gum style --border double --padding 1 'Claude session: $mode for $task_id'; echo 'Running: $claude_command'; $claude_command"
+        if [ "$mode" = "none" ]; then
+            claude_command="claude"
+            tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
+                "gum style --border double --padding 1 'Claude session (no command) for $task_id'; echo 'Running: $claude_command'; $claude_command"
+        else
+            claude_command="claude '/project:$mode $task_id $user_prompt'"
+            tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
+                "gum style --border double --padding 1 'Claude session: $mode for $task_id'; echo 'Running: $claude_command'; $claude_command"
+        fi
         
         gum style --foreground 82 "✓ Window created successfully"
     fi
@@ -161,7 +168,8 @@ select_mode() {
         return 1
     fi
     
-    echo "$modes" | gum choose --header "Select command mode:"
+    # Add "none" as first option, then list all command files
+    echo -e "none\n$modes" | gum choose --header "Select command mode (or 'none' for basic Claude):"
 }
 
 # Interactive task ID input
@@ -174,6 +182,12 @@ get_task_id() {
 # Interactive user prompt input
 get_user_prompt() {
     local mode=$1
+    
+    # Skip prompt input for "none" mode
+    if [ "$mode" = "none" ]; then
+        return
+    fi
+    
     gum style --foreground 245 "Optional: Add custom prompt for $mode command"
     gum input --placeholder "Press Enter to skip or type custom prompt" \
         --prompt "Prompt: " \
@@ -339,11 +353,18 @@ start_from_worktree() {
         if gum confirm "Create session?"; then
             create_or_get_session
             
-            # Create window with command using /project format
-            local claude_command="claude '/project:$mode $selected_task $user_prompt'"
+            # Create window with command using /project format or none
+            local claude_command
             
-            tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
-                "gum style --border double --padding 1 'Claude session: $mode for $selected_task'; echo 'Running: $claude_command'; $claude_command"
+            if [ "$mode" = "none" ]; then
+                claude_command="claude"
+                tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
+                    "gum style --border double --padding 1 'Claude session (no command) for $selected_task'; echo 'Running: $claude_command'; $claude_command"
+            else
+                claude_command="claude '/project:$mode $selected_task $user_prompt'"
+                tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
+                    "gum style --border double --padding 1 'Claude session: $mode for $selected_task'; echo 'Running: $claude_command'; $claude_command"
+            fi
             
             gum style --foreground 82 "✓ Session created successfully"
             
