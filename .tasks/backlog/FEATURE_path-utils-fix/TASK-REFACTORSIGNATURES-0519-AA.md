@@ -50,6 +50,22 @@ Complete refactoring of all CRUD operations across the codebase to use the optio
    - Updated handleWorkflowMarkCompleteNext to use options pattern
    - All MCP task operations now using new signatures
 
+5. **Feature Entity Updated**
+   - Updated all Feature CLI commands to use options pattern
+   - Updated all Feature MCP handlers to use options pattern
+   - Added E2E tests for Feature operations
+
+6. **Area Entity Updated**
+   - Updated all Area CLI commands to use options pattern
+   - Updated all Area MCP handlers to use options pattern
+   - Added E2E tests for Area operations
+
+7. **Phase Entity Updated**
+   - Updated all Phase CLI commands to use options pattern
+   - Updated all Phase MCP handlers to use options pattern
+   - Added E2E tests for Phase operations
+   - Fixed missing message properties in CLI output
+
 ## Important Discoveries and Learnings
 
 ### Key Issues Found During Implementation
@@ -88,19 +104,12 @@ Complete refactoring of all CRUD operations across the codebase to use the optio
    - Just pass options without config: `createTask(task, { subdirectory })`
    - The CRUD layer will handle config resolution internally
 
-### 🔲 Remaining Work - Signature Updates for Other Entities
+### 🔲 Remaining Work
 
-Still need to update signatures for:
-- Feature CLI commands (createFeature, updateFeature, deleteFeature, getFeature)
-- Feature MCP handlers 
-- Area CLI commands (createArea, updateArea, deleteArea, getArea)  
-- Area MCP handlers
-- Phase CLI commands (createPhase, updatePhase, deletePhase, listPhases)
-- Phase MCP handlers
-- Helper functions (updateRelationships)
-- Tests that use any of these functions
-
-**IMPORTANT NOTE**: After completing all entity updates, we need to add config/root parameters to all MCP parameter types (TaskCreateParams, TaskUpdateParams, etc.) so MCP clients can pass runtime configuration through the MCP interface.
+Still need to:
+- Helper functions (updateRelationships if needed)
+- Add config/root parameters to all MCP parameter types (TaskCreateParams, TaskUpdateParams, etc.) so MCP clients can pass runtime configuration through the MCP interface
+- Update any remaining tests that use the old function signatures
 
 ## Clear Instructions for Updating Callers
 
