@@ -2,7 +2,7 @@
 id = "_overview"
 title = "Enable Project Root Configuration for AI IDE Support"
 type = "🌟 Feature"
-status = "🟡 To Do"
+status = "✅ Done"
 created_date = "2025-05-18"
 updated_date = "2025-05-18"
 phase = "release-v1"
