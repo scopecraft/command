@@ -12,4 +12,5 @@ test/mcp/results/
 *.tgz
 npm-debug.log*
 
-**/.claude/settings.local.jsone2e_test/
+**/.claude/settings.local.json
+e2e_test/
