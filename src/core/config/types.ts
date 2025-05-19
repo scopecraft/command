@@ -31,6 +31,7 @@ export interface RootConfig {
  */
 export interface RuntimeConfig {
   rootPath?: string;
+  tasksDir?: string;  // Override for tasks directory location
   // Future: additional runtime overrides
 }
 
