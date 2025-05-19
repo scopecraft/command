@@ -711,7 +711,7 @@ export async function handlePhaseDeleteCommand(
       process.exit(1);
     }
 
-    console.log(result.message);
+    console.log(result.message || `Phase ${id} deleted successfully`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);

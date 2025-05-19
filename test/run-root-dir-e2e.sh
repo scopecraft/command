@@ -324,22 +324,57 @@ run_test "Area List" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test area list --phase TEST" \
     "AREA_"
 
-# Test 23: Phase Create
+# Test 21: Feature Delete with Force
+run_test "Feature Delete with Force" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test feature delete FEATURE_TestFeature --phase TEST --force" \
+    "deleted successfully"
+
+# Test 23: Area Create
+run_test "Area Create" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test area create --name 'TestArea' --title 'Test Area' --phase TEST" \
+    "successfully"
+
+# Test 24: Area List
+run_test "Area List" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test area list --phase TEST" \
+    "AREA_"
+
+# Test 25: Area Get
+run_test "Area Get" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test area get AREA_TestArea --phase TEST" \
+    "Test Area"
+
+# Test 26: Area Update
+run_test "Area Update" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test area update AREA_TestArea --title 'Updated Area' --phase TEST" \
+    "successfully"
+
+# Test 27: Area Delete
+run_test "Area Delete" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test area delete AREA_TestArea --phase TEST --force" \
+    "successfully"
+
+# Test 28: Phase Create
 run_test "Phase Create" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test phase create --id 'test-phase' --name 'Test Phase'" \
     "Phase test-phase created successfully"
 
-# Test 24: Phase List
+# Test 29: Phase List
 run_test "Phase List" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test phase list" \
     "test-phase"
 
-# Test 25: Phase Update
+# Test 30: Phase Update
 run_test "Phase Update" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test phase update test-phase --name 'Updated Phase'" \
     "Phase test-phase updated successfully"
 
-# Test 26: Invalid Root
+# Test 31: Phase Delete
+run_test "Phase Delete" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test phase delete test-phase --force" \
+    "successfully"
+
+# Test 32: Invalid Root
 run_test "Invalid Root (Should Fail)" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/nonexistent task list" \
     "Invalid project root"
