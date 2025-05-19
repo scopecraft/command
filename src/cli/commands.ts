@@ -86,10 +86,7 @@ export async function handleGetCommand(
   }
 ): Promise<void> {
   try {
-    const result = await getTask(id, {
-      phase: options.phase,
-      subdirectory: options.subdirectory,
-    });
+    const result = await getTask(id, options.phase, options.subdirectory);
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -358,10 +355,8 @@ export async function handleUpdateCommand(
             metadata: fileTask.metadata,
             content: fileTask.content,
           },
-          {
-            phase: options.searchPhase,
-            subdirectory: options.searchSubdirectory,
-          }
+          options.searchPhase,
+          options.searchSubdirectory
         );
 
         if (!result.success) {
@@ -386,10 +381,8 @@ export async function handleUpdateCommand(
               metadata: task.metadata,
               content: task.content,
             },
-            {
-              phase: options.searchPhase,
-              subdirectory: options.searchSubdirectory,
-            }
+            options.searchPhase,
+            options.searchSubdirectory
           );
 
           if (!result.success) {

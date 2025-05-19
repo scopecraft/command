@@ -79,10 +79,7 @@ export class ProjectConfig {
     const root = this.getRoot();
     const project = this.getProjectDefinition();
 
-    const dirs = {
-      ...DEFAULT_DIRECTORIES,
-      ...project?.directories,
-    };
+    const dirs = DEFAULT_DIRECTORIES;
 
     return {
       tasksRoot: path.join(root, dirs.tasks),

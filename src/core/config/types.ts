@@ -40,12 +40,6 @@ export interface RuntimeConfig {
 export interface ProjectDefinition {
   name: string;
   path: string;
-  directories?: {
-    tasks?: string; // Default: ".tasks"
-    phases?: string; // Default: ".tasks/phases"
-    config?: string; // Default: ".tasks/config"
-    templates?: string; // Default: ".tasks/templates"
-  };
   description?: string;
   tags?: string[];
 }

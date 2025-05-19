@@ -146,15 +146,10 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
  */
 export async function getTask(
   id: string,
-  options: {
-    phase?: string;
-    subdirectory?: string;
-    config?: RuntimeConfig;
-  } = {}
+  phase?: string,
+  subdirectory?: string
 ): Promise<OperationResult<Task>> {
   try {
-    const { phase, subdirectory, config } = options;
-
     // If phase and subdirectory are provided, try direct path lookup first
     if (phase && subdirectory) {
       // TODO: Update getTaskFilePath to use runtime config
@@ -338,14 +333,12 @@ export async function createTask(
 export async function updateTask(
   id: string,
   updates: TaskUpdateOptions,
-  options?: { phase?: string; subdirectory?: string }
+  phase?: string,
+  subdirectory?: string
 ): Promise<OperationResult<Task>> {
   try {
     // Get the task, using phase and subdirectory if provided
-    const taskResult = await getTask(id, {
-      phase: options?.phase,
-      subdirectory: options?.subdirectory,
-    });
+    const taskResult = await getTask(id, phase, subdirectory);
     if (!taskResult.success || !taskResult.data) {
       return {
         success: false,
@@ -492,13 +485,11 @@ export async function updateTask(
  */
 export async function deleteTask(
   id: string,
-  options?: { phase?: string; subdirectory?: string }
+  phase?: string,
+  subdirectory?: string
 ): Promise<OperationResult<void>> {
   try {
-    const taskResult = await getTask(id, {
-      phase: options?.phase,
-      subdirectory: options?.subdirectory,
-    });
+    const taskResult = await getTask(id, phase, subdirectory);
 
     if (!taskResult.success || !taskResult.data) {
       return {
