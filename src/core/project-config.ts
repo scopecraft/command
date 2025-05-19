@@ -236,19 +236,38 @@ export class ProjectConfig {
    */
   parseTaskPath(filePath: string): { phase?: string; subdirectory?: string } {
     const tasksRoot = this.paths.tasksRoot;
-    const relativePath = path.relative(tasksRoot, filePath);
+    
+    // Ensure we're working with absolute paths
+    const absoluteFilePath = path.resolve(filePath);
+    const absoluteTasksRoot = path.resolve(tasksRoot);
+    
+    // Check if the file is actually under the tasks root
+    if (!absoluteFilePath.startsWith(absoluteTasksRoot)) {
+      return {};
+    }
+    
+    // Get the relative path from tasks root
+    const relativePath = path.relative(absoluteTasksRoot, absoluteFilePath);
     const parts = relativePath.split(path.sep);
 
     let phase: string | undefined;
-    let subdirectory: string | undefined;
+    let subdirectory: string | undefined = '';
 
-    // If under phases directory, first part is phase name
-    if (parts.length >= 3 && parts[0] === 'phases') {
-      phase = parts[1];
-      subdirectory = parts[2];
-    } else if (parts.length >= 2) {
-      // Direct subdirectory under tasks
-      subdirectory = parts[0];
+    if (parts.length === 1) {
+      // Task directly in tasks directory (e.g., "task.md")
+      // No phase, no subdirectory
+    } else if (parts.length === 2) {
+      // phase/task.md or subdirectory/task.md
+      const firstPart = parts[0];
+      const systemDirs = ['config', 'templates'];
+      
+      if (!systemDirs.includes(firstPart)) {
+        phase = firstPart;
+      }
+    } else if (parts.length >= 3) {
+      // phase/subdirectory/task.md
+      phase = parts[0];
+      subdirectory = parts[1];
     }
 
     return { phase, subdirectory };

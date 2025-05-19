@@ -285,7 +285,7 @@ export async function createTask(
       ? projectConfig.getTaskFilePath(
           task.metadata.id,
           task.metadata.phase,
-          task.metadata.subdirectory
+          task.metadata.subdirectory || ''
         )
       : path.join(tasksDir, `${task.metadata.id}.md`);
 

@@ -22,10 +22,7 @@ export interface TemplateInfo {
  * @returns Path to the templates directory
  */
 export function getTemplatesDirectory(): string {
-  if (projectConfig.getMode() === 'roo_commander') {
-    return path.join(process.cwd(), '.ruru', 'templates', 'toml-md');
-  }
-  return path.join(process.cwd(), '.tasks', 'templates');
+  return projectConfig.getTemplatesDirectory();
 }
 
 /**
@@ -39,31 +36,28 @@ export function initializeTemplates(): void {
     fs.mkdirSync(templatesDir, { recursive: true });
   }
 
-  // In standalone mode, we need to copy templates from our bundled resources
-  if (projectConfig.getMode() === 'standalone') {
-    // Copy template files from docs/templates to .tasks/templates
-    const sourceTemplatesDir = path.join(process.cwd(), 'docs', 'templates');
+  // Copy templates from docs/templates to .tasks/templates
+  const sourceTemplatesDir = path.join(process.cwd(), 'docs', 'templates');
 
-    if (fs.existsSync(sourceTemplatesDir)) {
-      // Only copy MDTM task templates (01-06)
-      const templateFiles = fs.readdirSync(sourceTemplatesDir).filter((file) => {
-        // Match files like 01_mdtm_feature.md, 02_mdtm_bug.md, etc.
-        return /^0[1-6]_mdtm_.+\.md$/.test(file);
-      });
+  if (fs.existsSync(sourceTemplatesDir)) {
+    // Only copy MDTM task templates (01-06)
+    const templateFiles = fs.readdirSync(sourceTemplatesDir).filter((file) => {
+      // Match files like 01_mdtm_feature.md, 02_mdtm_bug.md, etc.
+      return /^0[1-6]_mdtm_.+\.md$/.test(file);
+    });
 
-      for (const file of templateFiles) {
-        const sourcePath = path.join(sourceTemplatesDir, file);
-        const targetPath = path.join(templatesDir, file);
+    for (const file of templateFiles) {
+      const sourcePath = path.join(sourceTemplatesDir, file);
+      const targetPath = path.join(templatesDir, file);
 
-        // Only copy if the file doesn't already exist
-        if (!fs.existsSync(targetPath)) {
-          fs.copyFileSync(sourcePath, targetPath);
-        }
+      // Only copy if the file doesn't already exist
+      if (!fs.existsSync(targetPath)) {
+        fs.copyFileSync(sourcePath, targetPath);
       }
-    } else {
-      // If templates not found, create some basic ones
-      createBasicTemplates(templatesDir);
     }
+  } else {
+    // If templates not found, create some basic ones
+    createBasicTemplates(templatesDir);
   }
 }
 

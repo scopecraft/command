@@ -9,6 +9,9 @@ Create the following test directory structure:
 e2e_test/
 ├── worktree-test/           # Simulates a single worktree
 │   └── .tasks/
+│       ├── templates/       # Template directory for testing
+│       │   ├── 01_mdtm_feature.md
+│       │   └── 02_mdtm_bug.md
 │       └── TEST/
 │           ├── TEST-ROOTCONFIG-001.md
 │           └── FEATURE_Auth/
@@ -137,7 +140,34 @@ e2e_test/
 - Shows only AUTH-001 task
 - Correctly filters by subdirectory within the root
 
-### 9. Error Cases
+### 9. Template Operations
+
+#### Create Task with Template
+**Command**: `bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task create \"Template Test Feature\" --type "🌟 Feature" --template feature --phase TEST`
+
+**Expected Output**:
+- Shows "Using project root from CLI"
+- Uses the feature template from the correct templates directory
+- Creates task with template structure
+- Task includes template content and correct metadata
+
+#### List Templates
+**Command**: `bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test list-templates`
+
+**Expected Output**:
+- Shows templates from the configured root's templates directory
+- Lists feature and bug templates
+- Doesn't show templates from other directories
+
+#### Create Task Without Template
+**Command**: `bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task create "Manual Task" --type "🌟 Feature" --phase TEST`
+
+**Expected Output**:
+- Creates task without template
+- Still respects the root directory configuration
+- Uses default task structure
+
+### 10. Error Cases
 
 #### Invalid Root
 **Command**: `bun run ./src/cli/cli.ts --root-dir ./e2e_test/nonexistent task list`
@@ -152,6 +182,13 @@ e2e_test/
 **Expected Output**:
 - Error message about missing .tasks directory
 - Falls back to auto-detection or fails
+
+#### Template Not Found
+**Command**: `bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task create "Test" --type "🌟 Feature" --template nonexistent`
+
+**Expected Output**:
+- Error message about template not found
+- Shows available templates from list-templates command
 
 ## Test Script
 

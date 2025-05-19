@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "projects": [
+    {
+      "name": "worktree-test",
+      "path": "/Users/davidpaquet/Projects/roo-task-cli/e2e_test/worktree-test"
+    }
+  ],
+  "defaultProject": "worktree-test"
+}

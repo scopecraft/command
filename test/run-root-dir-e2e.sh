@@ -43,6 +43,7 @@ mkdir -p e2e_test
 # Setup test directories
 echo "Setting up test directory structure..."
 mkdir -p e2e_test/worktree-test/.tasks/TEST/FEATURE_Auth
+mkdir -p e2e_test/worktree-test/.tasks/templates
 mkdir -p e2e_test/main-branch/.tasks/PROD
 mkdir -p e2e_test/feature-branch/.tasks/DEV
 
@@ -68,7 +69,6 @@ title = "Authentication Feature Task"
 type = "feature"
 status = "🔴 To Do"
 phase = "TEST"
-subdirectory = "FEATURE_Auth"
 +++
 
 # Authentication Feature Task
@@ -97,6 +97,70 @@ status = "🟡 To Do"
 +++
 
 Task in feature branch
+EOF
+
+# Copy template files
+echo "Setting up template files..."
+cat > e2e_test/worktree-test/.tasks/templates/01_mdtm_feature.md << 'EOF'
++++
+id = ""               # Will be auto-generated if not provided
+title = ""            # REQUIRED: Human-readable title
+status = "🟡 To Do"    # Current status
+type = "🌟 Feature"    # Type of task
+priority = "▶️ Medium" # Priority level
+created_date = ""     # Will be auto-filled
+updated_date = ""     # Will be auto-filled
+assigned_to = ""      # Who is responsible for this task
+tags = []             # Relevant keywords
++++
+
+# [Title]
+
+## Description ✍️
+Describe the feature in detail.
+
+## Acceptance Criteria ✅
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3
+
+## Implementation Notes 📝
+Add any technical details or implementation considerations here.
+EOF
+
+cat > e2e_test/worktree-test/.tasks/templates/02_mdtm_bug.md << 'EOF'
++++
+id = ""               # Will be auto-generated if not provided
+title = ""            # REQUIRED: Human-readable title
+status = "🟡 To Do"    # Current status
+type = "🐞 Bug"        # Type of task
+priority = "🔼 High"   # Priority level
+created_date = ""     # Will be auto-filled
+updated_date = ""     # Will be auto-filled
+assigned_to = ""      # Who is responsible for this task
+tags = []             # Relevant keywords
++++
+
+# [Title]
+
+## Description ✍️
+Describe the bug in detail.
+
+## Steps to Reproduce 🔄
+1. Step 1
+2. Step 2
+3. Step 3
+
+## Expected Behavior ✓
+What should happen?
+
+## Actual Behavior ✗
+What actually happens?
+
+## Fix Implementation 🔧
+- [ ] Identify root cause
+- [ ] Implement fix
+- [ ] Add regression test
 EOF
 
 # Create test config file
@@ -176,7 +240,32 @@ run_test "Feature Branch Worktree" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/feature-branch task list" \
     "DEV-001"
 
-# Test 12: Invalid Root
+# Test 12: Template Operations - List Templates
+run_test "List Templates" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test template list" \
+    "feature"
+
+# Test 13: Create Task with Template
+run_test "Create Task with Template" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task create --title \"Template Test Feature\" --type \"🌟 Feature\" --template feature --phase TEST" \
+    "created successfully"
+
+# Test 14: Verify Template Content
+run_test "Verify Template Task" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task list --phase TEST" \
+    "Template Test Feature"
+
+# Test 15: Create Task without Template  
+run_test "Create Task without Template" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task create --title \"Manual Task\" --type \"🌟 Feature\" --phase TEST" \
+    "created successfully"
+
+# Test 16: Template Not Found
+run_test "Template Not Found (Should Fail)" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task create --title \"Test\" --type \"🌟 Feature\" --template nonexistent" \
+    "not found"
+
+# Test 17: Invalid Root
 run_test "Invalid Root (Should Fail)" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/nonexistent task list" \
     "Invalid project root"

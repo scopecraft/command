@@ -161,10 +161,10 @@ export async function handleCreateCommand(options: {
       if (options.content) task.content = options.content;
     } else if (options.template) {
       // Create from template
-      const { getTemplateContent, applyTemplate } = await import('../core/index.js');
+      const { getTemplate, applyTemplate } = await import('../core/index.js');
 
       // Get the template content
-      const templateContent = getTemplateContent(options.template);
+      const templateContent = getTemplate(options.template);
 
       if (!templateContent) {
         throw new Error(
