@@ -3,11 +3,12 @@
 A powerful command-line tool and MCP server for managing Markdown-Driven Task Management (MDTM) files. Scopecraft helps you organize tasks, features, and development workflows with a structured approach.
 
 **Key Features:**
-* Works both standalone or with Roo Commander
+* Works with any AI IDE (Cursor, Claude Desktop, etc.) via flexible project root configuration
 * Supports MDTM format with TOML/YAML frontmatter
 * Provides both CLI and MCP server interfaces
 * Includes specialized Claude commands for feature development
 * Automated project type detection
+* Multi-project support with easy switching
 
 ## Installation
 
@@ -55,6 +56,53 @@ bun run build
 # Install globally
 bun run install:global
 ```
+
+## Project Root Configuration
+
+Scopecraft now works with any AI IDE! Configure your project root using one of these methods:
+
+### Quick Setup for AI IDEs
+
+#### Cursor / Claude Desktop
+```bash
+# Start MCP server with your project
+scopecraft-mcp --root-dir /path/to/your/project
+```
+
+Or add to your IDE's MCP configuration:
+```json
+{
+  "scopecraft": {
+    "command": "scopecraft-mcp",
+    "args": ["--root-dir", "/path/to/your/project"]
+  }
+}
+```
+
+#### Multiple Projects
+Create `~/.scopecraft/config.json`:
+```json
+{
+  "projects": {
+    "frontend": { "path": "/projects/myapp/frontend" },
+    "backend": { "path": "/projects/myapp/backend" }
+  }
+}
+```
+
+Then switch projects at runtime:
+```
+init_root /projects/myapp/backend
+```
+
+### Configuration Methods
+
+1. **CLI Parameter**: `--root-dir /path/to/project`
+2. **MCP Command**: `init_root /path/to/project`
+3. **Config File**: `~/.scopecraft/config.json`
+4. **Environment**: `SCOPECRAFT_ROOT=/path/to/project`
+
+See [Project Root Configuration Guide](docs/project-root-configuration-guide.md) for detailed setup instructions.
 
 ## Quick Start
 
