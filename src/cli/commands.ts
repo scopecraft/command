@@ -47,6 +47,8 @@ export async function handleListCommand(options: {
   format?: 'table' | 'json' | 'minimal' | 'workflow';
 }): Promise<void> {
   try {
+    // Runtime config is handled internally by CRUD functions
+    
     const result = await listTasks({
       status: options.status,
       type: options.type,
@@ -86,7 +88,12 @@ export async function handleGetCommand(
   }
 ): Promise<void> {
   try {
-    const result = await getTask(id, { phase: options.phase, subdirectory: options.subdirectory });
+    // Runtime config is handled internally by CRUD functions
+    
+    const result = await getTask(id, { 
+      phase: options.phase, 
+      subdirectory: options.subdirectory,
+    });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -122,6 +129,8 @@ export async function handleCreateCommand(options: {
   template?: string;
 }): Promise<void> {
   try {
+    // Runtime config is handled internally by CRUD functions
+    
     let task: Task;
 
     if (options.file) {
@@ -289,7 +298,8 @@ export async function handleCreateCommand(options: {
     // Extract subdirectory from metadata for the createTask call
     const subdirectory = task.metadata.subdirectory;
 
-    const result = await createTask(task, subdirectory);
+    // Use new options pattern
+    const result = await createTask(task, { subdirectory });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -330,6 +340,8 @@ export async function handleUpdateCommand(
   }
 ): Promise<void> {
   try {
+    // Runtime config is handled internally by CRUD functions
+    
     if (options.file) {
       // Update from file
       if (!fs.existsSync(options.file)) {
@@ -355,8 +367,10 @@ export async function handleUpdateCommand(
             metadata: fileTask.metadata,
             content: fileTask.content,
           },
-          options.searchPhase,
-          options.searchSubdirectory
+          {
+            phase: options.searchPhase,
+            subdirectory: options.searchSubdirectory,
+          }
         );
 
         if (!result.success) {
@@ -381,8 +395,10 @@ export async function handleUpdateCommand(
               metadata: task.metadata,
               content: task.content,
             },
-            options.searchPhase,
-            options.searchSubdirectory
+            {
+              phase: options.searchPhase,
+              subdirectory: options.searchSubdirectory,
+            }
           );
 
           if (!result.success) {
@@ -396,8 +412,10 @@ export async function handleUpdateCommand(
           const result = await updateTask(
             id,
             { content: fileContent },
-            options.searchPhase,
-            options.searchSubdirectory
+            {
+              phase: options.searchPhase,
+              subdirectory: options.searchSubdirectory,
+            }
           );
 
           if (!result.success) {
@@ -451,7 +469,10 @@ export async function handleUpdateCommand(
         return;
       }
 
-      const result = await updateTask(id, updates, options.searchPhase, options.searchSubdirectory);
+      const result = await updateTask(id, updates, { 
+        phase: options.searchPhase, 
+        subdirectory: options.searchSubdirectory,
+      });
 
       if (!result.success) {
         console.error(`Error: ${result.error}`);
@@ -477,7 +498,12 @@ export async function handleDeleteCommand(
   }
 ): Promise<void> {
   try {
-    const result = await deleteTask(id, options.phase, options.subdirectory);
+    // Runtime config is handled internally by CRUD functions
+    
+    const result = await deleteTask(id, { 
+      phase: options.phase, 
+      subdirectory: options.subdirectory,
+    });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -501,6 +527,8 @@ export async function handleNextTaskCommand(
   } = {}
 ): Promise<void> {
   try {
+    // Runtime config is handled internally by CRUD functions
+    
     const result = await findNextTask(id);
 
     if (!result.success) {
@@ -531,6 +559,8 @@ export async function handleMarkCompleteNextCommand(
   } = {}
 ): Promise<void> {
   try {
+    // Runtime config is handled internally by CRUD functions
+    
     // Get the next task before marking current as complete
     const nextTaskResult = await findNextTask(id);
 
@@ -697,6 +727,8 @@ export async function handleCurrentTaskCommand(
   } = {}
 ): Promise<void> {
   try {
+    // Runtime config is handled internally by CRUD functions
+    
     const inProgressResult = await listTasks({ status: '🔵 In Progress' });
 
     if (!inProgressResult.success) {

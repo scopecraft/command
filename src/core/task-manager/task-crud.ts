@@ -233,7 +233,7 @@ export async function createTask(
     // Generate ID if not provided
     if (!task.metadata.id) {
       // Use new concise format by default, unless explicitly set to timestamp
-      const projectConfigData = ProjectConfig.getInstance(config).getConfig();
+      const projectConfigData = ProjectConfig.getInstance(options?.config).getConfig();
       const useOldFormat = projectConfigData?.idFormat === 'timestamp';
 
       if (!useOldFormat) {

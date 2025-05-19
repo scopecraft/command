@@ -8,7 +8,6 @@ import path from 'node:path';
 import { Command } from 'commander';
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
 import {
-  ProjectMode,
   ensureDirectoryExists,
   getTasksDirectory,
   projectConfig,
@@ -59,34 +58,25 @@ program
       console.log(`Using config file: ${options.config}`);
     }
 
-    // Set specific mode if requested
+    // Handle mode option - now this is handled by configuration manager
     if (options.mode) {
-      const mode = options.mode.toLowerCase();
-      if (mode === 'roo' || mode === 'roo_commander') {
-        projectConfig.setMode(ProjectMode.ROO_COMMANDER);
-      } else if (mode === 'standalone') {
-        projectConfig.setMode(ProjectMode.STANDALONE);
-      } else {
-        console.error(`Error: Unknown mode "${options.mode}". Use "roo" or "standalone".`);
-        process.exit(1);
-      }
+      console.log(`Note: Mode option is deprecated. Project configuration is now managed automatically.`);
     }
 
     // Validate environment using projectConfig
     if (!projectConfig.validateEnvironment()) {
-      const mode = projectConfig.getMode();
-      const rootDir = mode === ProjectMode.ROO_COMMANDER ? '.ruru' : '.tasks';
+      const rootDir = projectConfig.getTasksDirectory();
 
-      console.error(`Error: ${rootDir} directory structure not found in the current directory`);
+      console.error(`Error: Project structure not found in the current directory`);
       console.error(
-        `Initialize the project first with "sc init${mode === ProjectMode.STANDALONE ? ' --mode standalone' : ''}"`
+        `Initialize the project first with "sc init"`
       );
 
       // Attempt to create the directory structure if it doesn't exist
       try {
-        console.log(`Creating ${rootDir} directory structure...`);
+        console.log(`Creating project structure...`);
         projectConfig.initializeProjectStructure();
-        console.log(`${rootDir} directory structure created successfully.`);
+        console.log(`Project structure created successfully.`);
       } catch (error) {
         console.error(
           `Failed to create directory structure: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -100,9 +90,7 @@ program
     ensureDirectoryExists(tasksDir);
 
     // Start server
-    const modeText =
-      projectConfig.getMode() === ProjectMode.ROO_COMMANDER ? 'Roo Commander' : 'Standalone';
-    console.log(`Starting MCP server in ${modeText} mode...`);
+    console.log(`Starting MCP server...`);
     await startServer(options.port);
   });
 
