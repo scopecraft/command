@@ -2,7 +2,7 @@
 id = "TASK-FEATUREPROPOSAL-0519-TX"
 title = "Fix Path Parsing with Centralized PathUtils"
 type = "prd"
-status = "🟡 To Do"
+status = "🟢 Done"
 priority = "▶️ Medium"
 created_date = "2025-05-19"
 updated_date = "2025-05-19"

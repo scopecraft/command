@@ -2,7 +2,7 @@
 id = "_overview"
 title = "Fix Path Parsing and Refactor Directory Structure"
 type = "enhancement"
-status = "🟡 To Do"
+status = "🟢 Done"
 created_date = "2025-05-19"
 updated_date = "2025-05-19"
 phase = "backlog"

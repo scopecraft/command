@@ -156,8 +156,13 @@ All major refactoring work is complete:
 
 ### 🔲 Remaining Work
 
-Minor remaining tasks:
+All main tasks completed:
 - ✅ Review CLI command help text to ensure --root-dir documentation is present
+- ✅ Support the path option in the API layer (MCP handlers and parameter interfaces)
+- ✅ Added comprehensive root_dir support across all MCP handlers
+- ✅ Updated all MCP parameter interfaces with root_dir property
+
+Additional tasks that could be done in a future iteration:
 - Add comprehensive E2E tests for --root-dir functionality to test/run-root-dir-e2e.sh
 
 **Note**: MCP types do not need config/root parameters as the MCP server handles configuration internally at the server level.
