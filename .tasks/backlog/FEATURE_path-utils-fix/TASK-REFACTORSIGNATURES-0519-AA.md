@@ -18,7 +18,7 @@ tags = [ "AREA:core", "refactoring", "api-design" ]
 
 Complete refactoring of all CRUD operations across the codebase to use the options object pattern for better extensibility, runtime config support, and consistency.
 
-## Status: In Progress
+## Status: ✅ Nearly Complete
 
 ### ✅ Completed
 
@@ -53,18 +53,23 @@ Complete refactoring of all CRUD operations across the codebase to use the optio
 5. **Feature Entity Updated**
    - Updated all Feature CLI commands to use options pattern
    - Updated all Feature MCP handlers to use options pattern
-   - Added E2E tests for Feature operations
+   - Added E2E tests for all Feature CRUD operations
 
 6. **Area Entity Updated**
    - Updated all Area CLI commands to use options pattern
    - Updated all Area MCP handlers to use options pattern
-   - Added E2E tests for Area operations
+   - Added E2E tests for all Area CRUD operations
 
 7. **Phase Entity Updated**
    - Updated all Phase CLI commands to use options pattern
    - Updated all Phase MCP handlers to use options pattern
-   - Added E2E tests for Phase operations
+   - Added E2E tests for all Phase CRUD operations
    - Fixed missing message properties in CLI output
+
+8. **Comprehensive E2E Test Suite**
+   - Created complete test coverage for all entities
+   - Fixed missing message properties in command outputs
+   - All tests passing successfully
 
 ## Important Discoveries and Learnings
 
@@ -103,6 +108,41 @@ Complete refactoring of all CRUD operations across the codebase to use the optio
    - Don't need to get config: `const config = projectConfig.getRuntimeConfig();`
    - Just pass options without config: `createTask(task, { subdirectory })`
    - The CRUD layer will handle config resolution internally
+
+8. **Phase Commands Missing Messages**
+   - createPhase and updatePhase don't return message properties
+   - CLI commands need to provide fallback messages
+   - Fixed by adding: `result.message || \`Phase ${id} created successfully\``
+
+## E2E Test Coverage Checklist
+
+### Task Entity ✅
+- [x] Create - tested (multiple scenarios)
+- [x] List - tested (with filters)
+- [x] Get - tested
+- [x] Update - tested
+- [x] Delete - tested (indirect through subdirectory operations)
+
+### Feature Entity ✅
+- [x] Create - tested
+- [x] List - tested
+- [x] Get - tested
+- [x] Update - tested
+- [x] Delete - tested with force
+
+### Area Entity ✅
+- [x] Create - tested
+- [x] List - tested
+- [x] Get - tested
+- [x] Update - tested
+- [x] Delete - tested with force
+
+### Phase Entity ✅
+- [x] Create - tested
+- [x] List - tested
+- [x] Get - N/A (phases don't have get command)
+- [x] Update - tested
+- [x] Delete - tested with force
 
 ### 🔲 Remaining Work
 
@@ -248,3 +288,11 @@ export async function createTaskCommand(title: string, options: any) {
 
 - 9672bfb: Refactor all CRUD operations to use options pattern
 - dd26675: Fix runtime config propagation and add comprehensive CRUD tests
+- d3f6eec: Update task commands to use options pattern for runtime config
+- 20864e5: Update MCP task handlers to use options pattern
+- 1dce2c3: Update Feature CLI commands and MCP handlers to use options pattern
+- 1c947e6: Update Area CLI commands and MCP handlers to use options pattern
+- 8affdc3: Update E2E tests for Feature and Area operations
+- 87e0de0: Update Phase CLI commands and MCP handlers to use options pattern
+- ca4729f: Update refactoring task to reflect completion of all entity updates
+- b60a361: Add comprehensive E2E tests for all CRUD operations and fix missing messages
