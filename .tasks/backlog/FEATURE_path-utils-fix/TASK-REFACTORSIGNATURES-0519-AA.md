@@ -556,11 +556,43 @@ const filePath = getFilePath(filename, phase, subdirectory, config);
 
 ## Testing Strategy
 
-1. Create unit tests for each refactored function
-2. Ensure backward compatibility where possible
-3. Test runtime config propagation
-4. Integration tests for cross-function calls
-5. E2E tests for CLI and MCP layers
+This project prefers integration tests, E2E tests, and snapshot tests over unit tests that merely check implementation details. Our testing approach should focus on:
+
+1. **Integration tests**:
+   - Test complete workflows (create task → update → move → delete)
+   - Verify runtime config propagation through the entire stack
+   - Test interactions between different CRUD modules
+   - Use real file system operations (not mocks)
+
+2. **E2E tests**:
+   - Test CLI commands with different parameter combinations
+   - Test MCP server operations end-to-end
+   - Verify --root-dir parameter works correctly
+   - Test error handling and edge cases
+
+3. **Snapshot tests**:
+   - Capture output of list operations before/after refactoring
+   - Verify task file formats remain consistent
+   - Test formatted output (tables, JSON, etc.)
+
+4. **Regression tests**:
+   - Ensure backward compatibility where possible
+   - Test that existing workflows continue to work
+   - Verify no data loss during operations
+
+5. **Coverage focus**:
+   - Test actual behavior, not implementation details
+   - Focus on user-facing functionality
+   - Avoid tests that just verify function calls
+
+### Test File Organization
+
+Following the project's existing patterns:
+
+- **Integration tests**: `test/integration/crud-refactor.test.ts`
+- **E2E tests**: `e2e_test/` directory with specific scenarios
+- **Snapshot tests**: Store in `test/snapshots/` for comparison
+- **Test utilities**: Create helper functions for common test scenarios
 
 ## Breaking Changes
 
