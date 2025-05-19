@@ -485,7 +485,11 @@ export async function updateTask(
       await updateRelationships(task, { config: options?.config });
     }
 
-    return { success: true, data: task };
+    return { 
+      success: true, 
+      data: task,
+      message: `Task ${id} updated successfully`
+    };
   } catch (error) {
     return {
       success: false,
