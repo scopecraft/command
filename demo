@@ -30,12 +30,14 @@ echo
 
 echo "   Direct dispatch:"
 echo "   ./dispatch interactive TASK-123"
-echo "   ./dispatch code-review TASK-456"
+echo "   ./dispatch code-review FEAT-456"
+echo "   ./dispatch none FEATURE_my-feature"
 echo
 
 echo "3. Available modes:"
 echo "   - none (starts basic Claude without any command)"
 echo "   - Dynamically loaded from .claude/commands/*.md files"
+echo "   - Supports both task IDs (TASK-xxx, FEAT-xxx) and feature IDs (FEATURE_xxx)"
 echo "   Examples:"
 echo "   - 01_brainstorm-feature"
 echo "   - 04_feature-planning"

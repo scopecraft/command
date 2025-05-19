@@ -43,9 +43,16 @@ create_window() {
     local task_id=$2
     local window_name="${task_id}-${mode}"
     
-    # Call tw-start and capture the output
-    gum style --foreground 245 "Setting up worktree for $task_id..."
-    local worktree_output=$(bun run tw-start "$task_id" 2>/dev/null | tail -n 1)
+    # Determine if this is a task or feature ID
+    if [[ "$task_id" =~ ^FEAT- || "$task_id" =~ ^FEATURE_ ]]; then
+        # Use tw-feat-start for feature IDs
+        gum style --foreground 245 "Setting up feature worktree for $task_id..."
+        local worktree_output=$(bun run tw-feat-start "$task_id" 2>/dev/null | tail -n 1)
+    else
+        # Use tw-start for task IDs
+        gum style --foreground 245 "Setting up task worktree for $task_id..."
+        local worktree_output=$(bun run tw-start "$task_id" 2>/dev/null | tail -n 1)
+    fi
     
     # Check if the output contains a valid path
     if [[ -d "$worktree_output" ]]; then
@@ -53,7 +60,7 @@ create_window() {
         gum style --foreground 82 "✓ Using worktree: $worktree_path"
     else
         gum style --foreground 196 "Error: Failed to create/find worktree for $task_id"
-        gum style --foreground 245 "Make sure task exists and is not already started in another worktree"
+        gum style --foreground 245 "Make sure ID exists and is not already started in another worktree"
         return 1
     fi
     
@@ -180,9 +187,9 @@ select_mode() {
 
 # Interactive task ID input
 get_task_id() {
-    gum input --placeholder "Enter task ID (e.g., TASK-123)" \
-        --prompt "Task ID: " \
-        --width 30
+    gum input --placeholder "Enter task/feature ID (e.g., TASK-123, FEAT-456, FEATURE_name)" \
+        --prompt "ID: " \
+        --width 40
 }
 
 # Interactive user prompt input
@@ -211,9 +218,9 @@ interactive_dispatch() {
     local task_id=$(get_task_id)
     [ -z "$task_id" ] && exit 0
     
-    # Validate task ID
+    # Validate ID format
     if [[ ! $task_id =~ ^[A-Z0-9_-]+$ ]]; then
-        gum style --foreground 196 "Invalid task ID format"
+        gum style --foreground 196 "Invalid ID format"
         exit 1
     fi
     
@@ -317,7 +324,7 @@ start_from_worktree() {
     fi
     
     # List directories in worktrees folder
-    local worktrees=$(ls -1 "$worktrees_dir" 2>/dev/null | grep -E '^(TASK|FEAT)-')
+    local worktrees=$(ls -1 "$worktrees_dir" 2>/dev/null | grep -E '^(TASK|FEAT)-|^FEATURE_')
     
     if [ -z "$worktrees" ]; then
         gum style --foreground 196 "No worktrees found"
@@ -401,7 +408,7 @@ main() {
                 ;;
             "help"|"-h"|"--help")
                 gum style --border normal --padding 1 \
-                    "$(echo -e "Usage:\n  $0                    # Interactive menu\n  $0 list              # List sessions\n  $0 worktree          # Start session from existing worktree\n  $0 <mode> <task-id>  # Direct dispatch")"
+                    "$(echo -e "Usage:\n  $0                    # Interactive menu\n  $0 list              # List sessions\n  $0 worktree          # Start session from existing worktree\n  $0 <mode> <id>       # Direct dispatch (supports TASK-xxx, FEAT-xxx, FEATURE_xxx)")"
                 ;;
             *)
                 # Direct dispatch with command line args
