@@ -4,13 +4,13 @@
 
 import { describe, expect, it, jest } from '@jest/globals';
 import {
+  DEFAULT_STOP_WORDS,
+  TASK_TYPE_MAPPING,
   extractContext,
   generateRandomSuffix,
   generateTaskId,
   getTypePrefix,
   validateTaskId,
-  TASK_TYPE_MAPPING,
-  DEFAULT_STOP_WORDS
 } from '../src/core/task-manager/id-generator.js';
 
 describe('ID Generator', () => {
@@ -54,8 +54,12 @@ describe('ID Generator', () => {
     });
 
     it('should respect max words limit', () => {
-      expect(extractContext('Implement user authentication system', DEFAULT_STOP_WORDS, 1)).toBe('IMPLEMENT');
-      expect(extractContext('Implement user authentication system', DEFAULT_STOP_WORDS, 3)).toBe('IMPLEMENTUSERAUTHENTICATION');
+      expect(extractContext('Implement user authentication system', DEFAULT_STOP_WORDS, 1)).toBe(
+        'IMPLEMENT'
+      );
+      expect(extractContext('Implement user authentication system', DEFAULT_STOP_WORDS, 3)).toBe(
+        'IMPLEMENTUSERAUTHENTICATION'
+      );
     });
 
     it('should use custom stop words', () => {
@@ -96,9 +100,9 @@ describe('ID Generator', () => {
       const id = generateTaskId({
         type: '🚀 Implementation',
         title: 'Fix user authentication',
-        today: mockDate
+        today: mockDate,
       });
-      
+
       // Should match format: FEAT-FIXUSER-0518-XX
       expect(id).toMatch(/^FEAT-FIXUSER-0518-[A-Z0-9]{2}$/);
     });
@@ -107,9 +111,9 @@ describe('ID Generator', () => {
       const id = generateTaskId({
         type: '🐛 Bug',
         title: '',
-        today: mockDate
+        today: mockDate,
       });
-      
+
       // Should match format: BUG-0518-XX (no context)
       expect(id).toMatch(/^BUG-0518-[A-Z0-9]{2}$/);
     });
@@ -118,9 +122,9 @@ describe('ID Generator', () => {
       const id = generateTaskId({
         type: '',
         title: 'Fix login issue',
-        today: mockDate
+        today: mockDate,
       });
-      
+
       // Should match format: TASK-FIXLOGIN-0518-XX
       expect(id).toMatch(/^TASK-FIXLOGIN-0518-[A-Z0-9]{2}$/);
     });
@@ -129,9 +133,9 @@ describe('ID Generator', () => {
       const id = generateTaskId({
         type: '',
         title: '',
-        today: mockDate
+        today: mockDate,
       });
-      
+
       // Should match format: TASK-0518-XX
       expect(id).toMatch(/^TASK-0518-[A-Z0-9]{2}$/);
     });
@@ -142,14 +146,14 @@ describe('ID Generator', () => {
         { date: new Date('2025-01-01'), expected: '0101' },
         { date: new Date('2025-12-31'), expected: '1231' },
         { date: new Date('2025-09-09'), expected: '0909' },
-        { date: new Date('2025-10-10'), expected: '1010' }
+        { date: new Date('2025-10-10'), expected: '1010' },
       ];
 
       for (const { date, expected } of dates) {
         const id = generateTaskId({
           type: 'TASK',
           title: 'Test',
-          today: date
+          today: date,
         });
         expect(id).toContain(`-${expected}-`);
       }
@@ -160,9 +164,9 @@ describe('ID Generator', () => {
         type: '🚀 Implementation',
         title: 'Implement user authentication system',
         maxContextLength: 3,
-        today: mockDate
+        today: mockDate,
       });
-      
+
       // Should have more context words
       expect(id).toMatch(/^FEAT-IMPLEMENTUSERAUTHENTICATION-0518-[A-Z0-9]{2}$/);
     });

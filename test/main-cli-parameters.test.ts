@@ -2,12 +2,12 @@
  * Tests for main CLI parameter handling
  */
 
-import { describe, expect, it, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
 import fs from 'node:fs';
-import path from 'node:path';
 import os from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
@@ -23,7 +23,7 @@ describe('Main CLI Parameters', () => {
     await fs.promises.mkdir(testDir, { recursive: true });
     await fs.promises.mkdir(path.join(testProjectDir, '.tasks', 'test-phase'), { recursive: true });
     await fs.promises.mkdir(path.join(anotherProjectDir, '.tasks'), { recursive: true });
-    
+
     // Create test task
     const taskContent = `+++
 id = "TEST-001"
@@ -37,19 +37,19 @@ phase = "test-phase"
 # Test Task
 
 This is a test task.`;
-    
+
     await fs.promises.writeFile(
       path.join(testProjectDir, '.tasks', 'test-phase', 'TEST-001.md'),
       taskContent
     );
-    
+
     // Create phases file
     await fs.promises.mkdir(path.join(testProjectDir, '.tasks', 'phases'), { recursive: true });
     await fs.promises.writeFile(
       path.join(testProjectDir, '.tasks', 'phases', 'phases.txt'),
       'test-phase'
     );
-    
+
     // Create config file
     const config = {
       version: '1.0.0',
@@ -57,12 +57,12 @@ This is a test task.`;
         {
           name: 'test-project',
           path: testProjectDir,
-          description: 'Test project'
-        }
+          description: 'Test project',
+        },
       ],
-      defaultProject: 'test-project'
+      defaultProject: 'test-project',
     };
-    
+
     await fs.promises.writeFile(configFile, JSON.stringify(config, null, 2));
   });
 
@@ -72,20 +72,16 @@ This is a test task.`;
   });
 
   it('should use --root-dir parameter', async () => {
-    const { stdout } = await execAsync(
-      `bun ${cliPath} --root-dir ${testProjectDir} task list`
-    );
-    
+    const { stdout } = await execAsync(`bun ${cliPath} --root-dir ${testProjectDir} task list`);
+
     expect(stdout).toContain('Using project root from CLI:');
     expect(stdout).toContain('TEST-001');
     expect(stdout).toContain('Test Task');
   });
 
   it('should use --config parameter', async () => {
-    const { stdout } = await execAsync(
-      `bun ${cliPath} --config ${configFile} task list`
-    );
-    
+    const { stdout } = await execAsync(`bun ${cliPath} --config ${configFile} task list`);
+
     expect(stdout).toContain('Using config file:');
     expect(stdout).toContain('TEST-001');
     expect(stdout).toContain('Test Task');
@@ -95,7 +91,7 @@ This is a test task.`;
     const { stdout } = await execAsync(
       `bun ${cliPath} --config ${configFile} --root-dir ${anotherProjectDir} task list`
     );
-    
+
     expect(stdout).toContain('Using project root from CLI:');
     expect(stdout).toContain('Using config file:');
     expect(stdout).toContain('No tasks found matching the criteria');
@@ -103,7 +99,7 @@ This is a test task.`;
 
   it('should show parameters in help', async () => {
     const { stdout } = await execAsync(`bun ${cliPath} --help`);
-    
+
     expect(stdout).toContain('--root-dir <path>');
     expect(stdout).toContain('Set project root directory');
     expect(stdout).toContain('--config <path>');

@@ -89,7 +89,7 @@ export async function handleTaskList(params: TaskListParams) {
  * Handler for task_get method
  */
 export async function handleTaskGet(params: TaskGetParams) {
-  return await getTask(params.id, params.phase, params.subdirectory);
+  return await getTask(params.id, { phase: params.phase, subdirectory: params.subdirectory });
 }
 
 /**

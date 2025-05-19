@@ -57,4 +57,3 @@ export function formatTaskFile(task: Task): string {
   const tomlContent = stringifyToml(task.metadata);
   return `+++\n${tomlContent}+++\n\n${task.content}\n`;
 }
-

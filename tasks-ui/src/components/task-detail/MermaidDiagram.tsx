@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import mermaid from 'mermaid';
 import { Maximize2 } from 'lucide-react';
+import mermaid from 'mermaid';
+import { useEffect, useRef, useState } from 'react';
 import { useUIContext } from '../../context/UIContext';
-import { Dialog, DialogContent } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { Dialog, DialogContent } from '../ui/dialog';
 
 interface MermaidDiagramProps {
   code: string;
@@ -55,7 +55,7 @@ export function MermaidDiagram({ code, className = '' }: MermaidDiagramProps) {
         });
 
         const { svg } = await mermaid.render(idRef.current, code);
-        
+
         if (containerRef.current) {
           containerRef.current.innerHTML = svg;
           setError(null);
@@ -64,7 +64,7 @@ export function MermaidDiagram({ code, className = '' }: MermaidDiagramProps) {
         console.error('Mermaid rendering error:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to render diagram';
         setError(errorMessage);
-        
+
         // Display error message
         if (containerRef.current) {
           containerRef.current.innerHTML = `
@@ -140,14 +140,14 @@ function MermaidDiagramInner({ code, className = '' }: MermaidDiagramProps) {
         });
 
         const { svg } = await mermaid.render(idRef.current, code);
-        
+
         if (containerRef.current) {
           containerRef.current.innerHTML = svg;
         }
       } catch (err) {
         console.error('Mermaid rendering error:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to render diagram';
-        
+
         // Display error message
         if (containerRef.current) {
           containerRef.current.innerHTML = `

@@ -140,21 +140,23 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
 }
 
 /**
- * Gets a task by ID, optionally with phase and subdirectory information
+ * Gets a task by ID with optional parameters
  * @param id Task ID
  * @param options Optional parameters including phase, subdirectory, and config
  * @returns Operation result with task if found
  */
 export async function getTask(
   id: string,
-  phase?: string,
-  subdirectory?: string
+  options?: {
+    phase?: string;
+    subdirectory?: string;
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<Task>> {
   try {
     // If phase and subdirectory are provided, try direct path lookup first
-    if (phase && subdirectory) {
-      // TODO: Update getTaskFilePath to use runtime config
-      const filePath = getTaskFilePath(id, phase, subdirectory, options.config);
+    if (options?.phase && options?.subdirectory) {
+      const filePath = getTaskFilePath(id, options.phase, options.subdirectory, options.config);
 
       if (fs.existsSync(filePath)) {
         const content = fs.readFileSync(filePath, 'utf-8');
@@ -163,10 +165,10 @@ export async function getTask(
 
         // Set phase and subdirectory in metadata if not already set
         if (!task.metadata.phase) {
-          task.metadata.phase = phase;
+          task.metadata.phase = options.phase;
         }
         if (!task.metadata.subdirectory) {
-          task.metadata.subdirectory = subdirectory;
+          task.metadata.subdirectory = options.subdirectory;
         }
 
         return { success: true, data: task };
@@ -174,7 +176,11 @@ export async function getTask(
     }
 
     // If direct path lookup fails or phase/subdirectory not provided, search all tasks
-    const tasksResult = await listTasks({ include_content: true, include_completed: true });
+    const tasksResult = await listTasks({
+      include_content: true,
+      include_completed: true,
+      config: options?.config,
+    });
     if (!tasksResult.success || !tasksResult.data) {
       return {
         success: false,
@@ -203,14 +209,16 @@ export async function getTask(
  * Creates a new task
  * @param task Task object to create
  * @param subdirectory Optional subdirectory within phase (e.g., "FEATURE_Authentication")
+ * @param config Optional runtime configuration
  * @returns Operation result with the created task
  */
 export async function createTask(
   task: Task,
-  subdirectory?: string
+  subdirectory?: string,
+  config?: RuntimeConfig
 ): Promise<OperationResult<Task>> {
   try {
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(config);
 
     if (!fs.existsSync(tasksDir)) {
       fs.mkdirSync(tasksDir, { recursive: true });
@@ -224,8 +232,8 @@ export async function createTask(
     // Generate ID if not provided
     if (!task.metadata.id) {
       // Use new concise format by default, unless explicitly set to timestamp
-      const config = ProjectConfig.getInstance(options.config).getConfig();
-      const useOldFormat = config?.idFormat === 'timestamp';
+      const projectConfigData = ProjectConfig.getInstance(config).getConfig();
+      const useOldFormat = projectConfigData?.idFormat === 'timestamp';
 
       if (!useOldFormat) {
         // Generate new concise ID with collision retry (default behavior)
@@ -239,7 +247,7 @@ export async function createTask(
           });
 
           // Check if ID already exists
-          const existingTask = await getTask(newId);
+          const existingTask = await getTask(newId, { config });
           if (!existingTask.success) {
             // ID doesn't exist, we can use it
             task.metadata.id = newId;
@@ -287,7 +295,7 @@ export async function createTask(
           task.metadata.id,
           task.metadata.phase,
           task.metadata.subdirectory || '',
-          options.config
+          config
         )
       : path.join(tasksDir, `${task.metadata.id}.md`);
 
@@ -340,7 +348,7 @@ export async function updateTask(
 ): Promise<OperationResult<Task>> {
   try {
     // Get the task, using phase and subdirectory if provided
-    const taskResult = await getTask(id, phase, subdirectory);
+    const taskResult = await getTask(id, { phase, subdirectory });
     if (!taskResult.success || !taskResult.data) {
       return {
         success: false,
@@ -492,7 +500,7 @@ export async function deleteTask(
   subdirectory?: string
 ): Promise<OperationResult<void>> {
   try {
-    const taskResult = await getTask(id, phase, subdirectory);
+    const taskResult = await getTask(id, { phase, subdirectory });
 
     if (!taskResult.success || !taskResult.data) {
       return {

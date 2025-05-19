@@ -86,7 +86,7 @@ export async function handleGetCommand(
   }
 ): Promise<void> {
   try {
-    const result = await getTask(id, options.phase, options.subdirectory);
+    const result = await getTask(id, { phase: options.phase, subdirectory: options.subdirectory });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);

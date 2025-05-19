@@ -1,14 +1,12 @@
 import { render, waitFor } from '@testing-library/react';
-import { TaskContent } from './TaskContent';
 import { TaskProvider } from '../../context/TaskContext';
 import { UIProvider } from '../../context/UIContext';
 import type { Task } from '../../lib/types';
+import { TaskContent } from './TaskContent';
 
 // Mock MermaidDiagram
 jest.mock('./MermaidDiagram', () => ({
-  MermaidDiagram: ({ code }: { code: string }) => (
-    <div data-testid="mermaid-diagram">{code}</div>
-  ),
+  MermaidDiagram: ({ code }: { code: string }) => <div data-testid="mermaid-diagram">{code}</div>,
 }));
 
 const mockTask: Task = {
@@ -40,10 +38,7 @@ describe('TaskContent', () => {
       content: '# Test Heading\n\nThis is a test paragraph.',
     };
 
-    const { getByText } = render(
-      <TaskContent task={taskWithContent} />,
-      { wrapper }
-    );
+    const { getByText } = render(<TaskContent task={taskWithContent} />, { wrapper });
 
     expect(getByText('Test Heading')).toBeTruthy();
     expect(getByText('This is a test paragraph.')).toBeTruthy();
@@ -64,10 +59,7 @@ Some more content.
       `,
     };
 
-    const { getByTestId, getByText } = render(
-      <TaskContent task={taskWithMermaid} />,
-      { wrapper }
-    );
+    const { getByTestId, getByText } = render(<TaskContent task={taskWithMermaid} />, { wrapper });
 
     await waitFor(() => {
       const mermaidDiagram = getByTestId('mermaid-diagram');
@@ -88,10 +80,7 @@ console.log('Hello, world!');
       `,
     };
 
-    const { container } = render(
-      <TaskContent task={taskWithCode} />,
-      { wrapper }
-    );
+    const { container } = render(<TaskContent task={taskWithCode} />, { wrapper });
 
     const codeElement = container.querySelector('code.language-javascript');
     expect(codeElement).toBeTruthy();
@@ -114,10 +103,7 @@ sequenceDiagram
       `,
     };
 
-    const { getAllByTestId } = render(
-      <TaskContent task={taskWithMultipleDiagrams} />,
-      { wrapper }
-    );
+    const { getAllByTestId } = render(<TaskContent task={taskWithMultipleDiagrams} />, { wrapper });
 
     await waitFor(() => {
       const mermaidDiagrams = getAllByTestId('mermaid-diagram');

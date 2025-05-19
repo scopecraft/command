@@ -19,7 +19,7 @@ describe('CLI Parameters', () => {
   describe('--root-dir parameter', () => {
     it('should set root directory from CLI parameter', () => {
       const testPath = '/test-project';
-      
+
       // Create a spy for existsSync
       const existsSyncSpy = spyOn(fs, 'existsSync');
       existsSyncSpy.mockImplementation((path: string) => {
@@ -38,7 +38,7 @@ describe('CLI Parameters', () => {
 
     it('should throw error for invalid root directory', () => {
       const invalidPath = '/invalid-project';
-      
+
       // Create a spy for existsSync
       const existsSyncSpy = spyOn(fs, 'existsSync');
       existsSyncSpy.mockImplementation((path: string) => {
@@ -72,7 +72,7 @@ describe('CLI Parameters', () => {
 
       expect(config.path).toBe(cliPath);
       expect(config.source).toBe('cli');
-      
+
       // Clean up
       delete process.env.SCOPECRAFT_ROOT;
     });
@@ -87,10 +87,10 @@ describe('CLI Parameters', () => {
           {
             name: 'test-project',
             path: '/test-project',
-            description: 'Test project'
-          }
+            description: 'Test project',
+          },
         ],
-        defaultProject: 'test-project'
+        defaultProject: 'test-project',
       };
 
       // Mock file system for custom config
@@ -112,7 +112,7 @@ describe('CLI Parameters', () => {
 
       // Set custom config path
       configManager.setConfigFilePath(customConfigPath);
-      
+
       // Set root from config
       const result = configManager.setRootFromConfig();
       expect(result.success).toBe(true);
@@ -127,17 +127,17 @@ describe('CLI Parameters', () => {
     it('should handle both --root-dir and --config together', () => {
       const cliPath = '/cli-override';
       const customConfigPath = '/custom/config.json';
-      
+
       const configContent = {
         version: '1.0.0',
         projects: [
           {
             name: 'config-project',
             path: '/config-project',
-            description: 'Config project'
-          }
+            description: 'Config project',
+          },
         ],
-        defaultProject: 'config-project'
+        defaultProject: 'config-project',
       };
 
       // Mock file system

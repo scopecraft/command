@@ -90,7 +90,7 @@ export async function findNextTask(taskId?: string): Promise<OperationResult<Tas
       };
     }
     // If a task ID is provided, find the next task in sequence first
-    const taskResult = await getTask(taskId);
+    const taskResult = await getTask(taskId, {});
 
     if (!taskResult.success || !taskResult.data) {
       return {
@@ -103,7 +103,7 @@ export async function findNextTask(taskId?: string): Promise<OperationResult<Tas
 
     // If next_task is set, that's our next task
     if (task.metadata.next_task) {
-      const nextTaskResult = await getTask(task.metadata.next_task);
+      const nextTaskResult = await getTask(task.metadata.next_task, {});
 
       if (nextTaskResult.success && nextTaskResult.data) {
         return {

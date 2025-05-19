@@ -24,7 +24,7 @@ export async function showConfig(format: OutputFormat = 'default'): Promise<void
   console.log('');
   console.log(chalk.cyan('ID Format:'), config.idFormat || 'timestamp');
   console.log(chalk.cyan('Max Context Length:'), config.maxContextLength || 2);
-  
+
   if (config.customStopWords && config.customStopWords.length > 0) {
     console.log(chalk.cyan('Custom Stop Words:'), config.customStopWords.join(', '));
   }
@@ -35,7 +35,7 @@ export async function showConfig(format: OutputFormat = 'default'): Promise<void
  */
 export async function setIdFormat(format: 'concise' | 'timestamp'): Promise<void> {
   const validFormats = ['concise', 'timestamp'];
-  
+
   if (!validFormats.includes(format)) {
     console.error(chalk.red(`Invalid format. Use one of: ${validFormats.join(', ')}`));
     return;
@@ -58,8 +58,11 @@ export async function setIdFormat(format: 'concise' | 'timestamp'): Promise<void
  * Set custom stop words for context extraction
  */
 export async function setStopWords(words: string): Promise<void> {
-  const stopWords = words.split(',').map(w => w.trim()).filter(w => w.length > 0);
-  
+  const stopWords = words
+    .split(',')
+    .map((w) => w.trim())
+    .filter((w) => w.length > 0);
+
   projectConfig.updateConfig({ customStopWords: stopWords });
   console.log(chalk.green(`✔ Custom stop words set: ${stopWords.join(', ')}`));
 }
@@ -68,8 +71,8 @@ export async function setStopWords(words: string): Promise<void> {
  * Set maximum context length for ID generation
  */
 export async function setMaxContextLength(length: string): Promise<void> {
-  const maxLength = parseInt(length, 10);
-  
+  const maxLength = Number.parseInt(length, 10);
+
   if (isNaN(maxLength) || maxLength < 1 || maxLength > 5) {
     console.error(chalk.red('Context length must be between 1 and 5'));
     return;
@@ -83,8 +86,10 @@ export async function setMaxContextLength(length: string): Promise<void> {
  * Migrate existing tasks to new ID format (dry run by default)
  */
 export async function migrateIds(dryRun = true): Promise<void> {
-  console.log(chalk.bold(`\n${dryRun ? 'Dry run: ' : ''}Migrating task IDs to concise format...\n`));
-  
+  console.log(
+    chalk.bold(`\n${dryRun ? 'Dry run: ' : ''}Migrating task IDs to concise format...\n`)
+  );
+
   // TO DO: Implement migration logic
   console.log(chalk.yellow('Migration functionality coming soon...'));
 }

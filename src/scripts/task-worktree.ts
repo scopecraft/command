@@ -306,7 +306,7 @@ async function startFeatureWorktree(featureId?: string) {
     const features = await listFeatures({ include_tasks: true });
     console.log('Available features:');
     // Simple feature list format since formatFeaturesList doesn't exist
-    features.data?.forEach(feature => {
+    features.data?.forEach((feature) => {
       console.log(`${feature.id} - ${feature.title} (${feature.tasks.length} tasks)`);
     });
 

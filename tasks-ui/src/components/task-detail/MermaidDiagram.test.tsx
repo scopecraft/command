@@ -1,6 +1,6 @@
-import { render, waitFor, fireEvent } from '@testing-library/react';
-import { MermaidDiagram } from './MermaidDiagram';
+import { fireEvent, render, waitFor } from '@testing-library/react';
 import { UIProvider } from '../../context/UIContext';
+import { MermaidDiagram } from './MermaidDiagram';
 
 // Mock mermaid module
 jest.mock('mermaid', () => ({
@@ -10,7 +10,7 @@ jest.mock('mermaid', () => ({
 
 // Mock Dialog components
 jest.mock('../ui/dialog', () => ({
-  Dialog: ({ children, open }: any) => open ? <div data-testid="dialog">{children}</div> : null,
+  Dialog: ({ children, open }: any) => (open ? <div data-testid="dialog">{children}</div> : null),
   DialogContent: ({ children }: any) => <div data-testid="dialog-content">{children}</div>,
 }));
 
@@ -29,10 +29,7 @@ describe('MermaidDiagram', () => {
   });
 
   it('renders diagram successfully', async () => {
-    const { container } = render(
-      <MermaidDiagram code={mockCode} />,
-      { wrapper }
-    );
+    const { container } = render(<MermaidDiagram code={mockCode} />, { wrapper });
 
     await waitFor(() => {
       const svg = container.querySelector('svg');
@@ -44,10 +41,7 @@ describe('MermaidDiagram', () => {
     const mermaid = require('mermaid');
     mermaid.render.mockRejectedValueOnce(new Error('Invalid syntax'));
 
-    const { container } = render(
-      <MermaidDiagram code="invalid code" />,
-      { wrapper }
-    );
+    const { container } = render(<MermaidDiagram code="invalid code" />, { wrapper });
 
     await waitFor(() => {
       const error = container.querySelector('.text-destructive');
@@ -57,10 +51,9 @@ describe('MermaidDiagram', () => {
   });
 
   it('applies custom className', () => {
-    const { container } = render(
-      <MermaidDiagram code={mockCode} className="custom-class" />,
-      { wrapper }
-    );
+    const { container } = render(<MermaidDiagram code={mockCode} className="custom-class" />, {
+      wrapper,
+    });
 
     const mermaidContainer = container.querySelector('.mermaid-container');
     expect(mermaidContainer?.classList.contains('custom-class')).toBe(true);
@@ -68,10 +61,7 @@ describe('MermaidDiagram', () => {
 
   it('re-renders when code changes', async () => {
     const mermaid = require('mermaid');
-    const { rerender } = render(
-      <MermaidDiagram code={mockCode} />,
-      { wrapper }
-    );
+    const { rerender } = render(<MermaidDiagram code={mockCode} />, { wrapper });
 
     await waitFor(() => {
       expect(mermaid.render).toHaveBeenCalledTimes(1);
@@ -90,10 +80,7 @@ describe('MermaidDiagram', () => {
   });
 
   it('shows expand button on hover', async () => {
-    const { container, getByRole } = render(
-      <MermaidDiagram code={mockCode} />,
-      { wrapper }
-    );
+    const { container, getByRole } = render(<MermaidDiagram code={mockCode} />, { wrapper });
 
     await waitFor(() => {
       const svg = container.querySelector('svg');
@@ -107,10 +94,9 @@ describe('MermaidDiagram', () => {
   });
 
   it('opens dialog when expand button is clicked', async () => {
-    const { container, getByRole, queryByTestId } = render(
-      <MermaidDiagram code={mockCode} />,
-      { wrapper }
-    );
+    const { container, getByRole, queryByTestId } = render(<MermaidDiagram code={mockCode} />, {
+      wrapper,
+    });
 
     await waitFor(() => {
       const svg = container.querySelector('svg');
@@ -135,10 +121,7 @@ describe('MermaidDiagram', () => {
     const mermaid = require('mermaid');
     mermaid.render.mockRejectedValueOnce(new Error('Invalid syntax'));
 
-    const { queryByRole } = render(
-      <MermaidDiagram code="invalid code" />,
-      { wrapper }
-    );
+    const { queryByRole } = render(<MermaidDiagram code="invalid code" />, { wrapper });
 
     await waitFor(() => {
       const expandButton = queryByRole('button', { name: /expand diagram/i });

@@ -3,11 +3,7 @@ import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
 import { ProjectConfig } from '../project-config.js';
 import type { OperationResult, Phase, Task } from '../types.js';
-import {
-  ensureDirectoryExists,
-  getAllFiles,
-  getTasksDirectory,
-} from './index.js';
+import { ensureDirectoryExists, getAllFiles, getTasksDirectory } from './index.js';
 import { listTasks } from './task-crud.js';
 
 /**
