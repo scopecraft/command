@@ -44,7 +44,12 @@ export function setupTaskCommands(program: Command): void {
   // Create task command group
   const taskCommand = new Command('task')
     .description('Task management commands')
-    .addHelpText('before', '\nTASK MANAGEMENT COMMANDS\n======================\n');
+    .addHelpText('before', '\nTASK MANAGEMENT COMMANDS\n======================\n')
+    .addHelpText('after', `
+Note: You can use the global --root-dir option to specify an alternative tasks directory:
+  sc --root-dir ./e2e_test/worktree-test task list
+  sc --root-dir /path/to/project task create --title "Task in other project"
+`);
 
   // task list command
   taskCommand
@@ -206,7 +211,11 @@ export function setupPhaseCommands(program: Command): void {
   // Create phase command group
   const phaseCommand = new Command('phase')
     .description('Phase management commands')
-    .addHelpText('before', '\nPHASE MANAGEMENT COMMANDS\n======================\n');
+    .addHelpText('before', '\nPHASE MANAGEMENT COMMANDS\n======================\n')
+    .addHelpText('after', `
+Note: You can use the global --root-dir option to specify an alternative tasks directory:
+  sc --root-dir ./e2e_test/worktree-test phase list
+`);
 
   // phase list command
   phaseCommand
@@ -294,7 +303,11 @@ export function setupFeatureAreaCommands(program: Command): void {
   // Create feature command group
   const featureCommand = new Command('feature')
     .description('Feature management commands')
-    .addHelpText('before', '\nFEATURE MANAGEMENT COMMANDS\n========================\n');
+    .addHelpText('before', '\nFEATURE MANAGEMENT COMMANDS\n========================\n')
+    .addHelpText('after', `
+Note: You can use the global --root-dir option to specify an alternative tasks directory:
+  sc --root-dir ./e2e_test/worktree-test feature list
+`);
 
   // feature create command (creates an overview file in a FEATURE_ subdirectory)
   featureCommand
@@ -381,7 +394,11 @@ export function setupFeatureAreaCommands(program: Command): void {
   // Create area command group
   const areaCommand = new Command('area')
     .description('Area management commands')
-    .addHelpText('before', '\nAREA MANAGEMENT COMMANDS\n=====================\n');
+    .addHelpText('before', '\nAREA MANAGEMENT COMMANDS\n=====================\n')
+    .addHelpText('after', `
+Note: You can use the global --root-dir option to specify an alternative tasks directory:
+  sc --root-dir ./e2e_test/worktree-test area list
+`);
 
   // area create command (creates an overview file in an AREA_ subdirectory)
   areaCommand
@@ -472,7 +489,12 @@ export function setupWorkflowCommands(program: Command): void {
   // Create workflow command group
   const workflowCommand = new Command('workflow')
     .description('Workflow management commands')
-    .addHelpText('before', '\nWORKFLOW MANAGEMENT COMMANDS\n=========================\n');
+    .addHelpText('before', '\nWORKFLOW MANAGEMENT COMMANDS\n=========================\n')
+    .addHelpText('after', `
+Note: You can use the global --root-dir option to specify an alternative tasks directory:
+  sc --root-dir ./e2e_test/worktree-test workflow next
+  sc --root-dir ./e2e_test/worktree-test workflow current
+`);
 
   // workflow next command
   workflowCommand
@@ -507,7 +529,11 @@ export function setupTemplateCommands(program: Command): void {
   // Create template command group
   const templateCommand = new Command('template')
     .description('Template management commands')
-    .addHelpText('before', '\nTEMPLATE MANAGEMENT COMMANDS\n=========================\n');
+    .addHelpText('before', '\nTEMPLATE MANAGEMENT COMMANDS\n=========================\n')
+    .addHelpText('after', `
+Note: You can use the global --root-dir option to specify an alternative tasks directory:
+  sc --root-dir ./e2e_test/worktree-test template list
+`);
 
   // template list command
   templateCommand
@@ -529,6 +555,7 @@ export function setupInitCommands(program: Command): void {
     .command('init')
     .description('Initialize task directory structure')
     .option('--mode <mode>', 'Force project mode (roo or standalone)')
+    .option('--root-dir <path>', 'Initialize in specific directory instead of current directory')
     .action(handleInitCommand);
 }
 
@@ -540,7 +567,11 @@ export function setupConfigCommands(program: Command): void {
   // Create config command group
   const configCommand = new Command('config')
     .description('Configuration management commands')
-    .addHelpText('before', '\nCONFIGURATION COMMANDS\n====================\n');
+    .addHelpText('before', '\nCONFIGURATION COMMANDS\n====================\n')
+    .addHelpText('after', `
+Note: The --root-dir option affects which project's configuration is shown or modified:
+  sc --root-dir ./e2e_test/worktree-test config show
+`);
 
   // config show command
   configCommand

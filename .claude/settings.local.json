@@ -76,7 +76,8 @@
       "Bash(realpath:*)",
       "Bash(/project:05_implement typescript FEAT-FIXPATH-0519-JY)",
       "Bash(bash:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(awk:*)"
     ],
     "deny": []
   }

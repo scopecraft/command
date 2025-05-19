@@ -73,11 +73,16 @@ Available entity types:
   template   Template management operations
   config     Configuration management operations
 
+Global options:
+  --root-dir <path>   Set project root directory (overrides environment variables and config)
+  --config <path>     Path to configuration file (default: ~/.scopecraft/config.json)
+
 Examples:
   sc task list                     List all tasks
   sc task create --title "New task" --type "🌟 Feature"   Create a new task
   sc phase list                    List all phases
   sc workflow next                 Find next task to work on
+  sc --root-dir ./e2e_test/worktree-test task list    List tasks in specified directory
 `
 );
 

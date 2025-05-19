@@ -157,7 +157,7 @@ All major refactoring work is complete:
 ### 🔲 Remaining Work
 
 Minor remaining tasks:
-- Review CLI command help text to ensure --root-dir documentation is present
+- ✅ Review CLI command help text to ensure --root-dir documentation is present
 - Add comprehensive E2E tests for --root-dir functionality to test/run-root-dir-e2e.sh
 
 **Note**: MCP types do not need config/root parameters as the MCP server handles configuration internally at the server level.
