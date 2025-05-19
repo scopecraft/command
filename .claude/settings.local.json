@@ -73,7 +73,9 @@
       "Bash(echo:*)",
       "Bash(git rm:*)",
       "Bash(./test/run-root-dir-e2e.sh:*)",
-      "Bash(realpath:*)"
+      "Bash(realpath:*)",
+      "Bash(/project:05_implement typescript FEAT-FIXPATH-0519-JY)",
+      "Bash(bash:*)"
     ],
     "deny": []
   }

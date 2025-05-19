@@ -13,7 +13,6 @@ import type { RuntimeConfig } from './config/types.js';
  */
 export interface ProjectPaths {
   tasksRoot: string;
-  phasesRoot: string;
   configRoot: string;
   templatesRoot: string;
 }
@@ -36,9 +35,8 @@ const DEFAULT_CONFIG: ProjectConfigData = {
 // Default directory structure
 const DEFAULT_DIRECTORIES = {
   tasks: '.tasks',
-  phases: '.tasks/phases',
-  config: '.tasks/config',
-  templates: '.tasks/templates',
+  config: '.tasks/.config',
+  templates: '.tasks/.templates',
 };
 
 /**
@@ -77,13 +75,11 @@ export class ProjectConfig {
    */
   private buildProjectPaths(): ProjectPaths {
     const root = this.getRoot();
-    const project = this.getProjectDefinition();
 
     const dirs = DEFAULT_DIRECTORIES;
 
     return {
       tasksRoot: path.join(root, dirs.tasks),
-      phasesRoot: path.join(root, dirs.phases),
       configRoot: path.join(root, dirs.config),
       templatesRoot: path.join(root, dirs.templates),
     };
@@ -124,10 +120,11 @@ export class ProjectConfig {
   }
 
   /**
-   * Get phases directory
+   * @deprecated phases are now first-level directories under tasks
    */
   getPhasesDirectory(): string {
-    return this.paths.phasesRoot;
+    // Return tasks directory as phases are now first-level directories
+    return this.paths.tasksRoot;
   }
 
   /**
@@ -164,11 +161,11 @@ export class ProjectConfig {
    */
   initializeProjectStructure(): void {
     // Create all directories
-    Object.values(this.paths).forEach((dirPath) => {
+    for (const dirPath of Object.values(this.paths)) {
       if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
       }
-    });
+    }
   }
 
   /**
@@ -233,43 +230,43 @@ export class ProjectConfig {
 
   /**
    * Parse task path to extract phase and subdirectory
+   * @deprecated Use directory-utils.parseTaskPath instead
    */
   parseTaskPath(filePath: string): { phase?: string; subdirectory?: string } {
     const tasksRoot = this.paths.tasksRoot;
-    
+
     // Ensure we're working with absolute paths
     const absoluteFilePath = path.resolve(filePath);
     const absoluteTasksRoot = path.resolve(tasksRoot);
-    
+
     // Check if the file is actually under the tasks root
     if (!absoluteFilePath.startsWith(absoluteTasksRoot)) {
       return {};
     }
-    
+
     // Get the relative path from tasks root
     const relativePath = path.relative(absoluteTasksRoot, absoluteFilePath);
     const parts = relativePath.split(path.sep);
 
-    let phase: string | undefined;
-    let subdirectory: string | undefined = '';
-
-    if (parts.length === 1) {
-      // Task directly in tasks directory (e.g., "task.md")
-      // No phase, no subdirectory
-    } else if (parts.length === 2) {
-      // phase/task.md or subdirectory/task.md
-      const firstPart = parts[0];
-      const systemDirs = ['config', 'templates'];
-      
-      if (!systemDirs.includes(firstPart)) {
-        phase = firstPart;
-      }
-    } else if (parts.length >= 3) {
-      // phase/subdirectory/task.md
-      phase = parts[0];
-      subdirectory = parts[1];
+    // Skip dot-prefix directories (system dirs)
+    if (parts.length > 0 && parts[0].startsWith('.')) {
+      return {};
     }
 
+    if (parts.length === 1) {
+      // Only filename, no phase or subdirectory
+      return {};
+    }
+
+    if (parts.length === 2) {
+      // phase/filename - has phase but no subdirectory
+      return { phase: parts[0] };
+    }
+
+    // Has both phase and subdirectory (or more levels)
+    const phase = parts[0];
+    // Combine all middle directories as the subdirectory path
+    const subdirectory = parts.slice(1, -1).join(path.sep);
     return { phase, subdirectory };
   }
 }

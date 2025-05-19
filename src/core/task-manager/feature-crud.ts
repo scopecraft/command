@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
-import { projectConfig } from '../project-config.js';
 import { formatTaskFile, parseTaskFile } from '../task-parser.js';
 import type {
   Feature,
@@ -10,7 +9,7 @@ import type {
   OperationResult,
   Task,
 } from '../types.js';
-import { ensureDirectoryExists, getTasksDirectory } from './directory-utils.js';
+import { ensureDirectoryExists, getTasksDirectory, parseTaskPath } from './directory-utils.js';
 import { createTask, deleteTask, getTask, listTasks, updateTask } from './task-crud.js';
 import { updateRelationships } from './task-relationships.js';
 
@@ -67,7 +66,7 @@ export async function listFeatures(
             overviewTask.filePath = overviewPath;
 
             // Extract phase and subdirectory from file path if not in metadata
-            const pathInfo = projectConfig.parseTaskPath(overviewPath);
+            const pathInfo = parseTaskPath(overviewPath, options.config);
             if (pathInfo.phase && !overviewTask.metadata.phase) {
               overviewTask.metadata.phase = pathInfo.phase;
             }

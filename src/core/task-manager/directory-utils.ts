@@ -16,12 +16,120 @@ export function getTasksDirectory(config?: RuntimeConfig): string {
 
 /**
  * Gets the phases directory path
+ * @deprecated phases are now first-level directories under tasks
  * @param config Optional runtime configuration
- * @returns Path to the phases directory
+ * @returns Path to the tasks directory
  */
 export function getPhasesDirectory(config?: RuntimeConfig): string {
   const projectConfig = ProjectConfig.getInstance(config);
   return projectConfig.getPhasesDirectory();
+}
+
+/**
+ * Resolves any path to an absolute path
+ * @param filePath Path to resolve
+ * @returns Absolute path
+ */
+export function resolveAbsolutePath(filePath: string): string {
+  return path.resolve(filePath);
+}
+
+/**
+ * Parses a task path to extract phase and subdirectory information
+ * @param filePath Path to parse
+ * @param config Optional runtime configuration
+ * @returns Object with phase and subdirectory properties
+ */
+export function parseTaskPath(
+  filePath: string,
+  config?: RuntimeConfig
+): { phase?: string; subdirectory?: string } {
+  const tasksDir = getTasksDirectory(config);
+  const absoluteTasksDir = path.resolve(tasksDir);
+  const absoluteFilePath = path.resolve(filePath);
+
+  // Ensure file is under tasks directory
+  if (!absoluteFilePath.startsWith(absoluteTasksDir)) {
+    return {};
+  }
+
+  const relativePath = path.relative(absoluteTasksDir, absoluteFilePath);
+  const parts = relativePath.split(path.sep);
+
+  // Skip dot-prefix directories (system dirs)
+  if (parts.length > 0 && parts[0].startsWith('.')) {
+    return {};
+  }
+
+  if (parts.length === 1) {
+    // Only filename, no phase or subdirectory
+    return {};
+  }
+
+  if (parts.length === 2) {
+    // phase/filename - has phase but no subdirectory
+    return { phase: parts[0] };
+  }
+
+  // Has both phase and subdirectory (or more levels)
+  const phase = parts[0];
+  // Combine all middle directories as the subdirectory path
+  const subdirectory = parts.slice(1, -1).join(path.sep);
+  return { phase, subdirectory };
+}
+
+/**
+ * Gets the full file path for a task
+ * @param id Task ID
+ * @param phase Optional phase
+ * @param subdirectory Optional subdirectory
+ * @param config Optional runtime configuration
+ * @returns Full file path
+ */
+export function getTaskFilePath(
+  id: string,
+  phase?: string,
+  subdirectory?: string,
+  config?: RuntimeConfig
+): string {
+  const tasksDir = getTasksDirectory(config);
+  const parts = [tasksDir];
+
+  if (phase) {
+    parts.push(phase);
+  }
+
+  if (subdirectory) {
+    parts.push(subdirectory);
+  }
+
+  parts.push(`${id}.md`);
+
+  return path.join(...parts);
+}
+
+/**
+ * Migrates system directories to dot-prefix convention
+ * @param config Optional runtime configuration
+ */
+export function migrateSystemDirectories(config?: RuntimeConfig): void {
+  const tasksDir = getTasksDirectory(config);
+
+  // Migrate config and templates to dot-prefix
+  const migrations = [
+    { old: 'config', new: '.config' },
+    { old: 'templates', new: '.templates' },
+  ];
+
+  for (const { old, new: newName } of migrations) {
+    const oldPath = path.join(tasksDir, old);
+    const newPath = path.join(tasksDir, newName);
+
+    if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) {
+      console.log(`Migrating ${oldPath} to ${newPath}`);
+      fs.renameSync(oldPath, newPath);
+    }
+  }
 }
 
 /**

@@ -9,6 +9,10 @@ export {
   getPhasesDirectory,
   ensureDirectoryExists,
   getAllFiles,
+  resolveAbsolutePath,
+  parseTaskPath,
+  getTaskFilePath,
+  migrateSystemDirectories,
 } from './directory-utils.js';
 
 // Export from utils except getAllFiles (already exported from directory-utils)

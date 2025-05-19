@@ -1,12 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
-import { projectConfig } from '../project-config.js';
+import { ProjectConfig } from '../project-config.js';
 import type { OperationResult, Phase, Task } from '../types.js';
 import {
   ensureDirectoryExists,
   getAllFiles,
-  getPhasesDirectory,
   getTasksDirectory,
 } from './index.js';
 import { listTasks } from './task-crud.js';

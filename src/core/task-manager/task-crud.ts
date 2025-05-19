@@ -9,7 +9,7 @@ import {
   normalizePriority,
   normalizeTaskStatus,
 } from '../field-normalizers.js';
-import { projectConfig } from '../project-config.js';
+import { ProjectConfig } from '../project-config.js';
 import { formatTaskFile, parseTaskFile } from '../task-parser.js';
 import {
   type OperationResult,
@@ -22,8 +22,9 @@ import { generateTaskId as generateNewTaskId, validateTaskId } from './id-genera
 import {
   ensureDirectoryExists,
   getAllFiles,
-  getPhasesDirectory,
+  getTaskFilePath,
   getTasksDirectory,
+  parseTaskPath,
 } from './index.js';
 import { updateRelationships } from './task-relationships.js';
 
@@ -54,7 +55,7 @@ export async function listTasks(options: TaskFilterOptions = {}): Promise<Operat
         task.filePath = filePath;
 
         // Extract phase and subdirectory from file path if not in metadata
-        const pathInfo = projectConfig.parseTaskPath(filePath);
+        const pathInfo = parseTaskPath(filePath, options.config);
         if (pathInfo.phase && !task.metadata.phase) {
           task.metadata.phase = pathInfo.phase;
         }
@@ -153,7 +154,7 @@ export async function getTask(
     // If phase and subdirectory are provided, try direct path lookup first
     if (phase && subdirectory) {
       // TODO: Update getTaskFilePath to use runtime config
-      const filePath = projectConfig.getTaskFilePath(id, phase, subdirectory);
+      const filePath = getTaskFilePath(id, phase, subdirectory, options.config);
 
       if (fs.existsSync(filePath)) {
         const content = fs.readFileSync(filePath, 'utf-8');
@@ -223,7 +224,7 @@ export async function createTask(
     // Generate ID if not provided
     if (!task.metadata.id) {
       // Use new concise format by default, unless explicitly set to timestamp
-      const config = projectConfig.getConfig();
+      const config = ProjectConfig.getInstance(options.config).getConfig();
       const useOldFormat = config?.idFormat === 'timestamp';
 
       if (!useOldFormat) {
@@ -282,10 +283,11 @@ export async function createTask(
 
     // Determine file path based on phase and subdirectory
     const filePath = task.metadata.phase
-      ? projectConfig.getTaskFilePath(
+      ? getTaskFilePath(
           task.metadata.id,
           task.metadata.phase,
-          task.metadata.subdirectory || ''
+          task.metadata.subdirectory || '',
+          options.config
         )
       : path.join(tasksDir, `${task.metadata.id}.md`);
 
@@ -437,10 +439,11 @@ export async function updateTask(
     if (needsFileMove) {
       // Determine old and new file paths
       const oldFilePath = task.filePath;
-      const newFilePath = projectConfig.getTaskFilePath(
+      const newFilePath = getTaskFilePath(
         task.metadata.id,
         targetPhase || task.metadata.phase,
-        targetSubdirectory || task.metadata.subdirectory
+        targetSubdirectory || task.metadata.subdirectory,
+        updates.config
       );
 
       // Create target directory if needed
