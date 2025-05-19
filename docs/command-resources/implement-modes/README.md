@@ -1,6 +1,6 @@
 # Implementation Mode Guidelines
 
-This directory contains mode-specific implementation guidance for the `/project:implement` command.
+This directory contains mode-specific implementation guidance for the `/project:05_implement` command.
 
 ## Structure
 
@@ -54,7 +54,7 @@ When mode-specific guidance doesn't exist, these general patterns apply:
 
 ## Mode Detection
 
-The `/project:implement` command will:
+The `/project:05_implement` command will:
 1. Look for `/docs/implement-modes/{mode}.md`
 2. If found, use mode-specific guidance
 3. If not found, apply general patterns and assume the role

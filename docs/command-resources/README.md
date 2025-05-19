@@ -6,7 +6,7 @@ This directory contains resources used by Claude commands, organized for future 
 
 ```
 command-resources/
-├── implement-modes/      # Mode-specific guidance for /project:implement
+├── implement-modes/      # Mode-specific guidance for /project:05_implement
 ├── planning-templates/   # Templates for planning commands
 └── README.md            # This file
 ```
@@ -26,7 +26,7 @@ The following commands use these resources:
 - `/project:02_feature-proposal` - Uses planning templates
 - `/project:03_feature-to-prd` - Uses planning templates 
 - `/project:04_feature-planning` - Uses planning templates
-- `/project:implement` - Uses mode-specific guidance from implement-modes/
+- `/project:05_implement` - Uses mode-specific guidance from implement-modes/
 - `/project:implement-next` - Automated feature implementation that uses implement modes
 
 ## Customization

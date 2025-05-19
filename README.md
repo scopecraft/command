@@ -195,7 +195,7 @@ Scopecraft includes specialized Claude commands for structured development:
 - `/project:02_feature-proposal` - Create formal proposals (Step 2)
 - `/project:03_feature-to-prd` - Expand to detailed PRDs (Step 3)
 - `/project:04_feature-planning` - Break down into tasks (Step 4)
-- `/project:implement {mode} {task-id}` - Execute with guidance
+- `/project:05_implement {mode} {task-id}` - Execute with guidance
   - Modes: `typescript`, `ui`, `mcp`, `cli`, `devops`
 - `/project:review` - Review project state
 
@@ -215,7 +215,7 @@ Scopecraft includes specialized Claude commands for structured development:
 /project:04_feature-planning FEATURE-20250517-123456
 
 # Execute tasks
-/project:implement ui TASK-20250517-234567
+/project:05_implement ui TASK-20250517-234567
 
 # Automatically find and implement next task in feature
 /project:implement-next FEATURE_auth

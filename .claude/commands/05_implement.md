@@ -145,10 +145,10 @@ Before marking implementation complete:
 </completion_checklist>
 
 <example_usage>
-/project:implement typescript TASK-20250517-185925
-/project:implement ui TASK-20250517-190000
-/project:implement mcp TASK-20250517-191234
-/project:implement devops TASK-20250517-192000
+/project:05_implement typescript TASK-20250517-185925
+/project:05_implement ui TASK-20250517-190000
+/project:05_implement mcp TASK-20250517-191234
+/project:05_implement devops TASK-20250517-192000
 </example_usage>
 
 <human_review_tracking>

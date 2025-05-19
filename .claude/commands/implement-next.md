@@ -58,7 +58,7 @@ Input: "$ARGUMENTS"
 5. **Execute Implementation**
    Call the implementation command with:
    ```
-   /project:implement {mode} {task_id}
+   /project:05_implement {mode} {task_id}
    ```
 </process>
 
@@ -99,7 +99,7 @@ Next Task: {task_id} - {task.title}
 Area: {task.area}
 Mode: {selected_mode}
 
-Executing: /project:implement {mode} {task_id}
+Executing: /project:05_implement {mode} {task_id}
 ```
 </output_format>
 

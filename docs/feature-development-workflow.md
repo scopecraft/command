@@ -101,7 +101,7 @@ The Scopecraft feature development workflow consists of five main stages:
 
 ### Stage 5: Implementation
 
-**Command**: `/project:implement {mode} {task-id}`
+**Command**: `/project:05_implement {mode} {task-id}`
 
 **Purpose**: Execute tasks with domain-specific guidance
 
@@ -116,13 +116,13 @@ The Scopecraft feature development workflow consists of five main stages:
 **Usage**:
 ```bash
 # UI implementation
-/project:implement ui TASK-20250517-234567
+/project:05_implement ui TASK-20250517-234567
 
 # Core logic
-/project:implement typescript TASK-20250517-345678
+/project:05_implement typescript TASK-20250517-345678
 
 # MCP integration
-/project:implement mcp TASK-20250517-456789
+/project:05_implement mcp TASK-20250517-456789
 ```
 
 ## Complete Example: Task Filtering Feature
@@ -185,10 +185,10 @@ Here's a complete walkthrough of developing a task filtering feature:
 
 ```bash
 # Start with core logic
-/project:implement typescript TASK-001
+/project:05_implement typescript TASK-001
 
 # Then UI changes
-/project:implement ui TASK-003
+/project:05_implement ui TASK-003
 
 # Continue through all tasks...
 ```

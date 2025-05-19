@@ -154,9 +154,9 @@ These commands have distinct prompts tailored to their specific workflows.
 **2. Generic Commands with Modes (Technical Variations)**
 
 Use generic commands with mode detection for technical domain variations:
-- `/project:implement typescript TASK-123`
-- `/project:implement ui TASK-123`
-- `/project:implement mcp TASK-123`
+- `/project:05_implement typescript TASK-123`
+- `/project:05_implement ui TASK-123`
+- `/project:05_implement mcp TASK-123`
 - `/project:test TASK-123`
 - `/project:integrate TASK-123`
 
@@ -408,7 +408,7 @@ Scopecraft includes specialized commands for feature development workflow:
    - Breaks features into actionable tasks
    - Creates task hierarchy with dependencies
 
-5. **Implementation**: `/project:implement {mode} {task-id}`
+5. **Implementation**: `/project:05_implement {mode} {task-id}`
    - Mode-specific guidance (typescript, ui, mcp, cli)
    - Follows domain best practices
 
@@ -428,8 +428,8 @@ Scopecraft includes specialized commands for feature development workflow:
 /project:04_feature-planning FEATURE-20250517-123456
 
 # Implement specific tasks
-/project:implement ui TASK-20250517-234567
-/project:implement core TASK-20250517-345678
+/project:05_implement ui TASK-20250517-234567
+/project:05_implement core TASK-20250517-345678
 ```
 
 ### Command Patterns
