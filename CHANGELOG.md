@@ -5,6 +5,19 @@ All notable changes to Scopecraft Command will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2025-05-19
+
+### Fixed
+- **Path Parsing Bug**: Fixed an issue where using relative paths with `--root-dir` would cause incorrect subdirectory extraction
+- **System Directory Filtering**: Improved filtering of system directories (dot-prefixed) from phase listings
+- **API Root Dir Support**: Added comprehensive support for `root_dir` parameter across all API endpoints
+- **CRUD Function Parameters**: Refactored all CRUD operations to use an options pattern for better extensibility and runtime configuration
+
+### Improved
+- **CLI Documentation**: Added help text for `--root-dir` option across all commands
+- **Code Structure**: Enhanced directory utilities with consistent path handling functions
+- **Configuration Management**: Better support for runtime configuration propagation throughout the application
+
 ## [0.10.0] - 2025-05-18
 
 ### Added
