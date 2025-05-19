@@ -39,7 +39,7 @@ program
     if (options.rootDir) {
       try {
         configManager.setRootFromCLI(options.rootDir);
-        console.log(`Using project root from CLI: ${options.rootDir}`);
+        // No logging output to avoid interfering with MCP protocol
       } catch (error) {
         console.error(
           `Error setting root directory: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -51,26 +51,24 @@ program
     // Handle --config parameter
     if (options.config) {
       configManager.setConfigFilePath(options.config);
-      console.log(`Using config file: ${options.config}`);
+      // No logging output to avoid interfering with MCP protocol
     }
 
     // Handle mode option - now this is handled by configuration manager
     if (options.mode) {
-      console.log(`Note: Mode option is deprecated. Project configuration is now managed automatically.`);
+      // No logging output to avoid interfering with MCP protocol
     }
 
     // Validate environment using projectConfig
     if (!projectConfig.validateEnvironment()) {
-      console.error(`Error: Project structure not found in the current directory`);
-      console.error(
-        `Initialize the project first with "sc init"`
-      );
+      console.error('Error: Project structure not found in the current directory');
+      console.error('Initialize the project first with "sc init"');
 
       // Attempt to create the directory structure if it doesn't exist
       try {
-        console.log(`Creating project structure...`);
+        // No logging output to avoid interfering with MCP protocol
         projectConfig.initializeProjectStructure();
-        console.log(`Project structure created successfully.`);
+        // No logging output to avoid interfering with MCP protocol
       } catch (error) {
         console.error(
           `Failed to create directory structure: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -80,8 +78,8 @@ program
     }
 
     // Start server
-    const modeText = 'Standard';
-    console.log(`Starting STDIO MCP server in ${modeText} mode...`);
+    // Standard mode is the default
+    // No logging output to avoid interfering with MCP protocol
 
     await startStdioServer({
       verbose: options.verbose || false,
@@ -92,6 +90,6 @@ program
 program.parse(process.argv);
 
 // Direct execution
-if (import.meta.url === import.meta.main) {
+if (false) { // import.meta.main is not supported in all environments
   // Directly executed
 }

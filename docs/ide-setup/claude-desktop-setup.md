@@ -52,7 +52,7 @@ Add the following configuration to the file:
   "mcpServers": {
     "scopecraft": {
       "command": "npx",
-      "args": ["-y", "@scopecraft/cmd", "mcp", "--root-dir", "/absolute/path/to/your/project"]
+      "args": ["--package=@scopecraft/cmd", "scopecraft-stdio", "--root-dir", "/absolute/path/to/your/project"]
     }
   }
 }

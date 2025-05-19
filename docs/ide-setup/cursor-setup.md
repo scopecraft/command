@@ -40,7 +40,7 @@ Edit the configuration file with the following JSON structure:
   "mcpServers": {
     "scopecraft": {
       "command": "npx",
-      "args": ["-y", "@scopecraft/cmd", "mcp", "--root-dir", "/path/to/your/project"],
+      "args": ["--package=@scopecraft/cmd", "scopecraft-stdio", "--root-dir", "/path/to/your/project"],
       "env": {
         "NODE_ENV": "production"
       }

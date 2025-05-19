@@ -35,9 +35,12 @@ After installation, these commands will be available:
 #### Using with npx (No Installation)
 
 ```bash
-# Run commands directly
-npx @scopecraft/cmd task list
-npx @scopecraft/cmd feature create "New Feature"
+# Run CLI commands directly
+npx @scopecraft/cmd sc task list
+npx @scopecraft/cmd sc feature create "New Feature"
+
+# Run MCP STDIO server
+npx --package=@scopecraft/cmd scopecraft-stdio --root-dir /path/to/your/project
 ```
 
 ### Install from Source

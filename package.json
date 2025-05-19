@@ -13,6 +13,7 @@
     "sc": "dist/cli/cli.js",
     "scopecraft-mcp": "dist/mcp/cli.js",
     "sc-mcp": "dist/mcp/cli.js",
+    "stdio": "dist/mcp/stdio-cli.js",
     "scopecraft-stdio": "dist/mcp/stdio-cli.js",
     "sc-stdio": "dist/mcp/stdio-cli.js"
   },

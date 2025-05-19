@@ -112,7 +112,7 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
   });
 
   if (options.verbose) {
-    console.log(`Creating MCP server version ${version}`);
+    // No logging output to avoid interfering with MCP protocol
   }
 
   // Register all tools
@@ -546,9 +546,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params) => {
       try {
-        console.log(
-          `[DEBUG] Feature Create (core-server): description=${params.description}, assignee=${params.assignee}`
-        );
+        // No logging output to avoid interfering with MCP protocol
         const result = await createFeature(
           params.name,
           params.title,
@@ -673,9 +671,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params) => {
       try {
-        console.log(
-          `[DEBUG] Area Create (core-server): description=${params.description}, assignee=${params.assignee}`
-        );
+        // No logging output to avoid interfering with MCP protocol
         const result = await createArea(
           params.name,
           params.title,
@@ -835,7 +831,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   });
 
   if (verbose) {
-    console.log('Registered all MCP tools');
+    // No logging output to avoid interfering with MCP protocol
   }
 
   return server;
