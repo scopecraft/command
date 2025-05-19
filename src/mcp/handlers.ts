@@ -383,7 +383,7 @@ export async function handleAreaList(params: AreaListParams) {
  * Handler for area_get method
  */
 export async function handleAreaGet(params: AreaGetParams) {
-  return await getArea(params.id, params.phase);
+  return await getArea(params.id, { phase: params.phase });
 }
 
 /**
@@ -395,12 +395,14 @@ export async function handleAreaCreate(params: AreaCreateParams) {
   );
   return await createArea(
     params.name,
-    params.title,
-    params.phase,
-    params.type || '🧹 Chore',
-    params.description,
-    params.assignee,
-    params.tags
+    {
+      title: params.title,
+      phase: params.phase,
+      type: params.type || '🧹 Chore',
+      description: params.description,
+      assignee: params.assignee,
+      tags: params.tags
+    }
   );
 }
 
@@ -408,14 +410,14 @@ export async function handleAreaCreate(params: AreaCreateParams) {
  * Handler for area_update method
  */
 export async function handleAreaUpdate(params: AreaUpdateParams) {
-  return await updateArea(params.id, params.updates, params.phase);
+  return await updateArea(params.id, params.updates, { phase: params.phase });
 }
 
 /**
  * Handler for area_delete method
  */
 export async function handleAreaDelete(params: AreaDeleteParams) {
-  return await deleteArea(params.id, params.phase, params.force);
+  return await deleteArea(params.id, { phase: params.phase, force: params.force });
 }
 
 /**

@@ -1066,7 +1066,7 @@ export async function handleAreaGetCommand(
       process.exit(1);
     }
 
-    const result = await getArea(id, options.phase);
+    const result = await getArea(id, { phase: options.phase });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -1126,7 +1126,7 @@ export async function handleAreaDeleteCommand(
       process.exit(1);
     }
 
-    const result = await deleteArea(id, options.phase, options.force);
+    const result = await deleteArea(id, { phase: options.phase, force: options.force });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -1150,6 +1150,7 @@ export async function handleAreaUpdateCommand(
     description?: string;
     status?: string;
     new_id?: string;
+    phase?: string;
   }
 ): Promise<void> {
   try {
@@ -1163,7 +1164,7 @@ export async function handleAreaUpdateCommand(
       description: updates.description,
       status: updates.status,
       newId: updates.new_id,
-    });
+    }, { phase: updates.phase });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
