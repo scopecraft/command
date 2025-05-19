@@ -1,0 +1,392 @@
+#!/bin/bash
+
+# Enhanced prototype dispatcher using Gum for better UX
+# Requires: brew install gum (or other package manager)
+
+# Configuration
+SESSION_NAME="scopecraft"
+
+# Check if gum is installed
+check_gum() {
+    if ! command -v gum &> /dev/null; then
+        echo "Error: gum is not installed"
+        echo "Install with: brew install gum"
+        exit 1
+    fi
+}
+
+# Check if tmux is installed
+check_tmux() {
+    if ! command -v tmux &> /dev/null; then
+        gum style --foreground 196 "Error: tmux is not installed"
+        exit 1
+    fi
+}
+
+# Create or get the main tmux session
+create_or_get_session() {
+    if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+        gum spin --spinner dot --title "Creating tmux session: $SESSION_NAME" -- \
+            tmux new-session -d -s "$SESSION_NAME"
+    else
+        gum style --foreground 82 "Using existing tmux session: $SESSION_NAME"
+    fi
+}
+
+# Create a window for the task
+create_window() {
+    local mode=$1
+    local task_id=$2
+    local window_name="${task_id}-${mode}"
+    
+    # Call tw-start and capture the output
+    gum style --foreground 245 "Setting up worktree for $task_id..."
+    local worktree_output=$(bun run tw-start "$task_id" 2>/dev/null | tail -n 1)
+    
+    # Check if the output contains a valid path
+    if [[ -d "$worktree_output" ]]; then
+        local worktree_path="$worktree_output"
+        gum style --foreground 82 "✓ Using worktree: $worktree_path"
+    else
+        gum style --foreground 196 "Error: Failed to create/find worktree for $task_id"
+        gum style --foreground 245 "Make sure task exists and is not already started in another worktree"
+        return 1
+    fi
+    
+    # Check if window already exists
+    if tmux list-windows -t "$SESSION_NAME" -F "#{window_name}" | grep -q "^${window_name}$"; then
+        gum style --foreground 214 "Window already exists: $window_name"
+        
+        if gum confirm "Switch to existing window?"; then
+            tmux select-window -t "$SESSION_NAME:${window_name}"
+            return 0
+        else
+            return 1
+        fi
+    else
+        gum spin --spinner dot --title "Creating window: $window_name" -- sleep 1
+        
+        # Create window with command using /project format
+        local user_prompt="${@:3}"
+        local claude_command="claude '/project:$mode $task_id $user_prompt'"
+        
+        tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
+            "gum style --border double --padding 1 'Claude session: $mode for $task_id'; echo 'Running: $claude_command'; $claude_command"
+        
+        gum style --foreground 82 "✓ Window created successfully"
+    fi
+}
+
+# Attach to the session
+attach_session() {
+    local terminal=$(gum choose --header "Select terminal:" \
+        "WezTerm" \
+        "iTerm2" \
+        "Terminal.app" \
+        "Gnome Terminal" \
+        "Manual (show command)")
+    
+    case $terminal in
+        "WezTerm")
+            wezterm start -- tmux attach-session -t "$SESSION_NAME"
+            ;;
+        "iTerm2")
+            osascript -e "tell application \"iTerm\" to create window with default profile command \"tmux attach-session -t $SESSION_NAME\""
+            ;;
+        "Terminal.app")
+            osascript -e "tell application \"Terminal\" to do script \"tmux attach-session -t $SESSION_NAME\""
+            ;;
+        "Gnome Terminal")
+            gnome-terminal -- tmux attach-session -t "$SESSION_NAME"
+            ;;
+        "Manual (show command)")
+            gum style --border normal --padding 1 "tmux attach-session -t $SESSION_NAME"
+            ;;
+    esac
+}
+
+# List active sessions with formatting
+list_active() {
+    gum style --border rounded --padding 1 --width 50 \
+        "$(echo -e "Active Claude Sessions\n$(printf '=%.0s' {1..30})")"
+    
+    local windows=$(tmux list-windows -t "$SESSION_NAME" -F "#{window_name}|#{window_active}" 2>/dev/null)
+    
+    if [ -z "$windows" ]; then
+        gum style --foreground 245 "No active sessions"
+    else
+        echo "$windows" | while IFS='|' read -r name active; do
+            if [ "$active" = "1" ]; then
+                gum style --foreground 82 --bold "▶ $name (active)"
+            else
+                gum style --foreground 245 "  $name"
+            fi
+        done
+    fi
+}
+
+# Interactive mode selection
+select_mode() {
+    # Find the .claude/commands directory - could be in current dir or parent dirs
+    local commands_dir=""
+    local current_dir="$PWD"
+    
+    # Search up the directory tree for .claude/commands
+    while [ "$current_dir" != "/" ]; do
+        if [ -d "$current_dir/.claude/commands" ]; then
+            commands_dir="$current_dir/.claude/commands"
+            break
+        fi
+        current_dir=$(dirname "$current_dir")
+    done
+    
+    # If not found, try the main repo directory
+    if [ -z "$commands_dir" ]; then
+        local main_repo="${HOME}/Projects/roo-task-cli"
+        if [ -d "$main_repo/.claude/commands" ]; then
+            commands_dir="$main_repo/.claude/commands"
+        fi
+    fi
+    
+    if [ -z "$commands_dir" ] || [ ! -d "$commands_dir" ]; then
+        gum style --foreground 196 "Error: Commands directory not found"
+        return 1
+    fi
+    
+    # Get all .md files and strip the extension
+    local modes=$(ls -1 "$commands_dir"/*.md 2>/dev/null | xargs -n1 basename | sed 's/\.md$//')
+    
+    if [ -z "$modes" ]; then
+        gum style --foreground 196 "No command files found in $commands_dir"
+        return 1
+    fi
+    
+    echo "$modes" | gum choose --header "Select command mode:"
+}
+
+# Interactive task ID input
+get_task_id() {
+    gum input --placeholder "Enter task ID (e.g., TASK-123)" \
+        --prompt "Task ID: " \
+        --width 30
+}
+
+# Interactive user prompt input
+get_user_prompt() {
+    local mode=$1
+    gum style --foreground 245 "Optional: Add custom prompt for $mode command"
+    gum input --placeholder "Press Enter to skip or type custom prompt" \
+        --prompt "Prompt: " \
+        --width 80
+}
+
+# Main interactive flow
+interactive_dispatch() {
+    gum style --border double --padding 1 --width 50 \
+        "Task-Aware Claude Sessions"
+    
+    local mode=$(select_mode)
+    [ -z "$mode" ] && exit 0
+    
+    local task_id=$(get_task_id)
+    [ -z "$task_id" ] && exit 0
+    
+    # Validate task ID
+    if [[ ! $task_id =~ ^[A-Z0-9_-]+$ ]]; then
+        gum style --foreground 196 "Invalid task ID format"
+        exit 1
+    fi
+    
+    # Get optional user prompt
+    local user_prompt=$(get_user_prompt "$mode")
+    
+    # Show summary
+    gum style --border normal --padding 1 \
+        "$(echo -e "Mode: $mode\nTask: $task_id\nPrompt: ${user_prompt:-[none]}")"
+    
+    if gum confirm "Proceed with dispatch?"; then
+        create_or_get_session
+        create_window "$mode" "$task_id" "$user_prompt"
+        
+        if gum confirm "Attach to session now?"; then
+            attach_session
+        fi
+    fi
+}
+
+# Quick status check
+quick_status() {
+    local task_id=$(get_task_id)
+    [ -z "$task_id" ] && exit 0
+    
+    local windows=$(tmux list-windows -t "$SESSION_NAME" -F "#{window_name}" 2>/dev/null | grep "^${task_id}-")
+    
+    if [ -z "$windows" ]; then
+        gum style --foreground 196 "No sessions found for $task_id"
+    else
+        gum style --border rounded --padding 1 "Sessions for $task_id:"
+        echo "$windows" | while read -r window; do
+            local mode=${window#*-}
+            gum style --foreground 82 "• $mode mode"
+        done
+    fi
+}
+
+# Main menu
+main_menu() {
+    while true; do
+        local action=$(gum choose --header "What would you like to do?" \
+            "Dispatch new session" \
+            "Start from existing worktree" \
+            "List active sessions" \
+            "Check task status" \
+            "Stop a session" \
+            "Attach to session" \
+            "Exit")
+        
+        case "$action" in
+            "Dispatch new session")
+                interactive_dispatch
+                ;;
+            "Start from existing worktree")
+                start_from_worktree
+                ;;
+            "List active sessions")
+                list_active
+                gum input --placeholder "Press Enter to continue"
+                ;;
+            "Check task status")
+                quick_status
+                gum input --placeholder "Press Enter to continue"
+                ;;
+            "Stop a session")
+                local windows=$(tmux list-windows -t "$SESSION_NAME" -F "#{window_name}" 2>/dev/null)
+                if [ -z "$windows" ]; then
+                    gum style --foreground 196 "No active sessions"
+                else
+                    local window=$(echo "$windows" | gum choose --header "Select session to stop:")
+                    if [ ! -z "$window" ]; then
+                        if gum confirm "Stop session $window?"; then
+                            tmux kill-window -t "$SESSION_NAME:$window"
+                            gum style --foreground 82 "Session stopped"
+                        fi
+                    fi
+                fi
+                ;;
+            "Attach to session")
+                attach_session
+                ;;
+            "Exit")
+                break
+                ;;
+        esac
+    done
+}
+
+# Start a session from an existing worktree
+start_from_worktree() {
+    gum style --border double --padding 1 --width 50 \
+        "Start Session from Existing Worktree"
+    
+    # Get list of worktrees and extract the task IDs
+    local worktrees_dir="${HOME}/Projects/roo-task-cli.worktrees"
+    
+    if [ ! -d "$worktrees_dir" ]; then
+        gum style --foreground 196 "No worktrees directory found at: $worktrees_dir"
+        return 1
+    fi
+    
+    # List directories in worktrees folder
+    local worktrees=$(ls -1 "$worktrees_dir" 2>/dev/null | grep -E '^(TASK|FEAT)-')
+    
+    if [ -z "$worktrees" ]; then
+        gum style --foreground 196 "No worktrees found"
+        return 1
+    fi
+    
+    # Let user select a worktree
+    local selected_task=$(echo "$worktrees" | gum choose --header "Select a worktree:")
+    
+    if [ -z "$selected_task" ]; then
+        return 0
+    fi
+    
+    # Select mode
+    local mode=$(select_mode)
+    [ -z "$mode" ] && return 0
+    
+    # Get optional user prompt
+    local user_prompt=$(get_user_prompt "$mode")
+    
+    # Create window directly with the existing worktree
+    local window_name="${selected_task}-${mode}"
+    local worktree_path="$worktrees_dir/$selected_task"
+    
+    # Check if window already exists
+    if tmux list-windows -t "$SESSION_NAME" -F "#{window_name}" | grep -q "^${window_name}$"; then
+        gum style --foreground 214 "Window already exists: $window_name"
+        
+        if gum confirm "Switch to existing window?"; then
+            tmux select-window -t "$SESSION_NAME:${window_name}"
+            return 0
+        else
+            return 1
+        fi
+    else
+        gum style --border normal --padding 1 \
+            "$(echo -e "Task: $selected_task\nMode: $mode\nPath: $worktree_path\nPrompt: ${user_prompt:-[none]}")"
+        
+        if gum confirm "Create session?"; then
+            create_or_get_session
+            
+            # Create window with command using /project format
+            local claude_command="claude '/project:$mode $selected_task $user_prompt'"
+            
+            tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
+                "gum style --border double --padding 1 'Claude session: $mode for $selected_task'; echo 'Running: $claude_command'; $claude_command"
+            
+            gum style --foreground 82 "✓ Session created successfully"
+            
+            if gum confirm "Attach to session now?"; then
+                attach_session
+            fi
+        fi
+    fi
+}
+
+# Main entry point
+main() {
+    check_gum
+    check_tmux
+    
+    # If no arguments, show interactive menu
+    if [ $# -eq 0 ]; then
+        main_menu
+    else
+        # Legacy command line interface for compatibility
+        case "$1" in
+            "list")
+                list_active
+                ;;
+            "worktree"|"wt")
+                start_from_worktree
+                ;;
+            "help"|"-h"|"--help")
+                gum style --border normal --padding 1 \
+                    "$(echo -e "Usage:\n  $0                    # Interactive menu\n  $0 list              # List sessions\n  $0 worktree          # Start session from existing worktree\n  $0 <mode> <task-id>  # Direct dispatch")"
+                ;;
+            *)
+                # Direct dispatch with command line args
+                if [ $# -lt 2 ]; then
+                    gum style --foreground 196 "Error: Missing arguments"
+                    exit 1
+                fi
+                create_or_get_session
+                create_window "$1" "$2" "${@:3}"
+                ;;
+        esac
+    fi
+}
+
+# Run the script
+main "$@"
