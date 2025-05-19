@@ -269,8 +269,8 @@ Example research task content:
 Research current best practices for real-time collaboration in React
 
 ## WebSearch Queries
-- "React real-time collaboration 2024 best practices"
-- "WebSocket vs Server-Sent Events React 2024"
+- "React real-time collaboration 2025 best practices"
+- "WebSocket vs Server-Sent Events React 2025"
 - "React state management real-time updates"
 - "collaborative editing React libraries comparison"
 
@@ -294,7 +294,7 @@ Use for unknowns and investigation:
 **Essential WebSearch topics for research tasks:**
 - Latest industry best practices for the feature type
 - Current popular libraries and their trade-offs
-- Recent implementation patterns (look for 2023+ content)
+- Recent implementation patterns (look for 2024+ content)
 - Common pitfalls and solutions
 - Performance considerations and optimizations
 

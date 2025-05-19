@@ -75,7 +75,15 @@
       "Bash(./test/run-root-dir-e2e.sh:*)",
       "Bash(realpath:*)",
       "Bash(/project:05_implement typescript FEAT-FIXPATH-0519-JY)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "mcp__scopecraft-cmd__task_update",
+      "mcp__scopecraft-cmd__task_get",
+      "mcp__scopecraft-cmd__feature_create",
+      "mcp__scopecraft-cmd__task_create"
     ],
     "deny": []
   }
