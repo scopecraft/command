@@ -71,13 +71,10 @@ create_window() {
         local claude_command
         
         if [ "$mode" = "none" ]; then
-            claude_command="claude"
-            tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
-                "gum style --border double --padding 1 'Claude session (no command) for $task_id'; echo 'Running: $claude_command'; $claude_command"
+            tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" "claude"
         else
-            claude_command="claude '/project:$mode $task_id $user_prompt'"
             tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
-                "gum style --border double --padding 1 'Claude session: $mode for $task_id'; echo 'Running: $claude_command'; $claude_command"
+                "claude '/project:$mode $task_id $user_prompt'"
         fi
         
         gum style --foreground 82 "✓ Window created successfully"
@@ -357,13 +354,10 @@ start_from_worktree() {
             local claude_command
             
             if [ "$mode" = "none" ]; then
-                claude_command="claude"
-                tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
-                    "gum style --border double --padding 1 'Claude session (no command) for $selected_task'; echo 'Running: $claude_command'; $claude_command"
+                tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" "claude"
             else
-                claude_command="claude '/project:$mode $selected_task $user_prompt'"
                 tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
-                    "gum style --border double --padding 1 'Claude session: $mode for $selected_task'; echo 'Running: $claude_command'; $claude_command"
+                    "claude '/project:$mode $selected_task $user_prompt'"
             fi
             
             gum style --foreground 82 "✓ Session created successfully"
