@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { RuntimeConfig } from '../config/types.js';
 import type { OperationResult } from '../types.js';
 import { getTasksDirectory } from './directory-utils.js';
 import { getTask, updateTask } from './task-crud.js';
@@ -21,11 +22,16 @@ export async function moveTask(
     targetPhase?: string;
     searchPhase?: string;
     searchSubdirectory?: string;
+    config?: RuntimeConfig;
   }
 ): Promise<OperationResult<void>> {
   try {
     // Get the task
-    const taskResult = await getTask(id, options.searchPhase, options.searchSubdirectory);
+    const taskResult = await getTask(id, {
+      phase: options.searchPhase,
+      subdirectory: options.searchSubdirectory,
+      config: options.config,
+    });
 
     if (!taskResult.success || !taskResult.data) {
       return {
@@ -50,8 +56,11 @@ export async function moveTask(
         phase: targetPhase,
         subdirectory: options.targetSubdirectory,
       },
-      options.searchPhase,
-      options.searchSubdirectory
+      {
+        phase: options.searchPhase,
+        subdirectory: options.searchSubdirectory,
+        config: options.config,
+      }
     );
 
     if (!updateResult.success) {

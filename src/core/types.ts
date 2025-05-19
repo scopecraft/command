@@ -77,6 +77,7 @@ export interface FeatureFilterOptions {
   status?: string;
   include_tasks?: boolean; // Whether to include task details
   include_progress?: boolean; // Whether to include progress calculation
+  config?: RuntimeConfig; // Runtime configuration support
 }
 
 // Filter options for area listing
@@ -85,6 +86,7 @@ export interface AreaFilterOptions {
   status?: string;
   include_tasks?: boolean; // Whether to include task details
   include_progress?: boolean; // Whether to include progress calculation
+  config?: RuntimeConfig; // Runtime configuration support
 }
 
 // Filter options for task listing
@@ -152,4 +154,5 @@ export interface OperationResult<T> {
   data?: T;
   error?: string;
   message?: string;
+  warnings?: string[]; // Additional warnings for non-critical issues
 }

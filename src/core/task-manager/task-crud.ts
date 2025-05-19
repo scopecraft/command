@@ -208,25 +208,26 @@ export async function getTask(
 /**
  * Creates a new task
  * @param task Task object to create
- * @param subdirectory Optional subdirectory within phase (e.g., "FEATURE_Authentication")
- * @param config Optional runtime configuration
+ * @param options Optional parameters including subdirectory and config
  * @returns Operation result with the created task
  */
 export async function createTask(
   task: Task,
-  subdirectory?: string,
-  config?: RuntimeConfig
+  options?: {
+    subdirectory?: string;
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<Task>> {
   try {
-    const tasksDir = getTasksDirectory(config);
+    const tasksDir = getTasksDirectory(options?.config);
 
     if (!fs.existsSync(tasksDir)) {
       fs.mkdirSync(tasksDir, { recursive: true });
     }
 
     // Store subdirectory in task metadata if provided
-    if (subdirectory) {
-      task.metadata.subdirectory = subdirectory;
+    if (options?.subdirectory) {
+      task.metadata.subdirectory = options.subdirectory;
     }
 
     // Generate ID if not provided
@@ -247,7 +248,7 @@ export async function createTask(
           });
 
           // Check if ID already exists
-          const existingTask = await getTask(newId, { config });
+          const existingTask = await getTask(newId, { config: options?.config });
           if (!existingTask.success) {
             // ID doesn't exist, we can use it
             task.metadata.id = newId;
@@ -295,7 +296,7 @@ export async function createTask(
           task.metadata.id,
           task.metadata.phase,
           task.metadata.subdirectory || '',
-          config
+          options?.config
         )
       : path.join(tasksDir, `${task.metadata.id}.md`);
 
@@ -316,7 +317,7 @@ export async function createTask(
       task.metadata.next_task ||
       task.metadata.previous_task
     ) {
-      await updateRelationships(task);
+      await updateRelationships(task, { config: options?.config });
     }
 
     return {
@@ -336,19 +337,25 @@ export async function createTask(
  * Updates a task
  * @param id Task id
  * @param updates Updates to apply
- * @param searchPhase Optional phase to search for the task in
- * @param searchSubdirectory Optional subdirectory to search for the task in
+ * @param options Optional parameters including phase, subdirectory, and config
  * @returns Operation result with updated task
  */
 export async function updateTask(
   id: string,
   updates: TaskUpdateOptions,
-  phase?: string,
-  subdirectory?: string
+  options?: {
+    phase?: string;
+    subdirectory?: string;
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<Task>> {
   try {
     // Get the task, using phase and subdirectory if provided
-    const taskResult = await getTask(id, { phase, subdirectory });
+    const taskResult = await getTask(id, {
+      phase: options?.phase,
+      subdirectory: options?.subdirectory,
+      config: options?.config,
+    });
     if (!taskResult.success || !taskResult.data) {
       return {
         success: false,
@@ -451,7 +458,7 @@ export async function updateTask(
         task.metadata.id,
         targetPhase || task.metadata.phase,
         targetSubdirectory || task.metadata.subdirectory,
-        updates.config
+        options?.config
       );
 
       // Create target directory if needed
@@ -475,7 +482,7 @@ export async function updateTask(
 
     // Update relationships if needed
     if (needsRelationshipUpdate) {
-      await updateRelationships(task);
+      await updateRelationships(task, { config: options?.config });
     }
 
     return { success: true, data: task };
@@ -490,17 +497,23 @@ export async function updateTask(
 /**
  * Deletes a task
  * @param id Task ID
- * @param phase Optional phase to look in
- * @param subdirectory Optional subdirectory to look in
+ * @param options Optional parameters including phase, subdirectory, and config
  * @returns Operation result
  */
 export async function deleteTask(
   id: string,
-  phase?: string,
-  subdirectory?: string
+  options?: {
+    phase?: string;
+    subdirectory?: string;
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<void>> {
   try {
-    const taskResult = await getTask(id, { phase, subdirectory });
+    const taskResult = await getTask(id, {
+      phase: options?.phase,
+      subdirectory: options?.subdirectory,
+      config: options?.config,
+    });
 
     if (!taskResult.success || !taskResult.data) {
       return {

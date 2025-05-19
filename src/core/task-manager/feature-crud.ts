@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
+import type { RuntimeConfig } from '../config/types.js';
 import { formatTaskFile, parseTaskFile } from '../task-parser.js';
 import type {
   Feature,
@@ -22,7 +23,7 @@ export async function listFeatures(
   options: FeatureFilterOptions = {}
 ): Promise<OperationResult<Feature[]>> {
   try {
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options.config);
 
     if (!fs.existsSync(tasksDir)) {
       return {
@@ -99,6 +100,7 @@ export async function listFeatures(
           subdirectory: subdir,
           include_content: options.include_content || false,
           include_completed: options.include_completed || false,
+          config: options.config,
         });
 
         if (tasksResult.success && tasksResult.data) {
@@ -113,6 +115,7 @@ export async function listFeatures(
             phase,
             subdirectory: subdir,
             include_completed: true,
+            config: options.config,
           });
 
           if (allTasksResult.success && allTasksResult.data) {
@@ -236,16 +239,23 @@ export async function listFeatures(
 /**
  * Gets a feature by ID
  * @param id Feature ID (e.g., "FEATURE_Authentication")
- * @param phase Optional phase to look in
+ * @param options Optional parameters including phase and config
  * @returns Operation result with feature if found
  */
-export async function getFeature(id: string, phase?: string): Promise<OperationResult<Feature>> {
+export async function getFeature(
+  id: string,
+  options?: {
+    phase?: string;
+    config?: RuntimeConfig;
+  }
+): Promise<OperationResult<Feature>> {
   try {
     const features = await listFeatures({
-      phase,
+      phase: options?.phase,
       include_tasks: true,
       include_content: true,
       include_progress: true,
+      config: options?.config,
     });
 
     if (!features.success) {
@@ -283,24 +293,23 @@ export async function getFeature(id: string, phase?: string): Promise<OperationR
 /**
  * Creates a new feature
  * @param name Feature name (will be prefixed with FEATURE_ if not already)
- * @param title Feature title
- * @param phase Phase to create the feature in
- * @param type Feature type (default: "🌟 Feature")
- * @param description Optional description
- * @param assignee Optional assignee
+ * @param options Parameters including title, phase, type, description, assignee, tags, and config
  * @returns Operation result with the created feature
  */
 export async function createFeature(
   name: string,
-  title: string,
-  phase: string,
-  type = '🌟 Feature',
-  description?: string,
-  assignee?: string,
-  tags?: string[]
+  options: {
+    title: string;
+    phase: string;
+    type?: string;
+    description?: string;
+    assignee?: string;
+    tags?: string[];
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<Feature>> {
   try {
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options.config);
 
     if (!fs.existsSync(tasksDir)) {
       fs.mkdirSync(tasksDir, { recursive: true });
@@ -310,56 +319,59 @@ export async function createFeature(
     const featureId = name.startsWith('FEATURE_') ? name : `FEATURE_${name}`;
 
     // Check if feature already exists
-    const existingFeature = await getFeature(featureId, phase);
+    const existingFeature = await getFeature(featureId, {
+      phase: options.phase,
+      config: options.config,
+    });
     if (existingFeature.success) {
       return {
         success: false,
-        error: `Feature ${featureId} already exists in phase ${phase}`,
+        error: `Feature ${featureId} already exists in phase ${options.phase}`,
       };
     }
 
     // Create the feature directory
-    const featureDir = path.join(tasksDir, phase, featureId);
+    const featureDir = path.join(tasksDir, options.phase, featureId);
     ensureDirectoryExists(featureDir);
 
     // Create the overview file
     const overviewTask: Task = {
       metadata: {
         id: '_overview',
-        title,
-        type,
+        title: options.title,
+        type: options.type || '🌟 Feature',
         status: '🟡 To Do',
         created_date: new Date().toISOString().split('T')[0],
         updated_date: new Date().toISOString().split('T')[0],
-        phase,
+        phase: options.phase,
         subdirectory: featureId,
         is_overview: true,
       },
       content:
-        description ||
-        `# ${title}\n\n## Description\n\nFeature overview for ${name.replace(/^FEATURE_/, '')}`,
+        options.description ||
+        `# ${options.title}\n\n## Description\n\nFeature overview for ${name.replace(/^FEATURE_/, '')}`,
     };
 
     // Important: Only set assigned_to if explicitly provided
-    if (assignee) {
-      overviewTask.metadata.assigned_to = assignee;
+    if (options.assignee) {
+      overviewTask.metadata.assigned_to = options.assignee;
     } else {
       // Make sure we explicitly set it to empty string to avoid description being
       // incorrectly used as assigned_to
       overviewTask.metadata.assigned_to = '';
     }
 
-    if (tags && tags.length > 0) {
-      overviewTask.metadata.tags = tags;
+    if (options.tags && options.tags.length > 0) {
+      overviewTask.metadata.tags = options.tags;
     }
 
     // Save the overview file
     const overviewPath = path.join(featureDir, '_overview.md');
 
     // Fix for the description/content issue - ensure content is properly set
-    if (description && overviewTask.metadata.assigned_to === description) {
+    if (options.description && overviewTask.metadata.assigned_to === options.description) {
       // If description was erroneously set as assigned_to, fix it
-      overviewTask.metadata.assigned_to = assignee || '';
+      overviewTask.metadata.assigned_to = options.assignee || '';
     }
 
     // Make sure content is more than just the status
@@ -368,8 +380,8 @@ export async function createFeature(
       overviewTask.content === overviewTask.metadata.status
     ) {
       overviewTask.content =
-        description ||
-        `# ${title}\n\n## Description\n\nFeature overview for ${name.replace(/^FEATURE_/, '')}`;
+        options.description ||
+        `# ${options.title}\n\n## Description\n\nFeature overview for ${name.replace(/^FEATURE_/, '')}`;
     }
 
     const fileContent = formatTaskFile(overviewTask);
@@ -379,9 +391,9 @@ export async function createFeature(
     const feature: Feature = {
       id: featureId,
       name: name.replace(/^FEATURE_/, ''),
-      title,
+      title: options.title,
       description: overviewTask.content,
-      phase,
+      phase: options.phase,
       task_count: 0,
       progress: 0,
       status: '🟡 To Do',
@@ -405,17 +417,20 @@ export async function createFeature(
  * Updates a feature
  * @param id Feature ID
  * @param updates Updates to apply
- * @param phase Phase where the feature is located
+ * @param options Optional parameters including phase and config
  * @returns Operation result with updated feature
  */
 export async function updateFeature(
   id: string,
   updates: FeatureUpdateOptions,
-  phase?: string
+  options?: {
+    phase?: string;
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<Feature>> {
   try {
     // Get the feature
-    const featureResult = await getFeature(id, phase);
+    const featureResult = await getFeature(id, { phase: options?.phase, config: options?.config });
     if (!featureResult.success || !featureResult.data) {
       return {
         success: false,
@@ -429,7 +444,7 @@ export async function updateFeature(
     const featureId = id.startsWith('FEATURE_') ? id : `FEATURE_${id}`;
 
     // Build the path to the overview file
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options?.config);
     const featureDir = path.join(tasksDir, feature.phase, featureId);
     const overviewPath = path.join(featureDir, '_overview.md');
 
@@ -512,6 +527,7 @@ export async function updateFeature(
           subdirectory: featureId,
           include_content: true,
           include_completed: true,
+          config: options?.config,
         });
 
         if (tasksResult.success && tasksResult.data) {
@@ -556,7 +572,10 @@ export async function updateFeature(
     }
 
     // Refresh the feature data
-    const updatedFeature = await getFeature(feature.id, feature.phase);
+    const updatedFeature = await getFeature(feature.id, {
+      phase: feature.phase,
+      config: options?.config,
+    });
 
     return {
       success: updatedFeature.success,
@@ -574,18 +593,20 @@ export async function updateFeature(
 /**
  * Deletes a feature
  * @param id Feature ID
- * @param phase Optional phase to look in
- * @param force Whether to force delete even if tasks exist
+ * @param options Optional parameters including phase, force, and config
  * @returns Operation result
  */
 export async function deleteFeature(
   id: string,
-  phase?: string,
-  force = false
+  options?: {
+    phase?: string;
+    force?: boolean;
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<void>> {
   try {
     // Get the feature
-    const featureResult = await getFeature(id, phase);
+    const featureResult = await getFeature(id, { phase: options?.phase, config: options?.config });
     if (!featureResult.success || !featureResult.data) {
       return {
         success: false,
@@ -599,7 +620,7 @@ export async function deleteFeature(
     const featureId = id.startsWith('FEATURE_') ? id : `FEATURE_${id}`;
 
     // Build the path to the feature directory
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options?.config);
     const featureDir = path.join(tasksDir, feature.phase, featureId);
 
     // Check if feature directory exists
@@ -614,7 +635,7 @@ export async function deleteFeature(
     const files = fs.readdirSync(featureDir);
     const taskFiles = files.filter((file) => file.endsWith('.md') && file !== '_overview.md');
 
-    if (taskFiles.length > 0 && !force) {
+    if (taskFiles.length > 0 && !options?.force) {
       return {
         success: false,
         error: `Feature ${id} has ${taskFiles.length} tasks. Use force=true to delete anyway.`,

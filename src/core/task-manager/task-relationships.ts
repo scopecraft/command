@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import type { RuntimeConfig } from '../config/types.js';
 import { formatTaskFile, parseTaskFile } from '../task-parser.js';
 import type { OperationResult, Task } from '../types.js';
 import { getTask } from './task-crud.js';
@@ -6,15 +7,21 @@ import { getTask } from './task-crud.js';
 /**
  * Update relationships between tasks
  * @param task Task to update relationships for
+ * @param options Optional parameters including config
  * @returns Operation result
  */
-export async function updateRelationships(task: Task): Promise<OperationResult<void>> {
+export async function updateRelationships(
+  task: Task,
+  options?: {
+    config?: RuntimeConfig;
+  }
+): Promise<OperationResult<void>> {
   const errors: string[] = [];
 
   // Update parent task if specified
   if (task.metadata.parent_task) {
     try {
-      const parentResult = await getTask(task.metadata.parent_task);
+      const parentResult = await getTask(task.metadata.parent_task, { config: options?.config });
       if (parentResult.success && parentResult.data) {
         const parentTask = parentResult.data;
         if (!parentTask.metadata.subtasks) {
@@ -44,7 +51,9 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
   // Update previous task's next_task field if specified
   if (task.metadata.previous_task) {
     try {
-      const previousResult = await getTask(task.metadata.previous_task);
+      const previousResult = await getTask(task.metadata.previous_task, {
+        config: options?.config,
+      });
       if (previousResult.success && previousResult.data) {
         const previousTask = previousResult.data;
         if (previousTask.metadata.next_task !== task.metadata.id) {
@@ -71,7 +80,7 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
   // Update next task's previous_task field if specified
   if (task.metadata.next_task) {
     try {
-      const nextResult = await getTask(task.metadata.next_task);
+      const nextResult = await getTask(task.metadata.next_task, { config: options?.config });
       if (nextResult.success && nextResult.data) {
         const nextTask = nextResult.data;
         if (nextTask.metadata.previous_task !== task.metadata.id) {
@@ -97,7 +106,7 @@ export async function updateRelationships(task: Task): Promise<OperationResult<v
   if (task.metadata.depends && Array.isArray(task.metadata.depends)) {
     for (const dependId of task.metadata.depends) {
       try {
-        const dependResult = await getTask(dependId);
+        const dependResult = await getTask(dependId, { config: options?.config });
         if (!dependResult.success || !dependResult.data) {
           errors.push(`Could not find dependency task ${dependId}: ${dependResult.error}`);
         }

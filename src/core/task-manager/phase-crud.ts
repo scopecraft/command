@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
+import type { RuntimeConfig } from '../config/types.js';
 import { ProjectConfig } from '../project-config.js';
 import type { OperationResult, Phase, Task } from '../types.js';
 import { ensureDirectoryExists, getAllFiles, getTasksDirectory } from './index.js';
@@ -8,11 +9,14 @@ import { listTasks } from './task-crud.js';
 
 /**
  * Lists all phases
+ * @param options Optional parameters including config
  * @returns Operation result with array of phases
  */
-export async function listPhases(): Promise<OperationResult<Phase[]>> {
+export async function listPhases(options?: {
+  config?: RuntimeConfig;
+}): Promise<OperationResult<Phase[]>> {
   try {
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options?.config);
     if (!fs.existsSync(tasksDir)) {
       return {
         success: false,
@@ -91,11 +95,17 @@ export async function listPhases(): Promise<OperationResult<Phase[]>> {
 /**
  * Creates a new phase
  * @param phase Phase object to create
+ * @param options Optional parameters including config
  * @returns Operation result with created phase
  */
-export async function createPhase(phase: Phase): Promise<OperationResult<Phase>> {
+export async function createPhase(
+  phase: Phase,
+  options?: {
+    config?: RuntimeConfig;
+  }
+): Promise<OperationResult<Phase>> {
   try {
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options?.config);
 
     if (!fs.existsSync(tasksDir)) {
       // Create tasks directory if it doesn't exist
@@ -143,14 +153,18 @@ export async function createPhase(phase: Phase): Promise<OperationResult<Phase>>
  * Updates a phase
  * @param id Phase ID
  * @param updates Updates to apply
+ * @param options Optional parameters including config
  * @returns Operation result with updated phase
  */
 export async function updatePhase(
   id: string,
-  updates: Partial<Phase>
+  updates: Partial<Phase>,
+  options?: {
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<Phase>> {
   try {
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options?.config);
     const phaseDir = path.join(tasksDir, id);
 
     if (!fs.existsSync(phaseDir)) {
@@ -211,7 +225,11 @@ export async function updatePhase(
       fs.renameSync(phaseDir, newPhaseDir);
 
       // Update tasks in this phase to reference the new phase id
-      const tasksResult = await listTasks({ phase: id, include_content: true });
+      const tasksResult = await listTasks({
+        phase: id,
+        include_content: true,
+        config: options?.config,
+      });
       if (tasksResult.success && tasksResult.data) {
         for (const task of tasksResult.data) {
           try {
@@ -292,15 +310,18 @@ function formatTaskFile(task: Task): string {
 /**
  * Deletes a phase
  * @param id Phase ID
- * @param options Options for deletion
+ * @param options Options for deletion including force and config
  * @returns Operation result
  */
 export async function deletePhase(
   id: string,
-  options: { force?: boolean } = {}
+  options?: {
+    force?: boolean;
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<void>> {
   try {
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options?.config);
     const phaseDir = path.join(tasksDir, id);
 
     if (!fs.existsSync(phaseDir)) {
@@ -316,7 +337,7 @@ export async function deletePhase(
       (entry) => entry.endsWith('.md') || fs.statSync(path.join(phaseDir, entry)).isDirectory()
     );
 
-    if (hasTasks && !options.force) {
+    if (hasTasks && !options?.force) {
       return {
         success: false,
         error: 'Phase has tasks. Use --force to delete anyway.',

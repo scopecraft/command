@@ -1,16 +1,23 @@
+import type { RuntimeConfig } from '../config/types.js';
 import type { OperationResult, Task } from '../types.js';
 import { getTask, listTasks } from './task-crud.js';
 
 /**
  * Find the next task based on dependencies and workflow sequence
  * @param taskId Current task ID (optional)
+ * @param options Optional parameters including config
  * @returns Operation result with next task if found
  */
-export async function findNextTask(taskId?: string): Promise<OperationResult<Task | null>> {
+export async function findNextTask(
+  taskId?: string,
+  options?: {
+    config?: RuntimeConfig;
+  }
+): Promise<OperationResult<Task | null>> {
   try {
     if (!taskId) {
       // If no task ID provided, find the first task that has no dependencies or previous task
-      const tasksResult = await listTasks({ include_content: true });
+      const tasksResult = await listTasks({ include_content: true, config: options?.config });
 
       if (!tasksResult.success || !tasksResult.data) {
         return {
@@ -90,7 +97,7 @@ export async function findNextTask(taskId?: string): Promise<OperationResult<Tas
       };
     }
     // If a task ID is provided, find the next task in sequence first
-    const taskResult = await getTask(taskId, {});
+    const taskResult = await getTask(taskId, { config: options?.config });
 
     if (!taskResult.success || !taskResult.data) {
       return {
@@ -103,7 +110,7 @@ export async function findNextTask(taskId?: string): Promise<OperationResult<Tas
 
     // If next_task is set, that's our next task
     if (task.metadata.next_task) {
-      const nextTaskResult = await getTask(task.metadata.next_task, {});
+      const nextTaskResult = await getTask(task.metadata.next_task, { config: options?.config });
 
       if (nextTaskResult.success && nextTaskResult.data) {
         return {
@@ -114,7 +121,7 @@ export async function findNextTask(taskId?: string): Promise<OperationResult<Tas
     }
 
     // No next task set, find tasks that have this task as a dependency
-    const tasksResult = await listTasks();
+    const tasksResult = await listTasks({ config: options?.config });
 
     if (!tasksResult.success || !tasksResult.data) {
       return {
@@ -161,7 +168,7 @@ export async function findNextTask(taskId?: string): Promise<OperationResult<Tas
     }
 
     // No dependent tasks, suggest any high priority task
-    const suggestResult = await findNextTask();
+    const suggestResult = await findNextTask(undefined, options);
     if (suggestResult.success) {
       return {
         success: true,

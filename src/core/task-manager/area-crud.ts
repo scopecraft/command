@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
+import type { RuntimeConfig } from '../config/types.js';
 import { formatTaskFile, parseTaskFile } from '../task-parser.js';
 import type {
   Area,
@@ -20,7 +21,7 @@ import { updateRelationships } from './task-relationships.js';
  */
 export async function listAreas(options: AreaFilterOptions = {}): Promise<OperationResult<Area[]>> {
   try {
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options.config);
 
     if (!fs.existsSync(tasksDir)) {
       return {
@@ -97,6 +98,7 @@ export async function listAreas(options: AreaFilterOptions = {}): Promise<Operat
           subdirectory: subdir,
           include_content: options.include_content || false,
           include_completed: options.include_completed || false,
+          config: options.config,
         });
 
         if (tasksResult.success && tasksResult.data) {
@@ -111,6 +113,7 @@ export async function listAreas(options: AreaFilterOptions = {}): Promise<Operat
             phase,
             subdirectory: subdir,
             include_completed: true,
+            config: options.config,
           });
 
           if (allTasksResult.success && allTasksResult.data) {
@@ -234,16 +237,23 @@ export async function listAreas(options: AreaFilterOptions = {}): Promise<Operat
 /**
  * Gets an area by ID
  * @param id Area ID (e.g., "AREA_Refactoring")
- * @param phase Optional phase to look in
+ * @param options Optional parameters including phase and config
  * @returns Operation result with area if found
  */
-export async function getArea(id: string, phase?: string): Promise<OperationResult<Area>> {
+export async function getArea(
+  id: string,
+  options?: {
+    phase?: string;
+    config?: RuntimeConfig;
+  }
+): Promise<OperationResult<Area>> {
   try {
     const areas = await listAreas({
-      phase,
+      phase: options?.phase,
       include_tasks: true,
       include_content: true,
       include_progress: true,
+      config: options?.config,
     });
 
     if (!areas.success) {
@@ -281,24 +291,23 @@ export async function getArea(id: string, phase?: string): Promise<OperationResu
 /**
  * Creates a new area
  * @param name Area name (will be prefixed with AREA_ if not already)
- * @param title Area title
- * @param phase Phase to create the area in
- * @param type Area type (default: "🌟 Feature")
- * @param description Optional description
- * @param assignee Optional assignee
+ * @param options Parameters including title, phase, type, description, assignee, tags, and config
  * @returns Operation result with the created area
  */
 export async function createArea(
   name: string,
-  title: string,
-  phase: string,
-  type = '🌟 Feature',
-  description?: string,
-  assignee?: string,
-  tags?: string[]
+  options: {
+    title: string;
+    phase: string;
+    type?: string;
+    description?: string;
+    assignee?: string;
+    tags?: string[];
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<Area>> {
   try {
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options.config);
 
     if (!fs.existsSync(tasksDir)) {
       fs.mkdirSync(tasksDir, { recursive: true });
@@ -308,56 +317,56 @@ export async function createArea(
     const areaId = name.startsWith('AREA_') ? name : `AREA_${name}`;
 
     // Check if area already exists
-    const existingArea = await getArea(areaId, phase);
+    const existingArea = await getArea(areaId, { phase: options.phase, config: options.config });
     if (existingArea.success) {
       return {
         success: false,
-        error: `Area ${areaId} already exists in phase ${phase}`,
+        error: `Area ${areaId} already exists in phase ${options.phase}`,
       };
     }
 
     // Create the area directory
-    const areaDir = path.join(tasksDir, phase, areaId);
+    const areaDir = path.join(tasksDir, options.phase, areaId);
     ensureDirectoryExists(areaDir);
 
     // Create the overview file
     const overviewTask: Task = {
       metadata: {
         id: '_overview',
-        title,
-        type,
+        title: options.title,
+        type: options.type || '🌟 Feature',
         status: '🟡 To Do',
         created_date: new Date().toISOString().split('T')[0],
         updated_date: new Date().toISOString().split('T')[0],
-        phase,
+        phase: options.phase,
         subdirectory: areaId,
         is_overview: true,
       },
       content:
-        description ||
-        `# ${title}\n\n## Description\n\nArea overview for ${name.replace(/^AREA_/, '')}`,
+        options.description ||
+        `# ${options.title}\n\n## Description\n\nArea overview for ${name.replace(/^AREA_/, '')}`,
     };
 
     // Important: Only set assigned_to if explicitly provided
-    if (assignee) {
-      overviewTask.metadata.assigned_to = assignee;
+    if (options.assignee) {
+      overviewTask.metadata.assigned_to = options.assignee;
     } else {
       // Make sure we explicitly set it to empty string to avoid description being
       // incorrectly used as assigned_to
       overviewTask.metadata.assigned_to = '';
     }
 
-    if (tags && tags.length > 0) {
-      overviewTask.metadata.tags = tags;
+    if (options.tags && options.tags.length > 0) {
+      overviewTask.metadata.tags = options.tags;
     }
 
     // Save the overview file
     const overviewPath = path.join(areaDir, '_overview.md');
 
     // Fix for the description/content issue - ensure content is properly set
-    if (description && overviewTask.metadata.assigned_to === description) {
+    if (options.description && overviewTask.metadata.assigned_to === options.description) {
       // If description was erroneously set as assigned_to, fix it
-      overviewTask.metadata.assigned_to = assignee || '';
+      overviewTask.metadata.assigned_to = options.assignee || '';
     }
 
     // Make sure content is more than just the status
@@ -366,8 +375,8 @@ export async function createArea(
       overviewTask.content === overviewTask.metadata.status
     ) {
       overviewTask.content =
-        description ||
-        `# ${title}\n\n## Description\n\nArea overview for ${name.replace(/^AREA_/, '')}`;
+        options.description ||
+        `# ${options.title}\n\n## Description\n\nArea overview for ${name.replace(/^AREA_/, '')}`;
     }
 
     const fileContent = formatTaskFile(overviewTask);
@@ -377,9 +386,9 @@ export async function createArea(
     const area: Area = {
       id: areaId,
       name: name.replace(/^AREA_/, ''),
-      title,
+      title: options.title,
       description: overviewTask.content,
-      phase,
+      phase: options.phase,
       task_count: 0,
       progress: 0,
       status: '🟡 To Do',
@@ -403,17 +412,20 @@ export async function createArea(
  * Updates an area
  * @param id Area ID
  * @param updates Updates to apply
- * @param phase Phase where the area is located
+ * @param options Optional parameters including phase and config
  * @returns Operation result with updated area
  */
 export async function updateArea(
   id: string,
   updates: AreaUpdateOptions,
-  phase?: string
+  options?: {
+    phase?: string;
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<Area>> {
   try {
     // Get the area
-    const areaResult = await getArea(id, phase);
+    const areaResult = await getArea(id, { phase: options?.phase, config: options?.config });
     if (!areaResult.success || !areaResult.data) {
       return {
         success: false,
@@ -427,7 +439,7 @@ export async function updateArea(
     const areaId = id.startsWith('AREA_') ? id : `AREA_${id}`;
 
     // Build the path to the overview file
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options?.config);
     const areaDir = path.join(tasksDir, area.phase, areaId);
     const overviewPath = path.join(areaDir, '_overview.md');
 
@@ -507,6 +519,7 @@ export async function updateArea(
           subdirectory: areaId,
           include_content: true,
           include_completed: true,
+          config: options?.config,
         });
 
         if (tasksResult.success && tasksResult.data) {
@@ -551,7 +564,7 @@ export async function updateArea(
     }
 
     // Refresh the area data
-    const updatedArea = await getArea(area.id, area.phase);
+    const updatedArea = await getArea(area.id, { phase: area.phase, config: options?.config });
 
     return {
       success: updatedArea.success,
@@ -569,18 +582,20 @@ export async function updateArea(
 /**
  * Deletes an area
  * @param id Area ID
- * @param phase Optional phase to look in
- * @param force Whether to force delete even if tasks exist
+ * @param options Optional parameters including phase, force, and config
  * @returns Operation result
  */
 export async function deleteArea(
   id: string,
-  phase?: string,
-  force = false
+  options?: {
+    phase?: string;
+    force?: boolean;
+    config?: RuntimeConfig;
+  }
 ): Promise<OperationResult<void>> {
   try {
     // Get the area
-    const areaResult = await getArea(id, phase);
+    const areaResult = await getArea(id, { phase: options?.phase, config: options?.config });
     if (!areaResult.success || !areaResult.data) {
       return {
         success: false,
@@ -594,7 +609,7 @@ export async function deleteArea(
     const areaId = id.startsWith('AREA_') ? id : `AREA_${id}`;
 
     // Build the path to the area directory
-    const tasksDir = getTasksDirectory();
+    const tasksDir = getTasksDirectory(options?.config);
     const areaDir = path.join(tasksDir, area.phase, areaId);
 
     // Check if area directory exists
@@ -609,7 +624,7 @@ export async function deleteArea(
     const files = fs.readdirSync(areaDir);
     const taskFiles = files.filter((file) => file.endsWith('.md') && file !== '_overview.md');
 
-    if (taskFiles.length > 0 && !force) {
+    if (taskFiles.length > 0 && !options?.force) {
       return {
         success: false,
         error: `Area ${id} has ${taskFiles.length} tasks. Use force=true to delete anyway.`,

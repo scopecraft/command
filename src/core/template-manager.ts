@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse, stringify } from '@iarna/toml';
+import type { RuntimeConfig } from './config/types.js';
 import { projectConfig } from './project-config.js';
 
 /**
@@ -19,17 +20,24 @@ export interface TemplateInfo {
 
 /**
  * Get the templates directory
+ * @param config Optional runtime configuration
  * @returns Path to the templates directory
  */
-export function getTemplatesDirectory(): string {
+export function getTemplatesDirectory(config?: RuntimeConfig): string {
+  // If runtime config is provided and has tasksDir, use it to construct templates path
+  if (config?.tasksDir) {
+    return path.join(config.tasksDir, '.templates');
+  }
+  // Otherwise fall back to project config
   return projectConfig.getTemplatesDirectory();
 }
 
 /**
  * Ensures templates directory exists and contains basic templates
+ * @param config Optional runtime configuration
  */
-export function initializeTemplates(): void {
-  const templatesDir = getTemplatesDirectory();
+export function initializeTemplates(config?: RuntimeConfig): void {
+  const templatesDir = getTemplatesDirectory(config);
 
   // Create templates directory if it doesn't exist
   if (!fs.existsSync(templatesDir)) {
@@ -133,10 +141,11 @@ What actually happens?
 
 /**
  * List available templates
+ * @param config Optional runtime configuration
  * @returns Array of template info objects
  */
-export function listTemplates(): TemplateInfo[] {
-  const templatesDir = getTemplatesDirectory();
+export function listTemplates(config?: RuntimeConfig): TemplateInfo[] {
+  const templatesDir = getTemplatesDirectory(config);
   const templates: TemplateInfo[] = [];
 
   if (!fs.existsSync(templatesDir)) {
@@ -188,10 +197,11 @@ export function listTemplates(): TemplateInfo[] {
 /**
  * Get a template by ID
  * @param templateId Template ID
+ * @param config Optional runtime configuration
  * @returns Template content or null if not found
  */
-export function getTemplate(templateId: string): string | null {
-  const templates = listTemplates();
+export function getTemplate(templateId: string, config?: RuntimeConfig): string | null {
+  const templates = listTemplates(config);
   const template = templates.find((t) => t.id === templateId);
 
   if (!template) {
