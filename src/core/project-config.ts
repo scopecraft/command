@@ -78,6 +78,15 @@ export class ProjectConfig {
 
     const dirs = DEFAULT_DIRECTORIES;
 
+    // Use runtime config if provided
+    if (this.runtime?.tasksDir) {
+      return {
+        tasksRoot: this.runtime.tasksDir,
+        configRoot: path.join(this.runtime.tasksDir, '.config'),
+        templatesRoot: path.join(this.runtime.tasksDir, '.templates'),
+      };
+    }
+
     return {
       tasksRoot: path.join(root, dirs.tasks),
       configRoot: path.join(root, dirs.config),
