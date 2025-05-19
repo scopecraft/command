@@ -62,6 +62,20 @@ phase = "TEST"
 This task tests that root configuration works correctly.
 EOF
 
+# Create feature overview file
+cat > e2e_test/worktree-test/.tasks/TEST/FEATURE_Auth/_overview.md << 'EOF'
++++
+id = "_overview"
+title = "Authentication"
+type = "🌟 Feature"
+status = "🟡 To Do"
+phase = "TEST"
++++
+
+# Authentication Feature
+Overview of the authentication feature.
+EOF
+
 cat > e2e_test/worktree-test/.tasks/TEST/FEATURE_Auth/AUTH-001.md << 'EOF'
 +++
 id = "AUTH-001"
@@ -230,10 +244,15 @@ run_test "Verify Update" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task get TEST-ROOTCONFIG-001" \
     "🟢 Done"
 
-# Test 8: List with Phase Filter
+# Create a new task for phase filter test that isn't done
+run_test "Create Task for Phase Filter" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task create --id 'TEST-PHASE-001' --title 'Phase Filter Test' --type 'test' --phase TEST" \
+    "created successfully"
+
+# Test 8: List with Phase Filter  
 run_test "List with Phase Filter" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task list --phase TEST" \
-    "TEST-ROOTCONFIG-001"
+    "TEST-PHASE-001"
 
 # Test 9: List with Subdirectory Filter
 run_test "List with Subdirectory Filter" \
@@ -275,7 +294,37 @@ run_test "Template Not Found (Should Fail)" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test task create --title \"Test\" --type \"🌟 Feature\" --template nonexistent" \
     "not found"
 
-# Test 17: Invalid Root
+# Test 17: Feature Create
+run_test "Feature Create" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test feature create --name 'TestFeature' --title 'Test Feature' --phase TEST" \
+    "successfully"
+
+# Test 18: Feature List
+run_test "Feature List" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test feature list --phase TEST" \
+    "FEATURE_"
+
+# Test 19: Feature Get
+run_test "Feature Get" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test feature get FEATURE_Auth --phase TEST" \
+    "Authentication"
+
+# Test 20: Feature Update
+run_test "Feature Update" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test feature update FEATURE_Auth --title 'Updated Auth' --phase TEST" \
+    "successfully"
+
+# Test 21: Area Create
+run_test "Area Create" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test area create --name 'TestArea' --title 'Test Area' --phase TEST" \
+    "successfully"
+
+# Test 22: Area List
+run_test "Area List" \
+    "bun run ./src/cli/cli.ts --root-dir ./e2e_test/worktree-test area list --phase TEST" \
+    "AREA_"
+
+# Test 23: Invalid Root
 run_test "Invalid Root (Should Fail)" \
     "bun run ./src/cli/cli.ts --root-dir ./e2e_test/nonexistent task list" \
     "Invalid project root"
