@@ -594,6 +594,24 @@ Following the project's existing patterns:
 - **Snapshot tests**: Store in `test/snapshots/` for comparison
 - **Test utilities**: Create helper functions for common test scenarios
 
+### CLI E2E Test Coverage
+
+**Important**: The `test/run-root-dir-e2e.sh` script should be updated as each function is refactored to ensure comprehensive coverage. This E2E test script validates both root directory support AND the refactored CRUD operations.
+
+For each refactored function:
+1. Add corresponding test cases to `test/run-root-dir-e2e.sh`
+2. Test all parameter combinations (with/without options)
+3. Test with different `--root-dir` values (relative and absolute paths)
+4. Test error scenarios and edge cases
+5. Verify runtime config propagation works correctly
+6. Ensure backward compatibility where applicable
+
+The goal is to achieve 100% test coverage for all CLI commands, ensuring they work correctly with:
+- Different root directory configurations
+- The new options pattern
+- Runtime config propagation
+- All supported parameter combinations
+
 ## Breaking Changes
 
 Functions with signature changes that may affect external callers:
