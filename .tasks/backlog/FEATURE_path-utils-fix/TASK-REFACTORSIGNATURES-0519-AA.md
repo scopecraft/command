@@ -100,6 +100,8 @@ Still need to update signatures for:
 - Helper functions (updateRelationships)
 - Tests that use any of these functions
 
+**IMPORTANT NOTE**: After completing all entity updates, we need to add config/root parameters to all MCP parameter types (TaskCreateParams, TaskUpdateParams, etc.) so MCP clients can pass runtime configuration through the MCP interface.
+
 ## Clear Instructions for Updating Callers
 
 ### 1. CLI Command Updates (src/cli/)

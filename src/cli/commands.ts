@@ -885,7 +885,7 @@ export async function handleFeatureGetCommand(
       process.exit(1);
     }
 
-    const result = await getFeature(id, options.phase);
+    const result = await getFeature(id, { phase: options.phase });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -945,7 +945,7 @@ export async function handleFeatureDeleteCommand(
       process.exit(1);
     }
 
-    const result = await deleteFeature(id, options.phase, options.force);
+    const result = await deleteFeature(id, { phase: options.phase, force: options.force });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -969,6 +969,7 @@ export async function handleFeatureUpdateCommand(
     description?: string;
     status?: string;
     new_id?: string;
+    phase?: string;
   }
 ): Promise<void> {
   try {
@@ -982,7 +983,7 @@ export async function handleFeatureUpdateCommand(
       description: updates.description,
       status: updates.status,
       newId: updates.new_id,
-    });
+    }, { phase: updates.phase });
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);

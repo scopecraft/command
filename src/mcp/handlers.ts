@@ -330,7 +330,7 @@ export async function handleFeatureList(params: FeatureListParams) {
  * Handler for feature_get method
  */
 export async function handleFeatureGet(params: FeatureGetParams) {
-  return await getFeature(params.id, params.phase);
+  return await getFeature(params.id, { phase: params.phase });
 }
 
 /**
@@ -342,12 +342,14 @@ export async function handleFeatureCreate(params: FeatureCreateParams) {
   );
   return await createFeature(
     params.name,
-    params.title,
-    params.phase,
-    params.type || '🌟 Feature',
-    params.description,
-    params.assignee,
-    params.tags
+    {
+      title: params.title,
+      phase: params.phase,
+      type: params.type || '🌟 Feature',
+      description: params.description,
+      assignee: params.assignee,
+      tags: params.tags
+    }
   );
 }
 
@@ -355,14 +357,14 @@ export async function handleFeatureCreate(params: FeatureCreateParams) {
  * Handler for feature_update method
  */
 export async function handleFeatureUpdate(params: FeatureUpdateParams) {
-  return await updateFeature(params.id, params.updates, params.phase);
+  return await updateFeature(params.id, params.updates, { phase: params.phase });
 }
 
 /**
  * Handler for feature_delete method
  */
 export async function handleFeatureDelete(params: FeatureDeleteParams) {
-  return await deleteFeature(params.id, params.phase, params.force);
+  return await deleteFeature(params.id, { phase: params.phase, force: params.force });
 }
 
 /**
