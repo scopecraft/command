@@ -28,6 +28,10 @@ create_or_get_session() {
     if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
         gum spin --spinner dot --title "Creating tmux session: $SESSION_NAME" -- \
             tmux new-session -d -s "$SESSION_NAME"
+        
+        # Set global session options for all windows
+        tmux set-option -g -t "$SESSION_NAME" automatic-rename off
+        tmux set-option -g -t "$SESSION_NAME" allow-rename off
     else
         gum style --foreground 82 "Using existing tmux session: $SESSION_NAME"
     fi
@@ -70,12 +74,17 @@ create_window() {
         local user_prompt="${@:3}"
         local claude_command
         
+        # Disable automatic renaming for the window
         if [ "$mode" = "none" ]; then
             tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" "claude"
         else
             tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
                 "claude '/project:$mode $task_id $user_prompt'"
         fi
+        
+        # Disable automatic window renaming
+        tmux set-window-option -t "$SESSION_NAME:$window_name" automatic-rename off
+        tmux set-window-option -t "$SESSION_NAME:$window_name" allow-rename off
         
         gum style --foreground 82 "✓ Window created successfully"
     fi
@@ -359,6 +368,10 @@ start_from_worktree() {
                 tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
                     "claude '/project:$mode $selected_task $user_prompt'"
             fi
+            
+            # Disable automatic window renaming
+            tmux set-window-option -t "$SESSION_NAME:$window_name" automatic-rename off
+            tmux set-window-option -t "$SESSION_NAME:$window_name" allow-rename off
             
             gum style --foreground 82 "✓ Session created successfully"
             
