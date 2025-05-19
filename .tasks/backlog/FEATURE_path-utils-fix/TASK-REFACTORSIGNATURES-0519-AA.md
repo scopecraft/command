@@ -148,8 +148,11 @@ Complete refactoring of all CRUD operations across the codebase to use the optio
 
 Still need to:
 - Helper functions (updateRelationships if needed)
-- Add config/root parameters to all MCP parameter types (TaskCreateParams, TaskUpdateParams, etc.) so MCP clients can pass runtime configuration through the MCP interface
+- Review all CLI command help functions to ensure they explain how to pass in --root-dir
+- Support the path option in the API layer (server.ts and related files)
 - Update any remaining tests that use the old function signatures
+
+**Note**: Adding config/root parameters to MCP types is not required for now as MCP handles configuration differently.
 
 ## Clear Instructions for Updating Callers
 
