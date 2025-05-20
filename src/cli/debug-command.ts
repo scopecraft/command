@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { program } from 'commander';
-import { updateTaskDebug } from '../core/task-manager/task-crud-debug.js';
+import { updateTask } from '../core/task-manager/task-crud.js';
 
 // Direct debug command for testing
 program
@@ -11,14 +11,14 @@ program
     console.log('Running debug update with:', id, options);
 
     // Create updates object
-    const updates: any = {};
+    const updates: Record<string, string> = {};
 
     if (options.status) {
       console.log('Setting status to:', options.status);
       updates.status = options.status;
     }
 
-    const result = await updateTaskDebug(id, updates);
+    const result = await updateTask(id, updates);
 
     if (result.success) {
       console.log('Success:', result.message);

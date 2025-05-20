@@ -445,7 +445,7 @@ export async function updateFeature(
 
     // Build the path to the overview file
     const tasksDir = getTasksDirectory(options?.config);
-    const featureDir = path.join(tasksDir, feature.phase, featureId);
+    const featureDir = path.join(tasksDir, feature.phase || '', featureId);
     const overviewPath = path.join(featureDir, '_overview.md');
 
     // Check if overview file exists
@@ -510,7 +510,7 @@ export async function updateFeature(
 
       if (newName !== featureId) {
         // Get the new directory path
-        const newFeatureDir = path.join(tasksDir, feature.phase, newName);
+        const newFeatureDir = path.join(tasksDir, feature.phase || '', newName);
 
         // Ensure parent directory exists
         const parentDir = path.dirname(newFeatureDir);
@@ -621,7 +621,7 @@ export async function deleteFeature(
 
     // Build the path to the feature directory
     const tasksDir = getTasksDirectory(options?.config);
-    const featureDir = path.join(tasksDir, feature.phase, featureId);
+    const featureDir = path.join(tasksDir, feature.phase || '', featureId);
 
     // Check if feature directory exists
     if (!fs.existsSync(featureDir)) {

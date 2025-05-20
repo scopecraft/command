@@ -440,7 +440,7 @@ export async function updateArea(
 
     // Build the path to the overview file
     const tasksDir = getTasksDirectory(options?.config);
-    const areaDir = path.join(tasksDir, area.phase, areaId);
+    const areaDir = path.join(tasksDir, area.phase || '', areaId);
     const overviewPath = path.join(areaDir, '_overview.md');
 
     // Check if overview file exists
@@ -502,7 +502,7 @@ export async function updateArea(
 
       if (newName !== areaId) {
         // Get the new directory path
-        const newAreaDir = path.join(tasksDir, area.phase, newName);
+        const newAreaDir = path.join(tasksDir, area.phase || '', newName);
 
         // Ensure parent directory exists
         const parentDir = path.dirname(newAreaDir);
@@ -610,7 +610,7 @@ export async function deleteArea(
 
     // Build the path to the area directory
     const tasksDir = getTasksDirectory(options?.config);
-    const areaDir = path.join(tasksDir, area.phase, areaId);
+    const areaDir = path.join(tasksDir, area.phase || '', areaId);
 
     // Check if area directory exists
     if (!fs.existsSync(areaDir)) {
