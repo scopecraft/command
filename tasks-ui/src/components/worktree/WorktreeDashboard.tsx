@@ -1,4 +1,15 @@
-import { AlertTriangle, CheckCircle, Filter, Loader2, RefreshCw, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  CodeSquare,
+  Filter,
+  GitMerge,
+  Loader2,
+  PlayCircle,
+  RefreshCw,
+  XCircle,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   fetchWorktree,
@@ -8,19 +19,20 @@ import {
   saveDashboardConfig,
 } from '../../lib/api/worktree-client';
 import type { Worktree, WorktreeDashboardConfig, WorktreeSummary } from '../../lib/types/worktree';
-import { WorktreeStatus, WorkflowStatus, DevelopmentMode } from '../../lib/types/worktree';
+import { DevelopmentMode, WorkflowStatus, WorktreeStatus } from '../../lib/types/worktree';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
-import { WorktreeCard } from './WorktreeCard';
 import { ModeIndicator } from './ModeIndicator';
 import { WorkflowStatusBadge } from './WorkflowStatusBadge';
+import { WorktreeCard } from './WorktreeCard';
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Dashboard is complex by design
 export function WorktreeDashboard() {
   // State for worktrees and loading
   const [worktrees, setWorktrees] = useState<Worktree[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [summary, setSummary] = useState<WorktreeSummary | null>(null);
+  const [_summary, setSummary] = useState<WorktreeSummary | null>(null);
 
   // State for dashboard configuration
   const [config, setConfig] = useState<WorktreeDashboardConfig>({
@@ -63,7 +75,7 @@ export function WorktreeDashboard() {
   };
 
   // Save dashboard configuration
-  const saveDashboardConfiguration = async (newConfig: WorktreeDashboardConfig) => {
+  const _saveDashboardConfiguration = async (newConfig: WorktreeDashboardConfig) => {
     const result = await saveDashboardConfig(newConfig);
     if (result.success && result.data) {
       setConfig(result.data);
@@ -149,19 +161,19 @@ export function WorktreeDashboard() {
   };
 
   // Filter worktrees
-  const filteredWorktrees = worktrees.filter(worktree => {
+  const filteredWorktrees = worktrees.filter((worktree) => {
     // Apply workflow status filter
     if (statusFilter && worktree.workflowStatus !== statusFilter) {
       return false;
     }
-    
+
     // Apply mode filter
     if (modeFilter) {
       if (worktree.mode?.current !== modeFilter && worktree.mode?.next !== modeFilter) {
         return false;
       }
     }
-    
+
     return true;
   });
 
@@ -175,7 +187,7 @@ export function WorktreeDashboard() {
   const StatusFilterButton = ({ status }: { status: WorkflowStatus }) => (
     <Button
       size="sm"
-      variant={statusFilter === status ? "default" : "outline"}
+      variant={statusFilter === status ? 'default' : 'outline'}
       onClick={() => setStatusFilter(statusFilter === status ? null : status)}
       className="h-7 text-xs"
     >
@@ -187,7 +199,7 @@ export function WorktreeDashboard() {
   const ModeFilterButton = ({ mode }: { mode: DevelopmentMode }) => (
     <Button
       size="sm"
-      variant={modeFilter === mode ? "default" : "outline"}
+      variant={modeFilter === mode ? 'default' : 'outline'}
       onClick={() => setModeFilter(modeFilter === mode ? null : mode)}
       className="h-7 px-2"
     >
@@ -195,32 +207,90 @@ export function WorktreeDashboard() {
     </Button>
   );
 
-  // Generate status summary badges
+  // Count worktrees by workflow status
+  const getWorkflowStatusCounts = () => {
+    const counts = {
+      [WorkflowStatus.TO_START]: 0,
+      [WorkflowStatus.WIP]: 0,
+      [WorkflowStatus.NEEDS_ATTENTION]: 0,
+      [WorkflowStatus.FOR_REVIEW]: 0,
+      [WorkflowStatus.TO_MERGE]: 0,
+      [WorkflowStatus.COMPLETED]: 0,
+    };
+
+    // Count worktrees by their workflow status
+    for (const worktree of worktrees) {
+      if (worktree.workflowStatus) {
+        counts[worktree.workflowStatus]++;
+      } else {
+        // If no workflow status, map git status to a workflow status
+        if (worktree.status === WorktreeStatus.CLEAN) {
+          counts[WorkflowStatus.COMPLETED]++;
+        } else if (worktree.status === WorktreeStatus.CONFLICT) {
+          counts[WorkflowStatus.NEEDS_ATTENTION]++;
+        } else {
+          counts[WorkflowStatus.WIP]++;
+        }
+      }
+    }
+
+    return counts;
+  };
+
+  // Generate status summary badges based on workflow status
   const StatusSummaryBadges = () => {
-    if (!summary) return null;
+    if (worktrees.length === 0) return null;
+
+    const statusCounts = getWorkflowStatusCounts();
 
     return (
       <div className="flex flex-wrap gap-2">
-        <div className="bg-green-950 text-green-100 px-3 py-1 rounded-md flex items-center">
-          <CheckCircle className="h-4 w-4 mr-1.5" />
-          <span>Clean: {summary.clean}</span>
-        </div>
-        {summary.modified > 0 && (
-          <div className="bg-blue-950 text-blue-100 px-3 py-1 rounded-md flex items-center">
-            <RefreshCw className="h-4 w-4 mr-1.5" />
-            <span>Modified: {summary.modified}</span>
+        {statusCounts[WorkflowStatus.TO_START] > 0 && (
+          <div className="bg-slate-900 text-slate-100 px-3 py-1 rounded flex items-center">
+            <Clock className="h-4 w-4 mr-1.5" />
+            <span>
+              {WorkflowStatus.TO_START}: {statusCounts[WorkflowStatus.TO_START]}
+            </span>
           </div>
         )}
-        {summary.untracked > 0 && (
-          <div className="bg-amber-950 text-amber-100 px-3 py-1 rounded-md flex items-center">
+        {statusCounts[WorkflowStatus.WIP] > 0 && (
+          <div className="bg-blue-950 text-blue-100 px-3 py-1 rounded flex items-center">
+            <PlayCircle className="h-4 w-4 mr-1.5" />
+            <span>
+              {WorkflowStatus.WIP}: {statusCounts[WorkflowStatus.WIP]}
+            </span>
+          </div>
+        )}
+        {statusCounts[WorkflowStatus.NEEDS_ATTENTION] > 0 && (
+          <div className="bg-red-950 text-red-100 px-3 py-1 rounded flex items-center">
             <AlertTriangle className="h-4 w-4 mr-1.5" />
-            <span>Untracked: {summary.untracked}</span>
+            <span>
+              {WorkflowStatus.NEEDS_ATTENTION}: {statusCounts[WorkflowStatus.NEEDS_ATTENTION]}
+            </span>
           </div>
         )}
-        {summary.conflict > 0 && (
-          <div className="bg-red-950 text-red-100 px-3 py-1 rounded-md flex items-center">
-            <XCircle className="h-4 w-4 mr-1.5" />
-            <span>Conflicts: {summary.conflict}</span>
+        {statusCounts[WorkflowStatus.FOR_REVIEW] > 0 && (
+          <div className="bg-purple-950 text-purple-100 px-3 py-1 rounded flex items-center">
+            <CodeSquare className="h-4 w-4 mr-1.5" />
+            <span>
+              {WorkflowStatus.FOR_REVIEW}: {statusCounts[WorkflowStatus.FOR_REVIEW]}
+            </span>
+          </div>
+        )}
+        {statusCounts[WorkflowStatus.TO_MERGE] > 0 && (
+          <div className="bg-amber-950 text-amber-100 px-3 py-1 rounded flex items-center">
+            <GitMerge className="h-4 w-4 mr-1.5" />
+            <span>
+              {WorkflowStatus.TO_MERGE}: {statusCounts[WorkflowStatus.TO_MERGE]}
+            </span>
+          </div>
+        )}
+        {statusCounts[WorkflowStatus.COMPLETED] > 0 && (
+          <div className="bg-green-950 text-green-100 px-3 py-1 rounded flex items-center">
+            <CheckCircle className="h-4 w-4 mr-1.5" />
+            <span>
+              {WorkflowStatus.COMPLETED}: {statusCounts[WorkflowStatus.COMPLETED]}
+            </span>
           </div>
         )}
       </div>
@@ -269,11 +339,11 @@ export function WorktreeDashboard() {
   }
 
   // Format last refresh time
-  const formattedTime = lastRefresh.toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit', 
+  const formattedTime = lastRefresh.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
     second: '2-digit',
-    hour12: true 
+    hour12: true,
   });
 
   return (
@@ -331,9 +401,9 @@ export function WorktreeDashboard() {
           <div className="mb-4 p-3 bg-card/50 rounded-md border border-border">
             <div className="flex justify-between items-center mb-3">
               <div className="text-sm font-medium">Filter Worktrees</div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={clearFilters}
                 className="h-7 px-2 text-xs"
                 disabled={!statusFilter && !modeFilter}
@@ -341,7 +411,7 @@ export function WorktreeDashboard() {
                 Clear Filters
               </Button>
             </div>
-            
+
             <div className="space-y-3">
               {/* Workflow status filters */}
               <div>
@@ -355,7 +425,7 @@ export function WorktreeDashboard() {
                   <StatusFilterButton status={WorkflowStatus.COMPLETED} />
                 </div>
               </div>
-              
+
               {/* Development mode filters */}
               <div>
                 <div className="text-xs text-muted-foreground mb-1.5">Development Mode</div>
@@ -400,11 +470,7 @@ export function WorktreeDashboard() {
           <div className="text-muted-foreground text-sm mb-4 text-center">
             No worktrees match your current filter criteria
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={clearFilters}
-          >
+          <Button variant="outline" size="sm" onClick={clearFilters}>
             Clear Filters
           </Button>
         </div>
@@ -414,14 +480,11 @@ export function WorktreeDashboard() {
       {filteredWorktrees.length > 0 && (
         <div className="flex flex-wrap gap-4">
           {filteredWorktrees.map((worktree) => (
-            <div 
-              key={worktree.path} 
+            <div
+              key={worktree.path}
               className="w-full md:w-[calc(50%-8px)] xl:w-[calc(33.333%-11px)] flex-shrink-0 flex-grow-0"
             >
-              <WorktreeCard
-                worktree={worktree}
-                onRefresh={refreshSingleWorktree}
-              />
+              <WorktreeCard worktree={worktree} onRefresh={refreshSingleWorktree} />
             </div>
           ))}
         </div>
