@@ -44,10 +44,11 @@ create_window() {
     local window_name="${task_id}-${mode}"
     
     # Determine if this is a task or feature ID
-    # Two ways to detect:
+    # Ways to detect:
     # 1. Tasks are always ALL CAPS with dashes and contain digits (typically 4)
-    # 2. Features use mixed case with dashes (worktree-dashboard) or FEATURE_ prefix
-    if [[ "$task_id" =~ ^FEAT- || "$task_id" =~ ^FEATURE_ || ! "$task_id" =~ [0-9] || ! "$task_id" =~ ^[A-Z0-9_-]+$ ]]; then
+    # 2. Features use mixed case with dashes (worktree-dashboard) or have FEAT-/FEATURE_ prefix
+    # 3. Any ID with lowercase letters is considered a feature
+    if [[ "$task_id" =~ ^FEAT- || "$task_id" =~ ^FEATURE_ || ! "$task_id" =~ [0-9] || "$task_id" =~ [a-z] ]]; then
         # Use tw-feat-start for feature IDs
         gum style --foreground 245 "Setting up feature worktree for $task_id..."
         local worktree_output=$(bun run tw-feat-start "$task_id" 2>/dev/null | tail -n 1)
@@ -221,8 +222,8 @@ interactive_dispatch() {
     local task_id=$(get_task_id)
     [ -z "$task_id" ] && exit 0
     
-    # Validate ID format - allow any character after the initial prefix
-    if [[ ! $task_id =~ ^[A-Z][A-Z0-9_-]+ ]]; then
+    # Validate ID format - very permissive to allow feature names like "worktree-dashboard"
+    if [[ ! $task_id =~ ^[A-Za-z][A-Za-z0-9_-]+ ]]; then
         gum style --foreground 196 "Invalid ID format"
         exit 1
     fi
