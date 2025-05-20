@@ -35,7 +35,7 @@ export function usePromptSender({
 
     if (!isConnected) {
       handleConnect();
-      
+
       // Wait for connection then send
       const checkConnection = setInterval(() => {
         if (sendPrompt(prompt, contextId)) {

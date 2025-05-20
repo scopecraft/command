@@ -1,6 +1,6 @@
 /**
  * Tests for Claude JSON format parsing
- * 
+ *
  * This tests that both the old and new Claude JSON streaming formats are handled correctly.
  */
 
@@ -22,7 +22,7 @@ function parseClaudeMessage(jsonString: string): {
 } {
   try {
     const msg = JSON.parse(jsonString);
-    
+
     // Internal websocket protocol messages
     if (msg.error) {
       return { messageType: 'error', content: msg.error, handled: true };
@@ -44,10 +44,10 @@ function parseClaudeMessage(jsonString: string): {
 
     // 2. Handle final result system message with stats
     if (msg.type === 'system' && msg.content && msg.content.type === 'result') {
-      return { 
-        messageType: 'info', 
-        content: `Session completed. Tokens: ${msg.content.total_tokens || 'unknown'}`, 
-        handled: true 
+      return {
+        messageType: 'info',
+        content: `Session completed. Tokens: ${msg.content.total_tokens || 'unknown'}`,
+        handled: true,
       };
     }
 
@@ -66,14 +66,14 @@ function parseClaudeMessage(jsonString: string): {
     // 5. Handle tool results from user role (both old and new format)
     if ((msg.role === 'user' || msg.type === 'user') && msg.content) {
       let toolResults = [];
-      
+
       if (Array.isArray(msg.content)) {
         toolResults = msg.content.filter((b: any) => b.type === 'tool_result');
       } else if (msg.content.type === 'tool_result') {
         // Single tool result
         toolResults = [msg.content];
       }
-      
+
       if (toolResults.length > 0) {
         return { messageType: 'tool_result', content: toolResults, handled: true };
       }
@@ -109,7 +109,7 @@ describe('Claude JSON Format Parser', () => {
       ],
       "stop_reason": null
     }`;
-    
+
     const result = parseClaudeMessage(oldFormat);
     assert.strictEqual(result.messageType, 'assistant');
     assert.strictEqual(result.handled, true);
@@ -129,7 +129,7 @@ describe('Claude JSON Format Parser', () => {
       ],
       "done": false
     }`;
-    
+
     const result = parseClaudeMessage(newFormat);
     assert.strictEqual(result.messageType, 'assistant');
     assert.strictEqual(result.handled, true);
@@ -147,7 +147,7 @@ describe('Claude JSON Format Parser', () => {
       },
       "done": false
     }`;
-    
+
     const result = parseClaudeMessage(singleBlockFormat);
     assert.strictEqual(result.messageType, 'assistant');
     assert.strictEqual(result.handled, true);
@@ -163,7 +163,7 @@ describe('Claude JSON Format Parser', () => {
         "model": "claude-3-7-sonnet-20250219"
       }
     }`;
-    
+
     const result = parseClaudeMessage(systemInit);
     assert.strictEqual(result.messageType, 'info');
     assert.strictEqual(result.handled, true);
@@ -180,7 +180,7 @@ describe('Claude JSON Format Parser', () => {
         "prompt_tokens": 2136
       }
     }`;
-    
+
     const result = parseClaudeMessage(systemResult);
     assert.strictEqual(result.messageType, 'info');
     assert.strictEqual(result.handled, true);
@@ -200,7 +200,7 @@ describe('Claude JSON Format Parser', () => {
         }
       ]
     }`;
-    
+
     const result = parseClaudeMessage(oldFormatToolResult);
     assert.strictEqual(result.messageType, 'tool_result');
     assert.strictEqual(result.handled, true);
@@ -220,7 +220,7 @@ describe('Claude JSON Format Parser', () => {
         }
       }
     }`;
-    
+
     const result = parseClaudeMessage(newFormatToolResult);
     assert.strictEqual(result.messageType, 'tool_result');
     assert.strictEqual(result.handled, true);
@@ -231,7 +231,7 @@ describe('Claude JSON Format Parser', () => {
 
   it('should handle internal error messages', () => {
     const errorMessage = `{"error": "Something went wrong"}`;
-    
+
     const result = parseClaudeMessage(errorMessage);
     assert.strictEqual(result.messageType, 'error');
     assert.strictEqual(result.handled, true);
@@ -240,7 +240,7 @@ describe('Claude JSON Format Parser', () => {
 
   it('should handle info messages', () => {
     const infoMessage = `{"info": "Connection established"}`;
-    
+
     const result = parseClaudeMessage(infoMessage);
     assert.strictEqual(result.messageType, 'info');
     assert.strictEqual(result.handled, true);
@@ -249,7 +249,7 @@ describe('Claude JSON Format Parser', () => {
 
   it('should handle plain text as assistant message', () => {
     const plainText = `This is not a JSON message`;
-    
+
     const result = parseClaudeMessage(plainText);
     assert.strictEqual(result.messageType, 'assistant');
     assert.strictEqual(result.handled, true);

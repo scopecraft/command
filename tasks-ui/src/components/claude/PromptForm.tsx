@@ -53,7 +53,8 @@ export function PromptForm({
       <div className="flex items-end gap-4">
         <div className="flex-1 space-y-2">
           <label htmlFor="context" className="text-sm font-medium">
-            Context (Optional) {id && <span className="text-muted-foreground">*Pre-filled from URL</span>}
+            Context (Optional){' '}
+            {id && <span className="text-muted-foreground">*Pre-filled from URL</span>}
           </label>
           <input
             id="context"

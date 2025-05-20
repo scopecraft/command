@@ -1,4 +1,4 @@
-import { RefObject } from 'react';
+import type { RefObject } from 'react';
 import type { Message } from '../../lib/claude-message-handler';
 import { MessageDisplay } from '../task-detail/MessageDisplay';
 
