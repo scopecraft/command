@@ -19,6 +19,13 @@ Extend the local Bun-powered application so that any task can launch, monitor, a
 Sessions run inside tmux for portability and can be opened in the user’s preferred terminal application.  
 Headless (non-interactive) modes must still expose status and logs to the web UI.
 
+### Key Benefits
+- **Human-in-the-loop orchestration**: Jump between sessions, answer questions, guide work
+- **Parallel subtask execution**: Run multiple modes/tasks simultaneously in tmux windows
+- **Unified tmux interface**: All tasks visible as tabs in a single tmux session
+- **Reduced process management complexity**: Tmux handles all lifecycle management
+- **Better monitoring**: Easy to see and switch between active work
+
 ---
 
 ### 2 Functional Requirements
@@ -27,7 +34,7 @@ Headless (non-interactive) modes must still expose status and logs to the web UI
 |---|-------------|
 | FR-1 | Provide a unified CLI entry-point `dispatch <mode> <task-id> [extra-args]`. |
 | FR-2 | Modes are pluggable. Initial set: `interactive`, `code-review`. |
-| FR-3 | Interactive modes create/re-use a **tmux session** named `claude-{mode}-{id}`. |
+| FR-3 | Interactive modes create/re-use a **tmux window** in the main session, named `{id}-{mode}`. |
 | FR-4 | Once the session is running, open or focus the user’s GUI terminal and attach to it. |
 | FR-5 | Headless modes execute in the background, stream logs, and return an exit code. |
 | FR-6 | Bun HTTP API exposes `/dispatch/{mode}/{id}`, `/status/{mode}/{id}`, `/stop/{mode}/{id}`, `/logs/{mode}/{id}`. |
@@ -40,10 +47,10 @@ Headless (non-interactive) modes must still expose status and logs to the web UI
 | Category | Requirement |
 |---|---|
 | Portability | macOS, Linux, WSL; should work with WezTerm, iTerm2, Apple Terminal, Windows Terminal, GNOME/Konsole, etc. |
-| Isolation   | One tmux session per combination of mode + task ID. |
+| Architecture | One tmux session with multiple windows (tabs), one window per mode + task ID combination. |
 | Security    | HTTP server bound to `127.0.0.1`; validate Task IDs and mode names (`[A-Z0-9_\-]+`). |
 | Extensibility | Adding a new mode requires only a new block in `dispatch` and minimal UI mapping. |
-| Observability | Provide log streaming and exit status for headless runs; no duplicate sessions allowed. |
+| Observability | Provide log streaming and exit status for headless runs; no duplicate windows allowed. |
 
 ---
 
@@ -64,10 +71,11 @@ Behaviour overview
 
 Internal steps (all modes)
 
-1. Locate or create a Git work-tree for the task.  
-2. `cd` into that work-tree.  
-3. Compose the prompt template for the mode.  
-4. Invoke `claude` with appropriate flags (interactive or `-p`).  
+1. Verify the working directory (assumes worktree already exists).  
+2. Create or reuse tmux window in the main session.  
+3. Set window working directory to the task worktree.  
+4. Compose the prompt template for the mode.  
+5. Invoke `claude` with appropriate flags (interactive or `-p`).  
 
 ---
 
@@ -75,14 +83,14 @@ Internal steps (all modes)
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/dispatch/{mode}/{id}` | Start or reuse a run. Returns `{ session:"claude-{mode}-{id}" }`. |
+| POST | `/dispatch/{mode}/{id}` | Start or reuse a run. Returns `{ session:"scopecraft", window:"{id}-{mode}" }`. |
 | GET  | `/status/{mode}/{id}`   | `{ running, headless, exitCode?, startedAt }`. |
 | GET  | `/stop/{mode}/{id}`     | Terminate the session or job. |
 | WS   | `/logs/{mode}/{id}`     | Stream stdout/stderr (closes when job ends). |
 
 Implementation details
 
-• Interactive: `tmux new-session -d -s claude-{mode}-{id} -- dispatch …`.  
+• Interactive: `tmux new-window -t scopecraft -n {id}-{mode} -c {worktree-path} "claude code {id}"`.  
 • Headless: spawn detached child, capture output to file, tail file over WebSocket.
 
 ---
@@ -92,7 +100,7 @@ Implementation details
 | # | Title | Notes |
 |---|-------|-------|
 | ST-1 | Build `dispatch` script with two starter modes. | Base on existing `tw-start`. |
-| ST-2 | Create `tmux.ts` helper (create, attach, kill, exists). | Namespaced by mode & id. |
+| ST-2 | Create `tmux.ts` helper (create window, kill window, list windows). | Window management within single session. |
 | ST-3 | Headless job manager (spawn, capture logs, track PID & exit). | Store metadata in memory or `.run/`. |
 | ST-4 | Bun routes (`/dispatch`, `/status`, `/stop`). | Thin wrappers over ST-2 / ST-3. |
 | ST-5 | Terminal attach utility (WezTerm → iTerm2 → Apple Terminal → xdg-terminal → Windows Terminal). | Accept session name as parameter. |
@@ -104,6 +112,30 @@ Implementors may merge, split, or reorder tasks as convenient.
 
 ---
 
+### 7 Testing Approach
+
+**Unit Tests**:
+- TmuxLib class methods (create window, kill window, list windows)
+- Dispatcher logic for mode selection and validation
+- Window naming collision prevention
+- Error handling for missing tmux
+
+**Integration Tests**:
+- Full dispatch flow with mock tmux commands
+- HTTP API endpoints with actual tmux sessions
+- Concurrent window creation and management
+- Session recovery after crashes
+
+**Manual Testing Checklist**:
+- [ ] Create multiple windows for different tasks
+- [ ] Switch between windows using tmux keybindings
+- [ ] Verify headless mode completes and cleans up
+- [ ] Test terminal attachment on different platforms
+- [ ] Confirm no duplicate windows for same mode/task
+- [ ] Validate error messages when tmux not available
+
+---
+
 ### 7 Open Questions
 
 | Topic | Question |
@@ -112,15 +144,16 @@ Implementors may merge, split, or reorder tasks as convenient.
 | Persistence | Recover job state after Bun process restart? |
 | Parallel runs | Allow multiple modes on the same task simultaneously? |
 | Windows native | Is WSL mandatory or will pure PowerShell be supported? |
+| Session naming | Should main session name be configurable or fixed as "scopecraft"? |
 
 ---
 
 ### 8 Acceptance Criteria
 
-1. `POST /dispatch/interactive/TASK-42` creates a tmux session, opens the terminal, and attaches.  
+1. `POST /dispatch/interactive/TASK-42` creates a tmux window in the main session, opens the terminal, and attaches.  
 2. `POST /dispatch/code-review/TASK-42` runs headless; `/status` shows it as running, then finished with exit code.  
 3. UI badges accurately reflect running / stopped / finished states.  
-4. No duplicate sessions/jobs are spawned for identical `{mode,id}` pairs.  
+4. No duplicate windows are created for identical `{mode,id}` pairs.  
 5. Works on at least:  
    • macOS + iTerm2, macOS + WezTerm  
    • Ubuntu 22.04 + GNOME Terminal  
@@ -134,5 +167,24 @@ Implementors may merge, split, or reorder tasks as convenient.
 • Persist run metadata to SQLite for history.  
 • Remote access via SSH tunnel with token auth.  
 • Per-mode resource limits (timeout, CPU quota).  
+
+### 11 Complexity Assessment
+**Overall Complexity**: Medium
+
+Factors considered:
+- Tmux window management is straightforward but requires careful session handling
+- HTTP API integration with existing UI infrastructure
+- Process lifecycle management delegated to tmux (reduces complexity)
+- Window naming conventions must prevent collisions
+- Error handling for edge cases (tmux not installed, session not found)
+- Cross-platform terminal attachment utility
+
+### 11 Human Review Required
+- [ ] Single session vs multi-session architecture decision validated
+- [ ] Window naming convention (`{id}-{mode}`) appropriate for all use cases
+- [ ] Worktree creation timing and responsibility clearly defined
+- [ ] Error recovery approach for orphaned windows
+- [ ] Session name "scopecraft" acceptable (or should be configurable?)
+- [ ] Headless mode implementation separate from tmux confirmed as best approach
 
 ---

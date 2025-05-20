@@ -84,7 +84,8 @@
       "Bash(npm version:*)",
       "mcp__scopecraft-cmd__phase_update",
       "mcp__scopecraft-cmd__phase_delete",
-      "mcp__scopecraft-cmd__area_update"
+      "mcp__scopecraft-cmd__area_update",
+      "Bash(rg:*)"
     ],
     "deny": []
   }
