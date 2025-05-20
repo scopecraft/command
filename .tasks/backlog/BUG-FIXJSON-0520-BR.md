@@ -2,7 +2,7 @@
 id = "BUG-FIXJSON-0520-BR"
 title = "Fix JSON streaming format handling in Task UI for Claude Code"
 type = "bug"
-status = "🔵 In Progress"
+status = "🟢 Done"
 priority = "🔼 High"
 created_date = "2025-05-20"
 updated_date = "2025-05-20"
@@ -64,3 +64,35 @@ The primary areas that need to be updated:
 - Claude Code was recently updated which introduced the format change
 - The Task UI uses WebSocket to stream Claude's responses in real-time
 - The format change appears to be minor but affects the parsing logic
+
+## Implementation Log
+
+### 2025-05-20: Initial Implementation
+
+1. Created a comprehensive message handler system in `claude-message-handler.ts` to handle different message formats:
+   - Added specialized handlers for different message types: protocol messages, system messages, legacy messages, new assistant messages, and tool results
+   - Implemented format detection for proper processing
+   - Added proper error handling for malformed JSON
+
+2. Fixed `MessageDisplay.tsx` component to properly display tool results with structured data:
+   - Enhanced JSON formatting and display
+   - Added proper handling for nested content structures
+   - Implemented collapsible views for complex data
+
+3. Added `--verbose` flag in `streamClaude.ts` for the JSON streaming format for better debugging
+
+4. Updated WebSocket connection to properly handle task parameters:
+   - Added XML parameter handling using `<user_params>task:${message.meta}</user_params>` format
+   - Made parameters more visible to Claude for proper processing
+
+5. Updated the task_ui.md command to enhance tool result handling:
+   - Added explicit instructions to use mcp__scopecraft-cmd__ tools
+   - Added examples of proper tool usage
+   - Prevented Claude from using the Task agent instead of specific MCP tools
+
+6. Fixed command handling in WebSocket to ensure proper routing:
+   - Automatically adding `/project:task_ui` to user prompts when needed
+   - Ensuring all requests use the correct command format
+   - Improved logging for better debugging
+
+All fixes have been tested and work properly with the latest Claude JSON format, including handling tool results and properly displaying structured data in the UI.
