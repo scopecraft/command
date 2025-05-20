@@ -45,10 +45,11 @@ create_window() {
     
     # Determine if this is a task or feature ID
     # Ways to detect:
-    # 1. Tasks are always ALL CAPS with dashes and contain digits (typically 4)
-    # 2. Features use mixed case with dashes (worktree-dashboard) or have FEAT-/FEATURE_ prefix
-    # 3. Any ID with lowercase letters is considered a feature
-    if [[ "$task_id" =~ ^FEAT- || "$task_id" =~ ^FEATURE_ || ! "$task_id" =~ [0-9] || "$task_id" =~ [a-z] ]]; then
+    # 1. Tasks are ALL CAPS with dashes and contain digits (typically 4)
+    # 2. Features use mixed case with dashes (e.g., "worktree-dashboard") 
+    # 3. Features might use FEATURE_ prefix (but never FEAT- which is for tasks)
+    # 4. Any ID with lowercase letters is considered a feature
+    if [[ "$task_id" =~ ^FEATURE_ || ! "$task_id" =~ [0-9] || "$task_id" =~ [a-z] ]]; then
         # Use tw-feat-start for feature IDs
         gum style --foreground 245 "Setting up feature worktree for $task_id..."
         local worktree_output=$(bun run tw-feat-start "$task_id" 2>/dev/null | tail -n 1)
@@ -327,8 +328,8 @@ start_from_worktree() {
         return 1
     fi
     
-    # List directories in worktrees folder - allow any characters after the prefix
-    local worktrees=$(ls -1 "$worktrees_dir" 2>/dev/null | grep -E '^[A-Z]+')
+    # List directories in worktrees folder - include both task IDs and feature names
+    local worktrees=$(ls -1 "$worktrees_dir" 2>/dev/null)
     
     if [ -z "$worktrees" ]; then
         gum style --foreground 196 "No worktrees found"
