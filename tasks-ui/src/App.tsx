@@ -22,7 +22,7 @@ function App() {
     <AppProviders>
       <AppLayout>
         <Switch>
-          <Route path={routes.home} component={HomePage} />
+          <Route path={routes.home} component={WorktreeDashboardPage} />
           <Route path={routes.taskList} component={TaskListView} />
           <Route path={routes.taskCreate} component={TaskFormView} />
           <Route path={routes.taskDetail(':id')} component={TaskDetailView} />

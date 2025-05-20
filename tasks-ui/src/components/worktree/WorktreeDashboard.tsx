@@ -9,6 +9,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
 import {
   fetchWorktree,
   fetchWorktrees,
@@ -16,6 +17,7 @@ import {
   getWorktreeSummary,
   saveDashboardConfig,
 } from '../../lib/api/worktree-client';
+import { routes } from '../../lib/routes';
 import type { Worktree, WorktreeDashboardConfig, WorktreeSummary } from '../../lib/types/worktree';
 import { WorkflowStatus, WorktreeStatus } from '../../lib/types/worktree';
 import { cn } from '../../lib/utils';
@@ -24,6 +26,26 @@ import { WorkflowStatusBadge } from './WorkflowStatusBadge';
 import { WorktreeCard } from './WorktreeCard';
 
 export function WorktreeDashboard() {
+  // For navigation
+  const [, navigate] = useLocation();
+
+  // Quicklinks component
+  const QuickLinks = () => (
+    <div className="border border-border rounded-md bg-card p-6 max-w-xl mx-auto mb-8">
+      <div className="grid grid-cols-2 gap-4">
+        <Button variant="outline" onClick={() => navigate(routes.taskCreate)}>
+          Create Task
+        </Button>
+        <Button onClick={() => navigate(routes.taskList)}>View Tasks</Button>
+        <Button variant="outline" onClick={() => navigate(routes.prompt)}>
+          Open Claude Assistant
+        </Button>
+        <Button variant="ghost" onClick={() => navigate(routes.comparison)}>
+          View Progress
+        </Button>
+      </div>
+    </div>
+  );
   // State for worktrees and loading
   const [worktrees, setWorktrees] = useState<Worktree[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,8 +299,7 @@ export function WorktreeDashboard() {
     <div className="container p-4">
       {/* Dashboard header */}
       <div className="mb-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
-          <h1 className="text-2xl font-bold mb-0">Worktree Dashboard</h1>
+        <div className="flex flex-col md:flex-row md:justify-end md:items-center gap-4 mb-4">
           <div className="flex gap-2">
             <Button
               variant={autoRefreshEnabled ? 'default' : 'outline'}
@@ -322,7 +343,7 @@ export function WorktreeDashboard() {
       </div>
 
       {/* Worktree grid */}
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-4 mb-8">
         {worktrees.map((worktree) => (
           <div
             key={worktree.path}
@@ -332,6 +353,9 @@ export function WorktreeDashboard() {
           </div>
         ))}
       </div>
+
+      {/* Quick Links */}
+      <QuickLinks />
     </div>
   );
 }
