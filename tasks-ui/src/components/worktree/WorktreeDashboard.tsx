@@ -162,83 +162,7 @@ export function WorktreeDashboard() {
     setAutoRefreshEnabled(!autoRefreshEnabled);
   };
 
-  // Count worktrees by workflow status
-  const getWorkflowStatusCounts = () => {
-    const counts = {
-      [WorkflowStatus.TO_START]: 0,
-      [WorkflowStatus.WIP]: 0,
-      [WorkflowStatus.NEEDS_ATTENTION]: 0,
-      [WorkflowStatus.FOR_REVIEW]: 0,
-      [WorkflowStatus.TO_MERGE]: 0,
-      [WorkflowStatus.COMPLETED]: 0,
-    };
 
-    // Count worktrees by their workflow status
-    for (const worktree of worktrees) {
-      if (worktree.workflowStatus) {
-        counts[worktree.workflowStatus]++;
-      } else {
-        // If no workflow status, map git status to a workflow status
-        if (worktree.status === WorktreeStatus.CLEAN) {
-          counts[WorkflowStatus.COMPLETED]++;
-        } else if (worktree.status === WorktreeStatus.CONFLICT) {
-          counts[WorkflowStatus.NEEDS_ATTENTION]++;
-        } else {
-          counts[WorkflowStatus.WIP]++;
-        }
-      }
-    }
-
-    return counts;
-  };
-
-  // Generate status summary badges based on workflow status
-  const StatusSummaryBadges = () => {
-    if (worktrees.length === 0) return null;
-
-    const statusCounts = getWorkflowStatusCounts();
-
-    return (
-      <div className="flex flex-wrap gap-2">
-        {statusCounts[WorkflowStatus.TO_START] > 0 && (
-          <div className="bg-slate-900 text-slate-100 px-3 py-1 rounded flex items-center">
-            <Clock className="h-4 w-4 mr-1.5" />
-            <span>Start: {statusCounts[WorkflowStatus.TO_START]}</span>
-          </div>
-        )}
-        {statusCounts[WorkflowStatus.WIP] > 0 && (
-          <div className="bg-blue-950 text-blue-100 px-3 py-1 rounded flex items-center">
-            <PlayCircle className="h-4 w-4 mr-1.5" />
-            <span>WIP: {statusCounts[WorkflowStatus.WIP]}</span>
-          </div>
-        )}
-        {statusCounts[WorkflowStatus.NEEDS_ATTENTION] > 0 && (
-          <div className="bg-red-950 text-red-100 px-3 py-1 rounded flex items-center">
-            <AlertTriangle className="h-4 w-4 mr-1.5" />
-            <span>Attention: {statusCounts[WorkflowStatus.NEEDS_ATTENTION]}</span>
-          </div>
-        )}
-        {statusCounts[WorkflowStatus.FOR_REVIEW] > 0 && (
-          <div className="bg-purple-950 text-purple-100 px-3 py-1 rounded flex items-center">
-            <CodeSquare className="h-4 w-4 mr-1.5" />
-            <span>Review: {statusCounts[WorkflowStatus.FOR_REVIEW]}</span>
-          </div>
-        )}
-        {statusCounts[WorkflowStatus.TO_MERGE] > 0 && (
-          <div className="bg-amber-950 text-amber-100 px-3 py-1 rounded flex items-center">
-            <GitMerge className="h-4 w-4 mr-1.5" />
-            <span>Merge: {statusCounts[WorkflowStatus.TO_MERGE]}</span>
-          </div>
-        )}
-        {statusCounts[WorkflowStatus.COMPLETED] > 0 && (
-          <div className="bg-green-950 text-green-100 px-3 py-1 rounded flex items-center">
-            <CheckCircle className="h-4 w-4 mr-1.5" />
-            <span>Done: {statusCounts[WorkflowStatus.COMPLETED]}</span>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   // Render loading state
   if (loading && worktrees.length === 0) {
@@ -324,9 +248,8 @@ export function WorktreeDashboard() {
           </div>
         </div>
 
-        {/* Status summary and last refresh time */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-          <StatusSummaryBadges />
+        {/* Last refresh time */}
+        <div className="flex justify-end">
           <div className="text-xs text-muted-foreground">
             Last refreshed: {formattedTime}
             {autoRefreshEnabled && (

@@ -155,10 +155,33 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
         worktree.isLoading && 'opacity-70'
       )}
     >
-      {/* Header section */}
+      {/* Header section - Task ID and Title */}
       <div className="bg-card/50 p-3">
-        {/* Top row with status badge and mode indicator */}
-        <div className="flex justify-between items-center mb-2">
+        {/* Task/Feature ID */}
+        <div className="flex items-center">
+          {worktree.taskId ? (
+            <h3 className="font-mono font-medium text-sm truncate" title={worktree.taskId}>
+              {worktree.taskId}
+            </h3>
+          ) : (
+            <h3 className="font-mono font-medium text-sm truncate" title={worktree.branch}>
+              {getBranchDisplay(worktree.branch)}
+            </h3>
+          )}
+        </div>
+
+        {/* Task/Feature Title */}
+        {worktree.taskTitle && (
+          <div className="text-sm truncate font-medium mt-1" title={worktree.taskTitle}>
+            {worktree.taskTitle}
+          </div>
+        )}
+      </div>
+
+      {/* Status section */}
+      <div className="p-3 border-t border-border flex flex-col gap-3">
+        {/* Status and mode indicators */}
+        <div className="flex justify-between items-center">
           {/* Status indicator */}
           <div className="flex-shrink-0">
             {showWorkflowStatus ? (
@@ -169,7 +192,7 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
           </div>
 
           {/* Mode indicator */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center">
             {worktree.mode?.current && (
               <ModeIndicator mode={worktree.mode.current} showLabel={true} />
             )}
@@ -183,69 +206,6 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
           </div>
         </div>
 
-        {/* Task/Feature ID on its own line */}
-        <div className="flex items-center">
-          {worktree.taskId ? (
-            <h3 className="font-mono font-medium text-sm truncate" title={worktree.taskId}>
-              {worktree.taskId}
-            </h3>
-          ) : (
-            <h3 className="font-mono font-medium text-sm truncate" title={worktree.branch}>
-              {getBranchDisplay(worktree.branch)}
-            </h3>
-          )}
-        </div>
-      </div>
-
-      {/* Content section */}
-      <div className="p-3 border-t border-border flex flex-col gap-2">
-        {/* Branch info */}
-        <div className="flex items-center">
-          <GitBranch className="h-3 w-3 mr-2 text-muted-foreground" />
-          <span className="text-xs">{getBranchDisplay(worktree.branch)}</span>
-        </div>
-
-        {/* Commit info */}
-        <div className="flex items-center">
-          <GitCommit className="h-3 w-3 mr-2 text-muted-foreground" />
-          <span className="font-mono text-xs">{worktree.headCommit.substring(0, 7)}</span>
-        </div>
-
-        {/* Path */}
-        <div className="text-xs text-muted-foreground">{getPathDisplay(worktree.path)}</div>
-
-        {/* Task info if available */}
-        {worktree.taskId && (
-          <div className="flex flex-col mt-1">
-            {worktree.taskTitle && (
-              <div className="text-sm truncate font-medium" title={worktree.taskTitle}>
-                {worktree.taskTitle}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mt-1">
-              {worktree.taskStatus && (
-                <span
-                  className={cn(
-                    'text-xs px-2 py-0.5 rounded',
-                    getTaskStatusColor(worktree.taskStatus)
-                  )}
-                >
-                  {worktree.taskStatus.replace('🔵 ', '')}
-                </span>
-              )}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={navigateToTask}
-                className="px-2 py-0 h-6 text-xs"
-              >
-                VIEW TASK
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Feature progress if available */}
         {worktree.featureProgress && (
           <FeatureProgress
@@ -254,8 +214,42 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
             inProgress={worktree.featureProgress.inProgress}
             blocked={worktree.featureProgress.blocked}
             toDo={worktree.featureProgress.toDo}
+            tasks={worktree.featureProgress.tasks}
           />
         )}
+
+        {/* View Task/Feature button */}
+        {worktree.taskId && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={navigateToTask}
+            className="mt-1 w-full px-2 py-0 h-6 text-xs"
+          >
+            {worktree.taskId.startsWith('FEAT') ? 'VIEW FEATURE' : 'VIEW TASK'}
+          </Button>
+        )}
+      </div>
+
+      {/* Git Information section */}
+      <div className="p-3 border-t border-border flex flex-col gap-2">
+        {/* Branch and Commit info side by side */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <GitBranch className="h-3 w-3 mr-1 text-muted-foreground" />
+            <span className="text-xs">{getBranchDisplay(worktree.branch)}</span>
+          </div>
+
+          <div className="flex items-center">
+            <GitCommit className="h-3 w-3 mr-1 text-muted-foreground" />
+            <span className="font-mono text-xs">{worktree.headCommit.substring(0, 7)}</span>
+          </div>
+        </div>
+
+        {/* Worktree path */}
+        <div className="flex items-center text-xs text-muted-foreground">
+          {getPathDisplay(worktree.path)}
+        </div>
 
         {/* Changed files section */}
         {worktree.status !== WorktreeStatus.CLEAN && (
@@ -269,7 +263,7 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
               className="flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
             >
               <FileText className="h-3 w-3 mr-1" />
-              <span>Changed files</span>
+              <span>Changed files ({worktree.changedFiles?.length || 0})</span>
               {showChangedFiles ? (
                 <ChevronUp className="h-3 w-3 ml-1" />
               ) : (

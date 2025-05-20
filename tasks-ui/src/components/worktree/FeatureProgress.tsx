@@ -8,6 +8,11 @@ interface FeatureProgressProps {
   inProgress: number;
   blocked: number;
   toDo: number;
+  tasks?: {
+    id: string;
+    title: string;
+    status: string;
+  }[];
   compact?: boolean;
 }
 
@@ -17,6 +22,7 @@ export function FeatureProgress({
   inProgress,
   blocked,
   toDo,
+  tasks = [],
   compact = false
 }: FeatureProgressProps) {
   const [expanded, setExpanded] = useState(false);
@@ -73,25 +79,27 @@ export function FeatureProgress({
         </div>
       </div>
 
-      {/* Detailed breakdown (shown when expanded) */}
+      {/* Task list (shown when expanded) */}
       {expanded && (
-        <div className={cn("mt-2 text-xs grid", compact ? "grid-cols-2" : "grid-cols-4")} >
-          <div className="flex items-center">
-            <div className="h-2 w-2 bg-green-500 rounded-full mr-1.5" />
-            <span>Completed: {completed}</span>
-          </div>
-          <div className="flex items-center">
-            <div className="h-2 w-2 bg-blue-500 rounded-full mr-1.5" />
-            <span>In Progress: {inProgress}</span>
-          </div>
-          <div className="flex items-center">
-            <div className="h-2 w-2 bg-amber-500 rounded-full mr-1.5" />
-            <span>To Do: {toDo}</span>
-          </div>
-          <div className="flex items-center">
-            <div className="h-2 w-2 bg-red-500 rounded-full mr-1.5" />
-            <span>Blocked: {blocked}</span>
-          </div>
+        <div className="mt-2 text-xs">
+          {tasks.length > 0 ? (
+            <div className="space-y-1">
+              {tasks.map(task => (
+                <div key={task.id} className="flex justify-between items-center">
+                  <div className="truncate max-w-[70%]" title={task.title}>
+                    {task.title}
+                  </div>
+                  <div className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50">
+                    {task.status}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-muted-foreground italic">
+              No task details available
+            </div>
+          )}
         </div>
       )}
     </div>

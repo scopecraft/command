@@ -35,6 +35,11 @@ export interface Worktree {
     inProgress: number;
     blocked: number;
     toDo: number;
+    tasks?: {
+      id: string;
+      title: string;
+      status: string;
+    }[];
   };
   
   // UI state properties
@@ -93,24 +98,32 @@ export interface WorktreeSummary {
 // Mock data for development and testing
 export const MOCK_WORKTREES: Worktree[] = [
   {
-    path: '/Users/user/Projects/project-name.worktrees/feature-auth',
-    branch: 'feature/auth',
+    path: '/Users/user/Projects/project-name.worktrees/worktree-dashboard',
+    branch: 'worktree-dashboard',
     headCommit: 'a1b2c3d',
     status: WorktreeStatus.CLEAN,
     lastActivity: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-    taskId: 'FEAT-AUTH-20250510-AB',
-    taskTitle: 'Implement Authentication',
+    taskId: 'FEAT-CREATEWORKTREEDASHBOARD-0520-ZB',
+    taskTitle: 'Create WorktreeDashboard and WorktreeCard Components',
     taskStatus: '🔵 In Progress',
     workflowStatus: WorkflowStatus.WIP,
     mode: {
       current: DevelopmentMode.TYPESCRIPT
     },
     featureProgress: {
-      totalTasks: 5,
-      completed: 2,
+      totalTasks: 6,
+      completed: 0,
       inProgress: 1,
       blocked: 0,
-      toDo: 2
+      toDo: 5,
+      tasks: [
+        { id: "FEAT-CREATEWORKTREEDASHBOARD-0520-ZB", title: "Create WorktreeDashboard and WorktreeCard Components", status: "🔵 In Progress" },
+        { id: "FEAT-IMPLEMENTWORKTREESERVICE-0520-88", title: "Implement WorktreeService for Git Operations", status: "🟡 To Do" },
+        { id: "FEAT-CREATEAPI-0520-QW", title: "Create API Endpoints for Worktree Operations", status: "🟡 To Do" },
+        { id: "FEAT-INTEGRATEWORKTREE-0520-D3", title: "Integrate Worktree Dashboard Components with APIs", status: "🟡 To Do" },
+        { id: "RESEARCH-RESEARCHGIT-0520-JB", title: "Research Git Worktree Integration with simplegit", status: "🟡 To Do" },
+        { id: "TEST-DASHBOARDINTEGRATION-0520-CQ", title: "Dashboard Integration and Testing", status: "🟡 To Do" }
+      ]
     }
   },
   {
@@ -131,7 +144,13 @@ export const MOCK_WORKTREES: Worktree[] = [
       completed: 1,
       inProgress: 3,
       blocked: 0,
-      toDo: 0
+      toDo: 0,
+      tasks: [
+        { id: "DASH-TASK-1", title: "Create Layout Component", status: "Done" },
+        { id: "DASH-TASK-2", title: "Implement Card Component", status: "In Progress" },
+        { id: "DASH-TASK-3", title: "Add Filtering", status: "In Progress" },
+        { id: "DASH-TASK-4", title: "Implement Live Updates", status: "In Progress" }
+      ]
     },
     changedFiles: [
       { path: 'src/components/Dashboard.tsx', status: 'modified' },
@@ -171,7 +190,15 @@ export const MOCK_WORKTREES: Worktree[] = [
       completed: 3,
       inProgress: 1,
       blocked: 2,
-      toDo: 0
+      toDo: 0,
+      tasks: [
+        { id: "NOTIF-TASK-1", title: "Design Notification UX", status: "Done" },
+        { id: "NOTIF-TASK-2", title: "Create Notification Component", status: "Done" },
+        { id: "NOTIF-TASK-3", title: "Implement Server Integration", status: "Done" },
+        { id: "NOTIF-TASK-4", title: "Add Push Notifications", status: "In Progress" },
+        { id: "NOTIF-TASK-5", title: "Mobile Integration", status: "Blocked" },
+        { id: "NOTIF-TASK-6", title: "Offline Support", status: "Blocked" }
+      ]
     },
     changedFiles: [
       { path: 'src/components/Notification.tsx', status: 'conflicted' },
@@ -199,7 +226,12 @@ export const MOCK_WORKTREES: Worktree[] = [
       completed: 2,
       inProgress: 1,
       blocked: 0,
-      toDo: 0
+      toDo: 0,
+      tasks: [
+        { id: "EXPORT-TASK-1", title: "Design Export Formats", status: "Done" },
+        { id: "EXPORT-TASK-2", title: "Implement CSV Export", status: "Done" },
+        { id: "EXPORT-TASK-3", title: "Add PDF Export", status: "In Progress" }
+      ]
     }
   }
 ];
