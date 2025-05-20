@@ -120,6 +120,12 @@ export interface UIState {
   activeView: 'home' | 'list' | 'detail' | 'form' | 'create' | 'graph';
   activeTaskId: string | null;
   toasts: Toast[];
+  collapsedSections: {
+    views?: boolean;
+    phases?: boolean;
+    features?: boolean;
+    areas?: boolean;
+  };
 }
 
 export interface Toast {

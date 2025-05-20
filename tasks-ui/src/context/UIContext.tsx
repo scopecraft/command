@@ -10,6 +10,7 @@ interface UIContextType {
   setActiveTaskId: (taskId: string | null) => void;
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
+  toggleSectionCollapsed: (section: keyof UIState['collapsedSections']) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -20,6 +21,12 @@ const DEFAULT_UI_STATE: UIState = {
   activeView: 'home',
   activeTaskId: null,
   toasts: [],
+  collapsedSections: {
+    views: false,
+    phases: false,
+    features: false,
+    areas: false,
+  },
 };
 
 const LOCAL_STORAGE_KEY = 'tasks-ui-preferences';
@@ -49,6 +56,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
     const uiPrefs = {
       sidebarOpen: ui.sidebarOpen,
       darkMode: ui.darkMode,
+      collapsedSections: ui.collapsedSections,
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(uiPrefs));
 
@@ -58,7 +66,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [ui.sidebarOpen, ui.darkMode]);
+  }, [ui.sidebarOpen, ui.darkMode, ui.collapsedSections]);
 
   const toggleSidebar = () => {
     setUI((prev) => ({
@@ -113,6 +121,16 @@ export function UIProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const toggleSectionCollapsed = (section: keyof UIState['collapsedSections']) => {
+    setUI((prev) => ({
+      ...prev,
+      collapsedSections: {
+        ...prev.collapsedSections,
+        [section]: !prev.collapsedSections[section],
+      },
+    }));
+  };
+
   const value = {
     ui,
     toggleSidebar,
@@ -121,6 +139,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
     setActiveTaskId,
     addToast,
     removeToast,
+    toggleSectionCollapsed,
   };
 
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>;
