@@ -18,8 +18,12 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
       
       logger.info('WebSocket connection opened', { connectionId });
       
-      const info: ClaudeWebSocketInfo = { info: "send {prompt,meta}" };
-      ws.send(JSON.stringify(info));
+      // Send a connection confirmation that won't appear in the message area
+      ws.send(JSON.stringify({ 
+        type: "connection_status", 
+        status: "connected",
+        message: "WebSocket connected. Ready to send prompts." 
+      }));
     },
 
     async message(ws: any, data: any) {
@@ -45,15 +49,28 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
           promptLength: message.prompt.length
         });
         
-        // Create full prompt
+        // Format the prompt to include the command and parameters
+        let formattedPrompt = message.prompt;
+        
+        // If the prompt doesn't start with a slash command, add the task_ui command
+        if (!formattedPrompt.startsWith('/')) {
+          formattedPrompt = `/project:task_ui ${formattedPrompt}`;
+          logger.info('Added task_ui command to prompt', {
+            connectionId,
+            originalPrompt: message.prompt,
+            formattedPrompt: formattedPrompt
+          });
+        }
+        
+        // Create full prompt with parameters in XML tags that Claude can parse
         const fullPrompt = message.meta 
-          ? `${message.prompt}\n\n[meta:${message.meta}]`
-          : message.prompt;
+          ? `${formattedPrompt} <user_params>task:${message.meta}</user_params>`
+          : formattedPrompt;
         
         logger.info('Full prompt prepared for Claude', {
           connectionId,
           fullPromptLength: fullPrompt.length,
-          prompt: message.prompt,
+          prompt: formattedPrompt,
           meta: message.meta,
           fullPrompt: fullPrompt
         });
@@ -61,7 +78,7 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
         // Echo back the user message to confirm receipt
         ws.send(JSON.stringify({
           type: 'user_echo',
-          content: `Received: ${message.prompt}${message.meta ? ` [Context: ${message.meta}]` : ''}`
+          content: `Received: ${message.prompt}${message.meta ? ` [Context: ${message.meta}]` : ''}${!message.prompt.startsWith('/') ? ' (Using task_ui command)' : ''}`
         }));
         
         // Spawn Claude process
@@ -112,6 +129,16 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
                   stdout: outputText.substring(0, 500), // Log first 500 chars
                   length: outputText.length
                 });
+                
+                // Log if it appears to be a tool-related message
+                if (outputText.includes('"tool_use"') || outputText.includes('"tool_result"')) {
+                  logger.info('Tool-related message detected', {
+                    connectionId,
+                    isToolUse: outputText.includes('"tool_use"'),
+                    isToolResult: outputText.includes('"tool_result"'),
+                    length: outputText.length
+                  });
+                }
                 
                 ws.send(outputText);
               }
