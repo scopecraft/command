@@ -11,4 +11,4 @@ is_overview = true
 assigned_to = ""
 +++
 
-Cross-cutting functionality to improve project root detection and management across different environments, especially for MCP integration with external tools.
+Core functionality for project root detection and management across different environments, especially for MCP integration with external tools.
