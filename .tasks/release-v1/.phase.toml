@@ -1,0 +1,4 @@
+id = "release-v1"
+name = "Release v1"
+status = "🟡 Pending"
+description = "Current major release with core functionality and essential features."

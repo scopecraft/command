@@ -1,0 +1,4 @@
+id = "planning"
+name = "Planning"
+status = "🟡 Pending"
+description = "Initial planning phase for features and tasks that require additional research or design before implementation."
