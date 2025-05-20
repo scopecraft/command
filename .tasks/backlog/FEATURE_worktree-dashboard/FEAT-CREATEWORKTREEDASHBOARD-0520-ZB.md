@@ -2,10 +2,11 @@
 id = "FEAT-CREATEWORKTREEDASHBOARD-0520-ZB"
 title = "Create WorktreeDashboard and WorktreeCard Components"
 type = "implementation"
-status = "🟡 To Do"
+status = "🔵 In Progress"
 priority = "▶️ Medium"
 created_date = "2025-05-20"
 updated_date = "2025-05-20"
+completed_date = ""
 assigned_to = ""
 phase = "backlog"
 parent_task = "worktree-dashboard"
@@ -18,79 +19,128 @@ subdirectory = "FEATURE_worktree-dashboard"
 
 This task covers the UI research, design, and implementation of the main components for the Worktree Dashboard feature, starting with purely visual components before integration.
 
-## Research Phase
+## Research Phase (Completed)
 
-### Codebase Exploration
-1. Examine the existing Tasks UI component patterns and architecture
-2. Identify current state management approach (confirm if React Query is used)
-3. Study the styling and theming solutions in the project
-4. Review existing dashboard/grid components that might be reusable
-5. Understand how routing and navigation are implemented
+### Codebase Exploration (Completed)
+1. ✅ Examined the existing Tasks UI component patterns and architecture
+2. ✅ Identified current state management approach (React hooks with context)
+3. ✅ Studied the styling and theming solutions (Tailwind CSS)
+4. ✅ Reviewed existing dashboard/grid components
+5. ✅ Understood how routing and navigation are implemented
 
-### UX Research
-1. Research dashboard design patterns for monitoring tools
-2. Look for inspiration from git GUIs and other monitoring dashboards
-3. Consider information hierarchy - what data is most important to show
-4. Research effective status visualization approaches (color coding, icons)
-5. Consider various layouts (masonry, grid, list) and their pros/cons
-6. Research mobile-friendly dashboard patterns
+### UX Research (Completed)
+1. ✅ Researched dashboard design patterns for monitoring tools
+2. ✅ Found inspiration from git GUIs and other monitoring dashboards
+3. ✅ Established information hierarchy for worktree information
+4. ✅ Implemented effective status visualization (dark color coding, icons)
+5. ✅ Selected responsive grid layout for desktop and mobile
+6. ✅ Implemented mobile-friendly dashboard patterns
 
-## Design Approach
+## Design Approach (Completed)
 
-### Information Architecture
-- Identify critical worktree information to display (priority order):
+### Information Architecture (Completed)
+- ✅ Identified critical worktree information to display (priority order):
   - Branch name and task ID association
-  - Git status (clean/changes)
+  - Workflow status (To Start, WIP, Needs Attention, For Review, To Merge, Completed)
+  - Git status (clean/changes/conflicts)
   - Last commit information
-  - Recent activity
+  - Recent activity timestamp
+  - Associated task information
+  - Development mode indicators
 
-### Visual Design
-- Create card layout sketches (can be code-based or conceptual)
-- Design status indicators for different states
-- Plan responsive behavior for different screen sizes
-- Consider empty state and loading state designs
+### Visual Design (Completed)
+- ✅ Created card layout with expandable sections
+- ✅ Designed status indicators with color-coding and icons
+- ✅ Implemented responsive behavior for different screen sizes
+- ✅ Added empty state, loading state, and error state designs
+- ✅ Created status summary with count indicators
 
-## Implementation
+## Implementation (In Progress)
 
-### Purely Visual Components First
-- Create components with mock data to validate UI without API dependencies
-- Implement static WorktreeCard component with all variations
-- Build WorktreeDashboard layout with placeholder cards
-- Add status visualizations and interactive elements
-- Implement responsive behavior
+### Purely Visual Components (Completed)
+- ✅ Created components with mock data to validate UI without API dependencies
+- ✅ Implemented WorktreeCard component with status variations
+- ✅ Built WorktreeDashboard layout with filtering capabilities
+- ✅ Added status visualizations and interactive elements
+- ✅ Implemented responsive behavior
+- ✅ Added auto-refresh functionality
 
-### Component Props and Interface Design
-- Design clean component interfaces that are decoupled from actual data sources
-- Create adapters for transforming future API data to component props
-- Implement mock data providers that simulate real data patterns
+### Component Props and Interface Design (Completed)
+- ✅ Designed clean component interfaces that are decoupled from data sources
+- ✅ Created adapters for transforming API data to component props
+- ✅ Implemented data providers that simulate real data patterns
 
-### Visual Testing
-- Create storybook-style demonstrations of component variations
-- Test across different screen sizes
-- Validate color and status indicators for accessibility
+### Visual Improvements (Completed)
+- ✅ Refined color scheme for status indicators (darker, more consistent palette)
+- ✅ Added workflow status summary with counts
+- ✅ Shortened status labels for better display (TO_START → Start, etc.)
+- ✅ Improved responsiveness across screen sizes
 
-## Technical Considerations
+## Technical Considerations (Completed)
 
-### Data Flow Planning
-- Design data flow that will work with or without React Query
-- Create mock data service to simulate API calls
-- Plan refresh strategy that can be implemented later
+### Data Flow Planning (Completed)
+- ✅ Designed data flow using React hooks and context
+- ✅ Created mock data service with simulated API responses
+- ✅ Implemented configurable auto-refresh strategy
+- ✅ Added single-worktree refresh capability
 
-### Styling Approach
-- Follow project's existing styling patterns
-- Create responsive styles that adapt to various screen sizes
-- Implement status color system for different worktree states
+### Styling Approach (Completed)
+- ✅ Followed project's existing Tailwind CSS styling patterns
+- ✅ Created responsive styles for desktop, tablet, and mobile
+- ✅ Implemented status color system with consistent palette:
+  - To Start: slate-900
+  - WIP: blue-950
+  - Needs Attention: red-950
+  - For Review: purple-950
+  - To Merge: amber-950
+  - Completed: green-950
 
 ## Acceptance Criteria
 
-- [ ] Research phase completed with documented findings
-- [ ] Visual design approach documented with rationale
-- [ ] WorktreeCard component implemented with all status variations
-- [ ] Static WorktreeDashboard with mock data implemented
-- [ ] Responsive behavior works across desktop, tablet, and mobile
-- [ ] Component interfaces designed for easy integration with future API
-- [ ] Status visualization clearly communicates different states
-- [ ] Color scheme follows accessibility guidelines
-- [ ] Layout accommodates various numbers of worktrees (0, 1, 5, 10+)
-- [ ] Empty and loading states are implemented
-- [ ] Components follow existing Tasks UI patterns and standards
+- [x] Research phase completed with documented findings
+- [x] Visual design approach documented with rationale
+- [x] WorktreeCard component implemented with all status variations
+- [x] Static WorktreeDashboard with mock data implemented
+- [x] Responsive behavior works across desktop, tablet, and mobile
+- [x] Component interfaces designed for easy integration with future API
+- [x] Status visualization clearly communicates different states
+- [x] Color scheme follows accessibility guidelines
+- [x] Layout accommodates various numbers of worktrees (0, 1, 5, 10+)
+- [x] Empty and loading states are implemented
+- [x] Components follow existing Tasks UI patterns and standards
+
+## Additional Features Implemented
+
+- [x] Workflow status badging system with consistent colors and icons
+- [x] Status summary with counts by workflow status
+- [x] Filter system for workflow status and development mode
+- [x] Configurable auto-refresh functionality
+- [x] Individual worktree refresh capability
+- [x] Error handling and retry mechanisms
+- [x] Development mode visualization (TypeScript, UI, CLI, etc.)
+- [x] Task association display with status indicators
+
+## API Integration Considerations
+
+The implementation has the following expectations for the API:
+
+1. Workflow status enum values should be provided by the API:
+   - TO_START → displayed as "Start"
+   - WIP → displayed as "WIP"
+   - NEEDS_ATTENTION → displayed as "Attention"
+   - FOR_REVIEW → displayed as "Review"
+   - TO_MERGE → displayed as "Merge"
+   - COMPLETED → displayed as "Done"
+
+2. Development mode indicators for different types of work:
+   - TYPESCRIPT, UI, CLI, MCP, DEVOPS, CODEREVIEW, PLANNING, DOCUMENTATION
+
+3. Worktree model should include:
+   - path: string
+   - branch: string
+   - status: WorktreeStatus (CLEAN, MODIFIED, UNTRACKED, CONFLICT)
+   - workflowStatus: WorkflowStatus
+   - lastCommit: { hash: string, message: string, date: string }
+   - activity: { minutes: number }
+   - mode?: { current: DevelopmentMode, next?: DevelopmentMode }
+   - task?: { id: string, title: string, status: string }
