@@ -18,9 +18,7 @@ export async function startStdioServer(
   // Create the transport
   const transport = new StdioServerTransport();
 
-  if (options.verbose) {
-    console.error('Creating STDIO MCP server transport');
-  }
+  // No logging output to avoid interfering with MCP protocol
 
   // Create the server instance
   const server = createServerInstance(options);
@@ -28,14 +26,12 @@ export async function startStdioServer(
   // Connect the transport to the server
   await server.connect(transport);
 
-  console.error('STDIO MCP Server running');
-  console.error('Use Ctrl+C to stop the server');
+  // No logging output to avoid interfering with MCP protocol
 
   // Handle process termination
   process.on('SIGINT', async () => {
-    console.error('Shutting down STDIO server...');
+    // Silent shutdown
     await server.close();
-    console.error('Server shutdown complete');
     process.exit(0);
   });
 
