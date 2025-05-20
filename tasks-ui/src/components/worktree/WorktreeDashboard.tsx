@@ -31,19 +31,13 @@ export function WorktreeDashboard() {
 
   // Quicklinks component
   const QuickLinks = () => (
-    <div className="border border-border rounded-md bg-card p-6 max-w-xl mx-auto mb-8">
-      <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" onClick={() => navigate(routes.taskCreate)}>
-          Create Task
-        </Button>
-        <Button onClick={() => navigate(routes.taskList)}>View Tasks</Button>
-        <Button variant="outline" onClick={() => navigate(routes.prompt)}>
-          Open Claude Assistant
-        </Button>
-        <Button variant="ghost" onClick={() => navigate(routes.comparison)}>
-          View Progress
-        </Button>
-      </div>
+    <div className="flex justify-center gap-4 mb-8 mt-4">
+      <Button variant="outline" size="lg" onClick={() => navigate(routes.taskCreate)}>
+        Create Task
+      </Button>
+      <Button size="lg" onClick={() => navigate(routes.taskList)}>
+        View Tasks
+      </Button>
     </div>
   );
   // State for worktrees and loading
