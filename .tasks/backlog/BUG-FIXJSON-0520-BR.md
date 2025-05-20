@@ -2,7 +2,7 @@
 id = "BUG-FIXJSON-0520-BR"
 title = "Fix JSON streaming format handling in Task UI for Claude Code"
 type = "bug"
-status = "🟡 To Do"
+status = "🔵 In Progress"
 priority = "🔼 High"
 created_date = "2025-05-20"
 updated_date = "2025-05-20"
