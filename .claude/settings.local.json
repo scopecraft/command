@@ -78,7 +78,10 @@
       "Bash(bash:*)",
       "Bash(npm test:*)",
       "Bash(awk:*)",
-      "Bash(tsc:*)"
+      "Bash(tsc:*)",
+      "Bash(npx --package=@scopecraft/cmd scopecraft-stdio:*)",
+      "Bash(npm install:*)",
+      "Bash(npm version:*)"
     ],
     "deny": []
   }
