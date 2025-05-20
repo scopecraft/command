@@ -54,7 +54,19 @@ export function WorkflowStatusBadge({ status, className }: WorkflowStatusBadgePr
   return (
     <div className={cn('flex items-center px-2 py-1 rounded-md', bgColor, className)}>
       {icon}
-      <span className="text-xs font-medium">{status}</span>
+      <span className="text-xs font-medium">
+        {status === WorkflowStatus.TO_START
+          ? 'Start'
+          : status === WorkflowStatus.NEEDS_ATTENTION
+            ? 'Attention'
+            : status === WorkflowStatus.FOR_REVIEW
+              ? 'Review'
+              : status === WorkflowStatus.TO_MERGE
+                ? 'Merge'
+                : status === WorkflowStatus.COMPLETED
+                  ? 'Done'
+                  : status}
+      </span>
     </div>
   );
 }

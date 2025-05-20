@@ -248,49 +248,37 @@ export function WorktreeDashboard() {
         {statusCounts[WorkflowStatus.TO_START] > 0 && (
           <div className="bg-slate-900 text-slate-100 px-3 py-1 rounded flex items-center">
             <Clock className="h-4 w-4 mr-1.5" />
-            <span>
-              {WorkflowStatus.TO_START}: {statusCounts[WorkflowStatus.TO_START]}
-            </span>
+            <span>Start: {statusCounts[WorkflowStatus.TO_START]}</span>
           </div>
         )}
         {statusCounts[WorkflowStatus.WIP] > 0 && (
           <div className="bg-blue-950 text-blue-100 px-3 py-1 rounded flex items-center">
             <PlayCircle className="h-4 w-4 mr-1.5" />
-            <span>
-              {WorkflowStatus.WIP}: {statusCounts[WorkflowStatus.WIP]}
-            </span>
+            <span>WIP: {statusCounts[WorkflowStatus.WIP]}</span>
           </div>
         )}
         {statusCounts[WorkflowStatus.NEEDS_ATTENTION] > 0 && (
           <div className="bg-red-950 text-red-100 px-3 py-1 rounded flex items-center">
             <AlertTriangle className="h-4 w-4 mr-1.5" />
-            <span>
-              {WorkflowStatus.NEEDS_ATTENTION}: {statusCounts[WorkflowStatus.NEEDS_ATTENTION]}
-            </span>
+            <span>Attention: {statusCounts[WorkflowStatus.NEEDS_ATTENTION]}</span>
           </div>
         )}
         {statusCounts[WorkflowStatus.FOR_REVIEW] > 0 && (
           <div className="bg-purple-950 text-purple-100 px-3 py-1 rounded flex items-center">
             <CodeSquare className="h-4 w-4 mr-1.5" />
-            <span>
-              {WorkflowStatus.FOR_REVIEW}: {statusCounts[WorkflowStatus.FOR_REVIEW]}
-            </span>
+            <span>Review: {statusCounts[WorkflowStatus.FOR_REVIEW]}</span>
           </div>
         )}
         {statusCounts[WorkflowStatus.TO_MERGE] > 0 && (
           <div className="bg-amber-950 text-amber-100 px-3 py-1 rounded flex items-center">
             <GitMerge className="h-4 w-4 mr-1.5" />
-            <span>
-              {WorkflowStatus.TO_MERGE}: {statusCounts[WorkflowStatus.TO_MERGE]}
-            </span>
+            <span>Merge: {statusCounts[WorkflowStatus.TO_MERGE]}</span>
           </div>
         )}
         {statusCounts[WorkflowStatus.COMPLETED] > 0 && (
           <div className="bg-green-950 text-green-100 px-3 py-1 rounded flex items-center">
             <CheckCircle className="h-4 w-4 mr-1.5" />
-            <span>
-              {WorkflowStatus.COMPLETED}: {statusCounts[WorkflowStatus.COMPLETED]}
-            </span>
+            <span>Done: {statusCounts[WorkflowStatus.COMPLETED]}</span>
           </div>
         )}
       </div>
