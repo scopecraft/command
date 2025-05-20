@@ -1,29 +1,29 @@
 import {
   AlertTriangle,
+  ArrowRight,
   CheckCircle,
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  Clock,
   FileText,
-  GitCommit,
   GitBranch,
+  GitCommit,
   HelpCircle,
   PlusCircle,
   RefreshCw,
   Trash,
   XCircle,
-  Clock,
-  ArrowRight
 } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { routes } from '../../lib/routes';
 import type { Worktree } from '../../lib/types/worktree';
-import { WorktreeStatus, WorkflowStatus } from '../../lib/types/worktree';
+import { WorkflowStatus, WorktreeStatus } from '../../lib/types/worktree';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
-import { ModeIndicator } from './ModeIndicator';
 import { FeatureProgress } from './FeatureProgress';
+import { ModeIndicator } from './ModeIndicator';
 import { WorkflowStatusBadge } from './WorkflowStatusBadge';
 
 interface WorktreeCardProps {
@@ -129,7 +129,7 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
   };
 
   // Handle refresh request
-  const handleRefresh = (e: React.MouseEvent) => {
+  const _handleRefresh = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onRefresh) {
       onRefresh(worktree.path);
@@ -157,23 +157,18 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
     >
       {/* Header section */}
       <div className="bg-card/50 p-3">
-        <div className="flex items-center justify-between">
-          {/* Left side with status and task ID */}
-          <div className="flex items-center gap-2">
+        {/* Top row with status badge and mode indicator */}
+        <div className="flex justify-between items-center mb-2">
+          {/* Status indicator */}
+          <div className="flex-shrink-0">
             {showWorkflowStatus ? (
-              <WorkflowStatusBadge status={worktree.workflowStatus!} />
+              <WorkflowStatusBadge status={worktree.workflowStatus || WorkflowStatus.TO_START} />
             ) : (
               <GitStatusBadge />
             )}
-            
-            {worktree.taskId ? (
-              <h3 className="font-mono font-medium">{worktree.taskId}</h3>
-            ) : (
-              <h3 className="font-mono font-medium">{getBranchDisplay(worktree.branch)}</h3>
-            )}
           </div>
-          
-          {/* Right side with mode indicator */}
+
+          {/* Mode indicator */}
           <div className="flex items-center space-x-2">
             {worktree.mode?.current && (
               <ModeIndicator mode={worktree.mode.current} showLabel={true} />
@@ -187,6 +182,19 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
             )}
           </div>
         </div>
+
+        {/* Task/Feature ID on its own line */}
+        <div className="flex items-center">
+          {worktree.taskId ? (
+            <h3 className="font-mono font-medium text-sm truncate" title={worktree.taskId}>
+              {worktree.taskId}
+            </h3>
+          ) : (
+            <h3 className="font-mono font-medium text-sm truncate" title={worktree.branch}>
+              {getBranchDisplay(worktree.branch)}
+            </h3>
+          )}
+        </div>
       </div>
 
       {/* Content section */}
@@ -196,18 +204,16 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
           <GitBranch className="h-3 w-3 mr-2 text-muted-foreground" />
           <span className="text-xs">{getBranchDisplay(worktree.branch)}</span>
         </div>
-        
+
         {/* Commit info */}
         <div className="flex items-center">
           <GitCommit className="h-3 w-3 mr-2 text-muted-foreground" />
           <span className="font-mono text-xs">{worktree.headCommit.substring(0, 7)}</span>
         </div>
-      
+
         {/* Path */}
-        <div className="text-xs text-muted-foreground">
-          {getPathDisplay(worktree.path)}
-        </div>
-        
+        <div className="text-xs text-muted-foreground">{getPathDisplay(worktree.path)}</div>
+
         {/* Task info if available */}
         {worktree.taskId && (
           <div className="flex flex-col mt-1">
@@ -216,7 +222,7 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
                 {worktree.taskTitle}
               </div>
             )}
-            
+
             <div className="flex items-center justify-between mt-1">
               {worktree.taskStatus && (
                 <span
@@ -239,10 +245,10 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
             </div>
           </div>
         )}
-        
+
         {/* Feature progress if available */}
         {worktree.featureProgress && (
-          <FeatureProgress 
+          <FeatureProgress
             totalTasks={worktree.featureProgress.totalTasks}
             completed={worktree.featureProgress.completed}
             inProgress={worktree.featureProgress.inProgress}
@@ -250,7 +256,7 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
             toDo={worktree.featureProgress.toDo}
           />
         )}
-        
+
         {/* Changed files section */}
         {worktree.status !== WorktreeStatus.CLEAN && (
           <div className="mt-2 border-t border-border/30 pt-2">
@@ -264,29 +270,38 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
             >
               <FileText className="h-3 w-3 mr-1" />
               <span>Changed files</span>
-              {showChangedFiles ? 
-                <ChevronUp className="h-3 w-3 ml-1" /> : 
+              {showChangedFiles ? (
+                <ChevronUp className="h-3 w-3 ml-1" />
+              ) : (
                 <ChevronDown className="h-3 w-3 ml-1" />
-              }
+              )}
             </button>
-            
+
             {showChangedFiles && worktree.changedFiles && worktree.changedFiles.length > 0 && (
               <div className="mt-1 bg-muted/20 p-1 rounded text-xs">
                 <ul className="space-y-1">
-                  {worktree.changedFiles.map((file, index) => (
-                    <li key={index} className="flex items-center">
-                      {file.status === 'added' && <PlusCircle className="h-3 w-3 mr-1 text-green-400" />}
-                      {file.status === 'modified' && <FileText className="h-3 w-3 mr-1 text-blue-400" />}
+                  {worktree.changedFiles.map((file) => (
+                    <li key={`${file.path}-${file.status}`} className="flex items-center">
+                      {file.status === 'added' && (
+                        <PlusCircle className="h-3 w-3 mr-1 text-green-400" />
+                      )}
+                      {file.status === 'modified' && (
+                        <FileText className="h-3 w-3 mr-1 text-blue-400" />
+                      )}
                       {file.status === 'deleted' && <Trash className="h-3 w-3 mr-1 text-red-400" />}
-                      {file.status === 'renamed' && <ChevronRight className="h-3 w-3 mr-1 text-yellow-400" />}
-                      {file.status === 'conflicted' && <XCircle className="h-3 w-3 mr-1 text-red-400" />}
+                      {file.status === 'renamed' && (
+                        <ChevronRight className="h-3 w-3 mr-1 text-yellow-400" />
+                      )}
+                      {file.status === 'conflicted' && (
+                        <XCircle className="h-3 w-3 mr-1 text-red-400" />
+                      )}
                       <span className="truncate">{file.path}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            
+
             {showChangedFiles && (!worktree.changedFiles || worktree.changedFiles.length === 0) && (
               <div className="mt-1 bg-muted/20 p-1 rounded text-xs text-muted-foreground">
                 No file details available
