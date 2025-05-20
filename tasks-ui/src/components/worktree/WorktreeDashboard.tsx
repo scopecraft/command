@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Loader2, RefreshCw, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Filter, Loader2, RefreshCw, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   fetchWorktree,
@@ -8,10 +8,12 @@ import {
   saveDashboardConfig,
 } from '../../lib/api/worktree-client';
 import type { Worktree, WorktreeDashboardConfig, WorktreeSummary } from '../../lib/types/worktree';
-import { WorktreeStatus } from '../../lib/types/worktree';
+import { WorktreeStatus, WorkflowStatus, DevelopmentMode } from '../../lib/types/worktree';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { WorktreeCard } from './WorktreeCard';
+import { ModeIndicator } from './ModeIndicator';
+import { WorkflowStatusBadge } from './WorkflowStatusBadge';
 
 export function WorktreeDashboard() {
   // State for worktrees and loading
@@ -25,6 +27,11 @@ export function WorktreeDashboard() {
     refreshInterval: 30000,
     showTaskInfo: true,
   });
+
+  // Filter states
+  const [statusFilter, setStatusFilter] = useState<WorkflowStatus | null>(null);
+  const [modeFilter, setModeFilter] = useState<DevelopmentMode | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   // State for refresh timer
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -136,6 +143,58 @@ export function WorktreeDashboard() {
     setAutoRefreshEnabled(!autoRefreshEnabled);
   };
 
+  // Toggle filters
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
+  };
+
+  // Filter worktrees
+  const filteredWorktrees = worktrees.filter(worktree => {
+    // Apply workflow status filter
+    if (statusFilter && worktree.workflowStatus !== statusFilter) {
+      return false;
+    }
+    
+    // Apply mode filter
+    if (modeFilter) {
+      if (worktree.mode?.current !== modeFilter && worktree.mode?.next !== modeFilter) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
+  // Clear all filters
+  const clearFilters = () => {
+    setStatusFilter(null);
+    setModeFilter(null);
+  };
+
+  // Filter buttons for workflow status
+  const StatusFilterButton = ({ status }: { status: WorkflowStatus }) => (
+    <Button
+      size="sm"
+      variant={statusFilter === status ? "default" : "outline"}
+      onClick={() => setStatusFilter(statusFilter === status ? null : status)}
+      className="h-7 text-xs"
+    >
+      <WorkflowStatusBadge status={status} className="h-6 py-0" />
+    </Button>
+  );
+
+  // Filter buttons for development mode
+  const ModeFilterButton = ({ mode }: { mode: DevelopmentMode }) => (
+    <Button
+      size="sm"
+      variant={modeFilter === mode ? "default" : "outline"}
+      onClick={() => setModeFilter(modeFilter === mode ? null : mode)}
+      className="h-7 px-2"
+    >
+      <ModeIndicator mode={mode} showLabel={true} size="sm" />
+    </Button>
+  );
+
   // Generate status summary badges
   const StatusSummaryBadges = () => {
     if (!summary) return null;
@@ -217,7 +276,6 @@ export function WorktreeDashboard() {
     hour12: true 
   });
 
-  // Render dashboard with worktrees
   return (
     <div className="container p-4">
       {/* Dashboard header */}
@@ -225,6 +283,20 @@ export function WorktreeDashboard() {
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
           <h1 className="text-2xl font-bold mb-0">Worktree Dashboard</h1>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleFilters}
+              className="h-8 px-3 flex items-center gap-1 relative"
+            >
+              <Filter className="h-4 w-4" />
+              FILTERS
+              {(statusFilter || modeFilter) && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground w-4 h-4 rounded-full text-xs flex items-center justify-center">
+                  {(statusFilter ? 1 : 0) + (modeFilter ? 1 : 0)}
+                </span>
+              )}
+            </Button>
             <Button
               variant={autoRefreshEnabled ? 'default' : 'outline'}
               size="sm"
@@ -254,6 +326,54 @@ export function WorktreeDashboard() {
           </div>
         </div>
 
+        {/* Filters section */}
+        {showFilters && (
+          <div className="mb-4 p-3 bg-card/50 rounded-md border border-border">
+            <div className="flex justify-between items-center mb-3">
+              <div className="text-sm font-medium">Filter Worktrees</div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearFilters}
+                className="h-7 px-2 text-xs"
+                disabled={!statusFilter && !modeFilter}
+              >
+                Clear Filters
+              </Button>
+            </div>
+            
+            <div className="space-y-3">
+              {/* Workflow status filters */}
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">Workflow Status</div>
+                <div className="flex flex-wrap gap-2">
+                  <StatusFilterButton status={WorkflowStatus.TO_START} />
+                  <StatusFilterButton status={WorkflowStatus.WIP} />
+                  <StatusFilterButton status={WorkflowStatus.NEEDS_ATTENTION} />
+                  <StatusFilterButton status={WorkflowStatus.FOR_REVIEW} />
+                  <StatusFilterButton status={WorkflowStatus.TO_MERGE} />
+                  <StatusFilterButton status={WorkflowStatus.COMPLETED} />
+                </div>
+              </div>
+              
+              {/* Development mode filters */}
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">Development Mode</div>
+                <div className="flex flex-wrap gap-2">
+                  <ModeFilterButton mode={DevelopmentMode.TYPESCRIPT} />
+                  <ModeFilterButton mode={DevelopmentMode.UI} />
+                  <ModeFilterButton mode={DevelopmentMode.CLI} />
+                  <ModeFilterButton mode={DevelopmentMode.MCP} />
+                  <ModeFilterButton mode={DevelopmentMode.DEVOPS} />
+                  <ModeFilterButton mode={DevelopmentMode.CODEREVIEW} />
+                  <ModeFilterButton mode={DevelopmentMode.PLANNING} />
+                  <ModeFilterButton mode={DevelopmentMode.DOCUMENTATION} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Status summary and last refresh time */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
           <StatusSummaryBadges />
@@ -266,20 +386,46 @@ export function WorktreeDashboard() {
         </div>
       </div>
 
-      {/* Worktree flexbox layout */}
-      <div className="flex flex-wrap gap-4">
-        {worktrees.map((worktree) => (
-          <div 
-            key={worktree.path} 
-            className="w-full md:w-[calc(50%-8px)] xl:w-[calc(33.333%-11px)] flex-shrink-0 flex-grow-0"
-          >
-            <WorktreeCard
-              worktree={worktree}
-              onRefresh={refreshSingleWorktree}
-            />
+      {/* Filtered result count if filters are active */}
+      {(statusFilter || modeFilter) && worktrees.length !== filteredWorktrees.length && (
+        <div className="mb-4 text-sm">
+          Showing {filteredWorktrees.length} of {worktrees.length} worktrees
+        </div>
+      )}
+
+      {/* Empty state when filters return no results */}
+      {filteredWorktrees.length === 0 && (
+        <div className="flex flex-col items-center justify-center bg-card/50 rounded-md border border-border p-8">
+          <div className="text-lg mb-2">No matching worktrees</div>
+          <div className="text-muted-foreground text-sm mb-4 text-center">
+            No worktrees match your current filter criteria
           </div>
-        ))}
-      </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={clearFilters}
+          >
+            Clear Filters
+          </Button>
+        </div>
+      )}
+
+      {/* Worktree grid */}
+      {filteredWorktrees.length > 0 && (
+        <div className="flex flex-wrap gap-4">
+          {filteredWorktrees.map((worktree) => (
+            <div 
+              key={worktree.path} 
+              className="w-full md:w-[calc(50%-8px)] xl:w-[calc(33.333%-11px)] flex-shrink-0 flex-grow-0"
+            >
+              <WorktreeCard
+                worktree={worktree}
+                onRefresh={refreshSingleWorktree}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -12,14 +12,19 @@ import {
   RefreshCw,
   Trash,
   XCircle,
+  Clock,
+  ArrowRight
 } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { routes } from '../../lib/routes';
 import type { Worktree } from '../../lib/types/worktree';
-import { WorktreeStatus } from '../../lib/types/worktree';
+import { WorktreeStatus, WorkflowStatus } from '../../lib/types/worktree';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
+import { ModeIndicator } from './ModeIndicator';
+import { FeatureProgress } from './FeatureProgress';
+import { WorkflowStatusBadge } from './WorkflowStatusBadge';
 
 interface WorktreeCardProps {
   worktree: Worktree;
@@ -123,13 +128,24 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
     }
   };
 
-  // Create the status badge component
-  const StatusBadge = () => (
+  // Handle refresh request
+  const handleRefresh = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRefresh) {
+      onRefresh(worktree.path);
+    }
+  };
+
+  // Create the git status badge component
+  const GitStatusBadge = () => (
     <div className={cn('flex items-center px-2 py-1 rounded', getStatusBgColor(worktree.status))}>
       <StatusIcon status={worktree.status} />
       <span className="text-xs font-medium">{getStatusText(worktree.status)}</span>
     </div>
   );
+
+  // Determine if we should show the workflow status or git status
+  const showWorkflowStatus = worktree.workflowStatus !== undefined;
 
   // Render card
   return (
@@ -141,13 +157,35 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
     >
       {/* Header section */}
       <div className="bg-card/50 p-3">
-        <div className="flex items-center gap-3">
-          <StatusBadge />
-          {worktree.taskId ? (
-            <h3 className="font-mono font-medium">{worktree.taskId}</h3>
-          ) : (
-            <h3 className="font-mono font-medium">{getBranchDisplay(worktree.branch)}</h3>
-          )}
+        <div className="flex items-center justify-between">
+          {/* Left side with status and task ID */}
+          <div className="flex items-center gap-2">
+            {showWorkflowStatus ? (
+              <WorkflowStatusBadge status={worktree.workflowStatus!} />
+            ) : (
+              <GitStatusBadge />
+            )}
+            
+            {worktree.taskId ? (
+              <h3 className="font-mono font-medium">{worktree.taskId}</h3>
+            ) : (
+              <h3 className="font-mono font-medium">{getBranchDisplay(worktree.branch)}</h3>
+            )}
+          </div>
+          
+          {/* Right side with mode indicator */}
+          <div className="flex items-center space-x-2">
+            {worktree.mode?.current && (
+              <ModeIndicator mode={worktree.mode.current} showLabel={true} />
+            )}
+            {!worktree.mode?.current && worktree.mode?.next && (
+              <div className="flex items-center">
+                <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
+                <ArrowRight className="h-3 w-3 mx-1 text-muted-foreground" />
+                <ModeIndicator mode={worktree.mode.next} showLabel={true} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -174,7 +212,7 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
         {worktree.taskId && (
           <div className="flex flex-col mt-1">
             {worktree.taskTitle && (
-              <div className="text-sm truncate" title={worktree.taskTitle}>
+              <div className="text-sm truncate font-medium" title={worktree.taskTitle}>
                 {worktree.taskTitle}
               </div>
             )}
@@ -202,9 +240,20 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
           </div>
         )}
         
+        {/* Feature progress if available */}
+        {worktree.featureProgress && (
+          <FeatureProgress 
+            totalTasks={worktree.featureProgress.totalTasks}
+            completed={worktree.featureProgress.completed}
+            inProgress={worktree.featureProgress.inProgress}
+            blocked={worktree.featureProgress.blocked}
+            toDo={worktree.featureProgress.toDo}
+          />
+        )}
+        
         {/* Changed files section */}
         {worktree.status !== WorktreeStatus.CLEAN && (
-          <div className="mt-2">
+          <div className="mt-2 border-t border-border/30 pt-2">
             <button
               type="button"
               onClick={(e) => {

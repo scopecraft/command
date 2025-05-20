@@ -21,18 +21,56 @@ export interface Worktree {
   taskTitle?: string;
   taskStatus?: string;
   
+  // Workflow properties
+  workflowStatus?: WorkflowStatus;
+  mode?: {
+    current?: DevelopmentMode;
+    next?: DevelopmentMode;
+  };
+  
+  // Feature progress (if part of a feature)
+  featureProgress?: {
+    totalTasks: number;
+    completed: number;
+    inProgress: number;
+    blocked: number;
+    toDo: number;
+  };
+  
   // UI state properties
   isLoading?: boolean;
   error?: string;
 }
 
-// Possible status values for a worktree
+// Git status values for a worktree
 export enum WorktreeStatus {
   CLEAN = 'clean',           // No uncommitted changes
   MODIFIED = 'modified',     // Has uncommitted modifications
   UNTRACKED = 'untracked',   // Has untracked files
   CONFLICT = 'conflict',     // Has merge conflicts
   UNKNOWN = 'unknown'        // Status couldn't be determined
+}
+
+// Workflow status values (more human-readable workflow states)
+export enum WorkflowStatus {
+  TO_START = 'To Start',       // Ready to begin work
+  WIP = 'WIP',                // Work in progress
+  NEEDS_ATTENTION = 'Needs Attention', // Requires intervention
+  FOR_REVIEW = 'For Review',    // Ready for code review
+  TO_MERGE = 'To Merge',       // Approved and ready to merge
+  COMPLETED = 'Completed'      // Fully merged and complete
+}
+
+// Development modes
+export enum DevelopmentMode {
+  TYPESCRIPT = 'typescript',
+  UI = 'ui',
+  CLI = 'cli',
+  MCP = 'mcp',
+  DEVOPS = 'devops',
+  CODEREVIEW = 'codereview',
+  PLANNING = 'planning',
+  DOCUMENTATION = 'documentation'
 }
 
 // Configuration for the Worktree Dashboard
@@ -62,7 +100,18 @@ export const MOCK_WORKTREES: Worktree[] = [
     lastActivity: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
     taskId: 'FEAT-AUTH-20250510-AB',
     taskTitle: 'Implement Authentication',
-    taskStatus: '🔵 In Progress'
+    taskStatus: '🔵 In Progress',
+    workflowStatus: WorkflowStatus.WIP,
+    mode: {
+      current: DevelopmentMode.TYPESCRIPT
+    },
+    featureProgress: {
+      totalTasks: 5,
+      completed: 2,
+      inProgress: 1,
+      blocked: 0,
+      toDo: 2
+    }
   },
   {
     path: '/Users/user/Projects/project-name.worktrees/feature-dashboard',
@@ -73,6 +122,17 @@ export const MOCK_WORKTREES: Worktree[] = [
     taskId: 'FEAT-DASHBOARD-20250512-CD',
     taskTitle: 'Create Main Dashboard',
     taskStatus: '🔵 In Progress',
+    workflowStatus: WorkflowStatus.WIP,
+    mode: {
+      current: DevelopmentMode.UI
+    },
+    featureProgress: {
+      totalTasks: 4,
+      completed: 1,
+      inProgress: 3,
+      blocked: 0,
+      toDo: 0
+    },
     changedFiles: [
       { path: 'src/components/Dashboard.tsx', status: 'modified' },
       { path: 'src/lib/api/dashboard-client.ts', status: 'added' },
@@ -87,7 +147,11 @@ export const MOCK_WORKTREES: Worktree[] = [
     lastActivity: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
     taskId: 'BUGFIX-LOGIN-20250515-EF',
     taskTitle: 'Fix Login Error',
-    taskStatus: '🟡 To Do'
+    taskStatus: '🟡 To Do',
+    workflowStatus: WorkflowStatus.TO_START,
+    mode: {
+      next: DevelopmentMode.TYPESCRIPT
+    }
   },
   {
     path: '/Users/user/Projects/project-name.worktrees/feature-notifications',
@@ -98,12 +162,45 @@ export const MOCK_WORKTREES: Worktree[] = [
     taskId: 'FEAT-NOTIFICATIONS-20250514-GH',
     taskTitle: 'Add Notification System',
     taskStatus: '🟠 Blocked',
+    workflowStatus: WorkflowStatus.NEEDS_ATTENTION,
+    mode: {
+      current: DevelopmentMode.CLI
+    },
+    featureProgress: {
+      totalTasks: 6,
+      completed: 3,
+      inProgress: 1,
+      blocked: 2,
+      toDo: 0
+    },
     changedFiles: [
       { path: 'src/components/Notification.tsx', status: 'conflicted' },
       { path: 'src/lib/api/notification-service.ts', status: 'modified' },
       { path: 'src/lib/hooks/useNotifications.ts', status: 'added' },
       { path: 'src/styles/notifications.css', status: 'deleted' }
     ]
+  },
+  {
+    path: '/Users/user/Projects/project-name.worktrees/feature-export',
+    branch: 'feature/export-data',
+    headCommit: 'q7r8s9t',
+    status: WorktreeStatus.CLEAN,
+    lastActivity: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
+    taskId: 'FEAT-EXPORT-20250513-IJ',
+    taskTitle: 'Add Data Export Functionality',
+    taskStatus: '🟢 Ready for Review',
+    workflowStatus: WorkflowStatus.FOR_REVIEW,
+    mode: {
+      current: DevelopmentMode.CODEREVIEW,
+      next: DevelopmentMode.DEVOPS
+    },
+    featureProgress: {
+      totalTasks: 3,
+      completed: 2,
+      inProgress: 1,
+      blocked: 0,
+      toDo: 0
+    }
   }
 ];
 
