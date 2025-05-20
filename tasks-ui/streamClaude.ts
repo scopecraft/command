@@ -1,7 +1,8 @@
 import { logger } from './src/observability/logger.js';
 
 export function streamClaude(fullPrompt: string) {
-  const cmd = ["claude", "-p", fullPrompt, "--output-format", "stream-json"];
+  // Add the --verbose flag which is required when using --output-format stream-json
+  const cmd = ["claude", "-p", fullPrompt, "--output-format", "stream-json", "--verbose"];
   
   // Log to our file logger instead of console
   logger.info('[streamClaude] Full prompt being sent', {
@@ -13,7 +14,7 @@ export function streamClaude(fullPrompt: string) {
     cmd: JSON.stringify(cmd)
   });
   
-  // Let's test alternative spawn syntax
+  // Create the process
   const proc = Bun.spawn(cmd, {
     stdout: "pipe",
     stderr: "pipe",

@@ -85,7 +85,13 @@
       "mcp__scopecraft-cmd__phase_update",
       "mcp__scopecraft-cmd__phase_delete",
       "mcp__scopecraft-cmd__area_update",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(claude -p \"Hello, what is today's date?\" --output-format stream-json)",
+      "Bash(claude -p \"Hello, what is today's date?\" --output-format stream-json --verbose)",
+      "Bash(bun run:*)",
+      "Bash(grep:*)",
+      "Bash(claude:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
