@@ -1,6 +1,6 @@
 +++
 id = "_overview"
-title = "Core Enhancements Feature"
+title = "Core Enhancements"
 type = "🌟 Feature"
 status = "🟡 To Do"
 priority = "🔼 High"
@@ -17,11 +17,11 @@ subtasks = [
 ]
 +++
 
-# Core Enhancements Feature
+# Core Enhancements
 
 ## Description
 
-This feature area focuses on enhancing the core functionality of the task management system. The goal is to improve the underlying infrastructure, fix critical bugs, and prepare the project for distribution.
+This feature focuses on enhancing the core functionality of the task management system. The goal is to improve the underlying infrastructure, fix critical bugs, and prepare the project for distribution.
 
 ## Key Components
 
@@ -41,4 +41,3 @@ This feature area focuses on enhancing the core functionality of the task manage
 - TOML parsing is reliable and consistent
 - The project can be distributed via NPM
 - Core functionality is stable and well-tested
-
