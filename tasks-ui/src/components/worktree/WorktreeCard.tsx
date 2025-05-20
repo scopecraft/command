@@ -233,22 +233,31 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
 
       {/* Git Information section */}
       <div className="p-3 border-t border-border flex flex-col gap-2">
-        {/* Branch and Commit info side by side */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <GitBranch className="h-3 w-3 mr-1 text-muted-foreground" />
-            <span className="text-xs">{getBranchDisplay(worktree.branch)}</span>
+        {/* Branch and Commit info side by side in columns */}
+        <div className="flex justify-between">
+          {/* Left column - Branch info with path below */}
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              <GitBranch className="h-3 w-3 mr-1 text-muted-foreground" />
+              <span className="text-xs">{getBranchDisplay(worktree.branch)}</span>
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5 ml-4">
+              {getPathDisplay(worktree.path)}
+            </div>
           </div>
 
-          <div className="flex items-center">
-            <GitCommit className="h-3 w-3 mr-1 text-muted-foreground" />
-            <span className="font-mono text-xs">{worktree.headCommit.substring(0, 7)}</span>
+          {/* Right column - Commit info with timestamp below */}
+          <div className="flex flex-col items-end">
+            <div className="flex items-center">
+              <GitCommit className="h-3 w-3 mr-1 text-muted-foreground" />
+              <span className="font-mono text-xs">{worktree.headCommit.substring(0, 7)}</span>
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {worktree.lastActivity ? 
+                `${Math.floor((Date.now() - new Date(worktree.lastActivity).getTime()) / (1000 * 60))} min ago` : 
+                'Unknown time'}
+            </div>
           </div>
-        </div>
-
-        {/* Worktree path */}
-        <div className="flex items-center text-xs text-muted-foreground">
-          {getPathDisplay(worktree.path)}
         </div>
 
         {/* Changed files section */}
