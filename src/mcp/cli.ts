@@ -15,7 +15,7 @@ import {
 import { startServer } from './server.js';
 
 // Read package version from package.json
-let version = '0.10.2'; // Default
+let version = '0.10.3'; // Default
 try {
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
