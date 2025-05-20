@@ -49,15 +49,28 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
           promptLength: message.prompt.length
         });
         
+        // Format the prompt to include the command and parameters
+        let formattedPrompt = message.prompt;
+        
+        // If the prompt doesn't start with a slash command, add the task_ui command
+        if (!formattedPrompt.startsWith('/')) {
+          formattedPrompt = `/project:task_ui ${formattedPrompt}`;
+          logger.info('Added task_ui command to prompt', {
+            connectionId,
+            originalPrompt: message.prompt,
+            formattedPrompt: formattedPrompt
+          });
+        }
+        
         // Create full prompt with parameters in XML tags that Claude can parse
         const fullPrompt = message.meta 
-          ? `${message.prompt} <user_params>task:${message.meta}</user_params>`
-          : message.prompt;
+          ? `${formattedPrompt} <user_params>task:${message.meta}</user_params>`
+          : formattedPrompt;
         
         logger.info('Full prompt prepared for Claude', {
           connectionId,
           fullPromptLength: fullPrompt.length,
-          prompt: message.prompt,
+          prompt: formattedPrompt,
           meta: message.meta,
           fullPrompt: fullPrompt
         });
@@ -65,7 +78,7 @@ export function createClaudeWebSocketHandler(processManager: ProcessManager) {
         // Echo back the user message to confirm receipt
         ws.send(JSON.stringify({
           type: 'user_echo',
-          content: `Received: ${message.prompt}${message.meta ? ` [Context: ${message.meta}]` : ''}`
+          content: `Received: ${message.prompt}${message.meta ? ` [Context: ${message.meta}]` : ''}${!message.prompt.startsWith('/') ? ' (Using task_ui command)' : ''}`
         }));
         
         // Spawn Claude process
