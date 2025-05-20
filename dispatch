@@ -44,7 +44,10 @@ create_window() {
     local window_name="${task_id}-${mode}"
     
     # Determine if this is a task or feature ID
-    if [[ "$task_id" =~ ^FEAT- || "$task_id" =~ ^FEATURE_ ]]; then
+    # Two ways to detect:
+    # 1. Tasks are always ALL CAPS with dashes and contain digits (typically 4)
+    # 2. Features use mixed case with dashes (worktree-dashboard) or FEATURE_ prefix
+    if [[ "$task_id" =~ ^FEAT- || "$task_id" =~ ^FEATURE_ || ! "$task_id" =~ [0-9] || ! "$task_id" =~ ^[A-Z0-9_-]+$ ]]; then
         # Use tw-feat-start for feature IDs
         gum style --foreground 245 "Setting up feature worktree for $task_id..."
         local worktree_output=$(bun run tw-feat-start "$task_id" 2>/dev/null | tail -n 1)
@@ -218,8 +221,8 @@ interactive_dispatch() {
     local task_id=$(get_task_id)
     [ -z "$task_id" ] && exit 0
     
-    # Validate ID format
-    if [[ ! $task_id =~ ^[A-Z0-9_-]+$ ]]; then
+    # Validate ID format - allow any character after the initial prefix
+    if [[ ! $task_id =~ ^[A-Z][A-Z0-9_-]+ ]]; then
         gum style --foreground 196 "Invalid ID format"
         exit 1
     fi
@@ -323,8 +326,8 @@ start_from_worktree() {
         return 1
     fi
     
-    # List directories in worktrees folder
-    local worktrees=$(ls -1 "$worktrees_dir" 2>/dev/null | grep -E '^(TASK|FEAT)-|^FEATURE_')
+    # List directories in worktrees folder - allow any characters after the prefix
+    local worktrees=$(ls -1 "$worktrees_dir" 2>/dev/null | grep -E '^[A-Z]+')
     
     if [ -z "$worktrees" ]; then
         gum style --foreground 196 "No worktrees found"
