@@ -266,14 +266,18 @@ export function WorktreeDashboard() {
         </div>
       </div>
 
-      {/* Worktree grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-fr">
+      {/* Worktree flexbox layout */}
+      <div className="flex flex-wrap gap-4">
         {worktrees.map((worktree) => (
-          <WorktreeCard
-            key={worktree.path}
-            worktree={worktree}
-            onRefresh={refreshSingleWorktree}
-          />
+          <div 
+            key={worktree.path} 
+            className="w-full md:w-[calc(50%-8px)] xl:w-[calc(33.333%-11px)] flex-shrink-0 flex-grow-0"
+          >
+            <WorktreeCard
+              worktree={worktree}
+              onRefresh={refreshSingleWorktree}
+            />
+          </div>
         ))}
       </div>
     </div>

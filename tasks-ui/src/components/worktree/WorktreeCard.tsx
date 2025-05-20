@@ -135,7 +135,7 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
   return (
     <div
       className={cn(
-        'w-full h-full border border-border rounded-md overflow-hidden transition-all',
+        'w-full border border-border rounded-md overflow-hidden transition-all h-auto',
         worktree.isLoading && 'opacity-70'
       )}
     >
@@ -152,7 +152,7 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
       </div>
 
       {/* Content section */}
-      <div className="p-3 border-t border-border flex flex-col gap-2 h-full">
+      <div className="p-3 border-t border-border flex flex-col gap-2">
         {/* Branch info */}
         <div className="flex items-center">
           <GitBranch className="h-3 w-3 mr-2 text-muted-foreground" />
