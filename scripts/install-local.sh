@@ -13,13 +13,25 @@ fi
 
 echo "Installing package: $LATEST_PACKAGE"
 
+# Uninstall any existing installations first
+npm uninstall -g @scopecraft/cmd
+
 # Install the package globally
 npm install -g "$LATEST_PACKAGE"
+
+# Check installation path
+NPM_GLOBAL_PATH=$(npm root -g)
+INSTALL_PATH=$(find "$NPM_GLOBAL_PATH" -name "scopecraft-cmd" | head -1)
+echo "Package installed at: $INSTALL_PATH"
 
 # Verify installation
 echo "Verifying installation:"
 sc --version
 sc-mcp --version
 sc-stdio --version
+
+# Print PATH information for debugging
+echo "PATH entries:"
+echo $PATH | tr ':' '\n' | grep -i npm
 
 echo "Successfully installed @scopecraft/cmd locally"
