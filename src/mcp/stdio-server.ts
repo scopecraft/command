@@ -26,17 +26,4 @@ export async function startStdioServer(
   // Connect the transport to the server
   await server.connect(transport);
 
-  // No logging output to avoid interfering with MCP protocol
-
-  // Handle process termination
-  process.on('SIGINT', async () => {
-    // Silent shutdown
-    await server.close();
-    process.exit(0);
-  });
-
-  // Keep the process alive
-  return new Promise((_resolve) => {
-    // This promise intentionally never resolves to keep the process running
-  });
 }
