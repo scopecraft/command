@@ -1,4 +1,0 @@
-id = "TEST"
-name = "Test"
-status = "🟡 Pending"
-description = "Phase for testing tasks and features that are not meant for production."
