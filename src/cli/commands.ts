@@ -48,7 +48,7 @@ export async function handleListCommand(options: {
 }): Promise<void> {
   try {
     // Runtime config is handled internally by CRUD functions
-    
+
     const result = await listTasks({
       status: options.status,
       type: options.type,
@@ -69,7 +69,7 @@ export async function handleListCommand(options: {
       return;
     }
 
-    console.log(formatTasksList(result.data!, options.format || 'table'));
+    console.log(formatTasksList(result.data || [], options.format || 'table'));
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -89,9 +89,9 @@ export async function handleGetCommand(
 ): Promise<void> {
   try {
     // Runtime config is handled internally by CRUD functions
-    
-    const result = await getTask(id, { 
-      phase: options.phase, 
+
+    const result = await getTask(id, {
+      phase: options.phase,
       subdirectory: options.subdirectory,
     });
 
@@ -100,7 +100,12 @@ export async function handleGetCommand(
       process.exit(1);
     }
 
-    console.log(formatTaskDetail(result.data!, options.format || 'default'));
+    // Ensure we have a proper Task object before formatting
+    if (result.data && 'metadata' in result.data && 'content' in result.data) {
+      console.log(formatTaskDetail(result.data, options.format || 'default'));
+    } else {
+      console.log('No valid task data found');
+    }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -130,7 +135,7 @@ export async function handleCreateCommand(options: {
 }): Promise<void> {
   try {
     // Runtime config is handled internally by CRUD functions
-    
+
     let task: Task;
 
     if (options.file) {
@@ -341,7 +346,7 @@ export async function handleUpdateCommand(
 ): Promise<void> {
   try {
     // Runtime config is handled internally by CRUD functions
-    
+
     if (options.file) {
       // Update from file
       if (!fs.existsSync(options.file)) {
@@ -469,8 +474,8 @@ export async function handleUpdateCommand(
         return;
       }
 
-      const result = await updateTask(id, updates, { 
-        phase: options.searchPhase, 
+      const result = await updateTask(id, updates, {
+        phase: options.searchPhase,
         subdirectory: options.searchSubdirectory,
       });
 
@@ -499,9 +504,9 @@ export async function handleDeleteCommand(
 ): Promise<void> {
   try {
     // Runtime config is handled internally by CRUD functions
-    
-    const result = await deleteTask(id, { 
-      phase: options.phase, 
+
+    const result = await deleteTask(id, {
+      phase: options.phase,
       subdirectory: options.subdirectory,
     });
 
@@ -528,7 +533,7 @@ export async function handleNextTaskCommand(
 ): Promise<void> {
   try {
     // Runtime config is handled internally by CRUD functions
-    
+
     const result = await findNextTask(id, {});
 
     if (!result.success) {
@@ -560,7 +565,7 @@ export async function handleMarkCompleteNextCommand(
 ): Promise<void> {
   try {
     // Runtime config is handled internally by CRUD functions
-    
+
     // Get the next task before marking current as complete
     const nextTaskResult = await findNextTask(id, {});
 
@@ -728,7 +733,7 @@ export async function handleCurrentTaskCommand(
 ): Promise<void> {
   try {
     // Runtime config is handled internally by CRUD functions
-    
+
     const inProgressResult = await listTasks({ status: '🔵 In Progress' });
 
     if (!inProgressResult.success) {
@@ -750,7 +755,7 @@ export async function handleCurrentTaskCommand(
         return;
       }
 
-      console.log(formatTasksList(alternativeResult.data, options.format || 'table'));
+      console.log(formatTasksList(alternativeResult.data || [], options.format || 'table'));
     } else {
       console.log(formatTasksList(inProgressResult.data!, options.format || 'table'));
     }
@@ -837,7 +842,7 @@ export async function handleFeatureListCommand(options: {
       process.exit(1);
     }
 
-    if (result.data.length === 0) {
+    if (!result.data || result.data.length === 0) {
       console.log('No features found matching the criteria');
       return;
     }
@@ -978,12 +983,16 @@ export async function handleFeatureUpdateCommand(
       process.exit(1);
     }
 
-    const result = await updateFeature(id, {
-      title: updates.title,
-      description: updates.description,
-      status: updates.status,
-      newId: updates.new_id,
-    }, { phase: updates.phase });
+    const result = await updateFeature(
+      id,
+      {
+        title: updates.title,
+        description: updates.description,
+        status: updates.status,
+        new_id: updates.new_id,
+      },
+      { phase: updates.phase }
+    );
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -1018,7 +1027,7 @@ export async function handleAreaListCommand(options: {
       process.exit(1);
     }
 
-    if (result.data.length === 0) {
+    if (!result.data || result.data.length === 0) {
       console.log('No areas found matching the criteria');
       return;
     }
@@ -1159,12 +1168,16 @@ export async function handleAreaUpdateCommand(
       process.exit(1);
     }
 
-    const result = await updateArea(id, {
-      title: updates.title,
-      description: updates.description,
-      status: updates.status,
-      newId: updates.new_id,
-    }, { phase: updates.phase });
+    const result = await updateArea(
+      id,
+      {
+        title: updates.title,
+        description: updates.description,
+        status: updates.status,
+        new_id: updates.new_id,
+      },
+      { phase: updates.phase }
+    );
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);

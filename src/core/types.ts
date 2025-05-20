@@ -56,6 +56,7 @@ export interface Feature {
   status?: string; // Computed status based on tasks
   progress?: number; // Progress percentage (0-100)
   overview?: Task; // Reference to the overview task
+  task_count?: number; // Count of tasks in this feature
 }
 
 // Area object representing an area directory structure
@@ -69,14 +70,18 @@ export interface Area {
   status?: string; // Computed status based on tasks
   progress?: number; // Progress percentage (0-100)
   overview?: Task; // Reference to the overview task
+  task_count?: number; // Count of tasks in this area
 }
 
 // Filter options for feature listing
 export interface FeatureFilterOptions {
   phase?: string;
   status?: string;
+  type?: string;
   include_tasks?: boolean; // Whether to include task details
   include_progress?: boolean; // Whether to include progress calculation
+  include_content?: boolean; // Controls whether feature content is included
+  include_completed?: boolean; // Controls whether completed features are included
   config?: RuntimeConfig; // Runtime configuration support
 }
 
@@ -84,8 +89,11 @@ export interface FeatureFilterOptions {
 export interface AreaFilterOptions {
   phase?: string;
   status?: string;
+  type?: string;
   include_tasks?: boolean; // Whether to include task details
   include_progress?: boolean; // Whether to include progress calculation
+  include_content?: boolean; // Controls whether area content is included
+  include_completed?: boolean; // Controls whether completed areas are included
   config?: RuntimeConfig; // Runtime configuration support
 }
 
@@ -128,6 +136,7 @@ export interface FeatureUpdateOptions {
   title?: string;
   description?: string;
   status?: string;
+  new_id?: string;
 }
 
 // Update options for area
@@ -136,6 +145,7 @@ export interface AreaUpdateOptions {
   title?: string;
   description?: string;
   status?: string;
+  new_id?: string;
 }
 
 // Output formats for various displays
