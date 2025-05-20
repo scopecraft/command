@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 /**
- * Script to update version numbers in CLI files
- * This ensures the CLI reports the correct version from package.json
+ * Script to update version numbers in CLI files and package.json
+ * Usage: bun run update-version [new-version]
+ * If no version is provided, uses the current version in package.json
  */
 
 import fs from 'fs';
@@ -13,12 +14,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, '..');
 
-// Read package.json to get the version
+// Check for version argument
+const newVersion = process.argv[2];
+
+// Read package.json
 const packageJsonPath = path.join(rootDir, 'package.json');
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-const version = packageJson.version;
+let version = packageJson.version;
 
-if (!version) {
+// Update package.json if new version provided
+if (newVersion) {
+  packageJson.version = newVersion;
+  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+  console.log(`Updated package.json version to ${newVersion}`);
+  version = newVersion;
+} else if (!version) {
   console.error('Error: No version found in package.json');
   process.exit(1);
 }
