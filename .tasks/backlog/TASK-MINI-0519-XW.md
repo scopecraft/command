@@ -1,5 +1,5 @@
 +++
-id = "FEAT-TASKUI-0519-XW"
+id = "TASK-MINI-0519-XW"
 title = "Task UI - Minimize sections in the sidebar"
 type = "🌟 Feature"
 status = "🟡 To Do"
