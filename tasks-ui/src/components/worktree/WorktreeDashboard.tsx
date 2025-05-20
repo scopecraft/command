@@ -217,44 +217,89 @@ export function WorktreeDashboard() {
     <div className="container p-4">
       {/* Dashboard header */}
       <div className="mb-6">
-        <div className="flex flex-col md:flex-row md:justify-end md:items-center gap-4 mb-4">
-          <div className="flex gap-2">
-            <Button
-              variant={autoRefreshEnabled ? 'default' : 'outline'}
-              size="sm"
-              onClick={toggleAutoRefresh}
-              className="h-8 px-3 flex items-center gap-1"
-            >
-              AUTO-REFRESH {autoRefreshEnabled ? 'ON' : 'OFF'}
-            </Button>
-            <Button
-              onClick={refreshWorktrees}
-              size="sm"
-              className="h-8 px-3 flex items-center gap-1"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  REFRESHING
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4" />
-                  REFRESH ALL
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
+          {/* Last Activities Section */}
+          <div className="w-full md:w-auto">
+            <h3 className="text-sm font-medium mb-2">Last Activities</h3>
+            <div className="space-y-1.5">
+              {worktrees
+                .sort((a, b) => {
+                  const dateA = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
+                  const dateB = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+                  return dateB - dateA;
+                })
+                .slice(0, 3)
+                .map((worktree) => {
+                  // Get the activity description based on worktree status
+                  let activityDesc = '';
+                  if (worktree.status === WorktreeStatus.MODIFIED) {
+                    activityDesc = `${worktree.changedFiles?.length || 0} files modified`;
+                  } else if (worktree.status === WorktreeStatus.CONFLICT) {
+                    activityDesc = 'Merge conflicts detected';
+                  } else if (worktree.status === WorktreeStatus.UNTRACKED) {
+                    activityDesc = 'New files added';
+                  } else {
+                    activityDesc = `Commit "${worktree.headCommit.substring(0, 7)}"`;
+                  }
 
-        {/* Last refresh time */}
-        <div className="flex justify-end">
-          <div className="text-xs text-muted-foreground">
-            Last refreshed: {formattedTime}
-            {autoRefreshEnabled && (
-              <span className="ml-2">(Auto-refresh every {config.refreshInterval / 1000}s)</span>
-            )}
+                  // Format the activity time
+                  const timeAgo = worktree.lastActivity
+                    ? `${Math.floor((Date.now() - new Date(worktree.lastActivity).getTime()) / (1000 * 60))}m ago`
+                    : '';
+
+                  // Get branch or task display name
+                  const displayName = worktree.taskId 
+                    ? worktree.taskId.split('-')[0] 
+                    : worktree.branch.replace(/^(feature|bugfix|hotfix)\//, '');
+
+                  return (
+                    <div key={worktree.path} className="flex items-center text-xs">
+                      <span className="font-medium text-primary-foreground/80">{displayName}:</span>
+                      <span className="ml-1.5 text-muted-foreground">{activityDesc} ({timeAgo})</span>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* Refresh Controls */}
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex gap-2">
+              <Button
+                variant={autoRefreshEnabled ? 'default' : 'outline'}
+                size="sm"
+                onClick={toggleAutoRefresh}
+                className="h-8 px-3 flex items-center gap-1"
+              >
+                AUTO-REFRESH {autoRefreshEnabled ? 'ON' : 'OFF'}
+              </Button>
+              <Button
+                onClick={refreshWorktrees}
+                size="sm"
+                className="h-8 px-3 flex items-center gap-1"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    REFRESHING
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    REFRESH ALL
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Last refresh time */}
+            <div className="text-xs text-muted-foreground">
+              Last refreshed: {formattedTime}
+              {autoRefreshEnabled && (
+                <span className="ml-2">(Auto-refresh every {config.refreshInterval / 1000}s)</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
