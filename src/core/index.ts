@@ -10,3 +10,6 @@ export * from './formatters.js';
 export * from './project-config.js';
 export * from './template-manager.js';
 export * from './field-normalizers.js';
+
+// Export worktree module
+export * from './worktree/index.js';

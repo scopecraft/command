@@ -50,6 +50,7 @@
     "tw-finish": "bun ./src/scripts/task-worktree.ts finish",
     "tw-list": "bun ./src/scripts/task-worktree.ts list",
     "tw-feat-start": "bun ./src/scripts/task-worktree.ts feat-start",
+    "worktree-monitor": "bun scripts/worktree-monitor.ts",
     "prepublishOnly": "bun run build",
     "update-version": "bun scripts/update-cli-version.ts",
     "version": "bun run update-version && git add src/cli/cli.ts src/mcp/cli.ts",
@@ -92,7 +93,9 @@
     "commander": "^11.1.0",
     "express": "^5.1.0",
     "fs-extra": "^11.2.0",
-    "inquirer": "^9.2.12"
+    "inquirer": "^9.2.12",
+    "simple-git": "^3.27.0",
+    "zod": "^3.25.10"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

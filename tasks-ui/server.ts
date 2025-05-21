@@ -5,6 +5,7 @@ import { lookup } from 'mrmime';
 import { createClaudeWebSocketHandler } from './websocket/claude-handler.js';
 import { ProcessManager } from './websocket/process-manager.js';
 import { logger } from './src/observability/logger.js';
+import { handleWorktreeRequest } from '../src/tasks-ui/server/worktree-api.js';
 import {
   handleTaskList,
   handleTaskGet,
@@ -64,6 +65,12 @@ const server = serve({
     
     // Handle API requests
     if (path.startsWith(API_PREFIX)) {
+      // Check if this is a worktree API request
+      if (path.startsWith(`${API_PREFIX}/worktrees`)) {
+        return await handleWorktreeRequest(req);
+      }
+
+      // Handle other API requests
       return await handleApiRequest(req, path.substring(API_PREFIX.length));
     }
     
@@ -113,6 +120,8 @@ const server = serve({
   
   websocket: claudeWebSocketHandler
 });
+
+// Worktree API routes are handled directly in the API request handler
 
 // Handle API requests by mapping them to MCP handlers
 async function handleApiRequest(req: Request, path: string): Promise<Response> {

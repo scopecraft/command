@@ -21,7 +21,10 @@ export function HomePage() {
             Create Task
           </Button>
           <Button onClick={() => navigate(routes.taskList)}>View Tasks</Button>
-          <Button variant="ghost" onClick={() => navigate(routes.prompt)} className="col-span-2">
+          <Button variant="outline" onClick={() => navigate(routes.worktreeDashboard)}>
+            Worktree Dashboard
+          </Button>
+          <Button variant="ghost" onClick={() => navigate(routes.prompt)}>
             Open Claude Assistant
           </Button>
         </div>

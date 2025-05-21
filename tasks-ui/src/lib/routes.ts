@@ -15,6 +15,7 @@ export const routes = {
   comparison: '/comparison',
   prompt: '/prompt',
   promptWithId: (id: string) => `/prompt/${id}`,
+  worktreeDashboard: '/worktrees',
 };
 
 // Get route path by name

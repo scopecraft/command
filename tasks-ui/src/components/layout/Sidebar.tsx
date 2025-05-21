@@ -180,6 +180,13 @@ export function Sidebar() {
               </Button>
             </Link>
           </li>
+          <li>
+            <Link href={routes.worktreeDashboard}>
+              <Button variant="ghost" className="w-full justify-start text-left normal-case">
+                <span className="truncate">Worktree Dashboard</span>
+              </Button>
+            </Link>
+          </li>
         </ul>
       </div>
 
