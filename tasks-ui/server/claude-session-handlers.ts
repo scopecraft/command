@@ -28,6 +28,58 @@ type SessionInput = z.infer<typeof SessionInputSchema>;
 const SESSION_NAME = "scopecraft";
 
 /**
+ * Check if tmux session exists
+ */
+function sessionExists(sessionName: string): boolean {
+  try {
+    const result = spawnSync(["tmux", "has-session", "-t", sessionName]);
+    return result.exitCode === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if window exists in a session
+ */
+function windowExists(sessionName: string, windowName: string): boolean {
+  try {
+    const result = spawnSync([
+      "tmux", "list-windows", 
+      "-t", sessionName, 
+      "-F", "#{window_name}"
+    ]);
+    
+    if (result.exitCode !== 0) return false;
+    
+    const output = result.stdout.toString();
+    return output.split('\n').some(name => name.trim() === windowName);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get worktree path for a task ID
+ */
+function getWorktreePath(taskId: string): string {
+  try {
+    // Get repo root
+    const rootDirResult = spawnSync(["git", "rev-parse", "--show-toplevel"]);
+    if (rootDirResult.exitCode !== 0) {
+      throw new Error("Could not determine git root directory");
+    }
+    const rootDir = rootDirResult.stdout.toString().trim();
+    
+    // Return worktrees directory with task ID
+    return `${rootDir}.worktrees/${taskId}`;
+  } catch (error) {
+    logger.error(`Failed to get worktree path`, { error, taskId });
+    throw error;
+  }
+}
+
+/**
  * Check if a Claude session exists for the given task ID
  * Uses tmux to check if a window exists with the taskId in its name
  * 
@@ -41,16 +93,9 @@ export async function handleSessionCheck(params: any): Promise<any> {
     
     logger.info(`Checking if Claude session exists`, { taskId });
     
-    // Check if tmux session exists with the task ID as window name
-    const result = spawnSync([
-      "tmux", "list-windows", 
-      "-t", SESSION_NAME, 
-      "-F", "#{window_name}"
-    ]);
-    
-    // If the session doesn't exist, result will have a non-zero exit code
-    if (result.exitCode !== 0) {
-      logger.info(`Tmux session not found or not running`, { taskId });
+    // Check if tmux session exists
+    if (!sessionExists(SESSION_NAME)) {
+      logger.info(`Tmux session '${SESSION_NAME}' does not exist`, { taskId });
       return { 
         success: true, 
         exists: false,
@@ -58,7 +103,13 @@ export async function handleSessionCheck(params: any): Promise<any> {
       };
     }
     
-    // Check output for window with taskId prefix
+    // Check if window exists with task ID prefix
+    const result = spawnSync([
+      "tmux", "list-windows", 
+      "-t", SESSION_NAME, 
+      "-F", "#{window_name}"
+    ]);
+    
     const output = result.stdout.toString();
     const exists = output.split('\n').some(line => line.startsWith(`${taskId}-`));
     
@@ -85,7 +136,7 @@ export async function handleSessionCheck(params: any): Promise<any> {
 
 /**
  * Start a new Claude session for the given task ID
- * Calls the dispatch script to create a tmux window with Claude
+ * Creates a tmux window directly with claude command
  * 
  * @param params - Request body with taskId and mode
  * @returns Object with success status and error message if applicable
@@ -93,7 +144,7 @@ export async function handleSessionCheck(params: any): Promise<any> {
 export async function handleSessionStart(params: any): Promise<any> {
   try {
     // Validate parameters
-    const { taskId, mode } = SessionInputSchema.parse(params);
+    const { taskId, mode = "none" } = SessionInputSchema.parse(params);
     
     logger.info(`Starting Claude session`, { taskId, mode });
     
@@ -109,47 +160,68 @@ export async function handleSessionStart(params: any): Promise<any> {
       };
     }
     
-    // Get project root directory
-    const rootDirResult = spawnSync(["git", "rev-parse", "--show-toplevel"]);
-    if (rootDirResult.exitCode !== 0) {
-      throw new Error("Could not determine git root directory");
+    // Window name for the session
+    const windowName = `${taskId}-${mode}`;
+    
+    // Get worktree path for this task
+    let worktreePath;
+    try {
+      worktreePath = getWorktreePath(taskId);
+    } catch (error) {
+      return {
+        success: false,
+        created: false,
+        error: `Failed to get worktree path: ${error instanceof Error ? error.message : error}`
+      };
     }
-    const rootDir = rootDirResult.stdout.toString().trim();
     
-    // Create session using the dispatch script with --no-interactive flag
-    const result = spawnSync({
-      cmd: ["./dispatch", mode, taskId, "--no-interactive"],
-      cwd: rootDir,
-      env: process.env,
-      stdin: 'ignore',
-      stdout: 'pipe',
-      stderr: 'pipe'
-    });
+    // Create tmux session if it doesn't exist
+    if (!sessionExists(SESSION_NAME)) {
+      logger.info(`Creating tmux session: ${SESSION_NAME}`);
+      spawnSync(["tmux", "new-session", "-d", "-s", SESSION_NAME]);
+      
+      // Set global session options
+      spawnSync(["tmux", "set-option", "-g", "-t", SESSION_NAME, "automatic-rename", "off"]);
+      spawnSync(["tmux", "set-option", "-g", "-t", SESSION_NAME, "allow-rename", "off"]);
+    }
     
-    // Parse the result - non-zero exit code means failure
-    if (result.exitCode !== 0) {
-      const stderr = result.stderr.toString();
-      logger.error(`Failed to start Claude session`, { 
+    // Create the command to run in the window
+    const claudeCommand = mode === "none" 
+      ? "claude" 
+      : `claude '/project:${mode} ${taskId}'`;
+    
+    // Create new window in the session
+    logger.info(`Creating tmux window: ${windowName} with command: ${claudeCommand}`);
+    
+    const windowResult = spawnSync([
+      "tmux", "new-window", 
+      "-t", SESSION_NAME, 
+      "-n", windowName, 
+      "-c", worktreePath, 
+      claudeCommand
+    ]);
+    
+    if (windowResult.exitCode !== 0) {
+      const stderr = windowResult.stderr.toString();
+      logger.error(`Failed to create tmux window`, { 
         taskId, 
         mode, 
-        exitCode: result.exitCode,
-        stderr
+        exitCode: windowResult.exitCode, 
+        stderr 
       });
       
       return {
         success: false,
         created: false,
-        error: `Command failed with error: ${stderr}`
+        error: `Failed to create tmux window: ${stderr}`
       };
     }
     
-    // Log success and response
-    const stdout = result.stdout.toString();
-    logger.info(`Successfully started Claude session`, { 
-      taskId, 
-      mode,
-      stdout
-    });
+    // Set window options
+    spawnSync(["tmux", "set-window-option", "-t", `${SESSION_NAME}:${windowName}`, "automatic-rename", "off"]);
+    spawnSync(["tmux", "set-window-option", "-t", `${SESSION_NAME}:${windowName}`, "allow-rename", "off"]);
+    
+    logger.info(`Successfully created Claude session`, { taskId, mode, window: windowName });
     
     return {
       success: true,
