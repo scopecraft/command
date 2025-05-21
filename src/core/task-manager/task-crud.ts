@@ -471,13 +471,17 @@ export async function updateTask(
       fs.writeFileSync(newFilePath, fileContent);
 
       // Delete original file
-      fs.unlinkSync(oldFilePath);
+      if (oldFilePath) {
+        fs.unlinkSync(oldFilePath);
+      }
 
       // Update file path
       task.filePath = newFilePath;
     } else {
       // No file move needed, just update in place
-      fs.writeFileSync(task.filePath, fileContent);
+      if (task.filePath) {
+        fs.writeFileSync(task.filePath, fileContent);
+      }
     }
 
     // Update relationships if needed
@@ -485,10 +489,10 @@ export async function updateTask(
       await updateRelationships(task, { config: options?.config });
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: task,
-      message: `Task ${id} updated successfully`
+      message: `Task ${id} updated successfully`,
     };
   } catch (error) {
     return {

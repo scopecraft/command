@@ -5,6 +5,12 @@ All notable changes to Scopecraft Command will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.6] - 2025-05-21
+
+### Fixed
+- **MCP Server**: Removed structuredContent from formatResponse and formatError functions in core-server.ts
+- **MCP Tool Registration**: Improved MCP tool registration with refactored code and updated dependencies
+
 ## [0.10.5] - 2025-05-21
 
 ### Fixed

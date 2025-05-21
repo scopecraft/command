@@ -1,3 +1,4 @@
+import type { RuntimeConfig } from '../config/types.js';
 import { getFeature, getTask, listTasks } from '../task-manager/index.js';
 import {
   DevelopmentMode,

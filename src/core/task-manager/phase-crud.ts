@@ -135,10 +135,12 @@ export async function createPhase(
       name: phase.name || phase.id,
       description: phase.description || '',
       status: phase.status || '🟡 Pending',
-      order: phase.order,
+      order: phase.order || undefined,
     };
 
-    const phaseInfoContent = stringifyToml(phaseInfo);
+    const phaseInfoContent = stringifyToml(
+      phaseInfo as Record<string, string | number | undefined>
+    );
     fs.writeFileSync(phaseInfoPath, phaseInfoContent);
 
     return {
@@ -282,11 +284,15 @@ export async function updatePhase(
       const newPhaseInfoPath = path.join(newPhaseDir, '.phase.toml');
 
       // Write updated phase info
-      const phaseInfoContent = stringifyToml(updatedPhaseInfo);
+      const phaseInfoContent = stringifyToml(
+        updatedPhaseInfo as Record<string, string | number | undefined>
+      );
       fs.writeFileSync(newPhaseInfoPath, phaseInfoContent);
     } else {
       // Just update the phase info file
-      const phaseInfoContent = stringifyToml(updatedPhaseInfo);
+      const phaseInfoContent = stringifyToml(
+        updatedPhaseInfo as Record<string, string | number | undefined>
+      );
       fs.writeFileSync(phaseInfoPath, phaseInfoContent);
     }
 
