@@ -17,14 +17,7 @@ export function ClaudeSessionButton({ taskId, type }: ClaudeSessionButtonProps) 
   const [sessionExists, setSessionExists] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
-  const [selectedMode, setSelectedMode] = useState('none');
   const { addToast } = useUIContext();
-
-  // Simple mode options that should work in any environment
-  const modeOptions = [
-    { value: 'none', label: 'Basic Claude' },
-    { value: 'implement', label: 'Implementation Mode' },
-  ];
 
   // Check session status on mount and periodically
   useEffect(() => {
@@ -73,7 +66,7 @@ export function ClaudeSessionButton({ taskId, type }: ClaudeSessionButtonProps) 
 
   // Start a new session
   async function handleStartSession() {
-    console.log(`[CLAUDE BUTTON] Starting session for task ${taskId} with mode: ${selectedMode}`);
+    console.log(`[CLAUDE BUTTON] Starting session for task ${taskId}`);
     setIsStarting(true);
 
     // First check if a session already exists
@@ -95,8 +88,8 @@ export function ClaudeSessionButton({ taskId, type }: ClaudeSessionButtonProps) 
     }
 
     try {
-      // Use the SessionInput interface and validate the input
-      const success = await startClaudeSession({ taskId, mode: selectedMode, type });
+      // Use the SessionInput interface and validate the input - default to 'none' mode
+      const success = await startClaudeSession({ taskId, mode: 'none', type });
       console.log(
         `[CLAUDE BUTTON] Session start request result: ${success ? 'SUCCEEDED' : 'FAILED'}`
       );
@@ -148,35 +141,13 @@ export function ClaudeSessionButton({ taskId, type }: ClaudeSessionButtonProps) 
 
   // No session exists yet
   return (
-    <div className="inline-flex items-center gap-3">
-      <div className="flex flex-col">
-        <label htmlFor="claude-mode" className="text-xs mb-1 text-muted-foreground">
-          Claude Mode
-        </label>
-        <select
-          id="claude-mode"
-          value={selectedMode}
-          onChange={(e) => setSelectedMode(e.target.value)}
-          disabled={isStarting}
-          className="mode-selector"
-          aria-label="Select Claude mode"
-        >
-          {modeOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <Button
-        onClick={handleStartSession}
-        disabled={isStarting}
-        variant="default"
-        className="claude-session-start-btn"
-      >
-        {isStarting ? 'Starting...' : 'START CLAUDE SESSION'}
-      </Button>
-    </div>
+    <Button
+      onClick={handleStartSession}
+      disabled={isStarting}
+      variant="default"
+      className="claude-session-start-btn"
+    >
+      {isStarting ? 'Starting...' : 'START CLAUDE SESSION'}
+    </Button>
   );
 }
