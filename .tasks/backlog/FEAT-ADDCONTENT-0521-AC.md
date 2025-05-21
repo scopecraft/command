@@ -2,7 +2,7 @@
 id = "FEAT-ADDCONTENT-0521-AC"
 title = "Add Content and Completed Feature Filtering to feature_list MCP Tool"
 type = "feature"
-status = "🟡 To Do"
+status = "🔵 In Progress"
 priority = "▶️ Medium"
 created_date = "2025-05-21"
 updated_date = "2025-05-21"
