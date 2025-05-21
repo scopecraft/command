@@ -1,9 +1,7 @@
 /**
- * Utilities for interacting with tmux Claude sessions
+ * Client API for managing Claude tmux sessions
  */
 import { z } from 'zod';
-
-const SESSION_NAME = "scopecraft";
 
 // Zod schemas for validation
 export const SessionInputSchema = z.object({
@@ -149,7 +147,7 @@ export function startClaudeSession(input: SessionInput): boolean {
 /**
  * List all active Claude sessions
  * 
- * This is a client-side API that uses a backend endpoint
+ * Queries the API to get all active sessions
  * 
  * @returns Array<Session>
  */

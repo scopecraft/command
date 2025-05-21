@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { checkSessionExists, startClaudeSession, SessionInputSchema } from '../../lib/utils/tmux';
+import { checkSessionExists, startClaudeSession, SessionInputSchema } from '../../lib/api/claude-sessions';
 import { Button } from '../ui/button';
 import './SessionButton.css';
 
