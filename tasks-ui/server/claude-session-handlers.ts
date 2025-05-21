@@ -132,13 +132,16 @@ export async function handleSessionCheck(params: any): Promise<any> {
     ]);
     
     const output = result.stdout.toString();
-    const exists = output.split('\n').some(line => line.startsWith(`${taskId}-`));
+    const windowNames = output.split('\n').filter(line => line.startsWith(`${taskId}-`));
+    const exists = windowNames.length > 0;
+    const windows = exists ? windowNames : [];
     
-    logger.info(`Claude session check result`, { taskId, exists });
+    logger.info(`Claude session check result`, { taskId, exists, windows });
     
     return {
       success: true,
       exists,
+      windows,
       error: null
     };
   } catch (error) {
@@ -170,13 +173,14 @@ export async function handleSessionStart(params: any): Promise<any> {
     logger.info(`Starting Claude session`, { taskId, mode, type });
     
     // First check if session already exists to prevent duplicates
-    const checkResult = await handleSessionCheck({ taskId });
+    const checkResult = await handleSessionCheck({ taskId, type });
     if (checkResult.success && checkResult.exists) {
-      logger.info(`Session already exists, skipping creation`, { taskId, mode });
+      logger.info(`Session already exists, skipping creation`, { taskId, mode, windows: checkResult.windows });
       return { 
         success: true, 
         message: "Session already exists",
         created: false,
+        windows: checkResult.windows,
         error: null
       };
     }

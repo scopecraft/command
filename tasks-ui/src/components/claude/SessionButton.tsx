@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useUIContext } from '../../context/UIContext';
 import {
   SessionInputSchema,
   checkSessionExists,
@@ -17,6 +18,7 @@ export function ClaudeSessionButton({ taskId, type }: ClaudeSessionButtonProps) 
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const [selectedMode, setSelectedMode] = useState('none');
+  const { addToast } = useUIContext();
 
   // Simple mode options that should work in any environment
   const modeOptions = [
@@ -33,10 +35,10 @@ export function ClaudeSessionButton({ taskId, type }: ClaudeSessionButtonProps) 
       if (!isMounted) return;
 
       try {
-        const exists = await checkSessionExists(taskId, type);
+        const result = await checkSessionExists(taskId, type);
 
         if (isMounted) {
-          setSessionExists(exists);
+          setSessionExists(result.exists);
           setIsLoading(false);
         }
       } catch (_error) {
@@ -62,8 +64,8 @@ export function ClaudeSessionButton({ taskId, type }: ClaudeSessionButtonProps) 
     try {
       // Validate input before checking
       SessionInputSchema.parse({ taskId, type });
-      const exists = await checkSessionExists(taskId, type);
-      setSessionExists(exists);
+      const result = await checkSessionExists(taskId, type);
+      setSessionExists(result.exists);
     } catch (error) {
       console.error('[CLAUDE BUTTON] Error checking session status:', error);
     }
@@ -74,6 +76,24 @@ export function ClaudeSessionButton({ taskId, type }: ClaudeSessionButtonProps) 
     console.log(`[CLAUDE BUTTON] Starting session for task ${taskId} with mode: ${selectedMode}`);
     setIsStarting(true);
 
+    // First check if a session already exists
+    const result = await checkSessionExists(taskId, type);
+
+    if (result.exists) {
+      const windowsList = result.windows.join(', ');
+      const windowsInfo = result.windows.length > 0 ? ` (${windowsList})` : '';
+      // Session already exists, show a toast notification
+      addToast({
+        type: 'info',
+        title: 'Session Already Running',
+        message: `Claude session for ${taskId} is already running in a terminal window${windowsInfo}.`,
+        duration: 5000,
+      });
+      setIsStarting(false);
+      setSessionExists(true);
+      return;
+    }
+
     try {
       // Use the SessionInput interface and validate the input
       const success = await startClaudeSession({ taskId, mode: selectedMode, type });
@@ -81,12 +101,29 @@ export function ClaudeSessionButton({ taskId, type }: ClaudeSessionButtonProps) 
         `[CLAUDE BUTTON] Session start request result: ${success ? 'SUCCEEDED' : 'FAILED'}`
       );
 
+      if (success) {
+        addToast({
+          type: 'success',
+          title: 'Claude Session Started',
+          message: `Successfully started Claude session for ${taskId}`,
+          duration: 3000,
+        });
+      }
+
       // Check session status immediately after creation
       await checkStatus();
       setIsStarting(false);
     } catch (error) {
       console.error('[CLAUDE BUTTON] Failed to start session:', error);
       setIsStarting(false);
+
+      // Show error toast
+      addToast({
+        type: 'error',
+        title: 'Failed to Start Session',
+        message: error instanceof Error ? error.message : 'An unknown error occurred',
+        duration: 5000,
+      });
     }
   }
 

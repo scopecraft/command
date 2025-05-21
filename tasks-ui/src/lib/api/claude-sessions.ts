@@ -12,13 +12,22 @@ export const SessionInputSchema = z.object({
 
 export type SessionInput = z.infer<typeof SessionInputSchema>;
 
+interface SessionCheckResult {
+  exists: boolean;
+  windows?: string[];
+}
+
 /**
  * Check if a Claude session exists for the given task ID
  *
  * @param taskId - The task ID to check
- * @returns Promise<boolean> - True if session exists, false otherwise
+ * @param type - The type of ID (task or feature)
+ * @returns Promise<SessionCheckResult> - Result with exists flag and windows if any
  */
-export async function checkSessionExists(taskId: string, type: 'task' | 'feature'): Promise<boolean> {
+export async function checkSessionExists(
+  taskId: string,
+  type: 'task' | 'feature'
+): Promise<SessionCheckResult> {
   try {
     // Validate input
     SessionInputSchema.parse({ taskId, type });
@@ -26,7 +35,9 @@ export async function checkSessionExists(taskId: string, type: 'task' | 'feature
     console.log(`[CLAUDE SESSION] Checking if session exists for taskId: ${taskId}`);
 
     // Call the API to check session status
-    const response = await fetch(`/api/claude-sessions/check?taskId=${encodeURIComponent(taskId)}&type=${encodeURIComponent(type)}`);
+    const response = await fetch(
+      `/api/claude-sessions/check?taskId=${encodeURIComponent(taskId)}&type=${encodeURIComponent(type)}`
+    );
 
     if (!response.ok) {
       throw new Error(`API returned status ${response.status}`);
@@ -35,11 +46,14 @@ export async function checkSessionExists(taskId: string, type: 'task' | 'feature
     const data = await response.json();
     console.log('[CLAUDE SESSION] API session check result:', data);
 
-    // Return existence status from API
-    return data.success && data.exists;
+    // Return existence status and windows from API
+    return {
+      exists: data.success && data.exists,
+      windows: data.windows || [],
+    };
   } catch (error) {
     console.error(`[CLAUDE SESSION] Error checking session for ${taskId}:`, error);
-    return false;
+    return { exists: false, windows: [] };
   }
 }
 
