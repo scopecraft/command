@@ -547,15 +547,14 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     async (params) => {
       try {
         // No logging output to avoid interfering with MCP protocol
-        const result = await createFeature(
-          params.name,
-          params.title,
-          params.phase,
-          params.type || '🌟 Feature',
-          params.description,
-          params.assignee,
-          params.tags
-        );
+        const result = await createFeature(params.name, {
+          title: params.title,
+          phase: params.phase,
+          type: params.type || '🌟 Feature',
+          description: params.description,
+          assignee: params.assignee,
+          tags: params.tags,
+        });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);

@@ -5,6 +5,28 @@ All notable changes to Scopecraft Command will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.5] - 2025-05-21
+
+### Fixed
+- **MCP Feature Creation**: Fixed parameter structure mismatch in feature_create MCP tool that was causing "undefined" errors
+- **CI/CD Pipeline**: Improved error handling in continuous integration workflow
+- **Worktree Dashboard**: Fixed feature status calculations to properly derive from task progress
+
+### Improved
+- **UI Components**: Enhanced Worktree Dashboard with better layout and styling
+- **Task Management**: Added Claude session button for task and feature UI
+- **CLI Workflow**: Added fish shell integration for automatic directory changing with task worktrees
+
+## [0.10.4] - 2025-05-20
+
+### Added
+- **Worktree Dashboard**: New dashboard to visualize and manage git worktrees
+- **Task UI Enhancements**: Added collapsible sections to sidebar for better organization
+
+### Fixed
+- **JSON Streaming**: Fixed Claude JSON format handling in task UI
+- **Feature Management**: Removed taskId modification for features to maintain consistency
+
 ## [0.10.1] - 2025-05-19
 
 ### Fixed

@@ -7,15 +7,11 @@ import path from 'node:path';
  */
 import { Command } from 'commander';
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import {
-  ensureDirectoryExists,
-  getTasksDirectory,
-  projectConfig,
-} from '../core/index.js';
+import { ensureDirectoryExists, getTasksDirectory, projectConfig } from '../core/index.js';
 import { startServer } from './server.js';
 
 // Read package version from package.json
-let version = '0.10.4'; // Default
+let version = '0.10.5'; // Default
 try {
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
@@ -60,7 +56,9 @@ program
 
     // Handle mode option - now this is handled by configuration manager
     if (options.mode) {
-      console.log(`Note: Mode option is deprecated. Project configuration is now managed automatically.`);
+      console.log(
+        `Note: Mode option is deprecated. Project configuration is now managed automatically.`
+      );
     }
 
     // Validate environment using projectConfig
@@ -68,9 +66,7 @@ program
       const rootDir = projectConfig.getTasksDirectory();
 
       console.error(`Error: Project structure not found in the current directory`);
-      console.error(
-        `Initialize the project first with "sc init"`
-      );
+      console.error(`Initialize the project first with "sc init"`);
 
       // Attempt to create the directory structure if it doesn't exist
       try {
