@@ -35,12 +35,16 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
   // Check if session exists
   function checkStatus() {
     try {
+      console.log(`[CLAUDE BUTTON] Checking status for task: ${taskId}`);
+      
       // Validate taskId before checking
       SessionInputSchema.parse({ taskId });
       const exists = checkSessionExists(taskId);
+      
+      console.log(`[CLAUDE BUTTON] Session status changed: ${sessionExists} -> ${exists}`);
       setSessionExists(exists);
     } catch (error) {
-      console.error("Error checking session status:", error);
+      console.error("[CLAUDE BUTTON] Error checking session status:", error);
     } finally {
       setIsLoading(false);
     }
@@ -48,19 +52,23 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
   
   // Start a new session
   function handleStartSession() {
+    console.log(`[CLAUDE BUTTON] Starting session for task ${taskId} with mode: ${selectedMode}`);
     setIsStarting(true);
     
     try {
       // Use the SessionInput interface and validate the input
-      startClaudeSession({ taskId, mode: selectedMode });
+      const success = startClaudeSession({ taskId, mode: selectedMode });
+      console.log(`[CLAUDE BUTTON] Session start request result: ${success ? 'INITIATED' : 'FAILED'}`);
       
-      // Wait a second for tmux to create the session
+      // Wait a bit longer for tmux to create the session
+      console.log(`[CLAUDE BUTTON] Waiting for session to be created...`);
       setTimeout(() => {
+        console.log(`[CLAUDE BUTTON] Checking session status after creation attempt`);
         checkStatus();
         setIsStarting(false);
-      }, 1000);
+      }, 1500);
     } catch (error) {
-      console.error("Failed to start session:", error);
+      console.error("[CLAUDE BUTTON] Failed to start session:", error);
       setIsStarting(false);
     }
   }
