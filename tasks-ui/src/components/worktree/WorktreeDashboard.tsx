@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import {
+  type OperationResult,
   fetchWorktree,
   fetchWorktrees,
   getDashboardConfig,
@@ -50,11 +51,13 @@ export function WorktreeDashboard() {
   const [config, setConfig] = useState<WorktreeDashboardConfig>({
     refreshInterval: 30000,
     showTaskInfo: true,
+    autoRefreshEnabled: true,
   });
 
   // State for refresh timer
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   // Fetch initial data
   useEffect(() => {
@@ -67,7 +70,9 @@ export function WorktreeDashboard() {
     if (!autoRefreshEnabled) return;
 
     const interval = setInterval(() => {
-      refreshWorktrees();
+      refreshWorktrees().catch((err) => {
+        setRefreshError(err instanceof Error ? err.message : 'Error refreshing worktrees');
+      });
     }, config.refreshInterval);
 
     return () => clearInterval(interval);
@@ -75,9 +80,17 @@ export function WorktreeDashboard() {
 
   // Load dashboard configuration
   const loadDashboardConfig = async () => {
-    const result = await getDashboardConfig();
-    if (result.success && result.data) {
-      setConfig(result.data);
+    try {
+      const result = await getDashboardConfig();
+      if (result.success && result.data) {
+        setConfig(result.data);
+        // Set auto-refresh based on config
+        if (result.data.autoRefreshEnabled !== undefined) {
+          setAutoRefreshEnabled(result.data.autoRefreshEnabled);
+        }
+      }
+    } catch (error) {
+      // Continue with default values - non-critical error
     }
   };
 
@@ -89,28 +102,49 @@ export function WorktreeDashboard() {
     }
   };
 
+  // Helper to update worktree data
+  const updateWorktreeData = (result: OperationResult<Worktree[]>) => {
+    if (result.success && result.data) {
+      setWorktrees(result.data);
+    } else {
+      setError(result.message || 'Failed to fetch worktrees');
+    }
+  };
+
+  // Helper to update summary data
+  const updateSummaryData = async () => {
+    try {
+      const summaryResult = await getWorktreeSummary();
+      if (summaryResult.success && summaryResult.data) {
+        setSummary(summaryResult.data);
+      } else if (summaryResult.message) {
+        // Non-critical warning - silently handle
+      }
+    } catch (err) {
+      // Non-critical error - continue without summary data
+    }
+  };
+
   // Refresh all worktrees
   const refreshWorktrees = async () => {
     setLoading(true);
     setError(null);
+    setRefreshError(null);
 
     try {
       // Fetch worktrees
       const result = await fetchWorktrees();
 
-      if (result.success && result.data) {
-        setWorktrees(result.data);
+      // Update UI with result
+      updateWorktreeData(result);
 
-        // Get summary statistics
-        const summaryResult = await getWorktreeSummary();
-        if (summaryResult.success && summaryResult.data) {
-          setSummary(summaryResult.data);
-        }
-      } else {
-        setError(result.message || 'Failed to fetch worktrees');
+      // Get summary statistics (non-blocking)
+      if (result.success) {
+        updateSummaryData();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error refreshing worktrees');
+      throw err; // Re-throw for the useEffect handler
     } finally {
       setLoading(false);
       setLastRefresh(new Date());
@@ -159,10 +193,29 @@ export function WorktreeDashboard() {
 
   // Toggle auto-refresh
   const toggleAutoRefresh = () => {
-    setAutoRefreshEnabled(!autoRefreshEnabled);
+    const newState = !autoRefreshEnabled;
+    setAutoRefreshEnabled(newState);
+
+    // Save configuration if auto-refresh is toggled
+    if (config) {
+      saveDashboardConfig({
+        ...config,
+        autoRefreshEnabled: newState,
+      });
+    }
   };
 
-
+  // Change refresh interval
+  const _updateRefreshInterval = (interval: number) => {
+    if (config) {
+      const newConfig = {
+        ...config,
+        refreshInterval: interval,
+      };
+      setConfig(newConfig);
+      saveDashboardConfig(newConfig);
+    }
+  };
 
   // Render loading state
   if (loading && worktrees.length === 0) {
@@ -248,14 +301,16 @@ export function WorktreeDashboard() {
                     : '';
 
                   // Get branch or task display name
-                  const displayName = worktree.taskId 
-                    ? worktree.taskId.split('-')[0] 
+                  const displayName = worktree.taskId
+                    ? worktree.taskId.split('-')[0]
                     : worktree.branch.replace(/^(feature|bugfix|hotfix)\//, '');
 
                   return (
                     <div key={worktree.path} className="flex items-center text-xs">
                       <span className="font-medium text-primary-foreground/80">{displayName}:</span>
-                      <span className="ml-1.5 text-muted-foreground">{activityDesc} ({timeAgo})</span>
+                      <span className="ml-1.5 text-muted-foreground">
+                        {activityDesc} ({timeAgo})
+                      </span>
                     </div>
                   );
                 })}
@@ -298,6 +353,9 @@ export function WorktreeDashboard() {
               Last refreshed: {formattedTime}
               {autoRefreshEnabled && (
                 <span className="ml-2">(Auto-refresh every {config.refreshInterval / 1000}s)</span>
+              )}
+              {refreshError && (
+                <div className="text-destructive/80 mt-1">Auto-refresh error: {refreshError}</div>
               )}
             </div>
           </div>
