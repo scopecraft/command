@@ -1,66 +1,127 @@
 +++
-id = "RESEARCH-RESEARCHGIT-0520-JB"
-title = "Research Git Worktree Integration with simplegit"
-type = "research"
+id = "ARCH-WORKTREEDASHARCHTECTURE-0520-XT"
+title = "Worktree Dashboard Architecture Analysis and Design"
+type = "architecture"
 status = "🟡 To Do"
 priority = "▶️ Medium"
 created_date = "2025-05-20"
 updated_date = "2025-05-20"
 assigned_to = ""
 phase = "backlog"
-tags = [ "AREA:core", "TaskWorktree" ]
+parent_task = "worktree-dashboard"
+tags = [ "AREA:core", "AREA:UI", "AREA:architecture", "TaskWorktree" ]
 subdirectory = "FEATURE_worktree-dashboard"
 +++
 
-# Research Git Worktree Integration with simplegit
+# Architecture Task: Worktree Dashboard Implementation Analysis and Design
 
-This research task will investigate how to effectively implement git worktree operations and monitoring using the simplegit package for the Worktree Dashboard feature.
+## Introduction
+This architecture task will analyze the existing worktree dashboard prototype, determine essential functionality for v1, design the necessary services and APIs, and establish implementation priorities.
 
-## WebSearch Queries
-- "git worktree operations simplegit js implementation examples"
-- "git worktree status monitor node.js 2024"
-- "git worktree branch tracking typescript library"
-- "efficient git status polling performance 2025"
-- "secure git operations via API React web"
+## Analysis Phase
 
-## Questions to Answer
-- How can we detect and list all active git worktrees for a repository using simplegit?
-- What is the most efficient way to extract git status information (changes, branch, commit) for multiple worktrees?
-- How can we correlate git branch names with task IDs reliably?
-- What are the performance implications of frequently polling git status?
-- What security considerations exist when exposing git operations via web APIs?
+### Analyze Prototype Implementation
+- [ ] Review WorktreeCard and WorktreeDashboard component requirements
+- [ ] Document data fields currently used in UI components
+- [ ] Identify UI interaction patterns that require backend support
+- [ ] Analyze refresh patterns and data loading requirements
+- [ ] Review error handling and edge cases in the prototype
 
-## Technical Areas to Investigate
+### Map Essential Data Requirements
+- [ ] Document essential git information needed from simplegit
+- [ ] Identify which worktree metadata is critical for v1
+- [ ] Determine minimum task metadata needed from MCP
+- [ ] Investigate complexity of retrieving detailed tasks under features using rootPath
+- [ ] Document which UI elements can be simplified or deferred to v2
 
-### Git Worktree Discovery
-- Commands for listing active worktrees
-- Parsing worktree output for path, branch, and status information
-- Detecting when worktrees are added or removed
+## Simplegit Capabilities Assessment
 
-### Git Status Monitoring
-- Efficient ways to check uncommitted changes
-- Retrieving last commit information
-- Determining when a worktree was last active
+### Research Current Git Operation Capabilities
+- [ ] Review the sample script for applicable patterns
+- [ ] Research simplegit methods for worktree discovery (`git worktree list --porcelain`)
+- [ ] Document available methods for status retrieval (`git status --porcelain`)
+- [ ] Investigate commit history and timestamp retrieval options
+- [ ] Research branch tracking and remote status detection
 
-### Status Polling Strategies
-- Event-based vs. time-based polling
-- Optimal refresh intervals for balancing performance and responsiveness
-- Caching strategies to minimize redundant operations
+### System Integration Evaluation
+- [ ] Determine how to correlate git branches with task IDs
+- [ ] Research performance considerations for multiple worktree polling
+- [ ] Document any limitations in simplegit for worktree operations
+- [ ] Identify any OS-specific considerations for file paths
+- [ ] Evaluate error handling patterns for git operations
 
-### Security Considerations
-- Sanitization of git command inputs
-- Limiting API operations to safe, read-only commands
-- Handling file system access permissions across operating systems
+## Design Phase
 
-## Libraries to Evaluate
-- simplegit implementation details and limitations
-- Alternative libraries if simplegit is insufficient
-- Complementary packages for efficient polling and caching
+### Component Architecture
+- [ ] Design WorktreeService class structure and responsibilities
+- [ ] Define data models and interfaces for git operations
+- [ ] Map integration points between UI components and services
+- [ ] Design caching strategy for performance optimization
+- [ ] Document error handling approach
 
-## Reference Implementation
+### API Definition
+- [ ] Define specific API endpoints required for dashboard
+- [ ] Design request/response schemas for each endpoint
+- [ ] Map which git operations are needed for each API
+- [ ] Document direct MCP handler integration approach for task metadata
+- [ ] Define error response format and status codes
 
-The following script provides a starting point for monitoring git worktrees and can be used as reference for the implementation:
+### Integration Strategy
+- [ ] Document how WorktreeService will interact with simplegit
+- [ ] Define integration pattern for calling MCP handlers with rootPath
+- [ ] Design refresh strategy for dashboard data
+- [ ] Plan how to handle worktree discovery and status detection
+- [ ] Map task/feature correlation with branch names
 
+## Decision Phase
+
+### v1 Scope Decisions
+- [ ] Decide on inclusion/exclusion of detailed feature tasks (based on investigation)
+- [ ] Finalize which status indicators can be implemented for v1
+- [ ] Determine if any additional UI simplifications are needed
+- [ ] Decide on refresh rate and polling strategy
+- [ ] Set performance targets for 5-10 concurrent worktrees
+
+### Implementation Priorities
+- [ ] Rank API endpoints by implementation priority
+- [ ] Identify potential technical challenges and risks
+- [ ] Determine testing strategy for git operations
+- [ ] Document any security considerations for git access
+- [ ] Plan phased implementation approach
+
+## Documentation Phase
+
+### Technical Documentation
+- [ ] Document final architecture decisions with rationale
+- [ ] Create interface specifications for all components
+- [ ] Document data flow diagrams for key operations
+- [ ] Create API specification with examples
+- [ ] Document caching and performance strategies
+
+### Handoff Materials
+- [ ] Prepare implementation guidelines for development team
+- [ ] Document known limitations and v2 considerations
+- [ ] Create reference links to sample code and examples
+- [ ] Document test cases for critical functionality
+- [ ] Prepare architectural review presentation
+
+## Acceptance Criteria
+- [ ] Complete analysis of prototype with clear v1 requirements
+- [ ] Defined API specifications with request/response schemas
+- [ ] Clear decision on inclusion of detailed feature tasks
+- [ ] Documented integration approach for task metadata via MCP
+- [ ] Prioritized implementation plan with identified risks
+- [ ] Technical documentation sufficient for implementation
+
+## References
+
+### Prototype Implementation
+Start looking at the following files for the prototype implementation:
+- WorktreeCard component: `/src/components/WorktreeCard.tsx`
+- WorktreeDashboard component: `/src/components/WorktreeDashboard.tsx`
+- Completed feature task: `/.tasks/backlog/FEATURE_worktree-dashboard/FEAT-CREATEWORKTREEDASHBOARD-0520-ZB.md`
+
+### Sample Git Operations Script
 ```typescript
 #!/usr/bin/env bun
 
@@ -469,36 +530,3 @@ if (import.meta.main) {
   main().catch(console.error);
 }
 ```
-
-### Key Implementation Points to Adapt from Reference
-
-1. **Worktree discovery using `git worktree list --porcelain`**
-   - The script already parses the output format correctly
-   - Need to adapt this approach to use simplegit instead of direct exec calls
-
-2. **Git status monitoring approach**
-   - Uses polling with configurable intervals
-   - Includes status change detection to minimize redundant output
-   - Has throttling mechanisms for rapid changes
-
-3. **Data model**
-   - Defines a Worktree interface that can be reused and expanded
-   - Includes methods for handling status, commits, and changes
-
-4. **Error handling**
-   - Handles edge cases like non-existent paths
-   - Silently handles some errors while logging important ones
-
-## Deliverables
-- Documentation of simplegit usage for worktree operations
-- Code examples for key operations (discovery, status checking)
-- Recommendations for polling frequency and caching strategy
-- Security guidelines for git operations via API
-- Performance benchmarks for different polling approaches
-
-## Acceptance Criteria
-- [ ] Document all necessary git worktree commands and their simplegit equivalents
-- [ ] Provide working code examples for worktree discovery and status checking
-- [ ] Determine optimal polling strategy with performance considerations
-- [ ] Identify security risks and mitigation strategies
-- [ ] Make clear recommendations for implementation approach
