@@ -102,7 +102,10 @@
       "Bash(bun npx biome check:*)",
       "Bash(npx biome check:*)",
       "Bash(npx tsc:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__scopecraft-cmd__task_update",
+      "mcp__scopecraft-cmd__task_list",
+      "Bash(http GET:*)"
     ],
     "deny": []
   }
