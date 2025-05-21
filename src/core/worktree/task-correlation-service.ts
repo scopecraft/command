@@ -1,13 +1,19 @@
-import { getFeature, getTask } from '../task-manager/index.js';
-import { TaskCorrelationError, Worktree, FeatureProgress, DevelopmentMode, WorkflowStatus } from './types.js';
-import { WorktreeService } from './worktree-service.js';
+import { getFeature, getTask, listTasks } from '../task-manager/index.js';
+import {
+  DevelopmentMode,
+  type FeatureProgress,
+  TaskCorrelationError,
+  WorkflowStatus,
+  type Worktree,
+} from './types.js';
+import type { WorktreeService } from './worktree-service.js';
 
 /**
  * Service for correlating worktrees with task metadata
  */
 export class TaskCorrelationService {
   private worktreeService: WorktreeService;
-  
+
   /**
    * Creates a new TaskCorrelationService
    * @param worktreeService The worktree service to use
@@ -27,46 +33,155 @@ export class TaskCorrelationService {
       if (!worktree.taskId) {
         return worktree;
       }
+
+      let taskId = worktree.taskId;
+      let branchComponent = '';
+
+      // Extract the potential identifier from branch name without complex regex
+      // This handles 'feature/name', 'feature-name', etc. formats
+      if (worktree.branch) {
+        const parts = worktree.branch.split(/[/-]/);
+        if (parts.length > 1 && parts[0].toLowerCase() === 'feature') {
+          branchComponent = parts.slice(1).join('-');
+        }
+      }
+
+      // Create a runtime config that includes the worktree's path as rootPath
+      // This ensures we look for tasks/features in the worktree, not just the main repo
+      const worktreeConfig = {
+        rootPath: worktree.path
+      };
+
+      // First try to get task metadata using direct taskId with worktree rootPath
+      let taskResult = await getTask(taskId, { config: worktreeConfig });
+
+      // If not found in worktree, try main repo as fallback
+      if (!taskResult.success) {
+        taskResult = await getTask(taskId);
+      }
+
+      // If not found and we have a branch component, try that in worktree
+      if (!taskResult.success && branchComponent && branchComponent !== taskId) {
+        taskResult = await getTask(branchComponent, { config: worktreeConfig });
+        
+        // If not found in worktree, try main repo as fallback
+        if (!taskResult.success) {
+          taskResult = await getTask(branchComponent);
+        }
+        
+        // Update taskId if we found a match
+        if (taskResult.success) {
+          taskId = branchComponent;
+        }
+      }
+
+      // If task is found, process it as a regular task
+      if (taskResult.success && taskResult.data) {
+        const task = taskResult.data;
+
+        // Get mode from task tags (area)
+        const mode = this.extractModeFromTags(task.metadata.tags || []);
+
+        // Ensure we have a task status
+        const taskStatus = task.metadata.status || 'Unknown';
+
+        // Enhance worktree with task metadata
+        const enhancedWorktree: Worktree = {
+          ...worktree,
+          taskTitle: task.metadata.title,
+          taskStatus,
+          workflowStatus: this.worktreeService.mapTaskStatusToWorkflow(taskStatus),
+          mode: {
+            current: mode,
+          },
+        };
+
+        // If task has a parent feature, get feature progress
+        if (task.metadata.parent_task) {
+          try {
+            // Check worktree first, then fall back to main repo
+            const featureProgress = await this.getFeatureProgress(
+              task.metadata.parent_task, 
+              worktreeConfig
+            );
+            
+            if (featureProgress) {
+              enhancedWorktree.featureProgress = featureProgress;
+            }
+          } catch (_error) {
+            // Ignore feature progress errors
+          }
+        }
+
+        return enhancedWorktree;
+      }
+
+      // Task not found, try as feature now - first in worktree
+      let featureResult = await getFeature(taskId, { 
+        phase: undefined,
+        config: worktreeConfig
+      });
       
-      // Get task metadata
-      const taskResult = await getTask(worktree.taskId);
-      
-      if (!taskResult.success || !taskResult.data) {
-        return worktree;
+      // If not found in worktree, try main repo
+      if (!featureResult.success) {
+        featureResult = await getFeature(taskId, { phase: undefined });
       }
       
-      const task = taskResult.data;
-      
-      // Get mode from task tags (area)
-      const mode = this.extractModeFromTags(task.metadata.tags || []);
-      
-      // Ensure we have a task status
-      const taskStatus = task.metadata.status || 'Unknown';
-      
-      // Enhance worktree with task metadata
-      const enhancedWorktree: Worktree = {
-        ...worktree,
-        taskTitle: task.metadata.title,
-        taskStatus,
-        workflowStatus: this.worktreeService.mapTaskStatusToWorkflow(taskStatus),
-        mode: {
-          current: mode,
-        },
-      };
-      
-      // If task has a parent feature, get feature progress
-      if (task.metadata.parent_task) {
-        try {
-          const featureProgress = await this.getFeatureProgress(task.metadata.parent_task);
-          if (featureProgress) {
-            enhancedWorktree.featureProgress = featureProgress;
-          }
-        } catch (error) {
-          // Ignore feature progress errors
+      // If not found and we have a branch component, try that in worktree
+      if (!featureResult.success && branchComponent && branchComponent !== taskId) {
+        featureResult = await getFeature(branchComponent, { 
+          phase: undefined,
+          config: worktreeConfig
+        });
+        
+        // If not found in worktree, try main repo
+        if (!featureResult.success) {
+          featureResult = await getFeature(branchComponent, { phase: undefined });
+        }
+        
+        // If found, update taskId
+        if (featureResult.success) {
+          taskId = branchComponent;
         }
       }
       
-      return enhancedWorktree;
+      // If feature is found, process it
+      if (featureResult.success && featureResult.data) {
+        // Found a feature - treat this as a feature worktree
+        const feature = featureResult.data;
+
+        // Use overview data if available
+        const title = feature.overview?.metadata?.title || feature.name || taskId;
+        const status = feature.overview?.metadata?.status || 'Unknown';
+
+        // Get mode from tags if available
+        const tags = feature.overview?.metadata?.tags || [];
+        const mode = this.extractModeFromTags(tags);
+
+        // Get feature progress - use the ID without FEATURE_ prefix for consistency
+        // Try worktree first, then fall back to main repo
+        const featureProgress = await this.getFeatureProgress(
+          feature.id.replace(/^FEATURE_/, ''),
+          worktreeConfig
+        );
+
+        // Enhance worktree with feature metadata
+        const enhancedWorktree: Worktree = {
+          ...worktree,
+          taskTitle: title,
+          taskStatus: status,
+          workflowStatus: this.worktreeService.mapTaskStatusToWorkflow(status),
+          mode: {
+            current: mode,
+          },
+          featureProgress: featureProgress,
+        };
+
+        return enhancedWorktree;
+      }
+
+      // Neither task nor feature found
+      return worktree;
     } catch (error) {
       // If correlation fails, return the original worktree
       console.error('Task correlation error:', error);
@@ -80,67 +195,235 @@ export class TaskCorrelationService {
    * @returns Enhanced worktrees with task metadata
    */
   async correlateWorktreesWithTasks(worktrees: Worktree[]): Promise<Worktree[]> {
-    return Promise.all(
-      worktrees.map(worktree => this.correlateWorktreeWithTask(worktree))
-    );
+    return Promise.all(worktrees.map((worktree) => this.correlateWorktreeWithTask(worktree)));
   }
 
   /**
    * Gets feature progress information
    * @param featureId Feature ID
+   * @param config Optional runtime configuration (for worktree-specific lookups)
    * @returns Feature progress or undefined if not found
    */
-  async getFeatureProgress(featureId: string): Promise<FeatureProgress | undefined> {
+  async getFeatureProgress(featureId: string, config?: RuntimeConfig): Promise<FeatureProgress | undefined> {
     try {
-      // Use the feature_get method with appropriate parameters
-      const featureResult = await getFeature(featureId, { phase: undefined });
+      // Get feature details with completed tasks, passing through config
+      const feature = await this.getFeatureDetails(featureId, config);
       
-      if (!featureResult.success || !featureResult.data) {
-        throw new TaskCorrelationError(`Feature not found: ${featureId}`);
-      }
+      // Instead of using feature.tasks (which may be incomplete),
+      // directly list all tasks in the feature subdirectory
+      const featureDirName = featureId.startsWith('FEATURE_') ? featureId : `FEATURE_${featureId}`;
+      const listResult = await listTasks({
+        subdirectory: featureDirName,
+        include_completed: true,
+        include_content: true,
+        config
+      });
       
-      const feature = featureResult.data;
-      
-      // Count tasks in each status category
-      let completed = 0;
-      let inProgress = 0;
-      let blocked = 0;
-      let toDo = 0;
-      
-      const tasks = feature.tasks || [];
-      
-      for (const taskId of tasks) {
-        // Get the task details
-        const taskResult = await getTask(taskId);
-        if (taskResult.success && taskResult.data) {
-          const task = taskResult.data;
-          const status = (task.metadata.status || '').toLowerCase();
-          
-          if (status.includes('done') || status.includes('complete') || status.includes('🟢')) {
-            completed++;
-          } else if (status.includes('progress') || status.includes('working') || status.includes('🔵')) {
-            inProgress++;
-          } else if (status.includes('blocked') || status.includes('waiting') || status.includes('🔴')) {
-            blocked++;
-          } else if (status.includes('to do') || status.includes('todo') || status.includes('🟡')) {
-            toDo++;
-          }
-        }
-      }
-      
+      // Get task IDs from the list result
+      const taskIds = listResult.success && listResult.data ? 
+        listResult.data.map(task => task.metadata.id) : 
+        feature.tasks || [];
+
+      // Process task statuses, passing through config
+      const statusCounts = await this.countTasksByStatus(taskIds, config);
+
+      // Get detailed task information, passing through config
+      const taskDetails = await this.getTaskDetails(taskIds, config);
+
       // Create the feature progress object
-      const featureProgress: FeatureProgress = {
-        totalTasks: tasks.length,
-        completed,
-        inProgress,
-        blocked,
-        toDo,
+      return {
+        totalTasks: taskIds.length,
+        ...statusCounts,
+        tasks: taskDetails,
       };
-      
-      return featureProgress;
     } catch (error) {
-      throw new TaskCorrelationError(`Failed to get feature progress: ${error instanceof Error ? error.message : String(error)}`);
+      throw new TaskCorrelationError(
+        `Failed to get feature progress: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
+  }
+
+  /**
+   * Gets feature details from the feature ID
+   * @param featureId The feature ID
+   * @param config Optional runtime configuration (for worktree-specific lookups)
+   * @returns Feature data
+   */
+  private async getFeatureDetails(featureId: string, config?: RuntimeConfig): Promise<{ tasks?: string[] }> {
+    // Try with config first (worktree-specific lookup)
+    let featureResult = await getFeature(featureId, { 
+      phase: undefined,
+      config,
+      include_completed: true,    // Include completed tasks in the feature
+      include_tasks: true,        // Include tasks list
+      include_content: true       // Include full content
+    });
+
+    // If not found and config was provided, try without config (main repo fallback)
+    if (!featureResult.success && config) {
+      featureResult = await getFeature(featureId, { 
+        phase: undefined,
+        include_completed: true,  // Include completed tasks in the feature
+        include_tasks: true,      // Include tasks list  
+        include_content: true     // Include full content
+      });
+    }
+
+    if (!featureResult.success || !featureResult.data) {
+      throw new TaskCorrelationError(`Feature not found: ${featureId}`);
+    }
+
+    return featureResult.data;
+  }
+
+  /**
+   * Counts tasks by status categories
+   * @param taskIds Array of task IDs
+   * @param config Optional runtime configuration (for worktree-specific lookups)
+   * @returns Object with counts for each status category
+   */
+  private async countTasksByStatus(taskIds: string[], config?: RuntimeConfig): Promise<{
+    completed: number;
+    inProgress: number;
+    blocked: number;
+    toDo: number;
+  }> {
+    // Initialize counters
+    const counters = {
+      completed: 0,
+      inProgress: 0,
+      blocked: 0,
+      toDo: 0,
+    };
+
+    // Force inclusion of completed tasks
+    const configWithCompleted = config ? 
+      { ...config, include_completed: true } : 
+      { include_completed: true };
+
+    // Get tasks and count by status, passing through config
+    await this.processTaskStatuses(taskIds, counters, configWithCompleted);
+
+    return counters;
+  }
+
+  /**
+   * Processes tasks and updates status counters
+   * @param taskIds Task IDs to process
+   * @param counters Status counters to update
+   * @param config Optional runtime configuration (for worktree-specific lookups)
+   */
+  private async processTaskStatuses(
+    taskIds: string[],
+    counters: { completed: number; inProgress: number; blocked: number; toDo: number },
+    config?: RuntimeConfig
+  ): Promise<void> {
+    for (const taskId of taskIds) {
+      // Try with config first (worktree-specific lookup), specifically including completed tasks
+      let taskResult = await getTask(taskId, { 
+        config, 
+        include_completed: true 
+      });
+      
+      // If not found in worktree and config provided, try main repo as fallback
+      if ((!taskResult.success || !taskResult.data) && config) {
+        taskResult = await getTask(taskId, { 
+          include_completed: true 
+        });
+      }
+      
+      if (!taskResult.success || !taskResult.data) continue;
+
+      const status = (taskResult.data.metadata.status || '').toLowerCase();
+      this.updateStatusCounter(status, counters);
+    }
+  }
+
+  /**
+   * Updates the appropriate status counter based on the status
+   * @param status The task status string
+   * @param counters The counters object to update
+   */
+  private updateStatusCounter(
+    status: string,
+    counters: { completed: number; inProgress: number; blocked: number; toDo: number }
+  ): void {
+    if (this.isCompletedStatus(status)) {
+      counters.completed++;
+    } else if (this.isInProgressStatus(status)) {
+      counters.inProgress++;
+    } else if (this.isBlockedStatus(status)) {
+      counters.blocked++;
+    } else if (this.isToDoStatus(status)) {
+      counters.toDo++;
+    }
+  }
+
+  /**
+   * Gets detailed task information for UI display
+   * @param taskIds Array of task IDs
+   * @param config Optional runtime configuration (for worktree-specific lookups)
+   * @returns Array of task details objects
+   */
+  private async getTaskDetails(
+    taskIds: string[],
+    config?: RuntimeConfig
+  ): Promise<
+    Array<{
+      id: string;
+      title: string;
+      status: string;
+    }>
+  > {
+    const taskDetails = [];
+    
+    // Force inclusion of completed tasks
+    const configWithCompleted = config ? 
+      { ...config, include_completed: true } : 
+      { include_completed: true };
+
+    for (const taskId of taskIds) {
+      // Try with config first (worktree-specific lookup with completed tasks)
+      let taskResult = await getTask(taskId, { 
+        config: configWithCompleted,
+        include_completed: true
+      });
+      
+      // If not found in worktree and config provided, try main repo as fallback
+      if ((!taskResult.success || !taskResult.data) && config) {
+        taskResult = await getTask(taskId, {
+          include_completed: true
+        });
+      }
+      
+      if (taskResult.success && taskResult.data) {
+        const task = taskResult.data;
+        taskDetails.push({
+          id: taskId,
+          title: task.metadata.title || '',
+          status: task.metadata.status || 'Unknown',
+        });
+      }
+    }
+
+    return taskDetails;
+  }
+
+  // Helper methods for status checking
+  private isCompletedStatus(status: string): boolean {
+    return status.includes('done') || status.includes('complete') || status.includes('🟢');
+  }
+
+  private isInProgressStatus(status: string): boolean {
+    return status.includes('progress') || status.includes('working') || status.includes('🔵');
+  }
+
+  private isBlockedStatus(status: string): boolean {
+    return status.includes('blocked') || status.includes('waiting') || status.includes('🔴');
+  }
+
+  private isToDoStatus(status: string): boolean {
+    return status.includes('to do') || status.includes('todo') || status.includes('🟡');
   }
 
   /**
@@ -150,29 +433,47 @@ export class TaskCorrelationService {
    */
   private extractModeFromTags(tags: string[] = []): DevelopmentMode {
     // Default mode if no matching tag is found
-    let mode = DevelopmentMode.UNKNOWN;
-    
+    const mode = DevelopmentMode.UNKNOWN;
+
     // Try to extract area from tags (e.g. AREA:core, AREA:ui)
     for (const tag of tags) {
       const tagLower = tag.toLowerCase();
-      
+
       if (tagLower.includes('area:')) {
         const area = tagLower.split('area:')[1].trim();
-        
-        if (area.includes('typescript') || area.includes('core')) {
-          return DevelopmentMode.TYPESCRIPT;
-        } else if (area.includes('ui')) {
-          return DevelopmentMode.UI;
-        } else if (area.includes('cli')) {
-          return DevelopmentMode.CLI;
-        } else if (area.includes('mcp')) {
-          return DevelopmentMode.MCP;
-        } else if (area.includes('devops')) {
-          return DevelopmentMode.DEVOPS;
-        }
+        return this.getModeFromArea(area);
       }
     }
-    
+
     return mode;
+  }
+
+  /**
+   * Get the development mode from an area string
+   * @param area The area string (e.g. "ui", "core")
+   * @returns The corresponding development mode
+   */
+  private getModeFromArea(area: string): DevelopmentMode {
+    if (area.includes('typescript') || area.includes('core')) {
+      return DevelopmentMode.TYPESCRIPT;
+    }
+
+    if (area.includes('ui')) {
+      return DevelopmentMode.UI;
+    }
+
+    if (area.includes('cli')) {
+      return DevelopmentMode.CLI;
+    }
+
+    if (area.includes('mcp')) {
+      return DevelopmentMode.MCP;
+    }
+
+    if (area.includes('devops')) {
+      return DevelopmentMode.DEVOPS;
+    }
+
+    return DevelopmentMode.UNKNOWN;
   }
 }

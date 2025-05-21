@@ -315,30 +315,10 @@ export class WorktreeService {
   /**
    * Extracts a task ID from a branch name
    * @param branch Branch name
-   * @returns Extracted task ID or undefined if no match
+   * @returns The branch name as-is (to be tried as a task or feature ID)
    */
   extractTaskId(branch: string): string | undefined {
-    // Common patterns for task IDs in branch names
-    const patterns = [
-      // Direct match (branch name is task ID)
-      /^(TASK-[\w-]+)$/i,
-      /^(FEAT-[\w-]+)$/i,
-      // Branch with task ID prefix
-      /^(TASK-[\w-]+)-.+$/i,
-      /^(FEAT-[\w-]+)-.+$/i,
-      // Branch with task ID anywhere
-      /.*(TASK-[\w-]+).*/i,
-      /.*(FEAT-[\w-]+).*/i,
-    ];
-    
-    for (const pattern of patterns) {
-      const match = branch.match(pattern);
-      if (match && match[1]) {
-        return match[1];
-      }
-    }
-    
-    return undefined;
+    return branch || undefined;
   }
 
   /**
