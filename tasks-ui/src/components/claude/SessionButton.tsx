@@ -67,27 +67,28 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
   
   // Loading state
   if (isLoading) {
-    return <div className="claude-session-button loading">Checking session status...</div>;
+    return <Button variant="ghost" disabled>Checking...</Button>;
   }
   
   // Session already exists
   if (sessionExists) {
     return (
-      <div className="claude-session-button existing">
+      <Button variant="secondary" disabled className="session-active-btn">
         <span className="status-indicator"></span>
         Claude Session Running
-      </div>
+      </Button>
     );
   }
   
   // No session exists yet
   return (
-    <div className="claude-session-button">
+    <div className="inline-flex items-center gap-3">
       <select 
         value={selectedMode}
         onChange={(e) => setSelectedMode(e.target.value)}
         disabled={isStarting}
         className="mode-selector"
+        aria-label="Select Claude mode"
       >
         {modeOptions.map(option => (
           <option key={option.value} value={option.value}>
@@ -99,10 +100,10 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
       <Button 
         onClick={handleStartSession}
         disabled={isStarting}
-        variant="outline"
-        size="sm"
+        variant="default"
+        className="claude-session-start-btn"
       >
-        {isStarting ? "Starting..." : "Start Claude Session"}
+        {isStarting ? "Starting..." : "START CLAUDE SESSION"}
       </Button>
     </div>
   );

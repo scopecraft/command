@@ -1,26 +1,4 @@
-.claude-session-button {
-  display: flex;
-  align-items: center;
-}
-
-.claude-session-button.loading {
-  color: var(--muted-foreground);
-  font-style: italic;
-  font-size: 0.875rem;
-}
-
-.claude-session-button.existing {
-  background-color: var(--muted);
-  color: var(--muted-foreground);
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  display: flex;
-  align-items: center;
-  user-select: none;
-  font-size: 0.875rem;
-  border: 1px solid var(--border);
-}
-
+/* Status indicator for running sessions */
 .status-indicator {
   width: 8px;
   height: 8px;
@@ -42,13 +20,31 @@
   }
 }
 
+/* Mode selector dropdown */
 .mode-selector {
-  margin-right: 0.5rem;
-  padding: 0.25rem 0.5rem;
+  height: 36px; /* Match button height */
+  padding: 0 0.75rem;
   border-radius: 0.375rem;
   border: 1px solid var(--border);
   background-color: var(--background);
   color: var(--foreground);
   font-size: 0.875rem;
-  height: 2rem;
+  font-weight: 500;
+  min-width: 160px;
+}
+
+/* Session active button adjustments */
+.session-active-btn {
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+}
+
+/* Start button adjustments to match other nav buttons */
+.claude-session-start-btn {
+  height: 36px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  min-width: 150px;
 }
