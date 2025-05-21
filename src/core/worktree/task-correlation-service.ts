@@ -152,18 +152,35 @@ export class TaskCorrelationService {
 
         // Use overview data if available
         const title = feature.overview?.metadata?.title || feature.name || taskId;
-        const status = feature.overview?.metadata?.status || 'Unknown';
-
-        // Get mode from tags if available
-        const tags = feature.overview?.metadata?.tags || [];
-        const mode = this.extractModeFromTags(tags);
-
+        
         // Get feature progress - use the ID without FEATURE_ prefix for consistency
         // Try worktree first, then fall back to main repo
         const featureProgress = await this.getFeatureProgress(
           feature.id.replace(/^FEATURE_/, ''),
           worktreeConfig
         );
+        
+        // Derive status from task progress
+        let status = feature.overview?.metadata?.status || 'Unknown';
+        
+        // If we have feature progress, derive status from task counts
+        if (featureProgress) {
+          if (featureProgress.totalTasks === 0) {
+            status = '🟡 To Do';
+          } else if (featureProgress.blocked > 0) {
+            status = '⚪ Blocked';
+          } else if (featureProgress.completed === featureProgress.totalTasks) {
+            status = '🟢 Done';
+          } else if (featureProgress.inProgress > 0) {
+            status = '🔵 In Progress';
+          } else {
+            status = '🟡 To Do';
+          }
+        }
+
+        // Get mode from tags if available
+        const tags = feature.overview?.metadata?.tags || [];
+        const mode = this.extractModeFromTags(tags);
 
         // Enhance worktree with feature metadata
         const enhancedWorktree: Worktree = {
