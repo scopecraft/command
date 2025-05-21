@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { checkSessionExists, startClaudeSession } from '../../lib/utils/tmux';
+import { checkSessionExists, startClaudeSession, SessionInputSchema } from '../../lib/utils/tmux';
+import { Button } from '../ui/button';
 import './SessionButton.css';
 
 interface ClaudeSessionButtonProps {
@@ -34,6 +35,8 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
   // Check if session exists
   function checkStatus() {
     try {
+      // Validate taskId before checking
+      SessionInputSchema.parse({ taskId });
       const exists = checkSessionExists(taskId);
       setSessionExists(exists);
     } catch (error) {
@@ -48,7 +51,9 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
     setIsStarting(true);
     
     try {
-      startClaudeSession(taskId, selectedMode);
+      // Use the SessionInput interface and validate the input
+      startClaudeSession({ taskId, mode: selectedMode });
+      
       // Wait a second for tmux to create the session
       setTimeout(() => {
         checkStatus();
@@ -91,13 +96,14 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
         ))}
       </select>
       
-      <button 
+      <Button 
         onClick={handleStartSession}
         disabled={isStarting}
-        className="start-button"
+        variant="outline"
+        size="sm"
       >
         {isStarting ? "Starting..." : "Start Claude Session"}
-      </button>
+      </Button>
     </div>
   );
 }

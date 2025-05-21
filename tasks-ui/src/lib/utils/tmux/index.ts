@@ -1,9 +1,26 @@
 /**
  * Utilities for interacting with tmux Claude sessions
  */
-import { execSync } from 'child_process';
+import { spawnSync } from 'bun';
+import { z } from 'zod';
 
 const SESSION_NAME = "scopecraft";
+
+// Zod schemas for validation
+export const SessionInputSchema = z.object({
+  taskId: z.string().min(1, "Task ID is required"),
+  mode: z.string().default("none")
+});
+
+export type SessionInput = z.infer<typeof SessionInputSchema>;
+
+export const SessionSchema = z.object({
+  taskId: z.string(),
+  mode: z.string(),
+  active: z.boolean()
+});
+
+export type Session = z.infer<typeof SessionSchema>;
 
 /**
  * Check if a Claude session exists for the given task ID
@@ -12,12 +29,20 @@ const SESSION_NAME = "scopecraft";
  */
 export function checkSessionExists(taskId: string): boolean {
   try {
+    // Validate input
+    SessionInputSchema.parse({ taskId });
+    
     // This matches how the dispatch script checks for existing windows
-    execSync(
-      `tmux list-windows -t "${SESSION_NAME}" -F "#{window_name}" 2>/dev/null | grep -q "^${taskId}-"`,
-      { stdio: 'pipe' }
-    );
-    return true; // grep returns 0 if match found
+    const result = spawnSync([
+      "tmux", "list-windows", 
+      "-t", SESSION_NAME, 
+      "-F", "#{window_name}"
+    ]);
+    
+    if (result.exitCode !== 0) return false;
+    
+    const output = result.stdout.toString();
+    return output.split('\n').some(line => line.startsWith(`${taskId}-`));
   } catch {
     // Either tmux isn't running or there was another error
     return false;
@@ -26,19 +51,27 @@ export function checkSessionExists(taskId: string): boolean {
 
 /**
  * Start a Claude session for the given task ID
- * @param taskId - The task ID to start a session for
- * @param mode - The Claude command mode (default: "none")
+ * @param input - Session input containing taskId and mode
  * @returns boolean - True if session started successfully, false otherwise
  */
-export function startClaudeSession(taskId: string, mode: string = "none"): boolean {
+export function startClaudeSession(input: SessionInput): boolean {
   try {
+    // Validate input
+    const { taskId, mode } = SessionInputSchema.parse(input);
+    
+    // Get project root directory
+    const rootDir = spawnSync(["git", "rev-parse", "--show-toplevel"]).stdout.toString().trim();
+    
     // The dispatch script handles all the logic of session creation
     // Running in background to prevent blocking UI
     // Adding --no-interactive flag to prevent prompting for input
-    execSync(`cd "$(git rev-parse --show-toplevel)" && ./dispatch ${mode} ${taskId} --no-interactive & disown`, {
-      stdio: 'pipe',
-      shell: '/bin/bash'
+    spawnSync({
+      cmd: ["./dispatch", mode, taskId, "--no-interactive"],
+      cwd: rootDir,
+      stdio: ['ignore', 'ignore', 'ignore'],
+      detached: true
     });
+    
     return true;
   } catch (error) {
     console.error("Failed to start Claude session:", error);
@@ -48,29 +81,43 @@ export function startClaudeSession(taskId: string, mode: string = "none"): boole
 
 /**
  * List all active Claude sessions
- * @returns Array<{taskId: string, mode: string, active: boolean}>
+ * @returns Array<Session>
  */
-export function listClaudeSessions(): Array<{taskId: string, mode: string, active: boolean}> {
+export function listClaudeSessions(): Session[] {
   try {
     // Format: "taskId-mode|active"
-    const result = execSync(
-      `tmux list-windows -t "${SESSION_NAME}" -F "#{window_name}|#{window_active}" 2>/dev/null`,
-      { stdio: 'pipe', encoding: 'utf8' }
-    );
+    const result = spawnSync([
+      "tmux", "list-windows", 
+      "-t", SESSION_NAME, 
+      "-F", "#{window_name}|#{window_active}"
+    ]);
     
-    if (!result) return [];
+    if (result.exitCode !== 0) return [];
     
-    return result.split('\n')
+    const output = result.stdout.toString();
+    
+    const sessions = output.split('\n')
       .filter(line => line.trim() !== '')
       .map(line => {
         const [nameStr, activeStr] = line.split('|');
         const [taskId, mode] = nameStr.split('-');
+        
         return {
           taskId,
           mode: mode || 'none',
           active: activeStr === '1'
         };
       });
+    
+    // Validate each session object
+    return sessions.filter(session => {
+      try {
+        SessionSchema.parse(session);
+        return true;
+      } catch {
+        return false;
+      }
+    });
   } catch {
     return [];
   }
