@@ -211,8 +211,9 @@ export async function handleSessionStart(params: any): Promise<any> {
     }
     
     // Create the command to run in the window
+    // TEMPORARY: Use /project:implement for none mode instead of plain claude
     const claudeCommand = mode === "none" 
-      ? "claude" 
+      ? `claude '/project:implement ${taskId}'` 
       : `claude '/project:${mode} ${taskId}'`;
     
     // Create new window in the session
