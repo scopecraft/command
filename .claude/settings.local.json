@@ -105,7 +105,8 @@
       "Bash(git add:*)",
       "mcp__scopecraft-cmd__task_update",
       "mcp__scopecraft-cmd__task_list",
-      "Bash(http GET:*)"
+      "Bash(http GET:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
