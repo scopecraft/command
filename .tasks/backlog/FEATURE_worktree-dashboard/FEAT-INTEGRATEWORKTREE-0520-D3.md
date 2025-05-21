@@ -5,7 +5,7 @@ type = "implementation"
 status = "🟡 To Do"
 priority = "▶️ Medium"
 created_date = "2025-05-20"
-updated_date = "2025-05-21"
+updated_date = "2025-05-22"
 assigned_to = ""
 phase = "backlog"
 parent_task = "worktree-dashboard"
@@ -50,6 +50,33 @@ This task covers the integration of the previously developed visual Worktree Das
 - Add user configuration options for refresh interval
 - Implement persistence of dashboard settings
 - Add options to filter or sort worktrees
+
+## Implementation Details
+
+### API Client Updates
+- Update `worktree-client.ts` to replace mock data with real API calls:
+  - Uncomment and update the existing fetch code blocks in `fetchWorktrees()`
+  - Uncomment and update the existing fetch code in `fetchWorktree()`
+  - Update the `getWorktreeSummary()` function to use the API endpoint instead of calculating locally
+  - Update the `getDashboardConfig()` and `saveDashboardConfig()` functions to use API endpoints
+
+### Data Mapping
+- Ensure API responses are correctly mapped to UI component props:
+  - Map WorktreeStatus enum values correctly
+  - Map WorkflowStatus enum values as expected by UI
+  - Ensure timestamps are properly formatted for display
+  - Handle null or undefined values gracefully
+
+### Error Handling
+- Implement specific error handling for each API endpoint
+- Add retry logic or fallback behavior for critical API calls
+- Display user-friendly error messages in the UI
+
+### Testing Approach
+- Test each API integration endpoint individually with the UI
+- Verify data is displayed correctly in all component states
+- Test refresh functionality with real Git changes
+- Validate error states with simulated API failures
 
 ## Technical Approach
 - Use the API interfaces designed in earlier tasks
