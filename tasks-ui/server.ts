@@ -28,6 +28,10 @@ import {
   handleAreaDelete,
   handleTaskMove
 } from '../src/mcp/handlers.js';
+import {
+  handleSessionCheck,
+  handleSessionStart
+} from './server/claude-session-handlers.js';
 
 // Configuration
 const DIST_DIR = './tasks-ui/dist';
@@ -380,6 +384,27 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
         const result = await handleTaskMove(params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    // Claude Session endpoints
+    if (path === '/claude-sessions/check') {
+      if (req.method === 'GET') {
+        const result = await handleSessionCheck(params);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    if (path === '/claude-sessions') {
+      if (req.method === 'POST') {
+        const result = await handleSessionStart(params);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 201 : 400,
           headers: corsHeaders
         });
       }
