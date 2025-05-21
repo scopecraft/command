@@ -126,21 +126,32 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
  */
 function registerTools(server: McpServer, verbose = false): McpServer {
   // Task list tool
-  server.tool(
+  const taskListRawShape = {
+    status: z.string().optional(),
+    type: z.string().optional(),
+    assignee: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    phase: z.string().optional(),
+    format: z.string().optional(),
+    include_content: z.boolean().optional(),
+    include_completed: z.boolean().optional(),
+    subdirectory: z.string().optional(),
+    is_overview: z.boolean().optional(),
+  };
+  const taskListSchema = z.object(taskListRawShape);
+  server.registerTool(
     'task_list',
     {
-      status: z.string().optional(),
-      type: z.string().optional(),
-      assignee: z.string().optional(),
-      tags: z.array(z.string()).optional(),
-      phase: z.string().optional(),
-      format: z.string().optional(),
-      include_content: z.boolean().optional(),
-      include_completed: z.boolean().optional(),
-      subdirectory: z.string().optional(),
-      is_overview: z.boolean().optional(),
+      description: 'List Tasks',
+      inputSchema: taskListRawShape,
+      annotations: {
+        title: 'List Tasks',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof taskListSchema>) => {
       const filterOptions: TaskFilterOptions = {
         status: params.status,
         type: params.type,
@@ -152,7 +163,6 @@ function registerTools(server: McpServer, verbose = false): McpServer {
         subdirectory: params.subdirectory,
         is_overview: params.is_overview,
       };
-
       try {
         const result = await listTasks(filterOptions);
         return formatResponse(result);
@@ -163,13 +173,24 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Task get tool
-  server.tool(
+  const taskGetRawShape = {
+    id: z.string(),
+    format: z.string().optional(),
+  };
+  const taskGetSchema = z.object(taskGetRawShape);
+  server.registerTool(
     'task_get',
     {
-      id: z.string(),
-      format: z.string().optional(),
+      description: 'Get Task',
+      inputSchema: taskGetRawShape,
+      annotations: {
+        title: 'Get Task',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof taskGetSchema>) => {
       try {
         const result = await getTask(params.id);
         return formatResponse(result);
@@ -180,33 +201,43 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Task create tool
-  server.tool(
+  const taskCreateRawShape = {
+    id: z.string().optional(),
+    title: z.string(),
+    type: z.string(),
+    status: z.string().optional(),
+    priority: z.string().optional(),
+    assignee: z.string().optional(),
+    phase: z.string().optional(),
+    subdirectory: z.string().optional(),
+    parent: z.string().optional(),
+    depends: z.array(z.string()).optional(),
+    previous: z.string().optional(),
+    next: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    content: z.string().optional(),
+  };
+  const taskCreateSchema = z.object(taskCreateRawShape);
+  server.registerTool(
     'task_create',
     {
-      id: z.string().optional(),
-      title: z.string(),
-      type: z.string(),
-      status: z.string().optional(),
-      priority: z.string().optional(),
-      assignee: z.string().optional(),
-      phase: z.string().optional(),
-      subdirectory: z.string().optional(),
-      parent: z.string().optional(),
-      depends: z.array(z.string()).optional(),
-      previous: z.string().optional(),
-      next: z.string().optional(),
-      tags: z.array(z.string()).optional(),
-      content: z.string().optional(),
+      description: 'Create Task',
+      inputSchema: taskCreateRawShape,
+      annotations: {
+        title: 'Create Task',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof taskCreateSchema>) => {
       try {
         const metadata = createTaskMetadata(params);
         const task: Task = {
           metadata,
           content: params.content || getDefaultTaskContent(params.title),
         };
-
-        const result = await createTask(task, params.subdirectory);
+        const result = await createTask(task, { subdirectory: params.subdirectory });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -215,40 +246,44 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Task update tool
-  server.tool(
+  const taskUpdateRawShape = {
+    id: z.string(),
+    updates: z
+      .object({
+        status: z.string().optional(),
+        priority: z.string().optional(),
+        phase: z.string().optional(),
+        subdirectory: z.string().optional(),
+        new_id: z.string().optional(),
+        metadata: z.record(z.unknown()).optional(),
+        content: z.string().optional(),
+      })
+      .optional(),
+    phase: z.string().optional(),
+    subdirectory: z.string().optional(),
+  };
+  const taskUpdateSchema = z.object(taskUpdateRawShape);
+  server.registerTool(
     'task_update',
     {
-      id: z.string(),
-      updates: z
-        .object({
-          // Add direct field updates to match TaskUpdateOptions interface
-          status: z.string().optional(),
-          priority: z.string().optional(),
-          phase: z.string().optional(),
-          subdirectory: z.string().optional(),
-          new_id: z.string().optional(),
-
-          // Keep existing metadata and content fields
-          metadata: z.record(z.unknown()).optional(),
-          content: z.string().optional(),
-        })
-        .optional(),
-      phase: z.string().optional(),
-      subdirectory: z.string().optional(),
+      description: 'Update Task',
+      inputSchema: taskUpdateRawShape,
+      annotations: {
+        title: 'Update Task',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof taskUpdateSchema>) => {
       try {
-        // Validate updates object
         if (!params.updates) {
           return formatError(new Error('No updates provided'));
         }
-
-        const result = await updateTask(
-          params.id,
-          params.updates,
-          params.phase,
-          params.subdirectory
-        );
+        const result = await updateTask(params.id, params.updates, {
+          phase: params.phase,
+          subdirectory: params.subdirectory,
+        });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -257,12 +292,23 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Task delete tool
-  server.tool(
+  const taskDeleteRawShape = {
+    id: z.string(),
+  };
+  const taskDeleteSchema = z.object(taskDeleteRawShape);
+  server.registerTool(
     'task_delete',
     {
-      id: z.string(),
+      description: 'Delete Task',
+      inputSchema: taskDeleteRawShape,
+      annotations: {
+        title: 'Delete Task',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof taskDeleteSchema>) => {
       try {
         const result = await deleteTask(params.id);
         return formatResponse(result);
@@ -273,13 +319,24 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Task next tool
-  server.tool(
+  const taskNextRawShape = {
+    id: z.string().optional(),
+    format: z.string().optional(),
+  };
+  const taskNextSchema = z.object(taskNextRawShape);
+  server.registerTool(
     'task_next',
     {
-      id: z.string().optional(),
-      format: z.string().optional(),
+      description: 'Get Next Task',
+      inputSchema: taskNextRawShape,
+      annotations: {
+        title: 'Get Next Task',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof taskNextSchema>) => {
       try {
         const result = await findNextTask(params.id);
         return formatResponse(result);
@@ -290,12 +347,23 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Phase list tool
-  server.tool(
+  const phaseListRawShape = {
+    format: z.string().optional(),
+  };
+  const phaseListSchema = z.object(phaseListRawShape);
+  server.registerTool(
     'phase_list',
     {
-      format: z.string().optional(),
+      description: 'List Phases',
+      inputSchema: phaseListRawShape,
+      annotations: {
+        title: 'List Phases',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async () => {
+    async (_params: z.infer<typeof phaseListSchema>) => {
       try {
         const result = await listPhases();
         return formatResponse(result);
@@ -306,16 +374,27 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Phase create tool
-  server.tool(
+  const phaseCreateRawShape = {
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    status: z.string().optional(),
+    order: z.number().optional(),
+  };
+  const phaseCreateSchema = z.object(phaseCreateRawShape);
+  server.registerTool(
     'phase_create',
     {
-      id: z.string(),
-      name: z.string(),
-      description: z.string().optional(),
-      status: z.string().optional(),
-      order: z.number().optional(),
+      description: 'Create Phase',
+      inputSchema: phaseCreateRawShape,
+      annotations: {
+        title: 'Create Phase',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof phaseCreateSchema>) => {
       try {
         const phase = {
           id: params.id,
@@ -325,7 +404,6 @@ function registerTools(server: McpServer, verbose = false): McpServer {
           order: params.order,
           tasks: [],
         };
-
         const result = await createPhase(phase);
         return formatResponse(result);
       } catch (error) {
@@ -335,19 +413,30 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Phase update tool
-  server.tool(
+  const phaseUpdateRawShape = {
+    id: z.string(),
+    updates: z.object({
+      id: z.string().optional(),
+      name: z.string().optional(),
+      description: z.string().optional(),
+      status: z.string().optional(),
+      order: z.number().optional(),
+    }),
+  };
+  const phaseUpdateSchema = z.object(phaseUpdateRawShape);
+  server.registerTool(
     'phase_update',
     {
-      id: z.string(),
-      updates: z.object({
-        id: z.string().optional(),
-        name: z.string().optional(),
-        description: z.string().optional(),
-        status: z.string().optional(),
-        order: z.number().optional(),
-      }),
+      description: 'Update Phase',
+      inputSchema: phaseUpdateRawShape,
+      annotations: {
+        title: 'Update Phase',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof phaseUpdateSchema>) => {
       try {
         const result = await updatePhase(params.id, params.updates);
         return formatResponse(result);
@@ -358,13 +447,24 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Phase delete tool
-  server.tool(
+  const phaseDeleteRawShape = {
+    id: z.string(),
+    force: z.boolean().optional(),
+  };
+  const phaseDeleteSchema = z.object(phaseDeleteRawShape);
+  server.registerTool(
     'phase_delete',
     {
-      id: z.string(),
-      force: z.boolean().optional(),
+      description: 'Delete Phase',
+      inputSchema: phaseDeleteRawShape,
+      annotations: {
+        title: 'Delete Phase',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof phaseDeleteSchema>) => {
       try {
         const result = await deletePhase(params.id, { force: params.force });
         return formatResponse(result);
@@ -375,25 +475,32 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Workflow current tool
-  server.tool(
+  const workflowCurrentRawShape = {
+    format: z.string().optional(),
+  };
+  const workflowCurrentSchema = z.object(workflowCurrentRawShape);
+  server.registerTool(
     'workflow_current',
     {
-      format: z.string().optional(),
+      description: 'Get Current Workflow',
+      inputSchema: workflowCurrentRawShape,
+      annotations: {
+        title: 'Get Current Workflow',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async () => {
+    async (_params: z.infer<typeof workflowCurrentSchema>) => {
       try {
         const inProgressResult = await listTasks({ status: '🔵 In Progress' });
-
         if (!inProgressResult.success) {
           return formatResponse(inProgressResult);
         }
-
         if (inProgressResult.data && inProgressResult.data.length === 0) {
-          // Try alternative status text
           const alternativeResult = await listTasks({ status: 'In Progress' });
           return formatResponse(alternativeResult);
         }
-
         return formatResponse(inProgressResult);
       } catch (error) {
         return formatError(error);
@@ -402,29 +509,35 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Workflow mark complete next tool
-  server.tool(
+  const workflowMarkCompleteNextRawShape = {
+    id: z.string(),
+    format: z.string().optional(),
+  };
+  const workflowMarkCompleteNextSchema = z.object(workflowMarkCompleteNextRawShape);
+  server.registerTool(
     'workflow_mark_complete_next',
     {
-      id: z.string(),
-      format: z.string().optional(),
+      description: 'Mark Complete and Get Next',
+      inputSchema: workflowMarkCompleteNextRawShape,
+      annotations: {
+        title: 'Mark Complete and Get Next',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof workflowMarkCompleteNextSchema>) => {
       try {
-        // Get the next task before marking current as complete
         const nextTaskResult = await findNextTask(params.id);
-
-        // Mark current task as complete
         const updateResult = await updateTask(params.id, { metadata: { status: '🟢 Done' } });
-
         if (!updateResult.success) {
           return formatResponse(updateResult);
         }
-
         if (!nextTaskResult.success) {
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: JSON.stringify(
                   {
                     success: true,
@@ -438,11 +551,10 @@ function registerTools(server: McpServer, verbose = false): McpServer {
             ],
           };
         }
-
         return {
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: JSON.stringify(
                 {
                   success: true,
@@ -462,16 +574,27 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Task move tool
-  server.tool(
+  const taskMoveRawShape = {
+    id: z.string(),
+    target_subdirectory: z.string(),
+    target_phase: z.string().optional(),
+    search_phase: z.string().optional(),
+    search_subdirectory: z.string().optional(),
+  };
+  const taskMoveSchema = z.object(taskMoveRawShape);
+  server.registerTool(
     'task_move',
     {
-      id: z.string(),
-      target_subdirectory: z.string(),
-      target_phase: z.string().optional(),
-      search_phase: z.string().optional(),
-      search_subdirectory: z.string().optional(),
+      description: 'Move Task',
+      inputSchema: taskMoveRawShape,
+      annotations: {
+        title: 'Move Task',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof taskMoveSchema>) => {
       try {
         const result = await moveTask(params.id, {
           targetSubdirectory: params.target_subdirectory,
@@ -487,24 +610,34 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Feature list tool
-  server.tool(
+  const featureListRawShape = {
+    phase: z.string().optional(),
+    status: z.string().optional(),
+    format: z.string().optional(),
+    include_tasks: z.boolean().optional(),
+    include_progress: z.boolean().optional(),
+  };
+  const featureListSchema = z.object(featureListRawShape);
+  server.registerTool(
     'feature_list',
     {
-      phase: z.string().optional(),
-      status: z.string().optional(),
-      format: z.string().optional(),
-      include_tasks: z.boolean().optional(),
-      include_progress: z.boolean().optional(),
+      description: 'List Features',
+      inputSchema: featureListRawShape,
+      annotations: {
+        title: 'List Features',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof featureListSchema>) => {
       try {
         const filterOptions: FeatureFilterOptions = {
           phase: params.phase,
           status: params.status,
           include_tasks: params.include_tasks,
-          include_progress: params.include_progress !== false, // Default to true
+          include_progress: params.include_progress !== false,
         };
-
         const result = await listFeatures(filterOptions);
         return formatResponse(result);
       } catch (error) {
@@ -514,16 +647,27 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Feature get tool
-  server.tool(
+  const featureGetRawShape = {
+    id: z.string(),
+    phase: z.string().optional(),
+    format: z.string().optional(),
+  };
+  const featureGetSchema = z.object(featureGetRawShape);
+  server.registerTool(
     'feature_get',
     {
-      id: z.string(),
-      phase: z.string().optional(),
-      format: z.string().optional(),
+      description: 'Get Feature',
+      inputSchema: featureGetRawShape,
+      annotations: {
+        title: 'Get Feature',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof featureGetSchema>) => {
       try {
-        const result = await getFeature(params.id, params.phase);
+        const result = await getFeature(params.id, { phase: params.phase });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -532,21 +676,31 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Feature create tool
-  server.tool(
+  const featureCreateRawShape = {
+    name: z.string(),
+    title: z.string(),
+    phase: z.string(),
+    type: z.string().optional(),
+    status: z.string().optional(),
+    description: z.string().optional(),
+    assignee: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+  };
+  const featureCreateSchema = z.object(featureCreateRawShape);
+  server.registerTool(
     'feature_create',
     {
-      name: z.string(),
-      title: z.string(),
-      phase: z.string(),
-      type: z.string().optional(),
-      status: z.string().optional(),
-      description: z.string().optional(),
-      assignee: z.string().optional(),
-      tags: z.array(z.string()).optional(),
+      description: 'Create Feature',
+      inputSchema: featureCreateRawShape,
+      annotations: {
+        title: 'Create Feature',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof featureCreateSchema>) => {
       try {
-        // No logging output to avoid interfering with MCP protocol
         const result = await createFeature(params.name, {
           title: params.title,
           phase: params.phase,
@@ -563,19 +717,30 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Feature update tool
-  server.tool(
+  const featureUpdateRawShape = {
+    id: z.string(),
+    updates: z.object({
+      name: z.string().optional(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      status: z.string().optional(),
+    }),
+    phase: z.string().optional(),
+  };
+  const featureUpdateSchema = z.object(featureUpdateRawShape);
+  server.registerTool(
     'feature_update',
     {
-      id: z.string(),
-      updates: z.object({
-        name: z.string().optional(),
-        title: z.string().optional(),
-        description: z.string().optional(),
-        status: z.string().optional(),
-      }),
-      phase: z.string().optional(),
+      description: 'Update Feature',
+      inputSchema: featureUpdateRawShape,
+      annotations: {
+        title: 'Update Feature',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof featureUpdateSchema>) => {
       try {
         const updateOptions: FeatureUpdateOptions = {
           name: params.updates.name,
@@ -583,8 +748,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
           description: params.updates.description,
           status: params.updates.status,
         };
-
-        const result = await updateFeature(params.id, updateOptions, params.phase);
+        const result = await updateFeature(params.id, updateOptions, { phase: params.phase });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -593,16 +757,30 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Feature delete tool
-  server.tool(
+  const featureDeleteRawShape = {
+    id: z.string(),
+    phase: z.string().optional(),
+    force: z.boolean().optional(),
+  };
+  const featureDeleteSchema = z.object(featureDeleteRawShape);
+  server.registerTool(
     'feature_delete',
     {
-      id: z.string(),
-      phase: z.string().optional(),
-      force: z.boolean().optional(),
+      description: 'Delete Feature',
+      inputSchema: featureDeleteRawShape,
+      annotations: {
+        title: 'Delete Feature',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof featureDeleteSchema>) => {
       try {
-        const result = await deleteFeature(params.id, params.phase, params.force);
+        const result = await deleteFeature(params.id, {
+          phase: params.phase,
+          force: params.force,
+        });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -611,24 +789,34 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Area list tool
-  server.tool(
+  const areaListRawShape = {
+    phase: z.string().optional(),
+    status: z.string().optional(),
+    format: z.string().optional(),
+    include_tasks: z.boolean().optional(),
+    include_progress: z.boolean().optional(),
+  };
+  const areaListSchema = z.object(areaListRawShape);
+  server.registerTool(
     'area_list',
     {
-      phase: z.string().optional(),
-      status: z.string().optional(),
-      format: z.string().optional(),
-      include_tasks: z.boolean().optional(),
-      include_progress: z.boolean().optional(),
+      description: 'List Areas',
+      inputSchema: areaListRawShape,
+      annotations: {
+        title: 'List Areas',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof areaListSchema>) => {
       try {
         const filterOptions: AreaFilterOptions = {
           phase: params.phase,
           status: params.status,
           include_tasks: params.include_tasks,
-          include_progress: params.include_progress !== false, // Default to true
+          include_progress: params.include_progress !== false,
         };
-
         const result = await listAreas(filterOptions);
         return formatResponse(result);
       } catch (error) {
@@ -638,16 +826,27 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Area get tool
-  server.tool(
+  const areaGetRawShape = {
+    id: z.string(),
+    phase: z.string().optional(),
+    format: z.string().optional(),
+  };
+  const areaGetSchema = z.object(areaGetRawShape);
+  server.registerTool(
     'area_get',
     {
-      id: z.string(),
-      phase: z.string().optional(),
-      format: z.string().optional(),
+      description: 'Get Area',
+      inputSchema: areaGetRawShape,
+      annotations: {
+        title: 'Get Area',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof areaGetSchema>) => {
       try {
-        const result = await getArea(params.id, params.phase);
+        const result = await getArea(params.id, { phase: params.phase });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -656,30 +855,39 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Area create tool
-  server.tool(
+  const areaCreateRawShape = {
+    name: z.string(),
+    title: z.string(),
+    phase: z.string(),
+    type: z.string().optional(),
+    status: z.string().optional(),
+    description: z.string().optional(),
+    assignee: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+  };
+  const areaCreateSchema = z.object(areaCreateRawShape);
+  server.registerTool(
     'area_create',
     {
-      name: z.string(),
-      title: z.string(),
-      phase: z.string(),
-      type: z.string().optional(),
-      status: z.string().optional(),
-      description: z.string().optional(),
-      assignee: z.string().optional(),
-      tags: z.array(z.string()).optional(),
+      description: 'Create Area',
+      inputSchema: areaCreateRawShape,
+      annotations: {
+        title: 'Create Area',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof areaCreateSchema>) => {
       try {
-        // No logging output to avoid interfering with MCP protocol
-        const result = await createArea(
-          params.name,
-          params.title,
-          params.phase,
-          params.type || '🧹 Chore',
-          params.description,
-          params.assignee,
-          params.tags
-        );
+        const result = await createArea(params.name, {
+          title: params.title,
+          phase: params.phase,
+          type: params.type || '🧹 Chore',
+          description: params.description,
+          assignee: params.assignee,
+          tags: params.tags,
+        });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -688,19 +896,30 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Area update tool
-  server.tool(
+  const areaUpdateRawShape = {
+    id: z.string(),
+    updates: z.object({
+      name: z.string().optional(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      status: z.string().optional(),
+    }),
+    phase: z.string().optional(),
+  };
+  const areaUpdateSchema = z.object(areaUpdateRawShape);
+  server.registerTool(
     'area_update',
     {
-      id: z.string(),
-      updates: z.object({
-        name: z.string().optional(),
-        title: z.string().optional(),
-        description: z.string().optional(),
-        status: z.string().optional(),
-      }),
-      phase: z.string().optional(),
+      description: 'Update Area',
+      inputSchema: areaUpdateRawShape,
+      annotations: {
+        title: 'Update Area',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof areaUpdateSchema>) => {
       try {
         const updateOptions: AreaUpdateOptions = {
           name: params.updates.name,
@@ -708,8 +927,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
           description: params.updates.description,
           status: params.updates.status,
         };
-
-        const result = await updateArea(params.id, updateOptions, params.phase);
+        const result = await updateArea(params.id, updateOptions, { phase: params.phase });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -718,16 +936,27 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Area delete tool
-  server.tool(
+  const areaDeleteRawShape = {
+    id: z.string(),
+    phase: z.string().optional(),
+    force: z.boolean().optional(),
+  };
+  const areaDeleteSchema = z.object(areaDeleteRawShape);
+  server.registerTool(
     'area_delete',
     {
-      id: z.string(),
-      phase: z.string().optional(),
-      force: z.boolean().optional(),
+      description: 'Delete Area',
+      inputSchema: areaDeleteRawShape,
+      annotations: {
+        title: 'Delete Area',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof areaDeleteSchema>) => {
       try {
-        const result = await deleteArea(params.id, params.phase, params.force);
+        const result = await deleteArea(params.id, { phase: params.phase, force: params.force });
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -736,12 +965,23 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Template list tool
-  server.tool(
+  const templateListRawShape = {
+    format: z.string().optional(),
+  };
+  const templateListSchema = z.object(templateListRawShape);
+  server.registerTool(
     'template_list',
     {
-      format: z.string().optional(),
+      description: 'List Templates',
+      inputSchema: templateListRawShape,
+      annotations: {
+        title: 'List Templates',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (_params) => {
+    async (_params: z.infer<typeof templateListSchema>) => {
       try {
         const templates = listTemplates();
         return formatResponse({
@@ -756,25 +996,33 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Init root configuration tool
-  server.tool(
+  const initRootRawShape = {
+    path: z.string(),
+  };
+  const initRootSchema = z.object(initRootRawShape);
+  server.registerTool(
     'init_root',
     {
-      path: z.string(),
+      description: 'Initialize Root Configuration',
+      inputSchema: initRootRawShape,
+      annotations: {
+        title: 'Initialize Root Configuration',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
-    async (params) => {
+    async (params: z.infer<typeof initRootSchema>) => {
       try {
         const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
         const configManager = ConfigurationManager.getInstance();
-
         if (!configManager.validateRoot(params.path)) {
           return formatResponse({
             success: false,
             error: `Invalid project root: ${params.path} does not contain .tasks or .ruru directory`,
           });
         }
-
         configManager.setRootFromSession(params.path);
-
         return formatResponse({
           success: true,
           data: {
@@ -791,43 +1039,71 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   );
 
   // Get current root tool
-  server.tool('get_current_root', {}, async () => {
-    try {
-      const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
-      const configManager = ConfigurationManager.getInstance();
-      const rootConfig = configManager.getRootConfig();
-
-      return formatResponse({
-        success: true,
-        data: {
-          path: rootConfig.path,
-          source: rootConfig.source,
-          validated: rootConfig.validated,
-          projectName: rootConfig.projectName,
-        },
-        message: `Current root: ${rootConfig.path} (source: ${rootConfig.source})`,
-      });
-    } catch (error) {
-      return formatError(error);
+  const getCurrentRootRawShape = {};
+  const getCurrentRootSchema = z.object(getCurrentRootRawShape);
+  server.registerTool(
+    'get_current_root',
+    {
+      description: 'Get Current Root',
+      inputSchema: getCurrentRootRawShape,
+      annotations: {
+        title: 'Get Current Root',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (_params: z.infer<typeof getCurrentRootSchema>) => {
+      try {
+        const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
+        const configManager = ConfigurationManager.getInstance();
+        const rootConfig = configManager.getRootConfig();
+        return formatResponse({
+          success: true,
+          data: {
+            path: rootConfig.path,
+            source: rootConfig.source,
+            validated: rootConfig.validated,
+            projectName: rootConfig.projectName,
+          },
+          message: `Current root: ${rootConfig.path} (source: ${rootConfig.source})`,
+        });
+      } catch (error) {
+        return formatError(error);
+      }
     }
-  });
+  );
 
   // List projects tool
-  server.tool('list_projects', {}, async () => {
-    try {
-      const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
-      const configManager = ConfigurationManager.getInstance();
-      const projects = configManager.getProjects();
-
-      return formatResponse({
-        success: true,
-        data: projects,
-        message: `Found ${projects.length} configured projects`,
-      });
-    } catch (error) {
-      return formatError(error);
+  const listProjectsRawShape = {};
+  const listProjectsSchema = z.object(listProjectsRawShape);
+  server.registerTool(
+    'list_projects',
+    {
+      description: 'List Projects',
+      inputSchema: listProjectsRawShape,
+      annotations: {
+        title: 'List Projects',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (_params: z.infer<typeof listProjectsSchema>) => {
+      try {
+        const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
+        const configManager = ConfigurationManager.getInstance();
+        const projects = configManager.getProjects();
+        return formatResponse({
+          success: true,
+          data: projects,
+          message: `Found ${projects.length} configured projects`,
+        });
+      } catch (error) {
+        return formatError(error);
+      }
     }
-  });
+  );
 
   if (verbose) {
     // No logging output to avoid interfering with MCP protocol
@@ -851,7 +1127,7 @@ export function formatResponse(result: {
     return {
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: JSON.stringify(
             {
               success: false,
@@ -862,6 +1138,7 @@ export function formatResponse(result: {
           ),
         },
       ],
+      structuredContent: { error: result.error },
       isError: true,
     };
   }
@@ -869,7 +1146,7 @@ export function formatResponse(result: {
   return {
     content: [
       {
-        type: 'text',
+        type: 'text' as const,
         text: JSON.stringify(
           {
             success: true,
@@ -881,6 +1158,7 @@ export function formatResponse(result: {
         ),
       },
     ],
+    structuredContent: { data: result.data, message: result.message },
   };
 }
 
@@ -890,20 +1168,22 @@ export function formatResponse(result: {
  * @returns Formatted error for the MCP SDK
  */
 export function formatError(error: unknown) {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
   return {
     content: [
       {
-        type: 'text',
+        type: 'text' as const,
         text: JSON.stringify(
           {
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: errorMessage,
           },
           null,
           2
         ),
       },
     ],
+    structuredContent: { error: errorMessage },
     isError: true,
   };
 }
