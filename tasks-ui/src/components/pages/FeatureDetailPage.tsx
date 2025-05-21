@@ -11,6 +11,7 @@ import { ErrorBoundary } from '../layout/ErrorBoundary';
 import { columns } from '../task-list/table/columns';
 import { DataTable } from '../task-list/table/data-table';
 import { Button } from '../ui/button';
+import { ClaudeSessionButton } from '../claude/SessionButton';
 
 function FeatureDetailViewInner() {
   const [, params] = useRoute<{ id: string }>(routes.featureDetail(':id'));
@@ -144,6 +145,7 @@ function FeatureDetailViewInner() {
           <Button variant="outline" size="sm" onClick={() => navigate(routes.comparison)}>
             Compare
           </Button>
+          <ClaudeSessionButton taskId={featureId} />
         </div>
       </div>
 

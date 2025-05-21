@@ -6,6 +6,7 @@ import { routes } from '../../lib/routes';
 import { formatDate, hasDependencies } from '../../lib/utils/format';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
 import { Button } from '../ui/button';
+import { ClaudeSessionButton } from '../claude/SessionButton';
 import { TaskContent } from './TaskContent';
 import { TaskDetailFallback } from './TaskDetailFallback';
 import { TaskMetadata } from './TaskMetadata';
@@ -94,6 +95,7 @@ export function TaskDetailViewInner() {
           <Button variant="outline" onClick={handlePromptClick}>
             Claude Assistant
           </Button>
+          <ClaudeSessionButton taskId={id} />
         </div>
       </div>
 
