@@ -49,7 +49,7 @@ export class TaskCorrelationService {
       // Create a runtime config that includes the worktree's path as rootPath
       // This ensures we look for tasks/features in the worktree, not just the main repo
       const worktreeConfig = {
-        rootPath: worktree.path
+        rootPath: worktree.path,
       };
 
       // First try to get task metadata using direct taskId with worktree rootPath
@@ -63,12 +63,12 @@ export class TaskCorrelationService {
       // If not found and we have a branch component, try that in worktree
       if (!taskResult.success && branchComponent && branchComponent !== taskId) {
         taskResult = await getTask(branchComponent, { config: worktreeConfig });
-        
+
         // If not found in worktree, try main repo as fallback
         if (!taskResult.success) {
           taskResult = await getTask(branchComponent);
         }
-        
+
         // Update taskId if we found a match
         if (taskResult.success) {
           taskId = branchComponent;
@@ -101,10 +101,10 @@ export class TaskCorrelationService {
           try {
             // Check worktree first, then fall back to main repo
             const featureProgress = await this.getFeatureProgress(
-              task.metadata.parent_task, 
+              task.metadata.parent_task,
               worktreeConfig
             );
-            
+
             if (featureProgress) {
               enhancedWorktree.featureProgress = featureProgress;
             }
@@ -117,34 +117,34 @@ export class TaskCorrelationService {
       }
 
       // Task not found, try as feature now - first in worktree
-      let featureResult = await getFeature(taskId, { 
+      let featureResult = await getFeature(taskId, {
         phase: undefined,
-        config: worktreeConfig
+        config: worktreeConfig,
       });
-      
+
       // If not found in worktree, try main repo
       if (!featureResult.success) {
         featureResult = await getFeature(taskId, { phase: undefined });
       }
-      
+
       // If not found and we have a branch component, try that in worktree
       if (!featureResult.success && branchComponent && branchComponent !== taskId) {
-        featureResult = await getFeature(branchComponent, { 
+        featureResult = await getFeature(branchComponent, {
           phase: undefined,
-          config: worktreeConfig
+          config: worktreeConfig,
         });
-        
+
         // If not found in worktree, try main repo
         if (!featureResult.success) {
           featureResult = await getFeature(branchComponent, { phase: undefined });
         }
-        
+
         // If found, update taskId
         if (featureResult.success) {
           taskId = branchComponent;
         }
       }
-      
+
       // If feature is found, process it
       if (featureResult.success && featureResult.data) {
         // Found a feature - treat this as a feature worktree
@@ -152,17 +152,17 @@ export class TaskCorrelationService {
 
         // Use overview data if available
         const title = feature.overview?.metadata?.title || feature.name || taskId;
-        
+
         // Get feature progress - use the ID without FEATURE_ prefix for consistency
         // Try worktree first, then fall back to main repo
         const featureProgress = await this.getFeatureProgress(
           feature.id.replace(/^FEATURE_/, ''),
           worktreeConfig
         );
-        
+
         // Derive status from task progress
         let status = feature.overview?.metadata?.status || 'Unknown';
-        
+
         // If we have feature progress, derive status from task counts
         if (featureProgress) {
           if (featureProgress.totalTasks === 0) {
@@ -221,11 +221,14 @@ export class TaskCorrelationService {
    * @param config Optional runtime configuration (for worktree-specific lookups)
    * @returns Feature progress or undefined if not found
    */
-  async getFeatureProgress(featureId: string, config?: RuntimeConfig): Promise<FeatureProgress | undefined> {
+  async getFeatureProgress(
+    featureId: string,
+    config?: RuntimeConfig
+  ): Promise<FeatureProgress | undefined> {
     try {
       // Get feature details with completed tasks, passing through config
       const feature = await this.getFeatureDetails(featureId, config);
-      
+
       // Instead of using feature.tasks (which may be incomplete),
       // directly list all tasks in the feature subdirectory
       const featureDirName = featureId.startsWith('FEATURE_') ? featureId : `FEATURE_${featureId}`;
@@ -233,13 +236,14 @@ export class TaskCorrelationService {
         subdirectory: featureDirName,
         include_completed: true,
         include_content: true,
-        config
+        config,
       });
-      
+
       // Get task IDs from the list result
-      const taskIds = listResult.success && listResult.data ? 
-        listResult.data.map(task => task.metadata.id) : 
-        feature.tasks || [];
+      const taskIds =
+        listResult.success && listResult.data
+          ? listResult.data.map((task) => task.metadata.id)
+          : feature.tasks || [];
 
       // Process task statuses, passing through config
       const statusCounts = await this.countTasksByStatus(taskIds, config);
@@ -266,23 +270,26 @@ export class TaskCorrelationService {
    * @param config Optional runtime configuration (for worktree-specific lookups)
    * @returns Feature data
    */
-  private async getFeatureDetails(featureId: string, config?: RuntimeConfig): Promise<{ tasks?: string[] }> {
+  private async getFeatureDetails(
+    featureId: string,
+    config?: RuntimeConfig
+  ): Promise<{ tasks?: string[] }> {
     // Try with config first (worktree-specific lookup)
-    let featureResult = await getFeature(featureId, { 
+    let featureResult = await getFeature(featureId, {
       phase: undefined,
       config,
-      include_completed: true,    // Include completed tasks in the feature
-      include_tasks: true,        // Include tasks list
-      include_content: true       // Include full content
+      include_completed: true, // Include completed tasks in the feature
+      include_tasks: true, // Include tasks list
+      include_content: true, // Include full content
     });
 
     // If not found and config was provided, try without config (main repo fallback)
     if (!featureResult.success && config) {
-      featureResult = await getFeature(featureId, { 
+      featureResult = await getFeature(featureId, {
         phase: undefined,
-        include_completed: true,  // Include completed tasks in the feature
-        include_tasks: true,      // Include tasks list  
-        include_content: true     // Include full content
+        include_completed: true, // Include completed tasks in the feature
+        include_tasks: true, // Include tasks list
+        include_content: true, // Include full content
       });
     }
 
@@ -299,7 +306,10 @@ export class TaskCorrelationService {
    * @param config Optional runtime configuration (for worktree-specific lookups)
    * @returns Object with counts for each status category
    */
-  private async countTasksByStatus(taskIds: string[], config?: RuntimeConfig): Promise<{
+  private async countTasksByStatus(
+    taskIds: string[],
+    config?: RuntimeConfig
+  ): Promise<{
     completed: number;
     inProgress: number;
     blocked: number;
@@ -314,9 +324,9 @@ export class TaskCorrelationService {
     };
 
     // Force inclusion of completed tasks
-    const configWithCompleted = config ? 
-      { ...config, include_completed: true } : 
-      { include_completed: true };
+    const configWithCompleted = config
+      ? { ...config, include_completed: true }
+      : { include_completed: true };
 
     // Get tasks and count by status, passing through config
     await this.processTaskStatuses(taskIds, counters, configWithCompleted);
@@ -337,18 +347,18 @@ export class TaskCorrelationService {
   ): Promise<void> {
     for (const taskId of taskIds) {
       // Try with config first (worktree-specific lookup), specifically including completed tasks
-      let taskResult = await getTask(taskId, { 
-        config, 
-        include_completed: true 
+      let taskResult = await getTask(taskId, {
+        config,
+        include_completed: true,
       });
-      
+
       // If not found in worktree and config provided, try main repo as fallback
       if ((!taskResult.success || !taskResult.data) && config) {
-        taskResult = await getTask(taskId, { 
-          include_completed: true 
+        taskResult = await getTask(taskId, {
+          include_completed: true,
         });
       }
-      
+
       if (!taskResult.success || !taskResult.data) continue;
 
       const status = (taskResult.data.metadata.status || '').toLowerCase();
@@ -393,26 +403,26 @@ export class TaskCorrelationService {
     }>
   > {
     const taskDetails = [];
-    
+
     // Force inclusion of completed tasks
-    const configWithCompleted = config ? 
-      { ...config, include_completed: true } : 
-      { include_completed: true };
+    const configWithCompleted = config
+      ? { ...config, include_completed: true }
+      : { include_completed: true };
 
     for (const taskId of taskIds) {
       // Try with config first (worktree-specific lookup with completed tasks)
-      let taskResult = await getTask(taskId, { 
+      let taskResult = await getTask(taskId, {
         config: configWithCompleted,
-        include_completed: true
+        include_completed: true,
       });
-      
+
       // If not found in worktree and config provided, try main repo as fallback
       if ((!taskResult.success || !taskResult.data) && config) {
         taskResult = await getTask(taskId, {
-          include_completed: true
+          include_completed: true,
         });
       }
-      
+
       if (taskResult.success && taskResult.data) {
         const task = taskResult.data;
         taskDetails.push({
