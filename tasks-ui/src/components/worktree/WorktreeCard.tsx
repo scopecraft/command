@@ -95,7 +95,7 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
   };
 
   // Get task status badge color if available
-  const getTaskStatusColor = (status?: string) => {
+  const _getTaskStatusColor = (status?: string) => {
     if (!status) return '';
 
     if (status.includes('Done') || status.includes('Complete')) {
@@ -120,11 +120,16 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
     return parts[parts.length - 1];
   };
 
-  // Handle navigation to task if available
-  const navigateToTask = (e: React.MouseEvent) => {
+  // Handle navigation to task or feature if available
+  const navigateToTaskOrFeature = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (worktree.taskId) {
-      navigate(routes.taskDetail(worktree.taskId));
+      // Check if this is a feature by looking for featureProgress data
+      if (worktree.featureProgress) {
+        navigate(routes.featureDetail(worktree.taskId));
+      } else {
+        navigate(routes.taskDetail(worktree.taskId));
+      }
     }
   };
 
@@ -223,10 +228,10 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
           <Button
             size="sm"
             variant="outline"
-            onClick={navigateToTask}
+            onClick={navigateToTaskOrFeature}
             className="mt-1 w-full px-2 py-0 h-6 text-xs"
           >
-            {worktree.taskId.startsWith('FEAT') ? 'VIEW FEATURE' : 'VIEW TASK'}
+            {worktree.featureProgress ? 'VIEW FEATURE' : 'VIEW TASK'}
           </Button>
         )}
       </div>
@@ -253,9 +258,9 @@ export function WorktreeCard({ worktree, onRefresh }: WorktreeCardProps) {
               <span className="font-mono text-xs">{worktree.headCommit.substring(0, 7)}</span>
             </div>
             <div className="text-[10px] text-muted-foreground mt-0.5">
-              {worktree.lastActivity ? 
-                `${Math.floor((Date.now() - new Date(worktree.lastActivity).getTime()) / (1000 * 60))} min ago` : 
-                'Unknown time'}
+              {worktree.lastActivity
+                ? `${Math.floor((Date.now() - new Date(worktree.lastActivity).getTime()) / (1000 * 60))} min ago`
+                : 'Unknown time'}
             </div>
           </div>
         </div>
