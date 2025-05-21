@@ -9,20 +9,19 @@ import './SessionButton.css';
 
 interface ClaudeSessionButtonProps {
   taskId: string;
+  type: 'task' | 'feature';
 }
 
-export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
+export function ClaudeSessionButton({ taskId, type }: ClaudeSessionButtonProps) {
   const [sessionExists, setSessionExists] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const [selectedMode, setSelectedMode] = useState('none');
 
-  // Common mode options
+  // Simple mode options that should work in any environment
   const modeOptions = [
     { value: 'none', label: 'Basic Claude' },
-    { value: '05_implement', label: 'Implementation' },
-    { value: 'review', label: 'Code Review' },
-    { value: '01_brainstorm-feature', label: 'Brainstorm' },
+    { value: 'implement', label: 'Implementation Mode' },
   ];
 
   // Check session status on mount and periodically
@@ -34,7 +33,7 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
       if (!isMounted) return;
 
       try {
-        const exists = await checkSessionExists(taskId);
+        const exists = await checkSessionExists(taskId, type);
 
         if (isMounted) {
           setSessionExists(exists);
@@ -56,14 +55,14 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [taskId]); // We only need taskId as a dependency
+  }, [taskId, type]); // Include both taskId and type as dependencies
 
   // External function to check status (used by handleStartSession)
   async function checkStatus() {
     try {
-      // Validate taskId before checking
-      SessionInputSchema.parse({ taskId });
-      const exists = await checkSessionExists(taskId);
+      // Validate input before checking
+      SessionInputSchema.parse({ taskId, type });
+      const exists = await checkSessionExists(taskId, type);
       setSessionExists(exists);
     } catch (error) {
       console.error('[CLAUDE BUTTON] Error checking session status:', error);
@@ -77,7 +76,7 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
 
     try {
       // Use the SessionInput interface and validate the input
-      const success = await startClaudeSession({ taskId, mode: selectedMode });
+      const success = await startClaudeSession({ taskId, mode: selectedMode, type });
       console.log(
         `[CLAUDE BUTTON] Session start request result: ${success ? 'SUCCEEDED' : 'FAILED'}`
       );
@@ -113,19 +112,25 @@ export function ClaudeSessionButton({ taskId }: ClaudeSessionButtonProps) {
   // No session exists yet
   return (
     <div className="inline-flex items-center gap-3">
-      <select
-        value={selectedMode}
-        onChange={(e) => setSelectedMode(e.target.value)}
-        disabled={isStarting}
-        className="mode-selector"
-        aria-label="Select Claude mode"
-      >
-        {modeOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <div className="flex flex-col">
+        <label htmlFor="claude-mode" className="text-xs mb-1 text-muted-foreground">
+          Claude Mode
+        </label>
+        <select
+          id="claude-mode"
+          value={selectedMode}
+          onChange={(e) => setSelectedMode(e.target.value)}
+          disabled={isStarting}
+          className="mode-selector"
+          aria-label="Select Claude mode"
+        >
+          {modeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <Button
         onClick={handleStartSession}

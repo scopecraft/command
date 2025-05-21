@@ -95,7 +95,7 @@ export function TaskDetailViewInner() {
           <Button variant="outline" onClick={handlePromptClick}>
             Claude Assistant
           </Button>
-          <ClaudeSessionButton taskId={id} />
+          <ClaudeSessionButton taskId={id} type="task" />
         </div>
       </div>
 

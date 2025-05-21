@@ -20,7 +20,8 @@ try {
 // Validation schema for session parameters
 const SessionInputSchema = z.object({
   taskId: z.string().min(1, "Task ID is required"),
-  mode: z.string().default("none")
+  mode: z.string().default("none"),
+  type: z.enum(["task", "feature"])
 });
 
 type SessionInput = z.infer<typeof SessionInputSchema>;
@@ -60,21 +61,41 @@ function windowExists(sessionName: string, windowName: string): boolean {
 }
 
 /**
- * Get worktree path for a task ID
+ * Create or get worktree path for a task ID
+ * Uses tw-start or tw-feat-start to create worktree if it doesn't exist
  */
-function getWorktreePath(taskId: string): string {
+async function createOrGetWorktreePath(taskId: string, type: 'task' | 'feature'): Promise<string> {
   try {
-    // Get repo root
-    const rootDirResult = spawnSync(["git", "rev-parse", "--show-toplevel"]);
-    if (rootDirResult.exitCode !== 0) {
-      throw new Error("Could not determine git root directory");
-    }
-    const rootDir = rootDirResult.stdout.toString().trim();
+    logger.info(`Creating/getting worktree for ${taskId}`, { type });
     
-    // Return worktrees directory with task ID
-    return `${rootDir}.worktrees/${taskId}`;
+    // Use appropriate command based on the explicit type parameter
+    const command = type === 'feature' ? 'tw-feat-start' : 'tw-start';
+    
+    // Run the command to create/get worktree
+    logger.info(`Running ${command} for ${taskId}`);
+    const result = spawnSync(['bun', 'run', command, taskId]);
+    
+    if (result.exitCode !== 0) {
+      const stderr = result.stderr.toString();
+      logger.error(`Failed to create/get worktree for ${taskId}`, { stderr });
+      throw new Error(`Failed to create worktree: ${stderr}`);
+    }
+    
+    // Get the worktree path from the last line of the output
+    const output = result.stdout.toString().trim();
+    const lines = output.split('\n');
+    const lastLine = lines[lines.length - 1];
+    
+    // Verify it's a directory path
+    if (!lastLine || !lastLine.startsWith('/')) {
+      logger.error(`Invalid worktree path: ${lastLine}`, { taskId, output });
+      throw new Error(`Invalid worktree path returned: ${lastLine}`);
+    }
+    
+    logger.info(`Successfully created/got worktree for ${taskId}`, { path: lastLine });
+    return lastLine;
   } catch (error) {
-    logger.error(`Failed to get worktree path`, { error, taskId });
+    logger.error(`Failed to create or get worktree path`, { error, taskId });
     throw error;
   }
 }
@@ -89,9 +110,9 @@ function getWorktreePath(taskId: string): string {
 export async function handleSessionCheck(params: any): Promise<any> {
   try {
     // Validate parameters
-    const { taskId } = SessionInputSchema.parse(params);
+    const { taskId, type } = SessionInputSchema.parse(params);
     
-    logger.info(`Checking if Claude session exists`, { taskId });
+    logger.info(`Checking if Claude session exists`, { taskId, type });
     
     // Check if tmux session exists
     if (!sessionExists(SESSION_NAME)) {
@@ -144,9 +165,9 @@ export async function handleSessionCheck(params: any): Promise<any> {
 export async function handleSessionStart(params: any): Promise<any> {
   try {
     // Validate parameters
-    const { taskId, mode = "none" } = SessionInputSchema.parse(params);
+    const { taskId, mode = "none", type } = SessionInputSchema.parse(params);
     
-    logger.info(`Starting Claude session`, { taskId, mode });
+    logger.info(`Starting Claude session`, { taskId, mode, type });
     
     // First check if session already exists to prevent duplicates
     const checkResult = await handleSessionCheck({ taskId });
@@ -163,15 +184,15 @@ export async function handleSessionStart(params: any): Promise<any> {
     // Window name for the session
     const windowName = `${taskId}-${mode}`;
     
-    // Get worktree path for this task
+    // Create or get worktree path for this task
     let worktreePath;
     try {
-      worktreePath = getWorktreePath(taskId);
+      worktreePath = await createOrGetWorktreePath(taskId, type);
     } catch (error) {
       return {
         success: false,
         created: false,
-        error: `Failed to get worktree path: ${error instanceof Error ? error.message : error}`
+        error: `Failed to create/get worktree: ${error instanceof Error ? error.message : error}`
       };
     }
     

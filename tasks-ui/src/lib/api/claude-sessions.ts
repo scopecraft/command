@@ -7,6 +7,7 @@ import { z } from 'zod';
 export const SessionInputSchema = z.object({
   taskId: z.string().min(1, 'Task ID is required'),
   mode: z.string().default('none'),
+  type: z.enum(['task', 'feature']),
 });
 
 export type SessionInput = z.infer<typeof SessionInputSchema>;
@@ -17,15 +18,15 @@ export type SessionInput = z.infer<typeof SessionInputSchema>;
  * @param taskId - The task ID to check
  * @returns Promise<boolean> - True if session exists, false otherwise
  */
-export async function checkSessionExists(taskId: string): Promise<boolean> {
+export async function checkSessionExists(taskId: string, type: 'task' | 'feature'): Promise<boolean> {
   try {
     // Validate input
-    SessionInputSchema.parse({ taskId });
+    SessionInputSchema.parse({ taskId, type });
 
     console.log(`[CLAUDE SESSION] Checking if session exists for taskId: ${taskId}`);
 
     // Call the API to check session status
-    const response = await fetch(`/api/claude-sessions/check?taskId=${encodeURIComponent(taskId)}`);
+    const response = await fetch(`/api/claude-sessions/check?taskId=${encodeURIComponent(taskId)}&type=${encodeURIComponent(type)}`);
 
     if (!response.ok) {
       throw new Error(`API returned status ${response.status}`);
@@ -51,9 +52,9 @@ export async function checkSessionExists(taskId: string): Promise<boolean> {
 export async function startClaudeSession(input: SessionInput): Promise<boolean> {
   try {
     // Validate input
-    const { taskId, mode } = SessionInputSchema.parse(input);
+    const { taskId, mode, type } = SessionInputSchema.parse(input);
 
-    console.log('[CLAUDE SESSION] Starting session', { taskId, mode });
+    console.log('[CLAUDE SESSION] Starting session', { taskId, mode, type });
 
     // Make API request to start the tmux session
     const response = await fetch('/api/claude-sessions', {
@@ -62,7 +63,7 @@ export async function startClaudeSession(input: SessionInput): Promise<boolean> 
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ taskId, mode }),
+      body: JSON.stringify({ taskId, mode, type }),
     });
 
     if (!response.ok) {

@@ -145,7 +145,7 @@ function FeatureDetailViewInner() {
           <Button variant="outline" size="sm" onClick={() => navigate(routes.comparison)}>
             Compare
           </Button>
-          <ClaudeSessionButton taskId={featureId} />
+          <ClaudeSessionButton taskId={featureId} type="feature" />
         </div>
       </div>
 
