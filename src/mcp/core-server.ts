@@ -1138,7 +1138,6 @@ export function formatResponse(result: {
           ),
         },
       ],
-      structuredContent: { error: result.error },
       isError: true,
     };
   }
@@ -1158,7 +1157,6 @@ export function formatResponse(result: {
         ),
       },
     ],
-    structuredContent: { data: result.data, message: result.message },
   };
 }
 
@@ -1183,7 +1181,6 @@ export function formatError(error: unknown) {
         ),
       },
     ],
-    structuredContent: { error: errorMessage },
     isError: true,
   };
 }
