@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "echo 'Please run from root: bun run ui:dev'",
+    "dev:api": "echo 'Please run from root: bun run ui:dev:api'",
+    "dev:ui": "vite",
     "typecheck": "tsc --noEmit",
     "check-imports": "bun ./scripts/import-checker.js",
     "build": "vite build",
