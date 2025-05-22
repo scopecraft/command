@@ -222,28 +222,31 @@ export async function callClaude(
     }
   }
   
-  // Create temporary prompt file in local .tmp directory
-  const tmpDir = '.tmp';
+  // Create temporary prompt file in .claude/commands directory
+  const commandsDir = '.claude/commands';
+  const timestamp = Date.now();
+  const tempPromptName = `temp-release-prompt-${timestamp}`;
+  const tempPromptPath = `${commandsDir}/${tempPromptName}.md`;
+  
   try {
-    // Ensure .tmp directory exists
-    await Bun.write(`${tmpDir}/.keep`, '');
+    // Ensure .claude/commands directory exists  
+    await Bun.write(`${commandsDir}/.keep`, '');
   } catch (error) {
     // Directory creation will happen automatically with Bun.write
   }
   
-  const tempPromptPath = `${tmpDir}/claude-prompt-${Date.now()}.md`;
   writeFileSync(tempPromptPath, processedContent);
   
   if (verbose) {
-    console.log(`\n🔍 Generated prompt file: ${tempPromptPath}`);
+    console.log(`\n🔍 Generated Claude command: ${tempPromptName}`);
     console.log(`📄 Prompt content (first 500 chars):`);
     console.log(processedContent.substring(0, 500) + '...');
     console.log('\n📤 Sending to Claude...');
   }
   
   try {
-    // Build Claude command
-    const cmd = ['claude', '-p', tempPromptPath];
+    // Build Claude command using /project: syntax
+    const cmd = ['claude', '-p', `/project:${tempPromptName}`];
     
     // Add system prompt if specified and feature flag is enabled
     if (finalConfig.systemPrompt && finalConfig.useSystemPromptFlag) {
@@ -254,8 +257,6 @@ export async function callClaude(
     if (finalConfig.allowedTools && finalConfig.allowedTools.length > 0) {
       cmd.push('--allowedTools', finalConfig.allowedTools.join(','));
     }
-    
-    // Claude Code doesn't support temperature or model parameters
     
     // Execute Claude command
     const result = await runCommand(cmd, `Claude: ${promptPath}`, !verbose);
@@ -282,11 +283,17 @@ export async function callClaude(
     return result;
     
   } finally {
-    // Clean up temporary file
+    // Always clean up temporary Claude command file
     try {
       unlinkSync(tempPromptPath);
+      if (verbose) {
+        console.log(`🧹 Cleaned up temporary command: ${tempPromptName}`);
+      }
     } catch (e) {
-      // Ignore cleanup errors
+      // Ignore cleanup errors but log in verbose mode
+      if (verbose) {
+        console.warn(`⚠️  Failed to cleanup ${tempPromptPath}: ${e}`);
+      }
     }
   }
 }
