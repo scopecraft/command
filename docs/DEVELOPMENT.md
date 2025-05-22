@@ -346,7 +346,115 @@ sc task list
 scopecraft-mcp
 ```
 
-### Publishing to NPM
+### AI-Assisted Release Process
+
+The project includes an automated release system that combines mechanical tasks with AI-assisted content generation using Claude. The release script provides a structured workflow for creating releases.
+
+#### Release Commands
+
+```bash
+# Using npm scripts (recommended)
+bun run precheck                    # Pre-flight checks
+bun run release:analyze [version]   # Analyze changes
+bun run release:execute             # Execute release  
+bun run release:publish             # Publish release
+bun run release:full [version]      # Complete workflow
+bun run release:dry                 # Dry-run full workflow
+
+# Direct script calls (with more options)
+bun scripts/release.ts precheck
+bun scripts/release.ts analyze [version] [--verbose]
+bun scripts/release.ts execute [--dry-run] [--skip-build]
+bun scripts/release.ts publish [--otp <code>]
+bun scripts/release.ts full [version] [--dry-run] [--otp <code>] [--verbose]
+```
+
+#### Recommended Workflow
+
+1. **Pre-flight Checks**: Always run first to ensure code quality
+   ```bash
+   bun run precheck
+   ```
+   This runs:
+   - Code quality checks (linting, formatting, TypeScript)
+   - Security checks
+   - Unit tests
+
+2. **Clean Git State**: Ensure working directory is clean
+   ```bash
+   git status  # Should show no changes
+   ```
+
+3. **Analyze Release**: Let Claude analyze changes and create release plan
+   ```bash
+   bun run release:analyze
+   # Or specify version: bun run release:analyze 1.2.3
+   ```
+   This creates:
+   - `.release/version.json` - Version bump analysis
+   - `.release/changelog.md` - Generated changelog entry
+   - `.release/metadata.json` - Release metadata
+
+4. **Review Analysis**: Check the generated files before proceeding
+   ```bash
+   cat .release/version.json
+   cat .release/changelog.md
+   ```
+
+5. **Execute Release**: Build and create git release
+   ```bash
+   bun run release:execute
+   # Or dry-run first: bun run release:dry
+   ```
+   This:
+   - Updates `package.json` version
+   - Updates `CHANGELOG.md` with new entry
+   - Builds and validates the project
+   - Creates git commit and tag
+
+6. **Publish**: Push and publish to registries
+   ```bash
+   bun run release:publish --otp <your-2fa-code>
+   ```
+   This:
+   - Pushes to GitHub with tags
+   - Creates GitHub release
+   - Publishes to npm with 2FA support
+
+#### Version Detection
+
+The system automatically analyzes git history to determine the appropriate version bump:
+
+- **Patch**: Bug fixes, small improvements
+- **Minor**: New features, backward-compatible changes  
+- **Major**: Breaking changes, major rewrites
+
+You can override by specifying a version: `analyze 1.2.3`
+
+#### Resuming Failed Releases
+
+If a release fails partway through, you can resume from any step:
+
+```bash
+# If analysis completed but execution failed
+bun run release:execute
+
+# If execution completed but publish failed  
+bun run release:publish --otp <code>
+```
+
+The script gracefully handles already-completed steps.
+
+#### Troubleshooting
+
+- **Git not clean**: Commit or stash changes before releasing
+- **npm OTP required**: Always use `--otp <code>` for 2FA-enabled accounts
+- **GitHub release exists**: The script will warn but continue (this is normal for retries)
+- **Build failures**: Run `bun run precheck` first to catch issues early
+
+### Manual Publishing (Legacy)
+
+If you need to publish manually without the AI-assisted process:
 
 ```bash
 # Update version
@@ -354,7 +462,7 @@ bun run version:patch  # or minor/major
 
 # Build and publish
 bun run build
-npm publish
+npm publish --otp <code>
 ```
 
 ## Task Worktree Management

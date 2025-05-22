@@ -109,6 +109,97 @@ const report = JSON.parse(await result.stdout.text());
 2. **TypeScript cross-file errors**: Even if checking staged files, TypeScript checks everything to catch dependency issues
 3. **Performance**: TypeScript full check can be slow on large projects
 
+## Release Pre-flight Checks
+
+The project includes a comprehensive pre-flight check system used by the release automation:
+
+```bash
+# Run complete pre-flight checks (used in release process)
+bun run precheck
+```
+
+This runs three essential checks:
+
+### 1. Code Quality Check
+- **Command**: `bun run code-check`
+- **Purpose**: Linting, formatting, and TypeScript validation
+- **Coverage**: All staged/changed files + full TypeScript check
+
+### 2. Security Check
+- **Command**: `bun scripts/security-check.ts`
+- **Purpose**: Vulnerability scanning and secret detection
+- **Tools**: 
+  - OSV Scanner (Google's dependency vulnerability scanner)
+  - Secretlint (secret detection in source code)
+  - Custom security pattern analysis
+- **Requirements**: Docker must be installed and running
+- **Coverage**: Dependencies, source files, and configuration
+
+### 3. Unit Tests
+- **Command**: `bun test`
+- **Purpose**: Verify functionality and prevent regressions
+- **Coverage**: All test files in the project
+
+## Security Checks
+
+The security check script (`scripts/security-check.ts`) provides comprehensive security scanning:
+
+```bash
+# Run security checks independently
+bun run security-check
+
+# Get JSON output for CI/tooling (direct script call needed for args)
+bun scripts/security-check.ts --format=json
+
+# Show help and requirements
+bun scripts/security-check.ts --help
+```
+
+### Security Tools
+
+1. **OSV Scanner**: Google's open-source dependency vulnerability scanner
+   - Runs via Docker: `ghcr.io/google/osv-scanner:latest`
+   - Scans for known vulnerabilities in dependencies
+   - No local installation required
+
+2. **Secretlint**: Secret detection in source code
+   - Runs via Docker: `secretlint/secretlint:latest`
+   - Scans for accidentally committed secrets
+   - Checks source files, scripts, and configuration
+
+3. **Custom Security Patterns**: Project-specific security checks
+   - Detects potential `eval()` usage
+   - Identifies suspicious credential patterns
+   - Flags potential secret logging
+   - Finds suspicious admin URLs
+
+### Security Prerequisites
+
+- **Docker**: Must be installed and running
+- **Internet Access**: Required for pulling security scanner images
+- **File Permissions**: Docker needs access to project directory
+
+### Security Exemptions
+
+Add comments to bypass specific security checks:
+
+```typescript
+// Security exemptions (use sparingly)
+eval(code); // security-ok - justified usage
+console.log("secret status"); // log-ok - not actually a secret
+const testUrl = "https://api.admin.example.com"; // url-ok - documentation
+```
+
 ## For Claude Code Sessions
 
-When using Claude Code, always run `bun run code-check` before committing. This is documented in `CLAUDE.md` for the AI assistant's reference.
+When using Claude Code, always run quality checks before committing:
+
+```bash
+# Quick check during development
+bun run code-check
+
+# Full pre-flight check before releases
+bun run precheck
+```
+
+This is documented in `CLAUDE.md` for the AI assistant's reference.
