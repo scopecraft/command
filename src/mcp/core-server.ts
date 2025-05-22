@@ -125,18 +125,47 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
  * Register all tools with the MCP server
  */
 function registerTools(server: McpServer, verbose = false): McpServer {
+  // Get available task types from templates for dynamic enum
+  const templates = listTemplates();
+  const taskTypes = templates.map((t) => t.description).filter(Boolean);
+  // Fallback to common types if no templates found
+  const availableTaskTypes =
+    taskTypes.length > 0
+      ? taskTypes
+      : ['🌟 Feature', '🐞 Bug', '🧹 Chore', '📚 Documentation', '🧪 Test', '🔬 Spike'];
+
+  // Common enums used across multiple tools
+  const taskStatusEnum = z.enum([
+    '🟡 To Do',
+    '🔵 In Progress',
+    '🟢 Done',
+    '⚪ Archived',
+    '🔴 Blocked',
+  ]);
+  const taskPriorityEnum = z.enum(['🔼 High', '▶️ Medium', '🔽 Low']);
+  const taskTypeEnum = z.enum(availableTaskTypes as [string, ...string[]]);
+
   // Task list tool
   const taskListRawShape = {
-    status: z.string().optional(),
-    type: z.string().optional(),
-    assignee: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    phase: z.string().optional(),
-    format: z.string().optional(),
-    include_content: z.boolean().optional(),
-    include_completed: z.boolean().optional(),
-    subdirectory: z.string().optional(),
-    is_overview: z.boolean().optional(),
+    status: taskStatusEnum.describe('Filter by task status').optional(),
+    type: taskTypeEnum.describe('Filter by task type (based on available templates)').optional(),
+    assignee: z.string().describe('Filter by assigned username').optional(),
+    tags: z.array(z.string()).describe('Filter by tags (e.g., ["backend", "api"])').optional(),
+    phase: z.string().describe('Filter by phase ID (e.g., "release-v1")').optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
+    include_content: z
+      .boolean()
+      .describe('Include full task content in response (default: false)')
+      .optional(),
+    include_completed: z
+      .boolean()
+      .describe('Include completed tasks in results (default: false)')
+      .optional(),
+    subdirectory: z
+      .string()
+      .describe('Filter by subdirectory/feature/area (e.g., "FEATURE_Authentication")')
+      .optional(),
+    is_overview: z.boolean().describe('Filter for overview files only').optional(),
   };
   const taskListSchema = z.object(taskListRawShape);
   server.registerTool(
@@ -175,8 +204,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task get tool
   const taskGetRawShape = {
-    id: z.string(),
-    format: z.string().optional(),
+    id: z.string().describe('Task ID to retrieve (e.g., "TASK-001", "FEAT-AUTH-001")'),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const taskGetSchema = z.object(taskGetRawShape);
   server.registerTool(
@@ -204,20 +233,26 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task create tool
   const taskCreateRawShape = {
-    id: z.string().optional(),
-    title: z.string(),
-    type: z.string(),
-    status: z.string().optional(),
-    priority: z.string().optional(),
-    assignee: z.string().optional(),
-    phase: z.string().optional(),
-    subdirectory: z.string().optional(),
-    parent: z.string().optional(),
-    depends: z.array(z.string()).optional(),
-    previous: z.string().optional(),
-    next: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    content: z.string().optional(),
+    id: z.string().describe('Custom task ID (auto-generated if not provided)').optional(),
+    title: z.string().describe('Task title/summary'),
+    type: taskTypeEnum.describe('Task type (must match available templates)'),
+    status: taskStatusEnum.describe('Initial task status').default('🟡 To Do').optional(),
+    priority: taskPriorityEnum.describe('Task priority level').default('▶️ Medium').optional(),
+    assignee: z.string().describe('Username of person assigned to this task').optional(),
+    phase: z.string().describe('Phase to create task in (e.g., "release-v1")').optional(),
+    subdirectory: z
+      .string()
+      .describe('Feature/area subdirectory (e.g., "FEATURE_Authentication")')
+      .optional(),
+    parent: z.string().describe('Parent task ID for creating subtasks').optional(),
+    depends: z.array(z.string()).describe('Array of task IDs this task depends on').optional(),
+    previous: z.string().describe('Previous task ID in sequence').optional(),
+    next: z.string().describe('Next task ID in sequence').optional(),
+    tags: z
+      .array(z.string())
+      .describe('Tags for categorization (e.g., ["backend", "api"])')
+      .optional(),
+    content: z.string().describe('Task description/content in Markdown format').optional(),
   };
   const taskCreateSchema = z.object(taskCreateRawShape);
   server.registerTool(
@@ -250,20 +285,21 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task update tool
   const taskUpdateRawShape = {
-    id: z.string(),
+    id: z.string().describe('Task ID to update'),
     updates: z
       .object({
-        status: z.string().optional(),
-        priority: z.string().optional(),
-        phase: z.string().optional(),
-        subdirectory: z.string().optional(),
-        new_id: z.string().optional(),
-        metadata: z.record(z.unknown()).optional(),
-        content: z.string().optional(),
+        status: taskStatusEnum.describe('New task status').optional(),
+        priority: taskPriorityEnum.describe('New priority level').optional(),
+        phase: z.string().describe('Move to different phase').optional(),
+        subdirectory: z.string().describe('Move to different subdirectory').optional(),
+        new_id: z.string().describe('Rename task (change ID)').optional(),
+        metadata: z.record(z.unknown()).describe('Update any metadata field').optional(),
+        content: z.string().describe('Replace task content/description').optional(),
       })
+      .describe('Fields to update (only specified fields are changed)')
       .optional(),
-    phase: z.string().optional(),
-    subdirectory: z.string().optional(),
+    phase: z.string().describe('Current phase (helps locate task)').optional(),
+    subdirectory: z.string().describe('Current subdirectory (helps locate task)').optional(),
   };
   const taskUpdateSchema = z.object(taskUpdateRawShape);
   server.registerTool(
@@ -297,7 +333,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task delete tool
   const taskDeleteRawShape = {
-    id: z.string(),
+    id: z.string().describe('Task ID to delete'),
   };
   const taskDeleteSchema = z.object(taskDeleteRawShape);
   server.registerTool(
@@ -325,8 +361,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task next tool
   const taskNextRawShape = {
-    id: z.string().optional(),
-    format: z.string().optional(),
+    id: z.string().describe('Current task ID (to find next in sequence)').optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const taskNextSchema = z.object(taskNextRawShape);
   server.registerTool(
@@ -482,7 +518,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Workflow current tool
   const workflowCurrentRawShape = {
-    format: z.string().optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const workflowCurrentSchema = z.object(workflowCurrentRawShape);
   server.registerTool(
@@ -517,8 +553,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Workflow mark complete next tool
   const workflowMarkCompleteNextRawShape = {
-    id: z.string(),
-    format: z.string().optional(),
+    id: z.string().describe('Task ID to mark as complete'),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const workflowMarkCompleteNextSchema = z.object(workflowMarkCompleteNextRawShape);
   server.registerTool(
@@ -583,11 +619,16 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task move tool
   const taskMoveRawShape = {
-    id: z.string(),
-    target_subdirectory: z.string(),
-    target_phase: z.string().optional(),
-    search_phase: z.string().optional(),
-    search_subdirectory: z.string().optional(),
+    id: z.string().describe('Task ID to move'),
+    target_subdirectory: z
+      .string()
+      .describe('Target feature/area directory (e.g., "FEATURE_Security")'),
+    target_phase: z.string().describe('Target phase if moving between phases').optional(),
+    search_phase: z.string().describe('Current phase to search in (helps locate task)').optional(),
+    search_subdirectory: z
+      .string()
+      .describe('Current subdirectory to search in (helps locate task)')
+      .optional(),
   };
   const taskMoveSchema = z.object(taskMoveRawShape);
   server.registerTool(
@@ -975,7 +1016,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Template list tool
   const templateListRawShape = {
-    format: z.string().optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const templateListSchema = z.object(templateListRawShape);
   server.registerTool(
@@ -1007,14 +1048,16 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Init root configuration tool
   const initRootRawShape = {
-    path: z.string(),
+    path: z
+      .string()
+      .describe('Absolute path to project root directory. Must already contain a .tasks or .ruru directory to be valid.'),
   };
   const initRootSchema = z.object(initRootRawShape);
   server.registerTool(
     'init_root',
     {
       description:
-        'Initializes or sets the project root directory for the MCP session. The path must contain a .tasks or .ruru directory to be valid. This configuration is session-specific and allows the MCP server to work with the correct project context.',
+        'Sets the project root directory for the MCP session. The directory must already contain a .tasks or .ruru subdirectory to be valid. This configuration is session-specific and allows the MCP server to work with the correct project context. Note: Unlike the CLI, this does not create the .tasks directory - it must already exist.',
       inputSchema: initRootRawShape,
       annotations: {
         title: 'Initialize Root Configuration',

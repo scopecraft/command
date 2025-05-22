@@ -114,7 +114,9 @@
       "mcp__scopecraft-cmd__task_get",
       "Bash(mkdir:*)",
       "mcp__scopecraft-cmd__task_update",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(bun run:*)"
     ],
     "deny": []
   }

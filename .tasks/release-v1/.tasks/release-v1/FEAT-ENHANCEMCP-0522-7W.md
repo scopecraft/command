@@ -45,6 +45,8 @@ Process remaining entities in parallel:
 - [x] Research Task entity tools and fields
 - [x] Document in `docs/mcp-tools/task-tools.md`
 - [x] Update tool descriptions in `src/mcp/core-server.ts`
+- [x] Add Zod field-level descriptions with `.describe()`
+- [x] Implement dynamic task type enum from templates
 - [ ] E2E test with Claude/Cursor
 
 ### 2. Phase Entity Enhancement
@@ -76,14 +78,31 @@ Process remaining entities in parallel:
 - [ ] Document debug tool purpose
 - [ ] Update tool description
 
+### 8. Documentation Updates
+- [ ] Update `docs/mcp-sdk.md` with current patterns
+
 ## Success Criteria
 - All MCP tools have comprehensive descriptions
 - AI agents can understand tool purpose without external documentation
 - Parameter usage is clear from the tool interface
 - E2E validation confirms improved AI discoverability
 
-## Notes
-- Task types are dynamic based on templates in the project
-- Updated documentation to reflect this and point to template_list tool
-- Also enhanced template_list and configuration tool descriptions
-- Consider future enhancement: generate Zod schemas dynamically at server init to provide proper enum validation for task types
+## Findings
+
+### Zod Schema Annotations
+- ✅ Zod supports `.describe()` method on all schema types
+- ✅ MCP SDK properly passes through these descriptions to clients
+- ✅ Can use enums with `z.enum()` for better validation and discovery
+- ✅ Implemented dynamic task type enum based on available templates
+
+### Project Root Validation
+- `init_root` requires `.tasks` or `.ruru` directory to already exist
+- Unlike CLI, MCP does NOT auto-create directories
+- Updated descriptions to clarify this requirement
+
+### MCP SDK Documentation Issues
+- Uses outdated `server.tool()` method (should be `server.registerTool()`)
+- Missing current pattern with raw Zod shapes and options object
+- No mention of field-level descriptions with `.describe()`
+- Tool list is incomplete (missing features, areas, templates, config tools)
+- Needs update to reflect current implementation patterns
