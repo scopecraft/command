@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.12.0] - 2025-05-22
 
 ### Added
+- **AI-Assisted Release Automation**: Complete automated release system with Claude integration for version analysis and changelog generation
+- **Content Filtering**: Added content and completed filtering options to feature_list MCP tool for better data management
+- **Enhanced Security Checks**: Comprehensive Docker-based security checking with smart filtering for tasks-ui components
+- **AI-First Knowledge System**: Complete vision and brainstorm documentation for improved knowledge management
+
+### Changed
+- **CLI Table Formatting**: Improved table display with clean layout and expanded titles for better readability
+- **Code Quality Checks**: Enhanced code-check script with smart filtering and better defaults for more efficient development
+- **MCP Tool Registration**: Updated dependencies and refactored MCP tool registration for improved performance
+- **Task Documentation**: Updated with complete implementation details for better developer experience
+
+### Fixed
+- **Release Script**: Fixed TypeScript checks during execute phase to prevent build failures
+- **Formatter Output**: Removed unnecessary structuredContent from formatResponse and formatError functions
+
+## [0.12.0] - 2025-05-22
+
+### Added
 - **Release Automation**: New `bun scripts/release.ts` command provides an AI-assisted release process with version analysis, changelog generation, and automated publishing
 - **Security Checks**: Comprehensive security scanning via `bun scripts/security-check.ts` to detect vulnerabilities, secrets, and security issues
 - **MCP Server Improvements**: Enhanced Model Context Protocol server with better error handling and more consistent response formats
