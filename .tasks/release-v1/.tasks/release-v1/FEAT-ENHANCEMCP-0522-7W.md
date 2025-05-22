@@ -42,9 +42,9 @@ Process remaining entities in parallel:
 ## Subtasks
 
 ### 1. Task Entity Enhancement
-- [ ] Research Task entity tools and fields
-- [ ] Document in `docs/mcp-tools/task-tools.md`
-- [ ] Update tool descriptions in `src/mcp/core-server.ts`
+- [x] Research Task entity tools and fields
+- [x] Document in `docs/mcp-tools/task-tools.md`
+- [x] Update tool descriptions in `src/mcp/core-server.ts`
 - [ ] E2E test with Claude/Cursor
 
 ### 2. Phase Entity Enhancement
@@ -81,3 +81,9 @@ Process remaining entities in parallel:
 - AI agents can understand tool purpose without external documentation
 - Parameter usage is clear from the tool interface
 - E2E validation confirms improved AI discoverability
+
+## Notes
+- Task types are dynamic based on templates in the project
+- Updated documentation to reflect this and point to template_list tool
+- Also enhanced template_list and configuration tool descriptions
+- Consider future enhancement: generate Zod schemas dynamically at server init to provide proper enum validation for task types

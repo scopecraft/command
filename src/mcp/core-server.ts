@@ -142,7 +142,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'task_list',
     {
-      description: 'List Tasks',
+      description:
+        'Lists tasks with powerful filtering capabilities. Use this to find specific tasks by status, type, phase, assignee, tags, or location. Supports filtering by completion status and can optionally include task content. Task types are dynamic based on available templates - use template_list to see valid types.',
       inputSchema: taskListRawShape,
       annotations: {
         title: 'List Tasks',
@@ -181,7 +182,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'task_get',
     {
-      description: 'Get Task',
+      description:
+        'Retrieves complete details of a specific task including all metadata and content. Use this when you need full information about a task, including its relationships (parent, dependencies), dates, and complete content. Essential for reading task details before updates.',
       inputSchema: taskGetRawShape,
       annotations: {
         title: 'Get Task',
@@ -221,7 +223,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'task_create',
     {
-      description: 'Create Task',
+      description:
+        'Creates a new task with specified metadata and content. Tasks can be standalone or organized within features/areas in specific phases. Supports parent-child relationships, dependencies, and task sequences. Task types must match available templates - use template_list to see valid types. Auto-generates ID if not provided.',
       inputSchema: taskCreateRawShape,
       annotations: {
         title: 'Create Task',
@@ -266,7 +269,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'task_update',
     {
-      description: 'Update Task',
+      description:
+        "Updates an existing task's metadata and/or content. Supports partial updates - only specified fields are changed. Use this to change status, reassign, update content, or move tasks between phases/subdirectories. Can also rename tasks by providing new_id.",
       inputSchema: taskUpdateRawShape,
       annotations: {
         title: 'Update Task',
@@ -299,7 +303,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'task_delete',
     {
-      description: 'Delete Task',
+      description:
+        'Permanently deletes a task and its file. Use with caution as this is destructive and cannot be undone. Useful for removing cancelled, obsolete, or test tasks.',
       inputSchema: taskDeleteRawShape,
       annotations: {
         title: 'Delete Task',
@@ -327,7 +332,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'task_next',
     {
-      description: 'Get Next Task',
+      description:
+        'Finds the next recommended task to work on based on dependencies, priorities, and workflow. Helps maintain task flow by suggesting what to work on next, either after completing a specific task or when starting fresh. Respects task sequences and dependencies.',
       inputSchema: taskNextRawShape,
       annotations: {
         title: 'Get Next Task',
@@ -482,7 +488,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'workflow_current',
     {
-      description: 'Get Current Workflow',
+      description:
+        'Shows all tasks currently in progress across the project. Useful for status updates, checking active work, and ensuring no task conflicts. Returns tasks with status "🔵 In Progress".',
       inputSchema: workflowCurrentRawShape,
       annotations: {
         title: 'Get Current Workflow',
@@ -517,7 +524,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'workflow_mark_complete_next',
     {
-      description: 'Mark Complete and Get Next',
+      description:
+        'Marks a task as complete (🟢 Done) and immediately suggests the next task to work on. Streamlines workflow by combining task completion with next task recommendation. Useful for maintaining momentum and following proper task sequences.',
       inputSchema: workflowMarkCompleteNextRawShape,
       annotations: {
         title: 'Mark Complete and Get Next',
@@ -585,7 +593,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'task_move',
     {
-      description: 'Move Task',
+      description:
+        'Moves a task to a different feature/area subdirectory or phase while preserving all metadata and relationships. Use this to reorganize tasks, reassign to different features/areas, or move between project phases. Requires target_subdirectory parameter.',
       inputSchema: taskMoveRawShape,
       annotations: {
         title: 'Move Task',
@@ -972,7 +981,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'template_list',
     {
-      description: 'List Templates',
+      description:
+        'Lists available task templates with their types and descriptions. Essential for discovering valid task types in your project since types are template-driven. Each template defines a task type (like "🌟 Feature", "🐞 Bug") that can be used when creating or filtering tasks. Always check this before using task_create or filtering by type.',
       inputSchema: templateListRawShape,
       annotations: {
         title: 'List Templates',
@@ -1003,7 +1013,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'init_root',
     {
-      description: 'Initialize Root Configuration',
+      description:
+        'Initializes or sets the project root directory for the MCP session. The path must contain a .tasks or .ruru directory to be valid. This configuration is session-specific and allows the MCP server to work with the correct project context.',
       inputSchema: initRootRawShape,
       annotations: {
         title: 'Initialize Root Configuration',
@@ -1044,7 +1055,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'get_current_root',
     {
-      description: 'Get Current Root',
+      description:
+        'Returns the currently configured project root directory, including its source (how it was detected) and validation status. Useful for debugging configuration issues or confirming the active project context.',
       inputSchema: getCurrentRootRawShape,
       annotations: {
         title: 'Get Current Root',
@@ -1080,7 +1092,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'list_projects',
     {
-      description: 'List Projects',
+      description:
+        'Lists all configured projects from the Scopecraft configuration file. Returns project names and paths, useful for switching between multiple projects or understanding the available project contexts.',
       inputSchema: listProjectsRawShape,
       annotations: {
         title: 'List Projects',
