@@ -80,7 +80,8 @@ export function formatTasksList(tasks: Task[], format: OutputFormat): string {
   }
 
   // Clean table format without separators (prioritizing title readability)
-  const header = 'ID                        Title                                              Status          Phase';
+  const header =
+    'ID                        Title                                              Status          Phase';
 
   const rows = tasks.map((task) => {
     const id = task.metadata.id.substring(0, 26).padEnd(26);
@@ -238,7 +239,8 @@ export function formatFeaturesList(features: Feature[], format: OutputFormat): s
   }
 
   // Clean table format without separators
-  const header = 'ID                              Title                                    Status      Phase         Progress';
+  const header =
+    'ID                              Title                                    Status      Phase         Progress';
 
   const rows = features.map((feature) => {
     const id = feature.id.substring(0, 32).padEnd(32);
