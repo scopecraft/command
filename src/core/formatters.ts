@@ -1,7 +1,7 @@
 /**
  * Formatters for displaying tasks and phases in various formats
  */
-import type { OutputFormat, Phase, Task } from './types.js';
+import type { Feature, OutputFormat, Phase, Task } from './types.js';
 
 /**
  * Format a list of tasks for display
@@ -79,20 +79,16 @@ export function formatTasksList(tasks: Task[], format: OutputFormat): string {
     return output;
   }
 
-  // Default table format
-  const header =
-    'ID                  | Phase          | Title                           | Status        | Type          | Assigned\n' +
-    '--------------------|---------------|--------------------------------|---------------|---------------|------------------';
+  // Clean table format without separators (prioritizing title readability)
+  const header = 'ID                        Title                                              Status          Phase';
 
   const rows = tasks.map((task) => {
-    const id = task.metadata.id.padEnd(20);
-    const phase = (task.metadata.phase || '').padEnd(15);
-    const title = (task.metadata.title || '').substring(0, 30).padEnd(30);
-    const status = (task.metadata.status || '').padEnd(15);
-    const type = (task.metadata.type || '').padEnd(15);
-    const assignee = task.metadata.assigned_to || '';
+    const id = task.metadata.id.substring(0, 26).padEnd(26);
+    const title = (task.metadata.title || '').substring(0, 50).padEnd(50);
+    const status = (task.metadata.status || '').padEnd(16);
+    const phase = (task.metadata.phase || '').padEnd(14);
 
-    return `${id}| ${phase}| ${title}| ${status}| ${type}| ${assignee}`;
+    return `${id}${title}${status}${phase}`;
   });
 
   return `\nTasks:\n${header}\n${rows.join('\n')}\n\nTotal: ${tasks.length} tasks\n`;
@@ -224,4 +220,35 @@ export function formatTaskDetail(task: Task, format: OutputFormat): string {
   output += `Content:\n${task.content}\n`;
 
   return output;
+}
+
+/**
+ * Format a list of features for display
+ * @param features List of features to format
+ * @param format Output format
+ * @returns Formatted string
+ */
+export function formatFeaturesList(features: Feature[], format: OutputFormat): string {
+  if (format === 'json') {
+    return JSON.stringify(features, null, 2);
+  }
+
+  if (format === 'minimal') {
+    return features.map((feature) => `${feature.id}\t${feature.title}`).join('\n');
+  }
+
+  // Clean table format without separators
+  const header = 'ID                              Title                                    Status      Phase         Progress';
+
+  const rows = features.map((feature) => {
+    const id = feature.id.substring(0, 32).padEnd(32);
+    const title = (feature.title || '').substring(0, 40).padEnd(40);
+    const status = (feature.status || '').padEnd(12);
+    const phase = (feature.phase || '').padEnd(14);
+    const progress = `${feature.progress || 0}%`.padEnd(8);
+
+    return `${id}${title}${status}${phase}${progress}`;
+  });
+
+  return `\nFeatures:\n${header}\n${rows.join('\n')}\n\nTotal: ${features.length} features\n`;
 }
