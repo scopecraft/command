@@ -347,7 +347,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>`;
   console.log(`  3. Publish: npm publish`);
 }
 
-async function publishRelease(): Promise<void> {
+async function publishRelease(otp?: string): Promise<void> {
   console.log('🚀 Publishing release...');
   
   // Push to remote
@@ -369,7 +369,11 @@ async function publishRelease(): Promise<void> {
   
   // Publish to npm (optional)
   console.log('\n📦 Publishing to npm...');
-  const publishResult = await runCommand(['npm', 'publish'], 'Publish to npm');
+  const publishCommand = ['npm', 'publish'];
+  if (otp) {
+    publishCommand.push('--otp', otp);
+  }
+  const publishResult = await runCommand(publishCommand, 'Publish to npm');
   if (!publishResult.success) {
     console.warn('⚠️  npm publish failed - check authentication');
   }
@@ -450,9 +454,10 @@ program
 program
   .command('publish')
   .description('Publish the release (push, GitHub, npm)')
-  .action(async () => {
+  .option('--otp <code>', 'One-time password for npm publish')
+  .action(async (options) => {
     try {
-      await publishRelease();
+      await publishRelease(options.otp);
     } catch (error) {
       console.error(`❌ Publish failed: ${error}`);
       process.exit(1);
@@ -465,12 +470,13 @@ program
   .argument('[version]', 'Requested version (optional)')
   .option('--dry-run', 'Show what would be done without making changes')
   .option('--verbose', 'Show detailed Claude output')
+  .option('--otp <code>', 'One-time password for npm publish')
   .action(async (version, options) => {
     try {
       await analyzeRelease(version, options.verbose);
       await executeRelease(options.dryRun);
       if (!options.dryRun) {
-        await publishRelease();
+        await publishRelease(options.otp);
       }
     } catch (error) {
       console.error(`❌ Full release failed: ${error}`);
