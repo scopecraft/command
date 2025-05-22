@@ -131,15 +131,11 @@ async function runPreflightChecks(): Promise<boolean> {
   return allPassed;
 }
 
-// Build and validate
+// Build and validate (assumes code quality checks already passed in precheck)
 async function buildAndValidate(): Promise<boolean> {
   console.log('\n🔨 Building and Validating...');
   
   const steps = [
-    {
-      name: 'Code Quality Check',
-      command: ['bun', 'run', 'code-check']
-    },
     {
       name: 'Build Project',
       command: ['bun', 'run', 'build']
@@ -284,7 +280,7 @@ async function executeRelease(dryRun = false, skipBuild = false): Promise<void> 
     console.log('\n🔍 Dry run - showing what would be done:');
     console.log('  1. Update package.json version');
     console.log('  2. Update CHANGELOG.md');
-    console.log('  3. Run build and tests');
+    console.log('  3. Build and package');
     console.log('  4. Commit changes');
     console.log('  5. Create git tag');
     return;
@@ -323,9 +319,9 @@ async function executeRelease(dryRun = false, skipBuild = false): Promise<void> 
     }
   } else {
     if (dryRun) {
-      console.log('\n🔍 Would run quality checks and build (skipped in dry-run)');
+      console.log('\n🔍 Would run build and packaging (skipped in dry-run)');
     } else {
-      console.log('\n🔍 Skipping build and validation (--skip-build)');
+      console.log('\n🔍 Skipping build and packaging (--skip-build)');
     }
   }
   
