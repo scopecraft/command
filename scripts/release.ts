@@ -197,7 +197,7 @@ async function analyzeVersion(state: ReleaseState, options: any = {}): Promise<v
 }
 
 // Generate changelog with Claude
-async function generateChangelog(state: ReleaseState): Promise<void> {
+async function generateChangelog(state: ReleaseState, options: any = {}): Promise<void> {
   console.log('\n📝 Generating Changelog...');
   
   const data = {
@@ -207,9 +207,16 @@ async function generateChangelog(state: ReleaseState): Promise<void> {
     ...state.gitData
   };
   
+  if (options.verbose) {
+    console.log('\n📊 Data being sent to Claude:');
+    console.log(JSON.stringify(data, null, 2));
+  }
+  
   const result = await callClaude(
     'scripts/prompts/tasks/changelog-generation.md',
-    data
+    data,
+    undefined,
+    options.verbose || false
   );
   
   const validation = validateChangelogGeneration(result);
@@ -468,7 +475,7 @@ async function releaseCommand(version?: string, options: any = {}) {
     await analyzeVersion(state, options);
     
     // Step 2: Generate changelog
-    await generateChangelog(state);
+    await generateChangelog(state, options);
     
     // Step 3: Update files
     updatePackageVersion(state.targetVersion);
