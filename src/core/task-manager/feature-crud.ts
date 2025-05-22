@@ -179,12 +179,23 @@ export async function listFeatures(
           }
         }
 
+        // Skip completed features if include_completed is false
+        if (
+          !options.include_completed &&
+          (status.includes('Done') ||
+            status.includes('🟢') ||
+            status.includes('Completed') ||
+            status.includes('Complete'))
+        ) {
+          continue; // Skip this feature
+        }
+
         // Create the feature object
         const feature: Feature = {
           id: subdir,
           name: featureName,
           title: overviewTask?.metadata.title || featureName,
-          description: overviewTask?.content || '',
+          description: options.include_content ? overviewTask?.content || '' : '',
           phase,
           task_count: taskFiles.length,
           progress,
@@ -193,7 +204,10 @@ export async function listFeatures(
         };
 
         // Fix: Make sure description isn't using the status value
-        if (feature.description === '🟡 To Do' || feature.description === status) {
+        if (
+          options.include_content &&
+          (feature.description === '🟡 To Do' || feature.description === status)
+        ) {
           // Try to get a better description
           if (overviewTask?.metadata.assigned_to && overviewTask.metadata.assigned_to.length > 10) {
             // This is likely a description that was incorrectly set as assigned_to
@@ -201,8 +215,8 @@ export async function listFeatures(
           }
         }
 
-        // Add the overview task if available
-        if (overviewTask) {
+        // Only include the overview task if include_content is true
+        if (overviewTask && options.include_content) {
           feature.overview = overviewTask;
         }
 

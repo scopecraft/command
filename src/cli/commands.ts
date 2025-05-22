@@ -827,14 +827,18 @@ import fs from 'node:fs';
 export async function handleFeatureListCommand(options: {
   phase?: string;
   format?: string;
-  include_tasks?: boolean;
-  include_progress?: boolean;
+  includeTasks?: boolean;
+  includeProgress?: boolean;
+  includeContent?: boolean;
+  includeCompleted?: boolean;
 }): Promise<void> {
   try {
     const result = await listFeatures({
       phase: options.phase,
-      include_tasks: options.include_tasks === true,
-      include_progress: options.include_progress !== false,
+      include_tasks: options.includeTasks === true,
+      include_progress: options.includeProgress !== false,
+      include_content: options.includeContent === true,
+      include_completed: options.includeCompleted === true,
     });
 
     if (!result.success) {

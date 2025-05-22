@@ -151,6 +151,8 @@ export interface FeatureListParams {
   format?: string;
   include_tasks?: boolean;
   include_progress?: boolean;
+  include_content?: boolean; // Controls whether feature content is included (default: false)
+  include_completed?: boolean; // Controls whether completed features are included (default: false)
 }
 
 // Feature get request params

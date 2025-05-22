@@ -71,7 +71,7 @@ import {
 export async function handleTaskList(params: TaskListParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
+
   // Pass all parameters to the core function, including runtime config
   // The core implementation now defaults to excluding content and completed tasks
   // Only when explicitly set to true will these be included
@@ -95,9 +95,9 @@ export async function handleTaskList(params: TaskListParams) {
 export async function handleTaskGet(params: TaskGetParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
-  return await getTask(params.id, { 
-    phase: params.phase, 
+
+  return await getTask(params.id, {
+    phase: params.phase,
     subdirectory: params.subdirectory,
     config, // Pass runtime config with tasksDir
   });
@@ -144,8 +144,8 @@ export async function handleTaskCreate(params: TaskCreateParams) {
 
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
-  return await createTask(task, { 
+
+  return await createTask(task, {
     subdirectory: params.subdirectory,
     config, // Pass runtime config with tasksDir
   });
@@ -181,8 +181,8 @@ export async function handleTaskUpdate(params: TaskUpdateParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
-  return await updateTask(params.id, updates, { 
-    phase: params.phase, 
+  return await updateTask(params.id, updates, {
+    phase: params.phase,
     subdirectory: params.subdirectory,
     config, // Pass runtime config with tasksDir
   });
@@ -195,8 +195,8 @@ export async function handleTaskDelete(params: TaskDeleteParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
-  return await deleteTask(params.id, { 
-    phase: params.phase, 
+  return await deleteTask(params.id, {
+    phase: params.phase,
     subdirectory: params.subdirectory,
     config, // Pass runtime config with tasksDir
   });
@@ -218,7 +218,7 @@ export async function handleTaskNext(params: TaskNextParams) {
 export async function handlePhaseList(params: PhaseListParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
+
   return await listPhases({ config });
 }
 
@@ -237,7 +237,7 @@ export async function handlePhaseCreate(params: PhaseCreateParams) {
 
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
+
   return await createPhase(phase, { config });
 }
 
@@ -254,7 +254,7 @@ export async function handlePhaseUpdate(params: PhaseUpdateParams) {
 
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
+
   return await updatePhase(params.id, updates, { config });
 }
 
@@ -264,8 +264,8 @@ export async function handlePhaseUpdate(params: PhaseUpdateParams) {
 export async function handlePhaseDelete(params: PhaseDeleteParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
-  return await deletePhase(params.id, { 
+
+  return await deletePhase(params.id, {
     force: params.force,
     config, // Pass runtime config with tasksDir
   });
@@ -277,7 +277,7 @@ export async function handlePhaseDelete(params: PhaseDeleteParams) {
 export async function handleWorkflowCurrent(params: WorkflowCurrentParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
+
   // Using the normalized status value means we'll find all in-progress tasks
   // regardless of their specific format
   const inProgressResult = await listTasks({
@@ -298,14 +298,18 @@ export async function handleWorkflowCurrent(params: WorkflowCurrentParams) {
 export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkCompleteNextParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
+
   // Get the next task before marking current as complete
   const nextTaskResult = await findNextTask(params.id, { config });
 
   // Mark current task as complete, using the normalized "Done" status
-  const updateResult = await updateTask(params.id, {
-    metadata: { status: normalizeTaskStatus('Done') },
-  }, { config });
+  const updateResult = await updateTask(
+    params.id,
+    {
+      metadata: { status: normalizeTaskStatus('Done') },
+    },
+    { config }
+  );
 
   if (!updateResult.success) {
     return updateResult;
@@ -386,6 +390,8 @@ export async function handleFeatureList(params: FeatureListParams) {
     status: params.status,
     include_tasks: params.include_tasks,
     include_progress: params.include_progress !== false, // Default to true
+    include_content: params.include_content, // Only include content when explicitly set to true
+    include_completed: params.include_completed, // Only include completed features when explicitly set to true
     config, // Pass runtime config with tasksDir
   });
 }
@@ -397,7 +403,7 @@ export async function handleFeatureGet(params: FeatureGetParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
-  return await getFeature(params.id, { 
+  return await getFeature(params.id, {
     phase: params.phase,
     config, // Pass runtime config with tasksDir
   });
@@ -410,22 +416,19 @@ export async function handleFeatureCreate(params: FeatureCreateParams) {
   console.log(
     `[DEBUG] Feature Create: description=${params.description}, assignee=${params.assignee}`
   );
-  
+
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
-  return await createFeature(
-    params.name,
-    {
-      title: params.title,
-      phase: params.phase,
-      type: params.type || '🌟 Feature',
-      description: params.description,
-      assignee: params.assignee,
-      tags: params.tags,
-      config, // Pass runtime config with tasksDir
-    }
-  );
+  return await createFeature(params.name, {
+    title: params.title,
+    phase: params.phase,
+    type: params.type || '🌟 Feature',
+    description: params.description,
+    assignee: params.assignee,
+    tags: params.tags,
+    config, // Pass runtime config with tasksDir
+  });
 }
 
 /**
@@ -435,7 +438,7 @@ export async function handleFeatureUpdate(params: FeatureUpdateParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
-  return await updateFeature(params.id, params.updates, { 
+  return await updateFeature(params.id, params.updates, {
     phase: params.phase,
     config, // Pass runtime config with tasksDir
   });
@@ -448,8 +451,8 @@ export async function handleFeatureDelete(params: FeatureDeleteParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
-  return await deleteFeature(params.id, { 
-    phase: params.phase, 
+  return await deleteFeature(params.id, {
+    phase: params.phase,
     force: params.force,
     config, // Pass runtime config with tasksDir
   });
@@ -461,7 +464,7 @@ export async function handleFeatureDelete(params: FeatureDeleteParams) {
 export async function handleAreaList(params: AreaListParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
+
   return await listAreas({
     phase: params.phase,
     status: params.status,
@@ -477,10 +480,10 @@ export async function handleAreaList(params: AreaListParams) {
 export async function handleAreaGet(params: AreaGetParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
-  return await getArea(params.id, { 
+
+  return await getArea(params.id, {
     phase: params.phase,
-    config, // Pass runtime config with tasksDir 
+    config, // Pass runtime config with tasksDir
   });
 }
 
@@ -491,22 +494,19 @@ export async function handleAreaCreate(params: AreaCreateParams) {
   console.log(
     `[DEBUG] Area Create: description=${params.description}, assignee=${params.assignee}`
   );
-  
+
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
-  return await createArea(
-    params.name,
-    {
-      title: params.title,
-      phase: params.phase,
-      type: params.type || '🧹 Chore',
-      description: params.description,
-      assignee: params.assignee,
-      tags: params.tags,
-      config, // Pass runtime config with tasksDir
-    }
-  );
+
+  return await createArea(params.name, {
+    title: params.title,
+    phase: params.phase,
+    type: params.type || '🧹 Chore',
+    description: params.description,
+    assignee: params.assignee,
+    tags: params.tags,
+    config, // Pass runtime config with tasksDir
+  });
 }
 
 /**
@@ -515,8 +515,8 @@ export async function handleAreaCreate(params: AreaCreateParams) {
 export async function handleAreaUpdate(params: AreaUpdateParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
-  return await updateArea(params.id, params.updates, { 
+
+  return await updateArea(params.id, params.updates, {
     phase: params.phase,
     config, // Pass runtime config with tasksDir
   });
@@ -528,9 +528,9 @@ export async function handleAreaUpdate(params: AreaUpdateParams) {
 export async function handleAreaDelete(params: AreaDeleteParams) {
   // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-  
-  return await deleteArea(params.id, { 
-    phase: params.phase, 
+
+  return await deleteArea(params.id, {
+    phase: params.phase,
     force: params.force,
     config, // Pass runtime config with tasksDir
   });
@@ -543,10 +543,10 @@ export async function handleTemplateList(params: TemplateListParams) {
   try {
     // Extract root_dir parameter to create runtime config if provided
     const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-    
+
     // Pass runtime config to listTemplates
     const templates = listTemplates(config);
-    
+
     return {
       success: true,
       data: templates,
