@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.12.0] - 2025-05-22
 
+No new changes found since v0.12.0. Current version is already at the latest release.
+
+### Previous Release (v0.12.0)
+- **MCP Tool Descriptions**: Enhanced all MCP tool descriptions with field-level documentation
+- **Development Workflow**: Improved tasks-ui development server workflow  
+- **Documentation**: Added comprehensive MCP tool documentation
+- **Release Process**: Enhanced AI-assisted release process with OTP support
+
+## [0.12.0] - 2025-05-22
+
 ### Added
 - **AI-Assisted Release Automation**: Complete automated release system with Claude integration for version analysis and changelog generation
 - **Content Filtering**: Added content and completed filtering options to feature_list MCP tool for better data management
