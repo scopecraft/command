@@ -36,14 +36,16 @@ import {
 
 // Configuration
 const DIST_DIR = './tasks-ui/dist';
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || (process.env.NODE_ENV === 'development' ? 8888 : 3000);
 const API_PREFIX = '/api';
+const IS_DEV = process.env.NODE_ENV === 'development';
 
 // Initialize WebSocket components
 const processManager = new ProcessManager();
 const claudeWebSocketHandler = createClaudeWebSocketHandler(processManager);
 
 console.log(`Current working directory: ${process.cwd()}`);
+console.log(`Starting server on port ${PORT}${IS_DEV ? ' (API only mode)' : ''}`);
 
 // Serve the React SPA and API endpoints
 const server = serve({
@@ -72,6 +74,11 @@ const server = serve({
 
       // Handle other API requests
       return await handleApiRequest(req, path.substring(API_PREFIX.length));
+    }
+    
+    // In development mode, only serve API and WebSocket, not static files
+    if (IS_DEV) {
+      return new Response('Not Found', { status: 404 });
     }
     
     // Clean the path to prevent directory traversal
@@ -445,6 +452,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
 processManager.setServer(server);
 processManager.setupShutdownHandlers();
 
-logger.info('Server started successfully', {
-  url: `http://localhost:${PORT}`
+logger.info(`Server started successfully${IS_DEV ? ' (API only mode)' : ''}`, {
+  url: `http://localhost:${PORT}`,
+  mode: IS_DEV ? 'development' : 'production'
 });
