@@ -23,21 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Release Script**: Fixed TypeScript checks during execute phase to prevent build failures
 - **Formatter Output**: Removed unnecessary structuredContent from formatResponse and formatError functions
 
-## [0.12.0] - 2025-05-22
-
-### Added
-- **Release Automation**: New `bun scripts/release.ts` command provides an AI-assisted release process with version analysis, changelog generation, and automated publishing
-- **Security Checks**: Comprehensive security scanning via `bun scripts/security-check.ts` to detect vulnerabilities, secrets, and security issues
-- **MCP Server Improvements**: Enhanced Model Context Protocol server with better error handling and more consistent response formats
-
-### Changed
-- **Task Management**: Improved handling of task filtering, making operations more efficient and consistent
-- **CLI Commands**: Enhanced formatting and display options for task and entity commands
-- **MCP Endpoint Parameters**: Streamlined parameter handling for better consistency across all endpoints
-
-### Fixed
-- **Task Listing**: Fixed issues with content filtering and display options in task listing functionality
-
 
 ## [0.11.1] - 2025-05-22
 
