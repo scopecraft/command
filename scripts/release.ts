@@ -1,39 +1,44 @@
 #!/usr/bin/env bun
 
 /**
- * Release Management Script
+ * Simple Release Script
  * 
- * Orchestrates the release process using a combination of automated checks
- * and AI-assisted content generation via Claude.
- * 
- * Usage: bun scripts/release.ts [version] [options]
+ * 1. Claude analyzes changes and creates release plan
+ * 2. Script executes the mechanical parts
  */
 
 import { Command } from 'commander';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { callClaude, prepareGitData, validateVersionAnalysis, validateChangelogGeneration } from './utils/claude-helper';
+import { callClaude } from './utils/claude-helper';
 
 const program = new Command();
 
-interface PackageJson {
+interface ReleaseVersion {
+  current_version: string;
+  new_version: string;
+  bump_type: string;
+  confidence: string;
+  reasoning: string;
+  breaking_changes: boolean;
+  notable_features: string[];
+}
+
+interface ReleaseMetadata {
+  success: boolean;
   version: string;
-  [key: string]: any;
+  release_date: string;
+  summary: string;
+  breaking_changes: boolean;
+  highlights: string[];
+  categories_used: string[];
+  total_changes: number;
+  commit_count: number;
+  files_changed: number;
 }
 
-// Release state management
-interface ReleaseState {
-  currentVersion: string;
-  targetVersion: string;
-  lastTag: string;
-  gitData: Record<string, any>;
-  versionAnalysis?: any;
-  changelogData?: any;
-}
-
-// Run a command and capture output
-async function runCommand(cmd: string[], description: string) {
-  console.log(`\n🔧 ${description}`);
+async function runCommand(cmd: string[], description: string, showAllOutput = false, streaming = false): Promise<{ success: boolean; output: string }> {
+  console.log(`🔧 ${description}`);
   
   const proc = Bun.spawn(cmd, {
     stdout: 'pipe',
@@ -43,7 +48,6 @@ async function runCommand(cmd: string[], description: string) {
   let stdout = '';
   let stderr = '';
   
-  // Read stdout
   if (proc.stdout) {
     const reader = proc.stdout.getReader();
     const decoder = new TextDecoder();
@@ -58,7 +62,6 @@ async function runCommand(cmd: string[], description: string) {
     }
   }
   
-  // Read stderr  
   if (proc.stderr) {
     const reader = proc.stderr.getReader();
     const decoder = new TextDecoder();
@@ -76,32 +79,12 @@ async function runCommand(cmd: string[], description: string) {
   const exitCode = await proc.exited;
   
   if (stdout) console.log(stdout);
-  if (stderr) console.error(stderr);
+  if (stderr && (exitCode !== 0 || showAllOutput)) console.error(stderr);
   
   return {
     success: exitCode === 0,
-    stdout,
-    stderr,
-    exitCode
+    output: stdout
   };
-}
-
-// Load current package.json
-function loadPackageJson(): PackageJson {
-  try {
-    const content = readFileSync('package.json', 'utf-8');
-    return JSON.parse(content);
-  } catch (error) {
-    throw new Error(`Failed to load package.json: ${error}`);
-  }
-}
-
-// Update package.json version
-function updatePackageVersion(newVersion: string) {
-  const pkg = loadPackageJson();
-  pkg.version = newVersion;
-  writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-  console.log(`✅ Updated package.json version to ${newVersion}`);
 }
 
 // Run pre-flight checks
@@ -148,126 +131,15 @@ async function runPreflightChecks(): Promise<boolean> {
   return allPassed;
 }
 
-// Analyze version with Claude
-async function analyzeVersion(state: ReleaseState, options: any = {}): Promise<void> {
-  console.log('\n🤖 Analyzing Version Requirements...');
-  
-  const data = {
-    current_version: state.currentVersion,
-    target_version: state.targetVersion,
-    last_tag: state.lastTag,
-    ...state.gitData
-  };
-  
-  if (options.verbose) {
-    console.log('\n📊 Data being sent to Claude:');
-    console.log(JSON.stringify(data, null, 2));
-  }
-  
-  const result = await callClaude(
-    'scripts/prompts/tasks/version-analysis.md',
-    data,
-    undefined,
-    options.verbose || false
-  );
-  
-  const validation = validateVersionAnalysis(result);
-  if (!validation.success) {
-    throw new Error(`Version analysis failed: ${validation.error}`);
-  }
-  
-  state.versionAnalysis = validation.data;
-  
-  // Update target version if not specified or incorrect
-  if (!state.targetVersion || state.versionAnalysis.recommended_version !== state.targetVersion) {
-    console.log(`\n📋 Version Analysis Results:`);
-    console.log(`  Current: ${state.currentVersion}`);
-    console.log(`  Recommended: ${state.versionAnalysis.recommended_version}`);
-    console.log(`  Change Type: ${state.versionAnalysis.change_type}`);
-    console.log(`  Confidence: ${state.versionAnalysis.confidence}`);
-    console.log(`  Reasoning: ${state.versionAnalysis.reasoning}`);
-    
-    if (state.versionAnalysis.breaking_changes) {
-      console.warn(`⚠️  Breaking changes detected!`);
-    }
-    
-    // Use recommended version
-    state.targetVersion = state.versionAnalysis.recommended_version;
-  }
-}
-
-// Generate changelog with Claude
-async function generateChangelog(state: ReleaseState, options: any = {}): Promise<void> {
-  console.log('\n📝 Generating Changelog...');
-  
-  const data = {
-    target_version: state.targetVersion,
-    release_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-    last_tag: state.lastTag,
-    ...state.gitData
-  };
-  
-  if (options.verbose) {
-    console.log('\n📊 Data being sent to Claude:');
-    console.log(JSON.stringify(data, null, 2));
-  }
-  
-  const result = await callClaude(
-    'scripts/prompts/tasks/changelog-generation.md',
-    data,
-    undefined,
-    options.verbose || false
-  );
-  
-  const validation = validateChangelogGeneration(result);
-  if (!validation.success) {
-    throw new Error(`Changelog generation failed: ${validation.error}`);
-  }
-  
-  state.changelogData = validation.data;
-  
-  console.log(`\n📋 Generated Changelog:`);
-  console.log(`  Summary: ${state.changelogData.summary}`);
-  console.log(`  Categories: ${state.changelogData.categories_used.join(', ')}`);
-  console.log(`  Changes: ${state.changelogData.total_changes}`);
-  
-  if (state.changelogData.breaking_changes) {
-    console.warn(`⚠️  Breaking changes in changelog!`);
-  }
-}
-
-// Update CHANGELOG.md file
-function updateChangelogFile(state: ReleaseState): void {
-  console.log('\n📄 Updating CHANGELOG.md...');
-  
-  const changelogPath = 'CHANGELOG.md';
-  let existingChangelog = '';
-  
-  try {
-    existingChangelog = readFileSync(changelogPath, 'utf-8');
-  } catch (error) {
-    // File doesn't exist, create with header
-    existingChangelog = '# Changelog\n\nAll notable changes to this project will be documented in this file.\n\n';
-  }
-  
-  // Insert new changelog entry
-  const newEntry = `## [${state.targetVersion}] - ${new Date().toISOString().split('T')[0]}\n\n${state.changelogData.changelog_markdown}\n\n`;
-  
-  // Find insertion point (after header, before first existing entry)
-  const lines = existingChangelog.split('\n');
-  const insertIndex = lines.findIndex(line => line.startsWith('## [')) || lines.length;
-  
-  lines.splice(insertIndex, 0, ...newEntry.split('\n'));
-  
-  writeFileSync(changelogPath, lines.join('\n'));
-  console.log(`✅ Updated CHANGELOG.md with version ${state.targetVersion}`);
-}
-
 // Build and validate
 async function buildAndValidate(): Promise<boolean> {
   console.log('\n🔨 Building and Validating...');
   
   const steps = [
+    {
+      name: 'Code Quality Check',
+      command: ['bun', 'run', 'code-check']
+    },
     {
       name: 'Build Project',
       command: ['bun', 'run', 'build']
@@ -288,232 +160,238 @@ async function buildAndValidate(): Promise<boolean> {
       console.error(`❌ ${step.name} failed`);
       return false;
     }
+    console.log(`✅ ${step.name} passed`);
   }
   
   return true;
 }
 
-// Commit changes
-async function commitChanges(state: ReleaseState): Promise<void> {
-  console.log('\n📦 Committing Release Changes...');
-  
-  // Stage files
-  await runCommand(['git', 'add', 'package.json', 'CHANGELOG.md'], 'Stage release files');
-  
-  // Create commit message
-  const commitMessage = `Bump version to ${state.targetVersion}
-
-- Update version in package.json to ${state.targetVersion}
-- Add CHANGELOG entry for ${state.targetVersion} release
-- ${state.changelogData.summary}
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>`;
-  
-  // Commit
-  const result = await runCommand(['git', 'commit', '-m', commitMessage], 'Create release commit');
-  
-  if (!result.success) {
-    throw new Error('Failed to create release commit');
-  }
-  
-  console.log(`✅ Created release commit for ${state.targetVersion}`);
-  
-  // Create git tag
-  const tagName = `v${state.targetVersion}`;
-  const tagResult = await runCommand(['git', 'tag', tagName], `Create git tag ${tagName}`);
-  
-  if (!tagResult.success) {
-    throw new Error(`Failed to create git tag ${tagName}`);
-  }
-  
-  console.log(`✅ Created git tag ${tagName}`);
-}
-
-// Publish command
-async function publishCommand(options: any = {}) {
-  console.log('🚀 Publishing Release...');
-  
-  try {
-    // Step 0: Check git status
-    await ensureCleanGitStatus();
-    // Step 1: Push commit and tags
-    console.log('\n📤 Pushing to remote...');
-    const pushResult = await runCommand(['git', 'push', 'origin', 'main', '--tags'], 'Push commit and tags');
-    
-    if (!pushResult.success) {
-      throw new Error('Failed to push to remote repository');
-    }
-    
-    console.log('✅ Pushed commit and tags to remote');
-    
-    // Step 2: Get the latest tag for GitHub release
-    const tagResult = await runCommand(['git', 'describe', '--tags', '--abbrev=0'], 'Get latest tag', true);
-    if (!tagResult.success) {
-      throw new Error('Failed to get latest tag');
-    }
-    
-    const latestTag = tagResult.stdout.trim();
-    console.log(`\n📋 Latest tag: ${latestTag}`);
-    
-    // Step 3: Create GitHub release
-    if (!options.skipGithub) {
-      console.log('\n🏷️  Creating GitHub release...');
-      const releaseResult = await runCommand(['gh', 'release', 'create', latestTag, '--generate-notes'], `Create GitHub release ${latestTag}`);
-      
-      if (!releaseResult.success) {
-        console.warn('⚠️  Failed to create GitHub release - you may need to install gh CLI or authenticate');
-        console.log(`   Manual: gh release create ${latestTag} --generate-notes`);
-      } else {
-        console.log(`✅ Created GitHub release ${latestTag}`);
-      }
-    }
-    
-    // Step 4: Publish to npm
-    if (!options.skipNpm) {
-      console.log('\n📦 Publishing to npm...');
-      
-      // Check if we're logged in to npm
-      const whoamiResult = await runCommand(['npm', 'whoami'], 'Check npm authentication', true);
-      if (!whoamiResult.success) {
-        console.warn('⚠️  Not logged in to npm. Please run: npm login');
-        console.log('   Then run: npm publish');
-      } else {
-        console.log(`📋 Publishing as: ${whoamiResult.stdout.trim()}`);
-        
-        const publishResult = await runCommand(['npm', 'publish'], 'Publish to npm');
-        
-        if (!publishResult.success) {
-          throw new Error('Failed to publish to npm');
-        }
-        
-        console.log('✅ Published to npm');
-      }
-    }
-    
-    console.log('\n🎉 Release Published Successfully!');
-    console.log(`\nRelease Summary:`);
-    console.log(`  📋 Version: ${latestTag}`);
-    console.log(`  🔗 GitHub: https://github.com/your-org/your-repo/releases/tag/${latestTag}`);
-    console.log(`  📦 npm: https://npmjs.com/package/@scopecraft/cmd`);
-    
-  } catch (error) {
-    console.error(`\n❌ Publish failed: ${error}`);
-    process.exit(1);
-  }
-}
-
-// Pre-check command
-async function precheckCommand() {
-  console.log('🔍 Running Release Pre-checks...');
-  
-  try {
-    const checksPass = await runPreflightChecks();
-    
-    if (checksPass) {
-      console.log('\n🎉 All pre-checks passed! Ready for release.');
-      process.exit(0);
-    } else {
-      console.log('\n❌ Pre-checks failed. Please fix issues before release.');
-      process.exit(1);
-    }
-  } catch (error) {
-    console.error(`\n❌ Pre-check failed: ${error}`);
-    process.exit(1);
-  }
-}
-
-// Check if git working directory is clean and exit if not
+// Check if git working directory is clean
 async function ensureCleanGitStatus(): Promise<void> {
   console.log('\n🔍 Checking git working directory...');
   
-  const result = await runCommand(['git', 'status', '--porcelain'], 'Check git status', true);
+  const result = await runCommand(['git', 'status', '--porcelain'], 'Check git status');
   
   if (!result.success) {
     throw new Error('Failed to check git status');
   }
   
-  const isClean = result.stdout.trim() === '';
+  const isClean = result.output.trim() === '';
   
   if (!isClean) {
     console.error('❌ Git working directory is not clean!');
     console.error('   Please commit or stash your changes before proceeding.');
     console.error('   Run: git status');
-    process.exit(1);
+    throw new Error('Git working directory is not clean');
   }
   
   console.log('✅ Git working directory is clean');
 }
 
-// Main release command
-async function releaseCommand(version?: string, options: any = {}) {
-  console.log('🚀 Starting Release Process...');
+async function analyzeRelease(requestedVersion?: string, verbose = false): Promise<void> {
+  console.log('🤖 Analyzing release with Claude...');
   
-  try {
-    // Step 0: Check git status (skip in dry-run mode)
-    if (!options.dryRun) {
-      await ensureCleanGitStatus();
-    }
-    // Initialize release state
-    const pkg = loadPackageJson();
-    const gitData = await prepareGitData();
-    
-    const state: ReleaseState = {
-      currentVersion: pkg.version,
-      targetVersion: version || '',
-      lastTag: gitData.last_tag,
-      gitData
-    };
-    
-    console.log(`\n📋 Release Context:`);
-    console.log(`  Current Version: ${state.currentVersion}`);
-    console.log(`  Last Tag: ${state.lastTag}`);
-    console.log(`  Target Version: ${state.targetVersion || 'TBD'}`);
-    
-    // Step 1: Version analysis
-    await analyzeVersion(state, options);
-    
-    // Step 2: Generate changelog
-    await generateChangelog(state, options);
-    
-    // Step 3: Update files
-    updatePackageVersion(state.targetVersion);
-    updateChangelogFile(state);
-    
-    // Step 4: Build and validate
-    if (!options.skipBuild) {
-      const buildSuccess = await buildAndValidate();
-      if (!buildSuccess) {
-        console.error('\n❌ Build and validation failed - aborting release');
-        process.exit(1);
-      }
-    }
-    
-    // Step 5: Commit changes
-    if (!options.dryRun) {
-      await commitChanges(state);
-      
-      console.log('\n🎉 Release Preparation Complete!');
-      console.log(`\nNext steps:`);
-      console.log(`  1. Review the changes: git show HEAD`);
-      console.log(`  2. Publish the release: bun scripts/release.ts publish`);
-      console.log(`\nOr publish manually:`);
-      console.log(`  • Push: git push origin main --tags`);
-      console.log(`  • GitHub: gh release create v${state.targetVersion} --generate-notes`);
-      console.log(`  • npm: npm publish`);
-      
-    } else {
-      console.log('\n🔍 Dry run complete - no changes committed');
-    }
-    
-  } catch (error) {
-    console.error(`\n❌ Release failed: ${error}`);
-    process.exit(1);
+  // Get current version
+  const pkg = JSON.parse(readFileSync('package.json', 'utf-8'));
+  const currentVersion = pkg.version;
+  
+  // Get last tag
+  const tagResult = await runCommand(['git', 'tag', '--sort=-version:refname'], 'Get latest tag');
+  const lastTag = tagResult.success && tagResult.output ? 
+    tagResult.output.trim().split('\n')[0] || 'HEAD~10' : 'HEAD~10';
+  
+  // Prepare data for Claude
+  const data = {
+    CURRENT_VERSION: currentVersion,
+    LAST_TAG: lastTag,
+    REQUESTED_VERSION: requestedVersion || '',
+    RELEASE_DATE: new Date().toISOString().split('T')[0]
+  };
+  
+  // Create .release directory
+  if (!existsSync('.release')) {
+    mkdirSync('.release');
   }
+  
+  // Prepare prompt with data substitution
+  let prompt = readFileSync('scripts/prompts/release-analysis.md', 'utf-8');
+  for (const [key, value] of Object.entries(data)) {
+    prompt = prompt.replace(new RegExp(`\\$${key}`, 'g'), value);
+  }
+  
+  // Write temporary prompt file
+  const tempPromptPath = '.claude/commands/release-analysis.md';
+  writeFileSync(tempPromptPath, prompt);
+  
+  console.log(`📋 Analysis Context:`);
+  console.log(`  Current: ${currentVersion}`);
+  console.log(`  Last Tag: ${lastTag}`);
+  console.log(`  Requested: ${requestedVersion || 'auto-detect'}`);
+  
+  // Call Claude using the proper utility
+  console.log('🤖 Calling Claude for release analysis...');
+  const result = await callClaude(
+    'scripts/prompts/release-analysis.md',
+    data,
+    undefined,
+    verbose
+  );
+  
+  if (!result.success) {
+    throw new Error('Claude analysis failed');
+  }
+  
+  // Verify analysis files were created
+  const requiredFiles = [
+    '.release/version.json',
+    '.release/changelog.md',
+    '.release/metadata.json'
+  ];
+  
+  const missingFiles = requiredFiles.filter(file => !existsSync(file));
+  if (missingFiles.length > 0) {
+    throw new Error(`Claude analysis incomplete. Missing files: ${missingFiles.join(', ')}`);
+  }
+  
+  console.log('✅ Release analysis complete');
 }
 
-// CLI setup
+async function executeRelease(dryRun = false, skipBuild = false): Promise<void> {
+  console.log('⚙️ Executing release...');
+  
+  // Check git status first (skip in dry-run)
+  if (!dryRun) {
+    await ensureCleanGitStatus();
+  }
+  
+  // Load analysis results
+  const version: ReleaseVersion = JSON.parse(readFileSync('.release/version.json', 'utf-8'));
+  const metadata: ReleaseMetadata = JSON.parse(readFileSync('.release/metadata.json', 'utf-8'));
+  const changelogContent = readFileSync('.release/changelog.md', 'utf-8');
+  
+  console.log(`\n📋 Release Plan:`);
+  console.log(`  Version: ${version.current_version} → ${version.new_version}`);
+  console.log(`  Type: ${version.bump_type}`);
+  console.log(`  Confidence: ${version.confidence}`);
+  console.log(`  Summary: ${metadata.summary}`);
+  console.log(`  Changes: ${metadata.total_changes}`);
+  
+  if (version.breaking_changes) {
+    console.warn('⚠️  Breaking changes detected!');
+  }
+  
+  if (dryRun) {
+    console.log('\n🔍 Dry run - showing what would be done:');
+    console.log('  1. Update package.json version');
+    console.log('  2. Update CHANGELOG.md');
+    console.log('  3. Run build and tests');
+    console.log('  4. Commit changes');
+    console.log('  5. Create git tag');
+    return;
+  }
+  
+  // 1. Update package.json
+  console.log('\n📦 Updating package.json...');
+  const pkg = JSON.parse(readFileSync('package.json', 'utf-8'));
+  pkg.version = version.new_version;
+  writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+  
+  // 2. Update CHANGELOG.md
+  console.log('📄 Updating CHANGELOG.md...');
+  let existingChangelog = '';
+  try {
+    existingChangelog = readFileSync('CHANGELOG.md', 'utf-8');
+  } catch {
+    existingChangelog = '# Changelog\n\nAll notable changes to this project will be documented in this file.\n\n';
+  }
+  
+  // Insert new changelog entry
+  const lines = existingChangelog.split('\n');
+  const insertIndex = lines.findIndex(line => line.startsWith('## ['));
+  if (insertIndex >= 0) {
+    lines.splice(insertIndex, 0, changelogContent, '');
+  } else {
+    lines.push('', changelogContent);
+  }
+  writeFileSync('CHANGELOG.md', lines.join('\n'));
+  
+  // 3. Run quality checks and build
+  if (!dryRun && !skipBuild) {
+    const buildSuccess = await buildAndValidate();
+    if (!buildSuccess) {
+      throw new Error('Build and validation failed');
+    }
+  } else {
+    if (dryRun) {
+      console.log('\n🔍 Would run quality checks and build (skipped in dry-run)');
+    } else {
+      console.log('\n🔍 Skipping build and validation (--skip-build)');
+    }
+  }
+  
+  // 5. Commit changes
+  console.log('📝 Committing changes...');
+  await runCommand(['git', 'add', 'package.json', 'CHANGELOG.md'], 'Stage files');
+  
+  const commitMessage = `Bump version to ${version.new_version}
+
+${metadata.summary}
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>`;
+  
+  const commitResult = await runCommand(['git', 'commit', '-m', commitMessage], 'Create commit');
+  if (!commitResult.success) {
+    throw new Error('Failed to create commit');
+  }
+  
+  // 6. Create tag
+  console.log('🏷️  Creating git tag...');
+  const tagName = `v${version.new_version}`;
+  const tagResult = await runCommand(['git', 'tag', tagName], `Create tag ${tagName}`);
+  if (!tagResult.success) {
+    throw new Error(`Failed to create tag ${tagName}`);
+  }
+  
+  console.log('\n🎉 Release prepared successfully!');
+  console.log(`\nNext steps:`);
+  console.log(`  1. Review: git show HEAD`);
+  console.log(`  2. Push: git push origin main --tags`);
+  console.log(`  3. Publish: npm publish`);
+}
+
+async function publishRelease(): Promise<void> {
+  console.log('🚀 Publishing release...');
+  
+  // Push to remote
+  const pushResult = await runCommand(['git', 'push', 'origin', 'main', '--tags'], 'Push to remote');
+  if (!pushResult.success) {
+    throw new Error('Failed to push to remote');
+  }
+  
+  // Create GitHub release (optional)
+  const tagResult = await runCommand(['git', 'describe', '--tags', '--abbrev=0'], 'Get latest tag');
+  if (tagResult.success) {
+    const latestTag = tagResult.output.trim();
+    console.log(`\n🏷️  Creating GitHub release for ${latestTag}...`);
+    const ghResult = await runCommand(['gh', 'release', 'create', latestTag, '--generate-notes'], 'Create GitHub release');
+    if (!ghResult.success) {
+      console.warn('⚠️  GitHub release failed - you may need to install gh CLI');
+    }
+  }
+  
+  // Publish to npm (optional)
+  console.log('\n📦 Publishing to npm...');
+  const publishResult = await runCommand(['npm', 'publish'], 'Publish to npm');
+  if (!publishResult.success) {
+    console.warn('⚠️  npm publish failed - check authentication');
+  }
+  
+  console.log('\n🎉 Release published!');
+}
+
+// Commands
 program
   .name('release')
   .description('AI-assisted release management for Scopecraft Command')
@@ -522,7 +400,36 @@ program
 program
   .command('precheck')
   .description('Run pre-flight checks (code quality, security, tests)')
-  .action(precheckCommand);
+  .action(async () => {
+    try {
+      const checksPass = await runPreflightChecks();
+      
+      if (checksPass) {
+        console.log('\n🎉 All pre-checks passed! Ready for release.');
+        process.exit(0);
+      } else {
+        console.log('\n❌ Pre-checks failed. Please fix issues before release.');
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error(`❌ Pre-check failed: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('analyze')
+  .description('Analyze changes and create release plan')
+  .argument('[version]', 'Requested version (optional)')
+  .option('--verbose', 'Show detailed Claude output')
+  .action(async (version, options) => {
+    try {
+      await analyzeRelease(version, options.verbose);
+    } catch (error) {
+      console.error(`❌ Analysis failed: ${error}`);
+      process.exit(1);
+    }
+  });
 
 program
   .command('run')
@@ -531,16 +438,60 @@ program
   .option('--dry-run', 'Run without making any changes')
   .option('--skip-build', 'Skip build and validation')
   .option('--verbose', 'Show detailed Claude output for debugging')
-  .action(releaseCommand);
+  .action(async (version, options) => {
+    try {
+      await analyzeRelease(version, options.verbose);
+      await executeRelease(options.dryRun, options.skipBuild);
+    } catch (error) {
+      console.error(`❌ Release failed: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('execute')
+  .description('Execute the release plan')
+  .option('--dry-run', 'Show what would be done without making changes')
+  .action(async (options) => {
+    try {
+      await executeRelease(options.dryRun);
+    } catch (error) {
+      console.error(`❌ Release failed: ${error}`);
+      process.exit(1);
+    }
+  });
 
 program
   .command('publish')
-  .description('Publish the release (push, GitHub release, npm publish)')
-  .option('--skip-github', 'Skip GitHub release creation')
-  .option('--skip-npm', 'Skip npm publishing')
-  .action(publishCommand);
+  .description('Publish the release (push, GitHub, npm)')
+  .action(async () => {
+    try {
+      await publishRelease();
+    } catch (error) {
+      console.error(`❌ Publish failed: ${error}`);
+      process.exit(1);
+    }
+  });
 
-// Handle direct execution
+program
+  .command('full')
+  .description('Complete release: analyze + execute + publish')
+  .argument('[version]', 'Requested version (optional)')
+  .option('--dry-run', 'Show what would be done without making changes')
+  .option('--verbose', 'Show detailed Claude output')
+  .action(async (version, options) => {
+    try {
+      await analyzeRelease(version, options.verbose);
+      await executeRelease(options.dryRun);
+      if (!options.dryRun) {
+        await publishRelease();
+      }
+    } catch (error) {
+      console.error(`❌ Full release failed: ${error}`);
+      process.exit(1);
+    }
+  });
+
 if (import.meta.main) {
   program.parse();
 }

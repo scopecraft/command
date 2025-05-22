@@ -61,7 +61,7 @@ export type ChangelogGenerationResult = z.infer<typeof ChangelogGenerationSchema
 /**
  * Run a command and capture output
  */
-async function runCommand(cmd: string[], description: string, silent = false): Promise<ClaudeResult> {
+async function runCommand(cmd: string[], description: string, silent = false, showAllOutput = false): Promise<ClaudeResult> {
   if (!silent) {
     console.log(`\n${description}`);
   }
@@ -108,7 +108,75 @@ async function runCommand(cmd: string[], description: string, silent = false): P
   // Only show output if not silent or if there's an error
   if (!silent || exitCode !== 0) {
     if (stdout) console.log(stdout);
-    if (stderr) console.error(stderr);
+    if (stderr && (exitCode !== 0 || showAllOutput)) console.error(stderr);
+  }
+  
+  return {
+    success: exitCode === 0,
+    stdout,
+    stderr,
+    error: exitCode !== 0 ? `Command failed with exit code ${exitCode}` : undefined
+  };
+}
+
+/**
+ * Run a command with piped input
+ */
+async function runCommandWithInput(cmd: string[], input: string, description: string, silent = false, showAllOutput = false): Promise<ClaudeResult> {
+  if (!silent) {
+    console.log(`\n${description}`);
+  }
+  
+  const proc = Bun.spawn(cmd, {
+    stdin: 'pipe',
+    stdout: 'pipe',
+    stderr: 'pipe'
+  });
+  
+  // Write input to stdin using Bun's API
+  if (proc.stdin) {
+    proc.stdin.write(input);
+    proc.stdin.end();
+  }
+  
+  // Read stdout
+  let stdout = '';
+  if (proc.stdout) {
+    const reader = proc.stdout.getReader();
+    const decoder = new TextDecoder();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        stdout += decoder.decode(value);
+      }
+    } catch (error) {
+      // Ignore read errors
+    }
+  }
+  
+  // Read stderr
+  let stderr = '';
+  if (proc.stderr) {
+    const reader = proc.stderr.getReader();
+    const decoder = new TextDecoder();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        stderr += decoder.decode(value);
+      }
+    } catch (error) {
+      // Ignore read errors
+    }
+  }
+  
+  const exitCode = await proc.exited;
+  
+  // Only show output if not silent or if there's an error
+  if (!silent || exitCode !== 0) {
+    if (stdout) console.log(stdout);
+    if (stderr && (exitCode !== 0 || showAllOutput)) console.error(stderr);
   }
   
   return {
@@ -136,40 +204,7 @@ function loadPrompt(promptPath: string): { content: string; config: PromptConfig
   }
 }
 
-/**
- * Test if Claude supports --system-prompt flag
- */
-async function testSystemPromptSupport(): Promise<boolean> {
-  try {
-    const proc = Bun.spawn(['claude', '--help'], {
-      stdout: 'pipe',
-      stderr: 'pipe'
-    });
-    
-    let stdout = '';
-    if (proc.stdout) {
-      const reader = proc.stdout.getReader();
-      const decoder = new TextDecoder();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          stdout += decoder.decode(value);
-        }
-      } catch (error) {
-        // Ignore read errors
-      }
-    }
-    
-    await proc.exited;
-    return stdout.includes('--system-prompt');
-  } catch (error) {
-    return false;
-  }
-}
-
-// Cache the system prompt support check
-let systemPromptSupported: boolean | null = null;
+// System prompt is now fully supported in the latest Claude Code version
 
 /**
  * Call Claude with a prompt file and optional data
@@ -182,18 +217,8 @@ export async function callClaude(
 ): Promise<ClaudeResult> {
   const { content, config } = loadPrompt(promptPath);
   
-  // Auto-detect system prompt support if not explicitly set
-  if (systemPromptSupported === null) {
-    systemPromptSupported = await testSystemPromptSupport();
-  }
-  
-  // Enable system prompt flag if supported and not explicitly disabled
-  const autoConfig = {
-    ...config,
-    useSystemPromptFlag: config.useSystemPromptFlag !== false && systemPromptSupported
-  };
-  
-  const finalConfig = { ...autoConfig, ...overrideConfig };
+  // System prompt is now fully supported, always enable it when specified
+  const finalConfig = { ...config, ...overrideConfig };
   
   // Replace placeholders in content with data
   let processedContent = content;
@@ -211,45 +236,27 @@ export async function callClaude(
     }
   }
   
-  // If system prompt is specified but flag not supported, embed it in content
-  if (finalConfig.systemPrompt && !finalConfig.useSystemPromptFlag) {
-    try {
-      const systemPromptContent = readFileSync(finalConfig.systemPrompt, 'utf-8');
-      processedContent = systemPromptContent + '\n\n' + processedContent;
-    } catch (error) {
-      // If system prompt file can't be read, continue without it
-      console.warn(`Warning: Could not read system prompt file: ${finalConfig.systemPrompt}`);
-    }
+  // System prompt is always passed via --system-prompt flag when specified
+  
+  // CRITICAL: Remove frontmatter from the processed content for Claude
+  // We'll pipe the content directly, so no frontmatter should be included
+  const frontmatterMatch = processedContent.match(/^---\n[\s\S]*?\n---\n/);
+  if (frontmatterMatch) {
+    processedContent = processedContent.substring(frontmatterMatch[0].length);
   }
-  
-  // Create temporary prompt file in .claude/commands directory
-  const commandsDir = '.claude/commands';
-  const timestamp = Date.now();
-  const tempPromptName = `temp-release-prompt-${timestamp}`;
-  const tempPromptPath = `${commandsDir}/${tempPromptName}.md`;
-  
-  try {
-    // Ensure .claude/commands directory exists  
-    await Bun.write(`${commandsDir}/.keep`, '');
-  } catch (error) {
-    // Directory creation will happen automatically with Bun.write
-  }
-  
-  writeFileSync(tempPromptPath, processedContent);
   
   if (verbose) {
-    console.log(`\n🔍 Generated Claude command: ${tempPromptName}`);
-    console.log(`📄 Prompt content (first 500 chars):`);
+    console.log(`\n📄 Prompt content (first 500 chars):`);
     console.log(processedContent.substring(0, 500) + '...');
     console.log('\n📤 Sending to Claude...');
   }
   
   try {
-    // Build Claude command using /project: syntax
-    const cmd = ['claude', '-p', `/project:${tempPromptName}`];
+    // Build Claude command for piping
+    const cmd = ['claude', '-p'];
     
-    // Add system prompt if specified and feature flag is enabled
-    if (finalConfig.systemPrompt && finalConfig.useSystemPromptFlag) {
+    // Add system prompt if specified
+    if (finalConfig.systemPrompt) {
       cmd.push('--system-prompt', finalConfig.systemPrompt);
     }
     
@@ -258,8 +265,13 @@ export async function callClaude(
       cmd.push('--allowedTools', finalConfig.allowedTools.join(','));
     }
     
-    // Execute Claude command
-    const result = await runCommand(cmd, `Claude: ${promptPath}`, !verbose);
+    // Add verbose and streaming if requested
+    if (verbose) {
+      cmd.push('--verbose', '--output-format', 'stream-json');
+    }
+    
+    // Execute Claude command with piped content
+    const result = await runCommandWithInput(cmd, processedContent, `Claude: ${promptPath}`, false, verbose);
     
     // Try to parse JSON output if present
     if (result.success && result.stdout) {
@@ -281,20 +293,11 @@ export async function callClaude(
     }
     
     return result;
-    
-  } finally {
-    // Always clean up temporary Claude command file
-    try {
-      unlinkSync(tempPromptPath);
-      if (verbose) {
-        console.log(`🧹 Cleaned up temporary command: ${tempPromptName}`);
-      }
-    } catch (e) {
-      // Ignore cleanup errors but log in verbose mode
-      if (verbose) {
-        console.warn(`⚠️  Failed to cleanup ${tempPromptPath}: ${e}`);
-      }
-    }
+  } catch (error) {
+    return {
+      success: false,
+      error: `Claude execution failed: ${error}`
+    };
   }
 }
 

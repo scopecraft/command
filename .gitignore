@@ -1,6 +1,7 @@
 dist/
 .claude/settings.local.json
 .claude/commands/temp-release-prompt-*
+.release/
 test-*/
 node_modules/
 .DS_Store
