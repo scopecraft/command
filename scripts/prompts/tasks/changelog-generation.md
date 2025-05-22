@@ -24,20 +24,41 @@ Transform technical code changes into clear, valuable release notes that help us
 
 ## Content Guidelines
 
-### Include
-- New user-facing features and capabilities
-- Bug fixes that affect user experience  
-- Performance improvements users will notice
-- Breaking changes with migration guidance
-- Security fixes (highlight prominently)
-- Configuration or behavior changes
+**IMPORTANT**: This is a user-facing changelog. Only include changes that directly impact end users of the CLI tool, MCP server, or task-ui.
 
-### Exclude
-- Internal refactoring or code cleanup
-- Development tool updates
-- Dependency bumps (unless they add user value)
-- Build system changes
-- Documentation-only updates
+### INCLUDE (User-Facing Changes)
+- **New CLI commands** or options users can run
+- **New MCP tools/endpoints** that Claude Code can use
+- **Task-UI features** that affect user workflows
+- **Bug fixes** that users would notice or experience
+- **Performance improvements** users will experience
+- **Breaking changes** that require user action
+- **Security fixes** that affect user safety
+- **Configuration changes** users need to know about
+
+### EXCLUDE (Internal/Development Changes)
+- **Build system changes** (webpack, bundling, CI/CD)
+- **Development tooling** (linting, formatting, testing infrastructure)
+- **Code refactoring** that doesn't change user behavior
+- **Internal architecture** improvements
+- **Dependency updates** (unless they add user features)
+- **Documentation** changes (README, code comments)
+- **Release automation** scripts and tools
+- **Development workflows** and processes
+- **Test improvements** or additions
+- **Code quality tools** and checks
+
+### Examples of What to Include:
+- "Added `sc task filter --status done` command"
+- "MCP server now supports bulk task operations"  
+- "Fixed issue where task dates weren't parsing correctly"
+- "Task-UI now shows progress indicators"
+
+### Examples of What to Exclude:
+- "Updated build script to use Bun"
+- "Added TypeScript strict mode"
+- "Improved test coverage"
+- "Refactored internal task parser"
 
 ## Formatting Standards
 - Use "Added/Changed/Fixed/Security" categorization
