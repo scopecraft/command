@@ -2,17 +2,17 @@
 id = "CHORE-ADDPROPER-0519-2T"
 title = "Add proper TypeScript schema definitions to MCP server tools"
 type = "chore"
-status = "🟡 To Do"
+status = "🟢 Done"
 priority = "▶️ Medium"
 created_date = "2025-05-20"
-updated_date = "2025-05-20"
+updated_date = "2025-05-22"
 assigned_to = ""
 phase = "backlog"
 depends_on = [ "TASK-20250517T185634" ]
 tags = [ "typescript", "mcp", "schema" ]
 +++
 
-## Add proper TypeScript schema definitions to MCP server tools
+# Add proper TypeScript schema definitions to MCP server tools
 
 Many of the MCP server tools are currently generating TypeScript errors due to missing or incorrect type schema definitions.
 
