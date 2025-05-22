@@ -8,6 +8,7 @@ bun.lock
 mcp-server.log
 temp.md
 test/mcp/results/
+.tmp/
 
 # NPM package files
 *.tgz

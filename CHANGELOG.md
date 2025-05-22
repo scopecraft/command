@@ -5,6 +5,42 @@ All notable changes to Scopecraft Command will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1] - 2025-05-22
+
+### Added
+- **Security System**: Comprehensive Docker-based security check script that scans for vulnerabilities, secrets, and custom security patterns
+- **CLI Formatting**: Improved table formatting with cleaner layout and expanded titles for better readability
+- **Content Filtering**: Added content and completed filtering to feature_list MCP tool for better search capabilities
+
+### Changed
+- **Code Quality Tools**: Enhanced code-check script with smart filtering, better defaults, and support for checking specific files
+- **Task Formatter**: Updated formatting system for cleaner output and improved readability in CLI displays
+- **MCP Server**: Significant improvements to the core server implementation for better reliability and performance
+
+### Security
+- **Vulnerability Detection**: Added Docker-based OSV Scanner integration to detect dependencies with known vulnerabilities
+- **Secret Detection**: Integrated secretlint for identifying accidentally committed secrets and credentials
+- **Custom Security Patterns**: Added pattern detection for potentially unsafe code practices
+
+
+## [0.11.0] - 2025-05-22
+
+### Added
+- **Security System**: New comprehensive Docker-based security check script that scans for vulnerabilities, secrets, and custom security patterns.
+- **CLI Formatting**: Improved table formatting with cleaner layout and expanded titles for better readability.
+- **Content Filtering**: Added content and completed filtering options to feature_list MCP tool for better search capabilities.
+
+### Changed
+- **Code Quality Tools**: Enhanced code-check script with smart filtering, better defaults, and support for checking specific files.
+- **Task Formatter**: Updated formatting system for cleaner output and improved readability in CLI displays.
+- **MCP Server**: Significant improvements to the core server implementation for better reliability and performance.
+
+### Security
+- **Vulnerability Detection**: Added Docker-based OSV Scanner integration to detect dependencies with known vulnerabilities.
+- **Secret Detection**: Integrated secretlint for identifying accidentally committed secrets and credentials.
+- **Custom Security Patterns**: Added pattern detection for potentially unsafe code practices.
+
+
 ## [0.10.6] - 2025-05-21
 
 ### Fixed

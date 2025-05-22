@@ -1,6 +1,6 @@
 {
   "name": "@scopecraft/cmd",
-  "version": "0.10.6",
+  "version": "0.11.1",
   "description": "CLI and MCP server for managing Markdown-Driven Task Management (MDTM) files with or without Roo Commander",
   "type": "module",
   "files": [
@@ -94,6 +94,7 @@
     "commander": "^11.1.0",
     "express": "^5.1.0",
     "fs-extra": "^11.2.0",
+    "gray-matter": "^4.0.3",
     "inquirer": "^9.2.12",
     "simple-git": "^3.27.0",
     "zod": "^3.25.10"
