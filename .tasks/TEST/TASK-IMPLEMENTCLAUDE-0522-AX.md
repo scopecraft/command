@@ -2,7 +2,7 @@
 id = "TASK-IMPLEMENTCLAUDE-0522-AX"
 title = "Implement Claude Session Resume in Task UI"
 type = "task"
-status = "🟡 To Do"
+status = "🔵 In Progress"
 priority = "▶️ Medium"
 created_date = "2025-05-22"
 updated_date = "2025-05-22"
