@@ -47,6 +47,8 @@
     "code-check": "bun scripts/code-check.ts",
     "security-check": "bun scripts/security-check.ts",
     "precheck": "bun scripts/release.ts precheck",
+    "release": "bun scripts/release.ts run",
+    "release:run": "bun scripts/release.ts run",
     "release:analyze": "bun scripts/release.ts analyze",
     "release:execute": "bun scripts/release.ts execute",
     "release:publish": "bun scripts/release.ts publish",

@@ -75,7 +75,11 @@ Standard changelog format focusing on USER-FACING changes only:
 
 1. **START IMMEDIATELY** - Do not ask questions or seek clarification
 2. **CREATE ALL THREE FILES** - Use the Write tool to create each file
-3. **FOCUS ON USER IMPACT** - Only include changes that affect end users
+3. **FOCUS ON USER IMPACT** - Changes to these paths ARE user-facing:
+   - `src/` - Core CLI and MCP server functionality
+   - `tasks-ui/` - Web UI functionality  
+   - `dist/` - Built artifacts
+   - Changes to scripts/, docs/, tests/ are NOT user-facing unless they fix bugs
 4. **USE SEMANTIC VERSIONING** - Major (breaking), Minor (features), Patch (fixes)
 
 **BEGIN NOW** - Create the three files based on your git analysis.
