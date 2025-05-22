@@ -18,7 +18,7 @@
     "sc-stdio": "dist/mcp/stdio-cli.js"
   },
   "scripts": {
-    "build": "bun build ./src/cli/cli.ts ./src/mcp/cli.ts ./src/mcp/stdio-cli.ts --outdir ./dist --target node && chmod +x ./dist/cli/cli.js ./dist/mcp/cli.js ./dist/mcp/stdio-cli.js",
+    "build": "bun build ./src/cli/cli.ts ./src/mcp/cli.ts ./src/mcp/stdio-cli.ts --outdir ./dist --target node && chmod +x ./dist/cli/cli.js ./dist/mcp/cli.js ./dist/mcp/stdio-cli.js && cp -r src/templates dist/",
     "start": "bun ./src/cli/cli.ts",
     "start:mcp": "bun ./src/mcp/cli.ts",
     "start:mcp:stdio": "bun ./src/mcp/stdio-cli.ts",

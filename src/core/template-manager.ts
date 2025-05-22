@@ -74,19 +74,43 @@ export function initializeTemplates(config?: RuntimeConfig): void {
  * @param templatesDir Directory to create templates in
  */
 function createBasicTemplates(templatesDir: string): void {
-  const featureTemplate = `+++
-id = ""               # Will be auto-generated if not provided
-title = ""            # REQUIRED: Human-readable title
-status = "🟡 To Do"    # Current status
-type = "🌟 Feature"    # Type of task
-priority = "▶️ Medium" # Priority level
-created_date = ""     # Will be auto-filled
-updated_date = ""     # Will be auto-filled
-assigned_to = ""      # Who is responsible for this task
-tags = []             # Relevant keywords
-+++
+  // Try to copy from bundled templates first
+  const bundledTemplatesDir = path.join(
+    path.dirname(import.meta.url).replace('file://', ''),
+    '..',
+    'templates'
+  );
+  const templateFiles = [
+    '01_mdtm_feature.md',
+    '02_mdtm_bug.md',
+    '03_mdtm_chore.md',
+    '04_mdtm_documentation.md',
+    '05_mdtm_test.md',
+    '06_mdtm_spike.md',
+  ];
 
-# [Title]
+  let copiedFromBundled = false;
+
+  if (fs.existsSync(bundledTemplatesDir)) {
+    try {
+      for (const file of templateFiles) {
+        const sourcePath = path.join(bundledTemplatesDir, file);
+        const targetPath = path.join(templatesDir, file);
+
+        if (fs.existsSync(sourcePath) && !fs.existsSync(targetPath)) {
+          fs.copyFileSync(sourcePath, targetPath);
+        }
+      }
+      copiedFromBundled = true;
+    } catch (error) {
+      console.warn('Failed to copy bundled templates, falling back to hardcoded templates');
+    }
+  }
+
+  // If bundled templates don't exist or copy failed, create minimal fallback templates
+  if (!copiedFromBundled) {
+    // Create minimal fallback templates
+    const fallbackFeature = `# [Title]
 
 ## Description ✍️
 Describe the feature in detail.
@@ -100,19 +124,7 @@ Describe the feature in detail.
 Add any technical details or implementation considerations here.
 `;
 
-  const bugTemplate = `+++
-id = ""               # Will be auto-generated if not provided
-title = ""            # REQUIRED: Human-readable title
-status = "🟡 To Do"    # Current status
-type = "🐞 Bug"        # Type of task
-priority = "🔼 High"   # Priority level
-created_date = ""     # Will be auto-filled
-updated_date = ""     # Will be auto-filled
-assigned_to = ""      # Who is responsible for this task
-tags = []             # Relevant keywords
-+++
-
-# [Title]
+    const fallbackBug = `# [Title]
 
 ## Description ✍️
 Describe the bug in detail.
@@ -134,9 +146,16 @@ What actually happens?
 - [ ] Add regression test
 `;
 
-  // Write basic templates
-  fs.writeFileSync(path.join(templatesDir, '01_mdtm_feature.md'), featureTemplate);
-  fs.writeFileSync(path.join(templatesDir, '02_mdtm_bug.md'), bugTemplate);
+    // Only create feature and bug templates as fallback
+    if (!fs.existsSync(path.join(templatesDir, '01_mdtm_feature.md'))) {
+      fs.writeFileSync(path.join(templatesDir, '01_mdtm_feature.md'), fallbackFeature);
+    }
+    if (!fs.existsSync(path.join(templatesDir, '02_mdtm_bug.md'))) {
+      fs.writeFileSync(path.join(templatesDir, '02_mdtm_bug.md'), fallbackBug);
+    }
+
+    console.warn('Only basic templates created. Full template set available after installation.');
+  }
 }
 
 /**
@@ -222,94 +241,89 @@ export function getTemplate(templateId: string, config?: RuntimeConfig): string 
  * @returns Processed template content
  */
 export function applyTemplate(templateContent: string, values: Record<string, any>): string {
-  // We need to prevent duplicate fields that can cause TOML parsing errors
-  // Extract the TOML frontmatter
+  // Check if template has frontmatter (legacy format)
   const frontmatterRegex = /^\+\+\+\s*\n([\s\S]*?)\n\+\+\+\s*\n([\s\S]*)$/;
   const match = templateContent.match(frontmatterRegex);
 
-  if (!match) {
-    throw new Error('Invalid template format: missing or malformed TOML frontmatter');
-  }
-
-  const [, tomlContent, markdownContent] = match;
-
-  // Parse the existing TOML to get a clean object
+  let markdownContent: string;
   let metadata: Record<string, any> = {};
-  try {
-    // Try to parse the existing TOML (if it's valid)
+
+  if (match) {
+    // Legacy template with frontmatter
+    const [, tomlContent, content] = match;
+    markdownContent = content;
+    
+    // Try to parse existing TOML
     try {
       metadata = parse(tomlContent) as Record<string, any>;
     } catch (error) {
-      // If parsing fails, we'll just start with an empty object
-      console.warn(
-        `Warning: Template has invalid TOML, starting fresh: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      console.warn('Template has invalid TOML, using defaults');
     }
-
-    // Ensure required fields are present in values
-    const requiredFields = ['id', 'title', 'type'];
-    for (const field of requiredFields) {
-      if (!values[field] && !metadata[field]) {
-        console.warn(`Warning: Required field '${field}' is not set in template or values`);
-      }
-    }
-
-    // Apply all values from the input
-    for (const [key, value] of Object.entries(values)) {
-      if (key === 'content') {
-        continue; // Skip content, handle it separately
-      }
-
-      // Skip undefined or null values
-      if (value === undefined || value === null) {
-        continue;
-      }
-
-      // Set the value in our metadata object
-      metadata[key] = value;
-    }
-
-    // Ensure ID is set (critical field)
-    if (values.id) {
-      metadata.id = values.id;
-    }
-
-    // Convert the metadata back to TOML
-    const newTomlContent = stringify(metadata);
-
-    // Rebuild the template with the new TOML and keep the markdown part
-    let newContent = `+++\n${newTomlContent}+++\n\n${markdownContent}`;
-
-    // Replace title in Markdown (if specified)
-    if (values.title) {
-      // Replace title placeholder in Markdown body
-      newContent = newContent.replace(/# \[Title\]/, `# ${values.title}`);
-      newContent = newContent.replace(/<< CONCISE BUG SUMMARY >>/, values.title);
-    }
-
-    // Apply custom content if provided
-    if (values.content) {
-      // Find the end of TOML frontmatter and the first empty line after the title
-      const endOfFrontmatter = newContent.indexOf('+++', 3) + 3;
-
-      // Rest of content after frontmatter
-      const afterContent = newContent.substring(endOfFrontmatter);
-
-      // Split after first heading
-      const parts = afterContent.split('\n\n', 2);
-      if (parts.length > 1) {
-        // Keep title heading and replace content
-        newContent = `${newContent.substring(0, endOfFrontmatter) + parts[0]}\n\n${values.content}`;
-      } else {
-        // Just append content
-        newContent = `${newContent.substring(0, endOfFrontmatter)}\n\n${values.content}`;
-      }
-    }
-
-    return newContent;
-  } catch (error) {
-    throw new Error(
-      `Failed to apply template: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
+  } else {
+    // New template format - just markdown
+    markdownContent = templateContent;
   }
+
+  // Apply all values from the input, merging with any existing metadata
+  for (const [key, value] of Object.entries(values)) {
+    if (key === 'content') {
+      continue; // Skip content, handle it separately
+    }
+
+    // Skip undefined or null values
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    // Set the value in our metadata object
+    metadata[key] = value;
+  }
+
+  // Ensure required fields are present
+  const requiredFields = ['title', 'type'];
+  for (const field of requiredFields) {
+    if (!metadata[field]) {
+      console.warn(`Warning: Required field '${field}' is not set in template or values`);
+    }
+  }
+
+  // Don't include empty ID in metadata - let task-crud generate it
+  if (metadata.id === '') {
+    delete metadata.id;
+  }
+
+  // Convert the metadata to TOML
+  const newTomlContent = stringify(metadata);
+
+  // Build the complete task file
+  let newContent = `+++\n${newTomlContent}+++\n\n${markdownContent}`;
+
+  // Replace title in Markdown (if specified)
+  if (values.title) {
+    // Replace title placeholder in Markdown body
+    newContent = newContent.replace(/# \[Title\]/, `# ${values.title}`);
+    // Replace various template title placeholders
+    newContent = newContent.replace(/# << CONCISE .+ >>/, `# ${values.title}`);
+  }
+
+  // Apply custom content if provided
+  if (values.content) {
+    // Find the end of TOML frontmatter and the first empty line after the title
+    const endOfFrontmatter = newContent.indexOf('+++', 3) + 3;
+
+    // Rest of content after frontmatter
+    const afterContent = newContent.substring(endOfFrontmatter);
+
+    // Split after first heading
+    const parts = afterContent.split('\n\n', 2);
+    if (parts.length > 1) {
+      // Keep title heading and replace content
+      newContent = `${newContent.substring(0, endOfFrontmatter) + parts[0]}\n\n${values.content}`;
+    } else {
+      // Just append content
+      newContent = `${newContent.substring(0, endOfFrontmatter)}\n\n${values.content}`;
+    }
+  }
+
+  return newContent;
 }

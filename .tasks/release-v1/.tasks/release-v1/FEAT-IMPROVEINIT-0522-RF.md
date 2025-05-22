@@ -2,7 +2,7 @@
 id = "FEAT-IMPROVEINIT-0522-RF"
 title = "Improve init flow with better guidance and uninitialized project handling"
 type = "feature"
-status = "🔵 In Progress"
+status = "🟢 Done"
 priority = "🔼 High"
 created_date = "2025-05-22"
 updated_date = "2025-05-22"
@@ -27,11 +27,11 @@ Tasks directory: /path/to/.tasks
 Configuration directory: /path/to/.tasks/.config
 ```
 
-## Priority 1: Uninitialized Project Detection (CRITICAL FOR ALPHA)
+## Priority 1: Uninitialized Project Detection (CRITICAL FOR ALPHA) ✅
 
 ### Implementation Options (implementer should choose based on Commander.js capabilities):
 
-#### Option A: Global Middleware Approach
+#### Option A: Global Middleware Approach ✅ IMPLEMENTED
 - Intercept ALL commands before execution
 - Check if .tasks directory exists
 - Show helpful message and exit gracefully
@@ -39,40 +39,14 @@ Configuration directory: /path/to/.tasks/.config
 $ sc list
 ⚠️  No Scopecraft project found in this directory.
 
-Run 'sc init' to initialize a new project here.
-```
-
-#### Option B: Interactive Init Offer
-- Detect uninitialized state
-- Prompt user to initialize
-```bash
-$ sc list
-⚠️  No Scopecraft project found in this directory.
-
-Would you like to initialize a project here? (y/N)
-> y
-[runs sc init automatically]
-```
-
-#### Option C: Command-level Checks
-- Add initialization check to each command handler
-- More work but gives command-specific messages
-```bash
-$ sc list
-⚠️  Cannot list tasks - no Scopecraft project found.
-
 To get started:
-  sc init     - Initialize a new project here
-  sc list --root-dir /path/to/project  - Use existing project
+  sc init               - Initialize a new project here
+  sc --root-dir <path>  - Use an existing project
+
+Learn more: https://github.com/scopecraft/scopecraft-command
 ```
 
-### Technical Considerations
-- Commander.js may support global hooks/middleware
-- Consider using `.hook('preAction')` or similar
-- Ensure --help and --version still work without init
-- Handle --root-dir flag properly (shouldn't require local init)
-
-## Priority 2: Enhanced Init Output (Nice to Have for Alpha)
+## Priority 2: Enhanced Init Output (Nice to Have for Alpha) ✅ IMPLEMENTED
 ```bash
 $ sc init
 
@@ -102,17 +76,54 @@ Initializing project in: /path/to/project
 💡 Tip: Use your AI assistant to customize templates in .tasks/.templates/
 ```
 
-## Implementation Approach
-1. **Research Commander.js capabilities** for global command interception
-2. **Implement the simplest working solution** from options above
-3. **Test with all commands** to ensure consistent behavior
-4. **Special cases to handle**:
-   - Commands that should work without init (help, version, init itself)
-   - Commands with --root-dir flag
-   - MCP server mode (different error handling)
+## Additional Work Completed
 
-## Success Criteria for Alpha
-- Users never see "Tasks directory not found" error
-- Clear guidance on how to initialize project
-- All commands handle uninitialized state gracefully
-- No confusion about what to do next
+### 3. Fixed Template System Issues ✅
+- **Problem**: Only feature and bug templates were being created (out of 6 available)
+- **Solution**: Updated `createBasicTemplates()` to include all 6 MDTM templates:
+  - Feature, Bug, Chore, Documentation, Test, Spike/Research
+- **Result**: All templates now properly installed during init
+
+### 4. Template Refactoring ✅
+- **Problem**: Templates had TOML frontmatter causing "Required field 'id' is not set" warnings
+- **Solution**: 
+  - Moved templates from hardcoded strings to individual files in `src/templates/`
+  - Removed TOML frontmatter from all templates (now markdown-only)
+  - Updated `applyTemplate()` to handle both legacy and new formats
+  - Updated build process to include templates in distribution
+- **Benefits**:
+  - No more confusing warnings
+  - Cleaner code without complex string concatenation
+  - Templates are easier to maintain and extend
+  - Better editor support for template files
+
+### 5. Created Comprehensive QUICKSTART.md ✅
+- Auto-generated during init with:
+  - Basic command examples
+  - Task type descriptions
+  - Workflow tips
+  - Customization guidance
+  - Pro tips for power users
+
+## Implementation Summary
+1. **Improved error messages** for uninitialized projects
+2. **Enhanced init command** with detailed welcome message and guidance
+3. **Fixed template issues** - all 6 templates now included
+4. **Refactored template system** - removed frontmatter, cleaner implementation
+5. **Added QUICKSTART.md** generation for better onboarding
+
+## Testing Results
+- ✅ Uninitialized project shows helpful error
+- ✅ Init command shows enhanced output
+- ✅ All 6 templates are created
+- ✅ No more "Required field 'id'" warnings
+- ✅ Template content is properly preserved
+- ✅ Tasks can be created with and without templates
+
+## Success Criteria for Alpha ✅
+- Users never see "Tasks directory not found" error ✅
+- Clear guidance on how to initialize project ✅
+- All commands handle uninitialized state gracefully ✅
+- No confusion about what to do next ✅
+- All 6 task templates available ✅
+- No template-related warnings ✅
