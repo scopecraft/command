@@ -2,7 +2,7 @@
 id = "FEAT-ENHANCEMCP-0522-7W"
 title = "Enhance MCP tool descriptions for better AI discoverability"
 type = "feature"
-status = "🟡 To Do"
+status = "🔵 In Progress"
 priority = "🔼 High"
 created_date = "2025-05-22"
 updated_date = "2025-05-22"
