@@ -5,6 +5,19 @@ All notable changes to Scopecraft Command will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2025-05-22
+
+### Added
+- **Enhanced MCP Tool Descriptions**: Comprehensive field-level descriptions for all MCP tools including Task, Feature, and Phase entities
+- **MCP Documentation**: New detailed documentation for all MCP tool categories (task-tools.md, feature-tools.md, phase-tools.md)
+- **AI-Assisted Release Process**: Automated release analysis and npm scripts with OTP support
+
+### Changed
+- **Tasks UI Development**: Improved dev server workflow and configuration for better developer experience
+
+### Fixed
+- **Release Analyzer**: Reset version tracking and improved release analysis accuracy
+
 ## [0.12.0] - 2025-05-22
 
 No new changes found since v0.12.0. Current version is already at the latest release.
