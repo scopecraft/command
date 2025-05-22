@@ -125,24 +125,63 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
  * Register all tools with the MCP server
  */
 function registerTools(server: McpServer, verbose = false): McpServer {
+  // Get available task types from templates for dynamic enum
+  const templates = listTemplates();
+  const taskTypes = templates.map((t) => t.description).filter(Boolean);
+  // Fallback to common types if no templates found
+  const availableTaskTypes =
+    taskTypes.length > 0
+      ? taskTypes
+      : ['🌟 Feature', '🐞 Bug', '🧹 Chore', '📚 Documentation', '🧪 Test', '🔬 Spike'];
+
+  // Common enums used across multiple tools
+  const taskStatusEnum = z.enum([
+    '🟡 To Do',
+    '🔵 In Progress',
+    '🟢 Done',
+    '⚪ Archived',
+    '🔴 Blocked',
+  ]);
+  const taskPriorityEnum = z.enum(['🔼 High', '▶️ Medium', '🔽 Low']);
+  const taskTypeEnum = z.enum(availableTaskTypes as [string, ...string[]]);
+
+  // Phase status enum
+  const phaseStatusEnum = z.enum([
+    '🟡 Pending',
+    '🔵 In Progress',
+    '🟢 Completed',
+    '⚪ Blocked',
+    '🗄️ Archived',
+  ]);
+
   // Task list tool
   const taskListRawShape = {
-    status: z.string().optional(),
-    type: z.string().optional(),
-    assignee: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    phase: z.string().optional(),
-    format: z.string().optional(),
-    include_content: z.boolean().optional(),
-    include_completed: z.boolean().optional(),
-    subdirectory: z.string().optional(),
-    is_overview: z.boolean().optional(),
+    status: taskStatusEnum.describe('Filter by task status').optional(),
+    type: taskTypeEnum.describe('Filter by task type (based on available templates)').optional(),
+    assignee: z.string().describe('Filter by assigned username').optional(),
+    tags: z.array(z.string()).describe('Filter by tags (e.g., ["backend", "api"])').optional(),
+    phase: z.string().describe('Filter by phase ID (e.g., "release-v1")').optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
+    include_content: z
+      .boolean()
+      .describe('Include full task content in response (default: false)')
+      .optional(),
+    include_completed: z
+      .boolean()
+      .describe('Include completed tasks in results (default: false)')
+      .optional(),
+    subdirectory: z
+      .string()
+      .describe('Filter by subdirectory/feature/area (e.g., "FEATURE_Authentication")')
+      .optional(),
+    is_overview: z.boolean().describe('Filter for overview files only').optional(),
   };
   const taskListSchema = z.object(taskListRawShape);
   server.registerTool(
     'task_list',
     {
-      description: 'List Tasks',
+      description:
+        'Lists tasks with powerful filtering capabilities. Use this to find specific tasks by status, type, phase, assignee, tags, or location. Supports filtering by completion status and can optionally include task content. Task types are dynamic based on available templates - use template_list to see valid types.',
       inputSchema: taskListRawShape,
       annotations: {
         title: 'List Tasks',
@@ -174,14 +213,15 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task get tool
   const taskGetRawShape = {
-    id: z.string(),
-    format: z.string().optional(),
+    id: z.string().describe('Task ID to retrieve (e.g., "TASK-001", "FEAT-AUTH-001")'),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const taskGetSchema = z.object(taskGetRawShape);
   server.registerTool(
     'task_get',
     {
-      description: 'Get Task',
+      description:
+        'Retrieves complete details of a specific task including all metadata and content. Use this when you need full information about a task, including its relationships (parent, dependencies), dates, and complete content. Essential for reading task details before updates.',
       inputSchema: taskGetRawShape,
       annotations: {
         title: 'Get Task',
@@ -202,26 +242,33 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task create tool
   const taskCreateRawShape = {
-    id: z.string().optional(),
-    title: z.string(),
-    type: z.string(),
-    status: z.string().optional(),
-    priority: z.string().optional(),
-    assignee: z.string().optional(),
-    phase: z.string().optional(),
-    subdirectory: z.string().optional(),
-    parent: z.string().optional(),
-    depends: z.array(z.string()).optional(),
-    previous: z.string().optional(),
-    next: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    content: z.string().optional(),
+    id: z.string().describe('Custom task ID (auto-generated if not provided)').optional(),
+    title: z.string().describe('Task title/summary'),
+    type: taskTypeEnum.describe('Task type (must match available templates)'),
+    status: taskStatusEnum.describe('Initial task status').default('🟡 To Do').optional(),
+    priority: taskPriorityEnum.describe('Task priority level').default('▶️ Medium').optional(),
+    assignee: z.string().describe('Username of person assigned to this task').optional(),
+    phase: z.string().describe('Phase to create task in (e.g., "release-v1")').optional(),
+    subdirectory: z
+      .string()
+      .describe('Feature/area subdirectory (e.g., "FEATURE_Authentication")')
+      .optional(),
+    parent: z.string().describe('Parent task ID for creating subtasks').optional(),
+    depends: z.array(z.string()).describe('Array of task IDs this task depends on').optional(),
+    previous: z.string().describe('Previous task ID in sequence').optional(),
+    next: z.string().describe('Next task ID in sequence').optional(),
+    tags: z
+      .array(z.string())
+      .describe('Tags for categorization (e.g., ["backend", "api"])')
+      .optional(),
+    content: z.string().describe('Task description/content in Markdown format').optional(),
   };
   const taskCreateSchema = z.object(taskCreateRawShape);
   server.registerTool(
     'task_create',
     {
-      description: 'Create Task',
+      description:
+        'Creates a new task with specified metadata and content. Tasks can be standalone or organized within features/areas in specific phases. Supports parent-child relationships, dependencies, and task sequences. Task types must match available templates - use template_list to see valid types. Auto-generates ID if not provided.',
       inputSchema: taskCreateRawShape,
       annotations: {
         title: 'Create Task',
@@ -247,26 +294,28 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task update tool
   const taskUpdateRawShape = {
-    id: z.string(),
+    id: z.string().describe('Task ID to update'),
     updates: z
       .object({
-        status: z.string().optional(),
-        priority: z.string().optional(),
-        phase: z.string().optional(),
-        subdirectory: z.string().optional(),
-        new_id: z.string().optional(),
-        metadata: z.record(z.unknown()).optional(),
-        content: z.string().optional(),
+        status: taskStatusEnum.describe('New task status').optional(),
+        priority: taskPriorityEnum.describe('New priority level').optional(),
+        phase: z.string().describe('Move to different phase').optional(),
+        subdirectory: z.string().describe('Move to different subdirectory').optional(),
+        new_id: z.string().describe('Rename task (change ID)').optional(),
+        metadata: z.record(z.unknown()).describe('Update any metadata field').optional(),
+        content: z.string().describe('Replace task content/description').optional(),
       })
+      .describe('Fields to update (only specified fields are changed)')
       .optional(),
-    phase: z.string().optional(),
-    subdirectory: z.string().optional(),
+    phase: z.string().describe('Current phase (helps locate task)').optional(),
+    subdirectory: z.string().describe('Current subdirectory (helps locate task)').optional(),
   };
   const taskUpdateSchema = z.object(taskUpdateRawShape);
   server.registerTool(
     'task_update',
     {
-      description: 'Update Task',
+      description:
+        "Updates an existing task's metadata and/or content. Supports partial updates - only specified fields are changed. Use this to change status, reassign, update content, or move tasks between phases/subdirectories. Can also rename tasks by providing new_id.",
       inputSchema: taskUpdateRawShape,
       annotations: {
         title: 'Update Task',
@@ -293,13 +342,14 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task delete tool
   const taskDeleteRawShape = {
-    id: z.string(),
+    id: z.string().describe('Task ID to delete'),
   };
   const taskDeleteSchema = z.object(taskDeleteRawShape);
   server.registerTool(
     'task_delete',
     {
-      description: 'Delete Task',
+      description:
+        'Permanently deletes a task and its file. Use with caution as this is destructive and cannot be undone. Useful for removing cancelled, obsolete, or test tasks.',
       inputSchema: taskDeleteRawShape,
       annotations: {
         title: 'Delete Task',
@@ -320,14 +370,15 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task next tool
   const taskNextRawShape = {
-    id: z.string().optional(),
-    format: z.string().optional(),
+    id: z.string().describe('Current task ID (to find next in sequence)').optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const taskNextSchema = z.object(taskNextRawShape);
   server.registerTool(
     'task_next',
     {
-      description: 'Get Next Task',
+      description:
+        'Finds the next recommended task to work on based on dependencies, priorities, and workflow. Helps maintain task flow by suggesting what to work on next, either after completing a specific task or when starting fresh. Respects task sequences and dependencies.',
       inputSchema: taskNextRawShape,
       annotations: {
         title: 'Get Next Task',
@@ -348,13 +399,14 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Phase list tool
   const phaseListRawShape = {
-    format: z.string().optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const phaseListSchema = z.object(phaseListRawShape);
   server.registerTool(
     'phase_list',
     {
-      description: 'List Phases',
+      description:
+        'Lists all phases in the project with their current status and metadata. Phases represent logical groupings like releases, sprints, or milestones. Use this to understand project structure and timeline.',
       inputSchema: phaseListRawShape,
       annotations: {
         title: 'List Phases',
@@ -375,17 +427,23 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Phase create tool
   const phaseCreateRawShape = {
-    id: z.string(),
-    name: z.string(),
-    description: z.string().optional(),
-    status: z.string().optional(),
-    order: z.number().optional(),
+    id: z
+      .string()
+      .describe('Unique phase identifier (e.g., "release-v2", "sprint-23"). Should be URL-safe.'),
+    name: z.string().describe('Human-readable phase name (e.g., "Release 2.0", "Sprint 23")'),
+    description: z.string().describe('Detailed description of phase goals and scope').optional(),
+    status: phaseStatusEnum.describe('Initial phase status').default('🟡 Pending').optional(),
+    order: z
+      .number()
+      .describe('Numeric order for sorting phases (lower numbers appear first)')
+      .optional(),
   };
   const phaseCreateSchema = z.object(phaseCreateRawShape);
   server.registerTool(
     'phase_create',
     {
-      description: 'Create Phase',
+      description:
+        'Creates a new phase to organize work. Phases represent releases, sprints, or milestones. Use URL-safe IDs (lowercase, hyphens). Common patterns: "release-v2", "2024-q1", "sprint-23".',
       inputSchema: phaseCreateRawShape,
       annotations: {
         title: 'Create Phase',
@@ -414,20 +472,23 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Phase update tool
   const phaseUpdateRawShape = {
-    id: z.string(),
-    updates: z.object({
-      id: z.string().optional(),
-      name: z.string().optional(),
-      description: z.string().optional(),
-      status: z.string().optional(),
-      order: z.number().optional(),
-    }),
+    id: z.string().describe('Current phase ID to update'),
+    updates: z
+      .object({
+        id: z.string().describe('New phase ID (renames the phase and directory)').optional(),
+        name: z.string().describe('New human-readable name').optional(),
+        description: z.string().describe('New description').optional(),
+        status: phaseStatusEnum.describe('New phase status').optional(),
+        order: z.number().describe('New numeric order').optional(),
+      })
+      .describe('Fields to update (only specified fields are changed)'),
   };
   const phaseUpdateSchema = z.object(phaseUpdateRawShape);
   server.registerTool(
     'phase_update',
     {
-      description: 'Update Phase',
+      description:
+        'Updates phase properties like name, status, or order. Can rename phases by changing ID. Common uses: marking phases as "In Progress", updating descriptions, reordering phases.',
       inputSchema: phaseUpdateRawShape,
       annotations: {
         title: 'Update Phase',
@@ -448,14 +509,18 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Phase delete tool
   const phaseDeleteRawShape = {
-    id: z.string(),
-    force: z.boolean().optional(),
+    id: z.string().describe('Phase ID to delete'),
+    force: z
+      .boolean()
+      .describe('Force deletion even if phase contains tasks (default: false)')
+      .optional(),
   };
   const phaseDeleteSchema = z.object(phaseDeleteRawShape);
   server.registerTool(
     'phase_delete',
     {
-      description: 'Delete Phase',
+      description:
+        'Deletes a phase and optionally all its contents. Use caution as this can delete many tasks. Consider updating status to "Archived" instead of deleting. Requires force=true to delete phases with tasks.',
       inputSchema: phaseDeleteRawShape,
       annotations: {
         title: 'Delete Phase',
@@ -476,13 +541,14 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Workflow current tool
   const workflowCurrentRawShape = {
-    format: z.string().optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const workflowCurrentSchema = z.object(workflowCurrentRawShape);
   server.registerTool(
     'workflow_current',
     {
-      description: 'Get Current Workflow',
+      description:
+        'Shows all tasks currently in progress across the project. Useful for status updates, checking active work, and ensuring no task conflicts. Returns tasks with status "🔵 In Progress".',
       inputSchema: workflowCurrentRawShape,
       annotations: {
         title: 'Get Current Workflow',
@@ -510,14 +576,15 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Workflow mark complete next tool
   const workflowMarkCompleteNextRawShape = {
-    id: z.string(),
-    format: z.string().optional(),
+    id: z.string().describe('Task ID to mark as complete'),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const workflowMarkCompleteNextSchema = z.object(workflowMarkCompleteNextRawShape);
   server.registerTool(
     'workflow_mark_complete_next',
     {
-      description: 'Mark Complete and Get Next',
+      description:
+        'Marks a task as complete (🟢 Done) and immediately suggests the next task to work on. Streamlines workflow by combining task completion with next task recommendation. Useful for maintaining momentum and following proper task sequences.',
       inputSchema: workflowMarkCompleteNextRawShape,
       annotations: {
         title: 'Mark Complete and Get Next',
@@ -575,17 +642,23 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task move tool
   const taskMoveRawShape = {
-    id: z.string(),
-    target_subdirectory: z.string(),
-    target_phase: z.string().optional(),
-    search_phase: z.string().optional(),
-    search_subdirectory: z.string().optional(),
+    id: z.string().describe('Task ID to move'),
+    target_subdirectory: z
+      .string()
+      .describe('Target feature/area directory (e.g., "FEATURE_Security")'),
+    target_phase: z.string().describe('Target phase if moving between phases').optional(),
+    search_phase: z.string().describe('Current phase to search in (helps locate task)').optional(),
+    search_subdirectory: z
+      .string()
+      .describe('Current subdirectory to search in (helps locate task)')
+      .optional(),
   };
   const taskMoveSchema = z.object(taskMoveRawShape);
   server.registerTool(
     'task_move',
     {
-      description: 'Move Task',
+      description:
+        'Moves a task to a different feature/area subdirectory or phase while preserving all metadata and relationships. Use this to reorganize tasks, reassign to different features/areas, or move between project phases. Requires target_subdirectory parameter.',
       inputSchema: taskMoveRawShape,
       annotations: {
         title: 'Move Task',
@@ -611,17 +684,24 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Feature list tool
   const featureListRawShape = {
-    phase: z.string().optional(),
-    status: z.string().optional(),
-    format: z.string().optional(),
-    include_tasks: z.boolean().optional(),
-    include_progress: z.boolean().optional(),
+    phase: z.string().describe('Filter by phase ID (e.g., "release-v1")').optional(),
+    status: z.string().describe('Filter by feature status (e.g., "🔵 In Progress")').optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
+    include_tasks: z
+      .boolean()
+      .describe('Include task IDs within each feature (default: false)')
+      .optional(),
+    include_progress: z
+      .boolean()
+      .describe('Include completion percentage (default: true)')
+      .optional(),
   };
   const featureListSchema = z.object(featureListRawShape);
   server.registerTool(
     'feature_list',
     {
-      description: 'List Features',
+      description:
+        'Lists all features (epics) in the project with progress tracking. Features organize complex work into subtasks. Use this to see major functionality being developed, check progress, and understand project scope.',
       inputSchema: featureListRawShape,
       annotations: {
         title: 'List Features',
@@ -648,15 +728,16 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Feature get tool
   const featureGetRawShape = {
-    id: z.string(),
-    phase: z.string().optional(),
-    format: z.string().optional(),
+    id: z.string().describe('Feature ID (e.g., "Authentication" or "FEATURE_Authentication")'),
+    phase: z.string().describe('Phase to search in (helps locate feature faster)').optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const featureGetSchema = z.object(featureGetRawShape);
   server.registerTool(
     'feature_get',
     {
-      description: 'Get Feature',
+      description:
+        'Gets complete details about a feature including overview, tasks, and progress. Features are epics that group related work. Use this to understand feature scope, read documentation, and see all tasks.',
       inputSchema: featureGetRawShape,
       annotations: {
         title: 'Get Feature',
@@ -677,20 +758,31 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Feature create tool
   const featureCreateRawShape = {
-    name: z.string(),
-    title: z.string(),
-    phase: z.string(),
-    type: z.string().optional(),
-    status: z.string().optional(),
-    description: z.string().optional(),
-    assignee: z.string().optional(),
-    tags: z.array(z.string()).optional(),
+    name: z
+      .string()
+      .describe(
+        'Feature name without spaces (e.g., "UserAuthentication"). Will be prefixed with FEATURE_'
+      ),
+    title: z.string().describe('Human-readable feature title (e.g., "User Authentication System")'),
+    phase: z.string().describe('Phase to create feature in (must exist, e.g., "release-v1")'),
+    type: taskTypeEnum.describe('Task type for overview file').default('🌟 Feature').optional(),
+    status: taskStatusEnum.describe('Initial feature status').default('🟡 To Do').optional(),
+    description: z
+      .string()
+      .describe('Detailed feature description explaining purpose and scope')
+      .optional(),
+    assignee: z.string().describe('Person responsible for this feature/epic').optional(),
+    tags: z
+      .array(z.string())
+      .describe('Tags for categorization (e.g., ["backend", "security"])')
+      .optional(),
   };
   const featureCreateSchema = z.object(featureCreateRawShape);
   server.registerTool(
     'feature_create',
     {
-      description: 'Create Feature',
+      description:
+        'Creates a new feature (epic) to organize complex work. Features group related tasks together. Creates directory with FEATURE_ prefix and an _overview.md file. Perfect for breaking down large functionality into manageable subtasks.',
       inputSchema: featureCreateRawShape,
       annotations: {
         title: 'Create Feature',
@@ -718,20 +810,26 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Feature update tool
   const featureUpdateRawShape = {
-    id: z.string(),
-    updates: z.object({
-      name: z.string().optional(),
-      title: z.string().optional(),
-      description: z.string().optional(),
-      status: z.string().optional(),
-    }),
-    phase: z.string().optional(),
+    id: z.string().describe('Feature ID to update (with or without FEATURE_ prefix)'),
+    updates: z
+      .object({
+        name: z
+          .string()
+          .describe('New feature name (renames directory - use carefully)')
+          .optional(),
+        title: z.string().describe('New human-readable title').optional(),
+        description: z.string().describe('New or updated description').optional(),
+        status: taskStatusEnum.describe('New feature status').optional(),
+      })
+      .describe('Fields to update (only specified fields are changed)'),
+    phase: z.string().describe('Current phase (helps locate feature)').optional(),
   };
   const featureUpdateSchema = z.object(featureUpdateRawShape);
   server.registerTool(
     'feature_update',
     {
-      description: 'Update Feature',
+      description:
+        'Updates feature properties like title, description, or status. Can rename features but use carefully as it changes task locations. Common uses: marking features "In Progress", updating descriptions as scope evolves.',
       inputSchema: featureUpdateRawShape,
       annotations: {
         title: 'Update Feature',
@@ -758,15 +856,19 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Feature delete tool
   const featureDeleteRawShape = {
-    id: z.string(),
-    phase: z.string().optional(),
-    force: z.boolean().optional(),
+    id: z.string().describe('Feature ID to delete (with or without FEATURE_ prefix)'),
+    phase: z.string().describe('Phase containing the feature').optional(),
+    force: z
+      .boolean()
+      .describe('Force deletion even if feature contains tasks (default: false)')
+      .optional(),
   };
   const featureDeleteSchema = z.object(featureDeleteRawShape);
   server.registerTool(
     'feature_delete',
     {
-      description: 'Delete Feature',
+      description:
+        'Deletes a feature directory and ALL its contents. Use with extreme caution as this removes all tasks within the feature. Consider archiving completed features instead. Requires force=true if feature contains tasks.',
       inputSchema: featureDeleteRawShape,
       annotations: {
         title: 'Delete Feature',
@@ -966,13 +1068,14 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Template list tool
   const templateListRawShape = {
-    format: z.string().optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const templateListSchema = z.object(templateListRawShape);
   server.registerTool(
     'template_list',
     {
-      description: 'List Templates',
+      description:
+        'Lists available task templates with their types and descriptions. Essential for discovering valid task types in your project since types are template-driven. Each template defines a task type (like "🌟 Feature", "🐞 Bug") that can be used when creating or filtering tasks. Always check this before using task_create or filtering by type.',
       inputSchema: templateListRawShape,
       annotations: {
         title: 'List Templates',
@@ -997,13 +1100,18 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Init root configuration tool
   const initRootRawShape = {
-    path: z.string(),
+    path: z
+      .string()
+      .describe(
+        'Absolute path to project root directory. Must already contain a .tasks or .ruru directory to be valid.'
+      ),
   };
   const initRootSchema = z.object(initRootRawShape);
   server.registerTool(
     'init_root',
     {
-      description: 'Initialize Root Configuration',
+      description:
+        'Sets the project root directory for the MCP session. The directory must already contain a .tasks or .ruru subdirectory to be valid. This configuration is session-specific and allows the MCP server to work with the correct project context. Note: Unlike the CLI, this does not create the .tasks directory - it must already exist.',
       inputSchema: initRootRawShape,
       annotations: {
         title: 'Initialize Root Configuration',
@@ -1044,7 +1152,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'get_current_root',
     {
-      description: 'Get Current Root',
+      description:
+        'Returns the currently configured project root directory, including its source (how it was detected) and validation status. Useful for debugging configuration issues or confirming the active project context.',
       inputSchema: getCurrentRootRawShape,
       annotations: {
         title: 'Get Current Root',
@@ -1080,7 +1189,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   server.registerTool(
     'list_projects',
     {
-      description: 'List Projects',
+      description:
+        'Lists all configured projects from the Scopecraft configuration file. Returns project names and paths, useful for switching between multiple projects or understanding the available project contexts.',
       inputSchema: listProjectsRawShape,
       annotations: {
         title: 'List Projects',

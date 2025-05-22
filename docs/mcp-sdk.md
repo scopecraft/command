@@ -16,20 +16,53 @@ The MCP server provides a way for LLMs and other clients to interact with the Sc
 
 ## Available Methods
 
-The following MCP tools (methods) are available:
+The following MCP tools are available:
 
-| Tool Name | Description |
-|-----------|-------------|
-| `task_list` | List tasks in the system with optional filtering based on status, type, assignee, tags, phase, or subdirectory. By default, task content is excluded and completed tasks are excluded to reduce response size (use `include_content: true` to include full content and `include_completed: true` to include completed tasks). Returns an array of tasks matching the specified criteria. Results are sorted by priority by default. |
-| `task_get` | Get detailed information about a specific task by its ID. Returns the complete task object including both metadata and content. |
-| `task_create` | Create a new task with the specified properties. Required fields are title and type. Other fields are optional with sensible defaults. Returns the created task object. |
-| `task_update` | Update a task's metadata or content. Requires the task ID and an updates object with metadata and/or content changes. Returns the updated task object. |
-| `task_delete` | Delete a task by its ID. This operation permanently removes the task file from the system. Returns a success status. |
-| `task_next` | Find the next task to work on based on priority and dependencies. If an ID is provided, finds the next task after the specified one. Returns the next highest priority task that's ready to be started. |
-| `phase_list` | List all phases in the system. Phases represent logical groupings of tasks such as releases, milestones, or sprints. Returns an array of phase objects. |
-| `phase_create` | Create a new phase with the specified properties. Required fields are id and name. A phase represents a logical grouping of tasks such as a release, milestone, or sprint. Returns the created phase object. |
-| `workflow_current` | Get all tasks that are currently in progress (tasks with status '🔵 In Progress'). Returns an array of tasks that are actively being worked on. |
-| `workflow_mark_complete_next` | Mark a task as complete and find the next task to work on. Requires the ID of the task to mark as complete. Updates the task's status to '🟢 Done' and returns both the updated task and the next suggested task. |
+### Task Management
+- `task_list` - List tasks with powerful filtering capabilities
+- `task_get` - Get complete task details including metadata and content
+- `task_create` - Create new tasks with metadata and content
+- `task_update` - Update existing task metadata or content
+- `task_delete` - Permanently delete a task
+- `task_next` - Find the next recommended task to work on
+- `task_move` - Move tasks between features/areas or phases
+
+### Workflow Management
+- `workflow_current` - Get all tasks currently in progress
+- `workflow_mark_complete_next` - Mark task complete and get next suggestion
+
+### Phase Management
+- `phase_list` - List all project phases
+- `phase_create` - Create a new phase
+- `phase_update` - Update phase properties
+- `phase_delete` - Delete a phase
+
+### Feature Management
+- `feature_list` - List features with optional filtering
+- `feature_get` - Get detailed feature information
+- `feature_create` - Create a new feature directory
+- `feature_update` - Update feature properties
+- `feature_delete` - Delete a feature and its tasks
+
+### Area Management
+- `area_list` - List areas with optional filtering
+- `area_get` - Get detailed area information
+- `area_create` - Create a new area directory
+- `area_update` - Update area properties
+- `area_delete` - Delete an area and its tasks
+
+### Template Management
+- `template_list` - List available task templates
+
+### Configuration Management
+- `init_root` - Set project root directory for session
+- `get_current_root` - Get current project root configuration
+- `list_projects` - List all configured projects
+
+### Debug Tools
+- `debug_code_path` - Get diagnostic information about the MCP server
+
+For detailed parameter information, see the tool descriptions exposed through the MCP interface.
 
 ## Running the MCP Server
 
@@ -81,44 +114,94 @@ The MCP Inspector will spawn the server process and communicate with it via the 
 
 ### Tool Documentation
 
-All MCP tools are now documented with comprehensive descriptions and annotations that help AI assistants and other clients understand how to use them. Each tool includes:
+All MCP tools are documented with comprehensive descriptions and field-level documentation using the current SDK patterns:
 
-1. **Description** - A clear, concise explanation of what the tool does
-2. **Annotations** - Metadata about the tool's behavior:
-   - `title` - Human-readable name
-   - `readOnlyHint` - Whether the tool changes system state
-   - `destructiveHint` - Whether the tool performs destructive operations
-   - `idempotentHint` - Whether multiple identical calls have the same effect
+1. **Tool-level Documentation**:
+   - `description` - Comprehensive explanation of what the tool does and when to use it
+   - `annotations` - Metadata about the tool's behavior:
+     - `title` - Human-readable name
+     - `readOnlyHint` - Whether the tool changes system state
+     - `destructiveHint` - Whether the tool performs destructive operations
+     - `idempotentHint` - Whether multiple identical calls have the same effect
 
-Example tool registration with documentation:
+2. **Field-level Documentation**:
+   - Use Zod's `.describe()` method to document individual parameters
+   - Use `z.enum()` for fields with specific valid values
+   - Dynamic enums can be generated at server initialization
+
+#### Current Registration Pattern
 
 ```typescript
-server.tool(
-  "task_list",
+// Define raw Zod shapes (not z.object())
+const taskListRawShape = {
+  status: z.enum(['🟡 To Do', '🔵 In Progress', '🟢 Done'])
+    .describe('Filter by task status')
+    .optional(),
+  type: z.string()
+    .describe('Filter by task type (based on templates)')
+    .optional(),
+  assignee: z.string()
+    .describe('Filter by assigned username')
+    .optional(),
+  // ... other parameters
+};
+
+// Create schema for type inference
+const taskListSchema = z.object(taskListRawShape);
+
+// Register tool with comprehensive documentation
+server.registerTool(
+  'task_list',
   {
-    status: z.string().optional(),
-    type: z.string().optional(),
-    // Other parameters...
-  },
-  async (params) => {
-    // Implementation...
-  },
-  {
-    description: "List tasks in the system with optional filtering based on status, type, assignee, tags, or phase.",
+    description: 'Lists tasks with powerful filtering capabilities. Use this to find specific tasks by status, type, phase, assignee, tags, or location.',
+    inputSchema: taskListRawShape, // Pass raw shape, not z.object()
     annotations: {
-      title: "List Tasks",
+      title: 'List Tasks',
       readOnlyHint: true,
-      idempotentHint: true
-    }
+      destructiveHint: false,
+      idempotentHint: true,
+    },
+  },
+  async (params: z.infer<typeof taskListSchema>) => {
+    // Implementation...
   }
 );
 ```
 
-These descriptions and annotations provide crucial context for AI assistants like Claude, enabling them to:
-- Discover available tools
-- Understand which parameters are required vs. optional
-- Know what kind of data to expect in responses
-- Make informed decisions about when to use each tool
+#### Schema Best Practices
+
+1. **Use Common Enums** for consistent values across tools:
+   ```typescript
+   const taskStatusEnum = z.enum(['🟡 To Do', '🔵 In Progress', '🟢 Done', '⚪ Archived', '🔴 Blocked']);
+   const taskPriorityEnum = z.enum(['🔼 High', '▶️ Medium', '🔽 Low']);
+   ```
+
+2. **Dynamic Enums** for template-based values:
+   ```typescript
+   const templates = listTemplates();
+   const taskTypes = templates.map(t => t.description).filter(Boolean);
+   const taskTypeEnum = z.enum(taskTypes as [string, ...string[]]);
+   ```
+
+3. **Field Descriptions** should include:
+   - What the field does
+   - Valid values or format
+   - Examples where helpful
+   - Default values if applicable
+
+4. **Nested Objects** can also have descriptions:
+   ```typescript
+   updates: z.object({
+     status: taskStatusEnum.describe('New task status').optional(),
+     priority: taskPriorityEnum.describe('New priority level').optional(),
+   }).describe('Fields to update (only specified fields are changed)')
+   ```
+
+These patterns provide crucial context for AI assistants, enabling them to:
+- Discover available tools and their purposes
+- Understand parameter requirements and valid values
+- Get inline help for each parameter
+- Make informed decisions about tool usage
 
 ### Transport Options
 
