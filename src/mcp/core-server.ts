@@ -145,6 +145,15 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   const taskPriorityEnum = z.enum(['🔼 High', '▶️ Medium', '🔽 Low']);
   const taskTypeEnum = z.enum(availableTaskTypes as [string, ...string[]]);
 
+  // Phase status enum
+  const phaseStatusEnum = z.enum([
+    '🟡 Pending',
+    '🔵 In Progress',
+    '🟢 Completed',
+    '⚪ Blocked',
+    '🗄️ Archived',
+  ]);
+
   // Task list tool
   const taskListRawShape = {
     status: taskStatusEnum.describe('Filter by task status').optional(),
@@ -390,13 +399,14 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Phase list tool
   const phaseListRawShape = {
-    format: z.string().optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const phaseListSchema = z.object(phaseListRawShape);
   server.registerTool(
     'phase_list',
     {
-      description: 'List Phases',
+      description:
+        'Lists all phases in the project with their current status and metadata. Phases represent logical groupings like releases, sprints, or milestones. Use this to understand project structure and timeline.',
       inputSchema: phaseListRawShape,
       annotations: {
         title: 'List Phases',
@@ -417,17 +427,23 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Phase create tool
   const phaseCreateRawShape = {
-    id: z.string(),
-    name: z.string(),
-    description: z.string().optional(),
-    status: z.string().optional(),
-    order: z.number().optional(),
+    id: z
+      .string()
+      .describe('Unique phase identifier (e.g., "release-v2", "sprint-23"). Should be URL-safe.'),
+    name: z.string().describe('Human-readable phase name (e.g., "Release 2.0", "Sprint 23")'),
+    description: z.string().describe('Detailed description of phase goals and scope').optional(),
+    status: phaseStatusEnum.describe('Initial phase status').default('🟡 Pending').optional(),
+    order: z
+      .number()
+      .describe('Numeric order for sorting phases (lower numbers appear first)')
+      .optional(),
   };
   const phaseCreateSchema = z.object(phaseCreateRawShape);
   server.registerTool(
     'phase_create',
     {
-      description: 'Create Phase',
+      description:
+        'Creates a new phase to organize work. Phases represent releases, sprints, or milestones. Use URL-safe IDs (lowercase, hyphens). Common patterns: "release-v2", "2024-q1", "sprint-23".',
       inputSchema: phaseCreateRawShape,
       annotations: {
         title: 'Create Phase',
@@ -456,20 +472,23 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Phase update tool
   const phaseUpdateRawShape = {
-    id: z.string(),
-    updates: z.object({
-      id: z.string().optional(),
-      name: z.string().optional(),
-      description: z.string().optional(),
-      status: z.string().optional(),
-      order: z.number().optional(),
-    }),
+    id: z.string().describe('Current phase ID to update'),
+    updates: z
+      .object({
+        id: z.string().describe('New phase ID (renames the phase and directory)').optional(),
+        name: z.string().describe('New human-readable name').optional(),
+        description: z.string().describe('New description').optional(),
+        status: phaseStatusEnum.describe('New phase status').optional(),
+        order: z.number().describe('New numeric order').optional(),
+      })
+      .describe('Fields to update (only specified fields are changed)'),
   };
   const phaseUpdateSchema = z.object(phaseUpdateRawShape);
   server.registerTool(
     'phase_update',
     {
-      description: 'Update Phase',
+      description:
+        'Updates phase properties like name, status, or order. Can rename phases by changing ID. Common uses: marking phases as "In Progress", updating descriptions, reordering phases.',
       inputSchema: phaseUpdateRawShape,
       annotations: {
         title: 'Update Phase',
@@ -490,14 +509,18 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Phase delete tool
   const phaseDeleteRawShape = {
-    id: z.string(),
-    force: z.boolean().optional(),
+    id: z.string().describe('Phase ID to delete'),
+    force: z
+      .boolean()
+      .describe('Force deletion even if phase contains tasks (default: false)')
+      .optional(),
   };
   const phaseDeleteSchema = z.object(phaseDeleteRawShape);
   server.registerTool(
     'phase_delete',
     {
-      description: 'Delete Phase',
+      description:
+        'Deletes a phase and optionally all its contents. Use caution as this can delete many tasks. Consider updating status to "Archived" instead of deleting. Requires force=true to delete phases with tasks.',
       inputSchema: phaseDeleteRawShape,
       annotations: {
         title: 'Delete Phase',
@@ -1050,7 +1073,9 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   const initRootRawShape = {
     path: z
       .string()
-      .describe('Absolute path to project root directory. Must already contain a .tasks or .ruru directory to be valid.'),
+      .describe(
+        'Absolute path to project root directory. Must already contain a .tasks or .ruru directory to be valid.'
+      ),
   };
   const initRootSchema = z.object(initRootRawShape);
   server.registerTool(
