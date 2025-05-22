@@ -56,9 +56,10 @@ Process remaining entities in parallel:
 - [x] Add phase status enum and field descriptions
 
 ### 3. Feature Entity Enhancement
-- [ ] Research Feature entity tools and fields
-- [ ] Document in `docs/mcp-tools/feature-tools.md`
-- [ ] Update tool descriptions
+- [x] Research Feature entity tools and fields
+- [x] Document in `docs/mcp-tools/feature-tools.md`
+- [x] Update tool descriptions
+- [x] Add field descriptions emphasizing features as epics
 
 ### 4. Area Entity Enhancement
 - [ ] Research Area entity tools and fields

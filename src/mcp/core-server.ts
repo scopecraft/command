@@ -684,17 +684,24 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Feature list tool
   const featureListRawShape = {
-    phase: z.string().optional(),
-    status: z.string().optional(),
-    format: z.string().optional(),
-    include_tasks: z.boolean().optional(),
-    include_progress: z.boolean().optional(),
+    phase: z.string().describe('Filter by phase ID (e.g., "release-v1")').optional(),
+    status: z.string().describe('Filter by feature status (e.g., "🔵 In Progress")').optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
+    include_tasks: z
+      .boolean()
+      .describe('Include task IDs within each feature (default: false)')
+      .optional(),
+    include_progress: z
+      .boolean()
+      .describe('Include completion percentage (default: true)')
+      .optional(),
   };
   const featureListSchema = z.object(featureListRawShape);
   server.registerTool(
     'feature_list',
     {
-      description: 'List Features',
+      description:
+        'Lists all features (epics) in the project with progress tracking. Features organize complex work into subtasks. Use this to see major functionality being developed, check progress, and understand project scope.',
       inputSchema: featureListRawShape,
       annotations: {
         title: 'List Features',
@@ -721,15 +728,16 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Feature get tool
   const featureGetRawShape = {
-    id: z.string(),
-    phase: z.string().optional(),
-    format: z.string().optional(),
+    id: z.string().describe('Feature ID (e.g., "Authentication" or "FEATURE_Authentication")'),
+    phase: z.string().describe('Phase to search in (helps locate feature faster)').optional(),
+    format: z.string().describe('Output format (reserved for future use)').optional(),
   };
   const featureGetSchema = z.object(featureGetRawShape);
   server.registerTool(
     'feature_get',
     {
-      description: 'Get Feature',
+      description:
+        'Gets complete details about a feature including overview, tasks, and progress. Features are epics that group related work. Use this to understand feature scope, read documentation, and see all tasks.',
       inputSchema: featureGetRawShape,
       annotations: {
         title: 'Get Feature',
@@ -750,20 +758,31 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Feature create tool
   const featureCreateRawShape = {
-    name: z.string(),
-    title: z.string(),
-    phase: z.string(),
-    type: z.string().optional(),
-    status: z.string().optional(),
-    description: z.string().optional(),
-    assignee: z.string().optional(),
-    tags: z.array(z.string()).optional(),
+    name: z
+      .string()
+      .describe(
+        'Feature name without spaces (e.g., "UserAuthentication"). Will be prefixed with FEATURE_'
+      ),
+    title: z.string().describe('Human-readable feature title (e.g., "User Authentication System")'),
+    phase: z.string().describe('Phase to create feature in (must exist, e.g., "release-v1")'),
+    type: taskTypeEnum.describe('Task type for overview file').default('🌟 Feature').optional(),
+    status: taskStatusEnum.describe('Initial feature status').default('🟡 To Do').optional(),
+    description: z
+      .string()
+      .describe('Detailed feature description explaining purpose and scope')
+      .optional(),
+    assignee: z.string().describe('Person responsible for this feature/epic').optional(),
+    tags: z
+      .array(z.string())
+      .describe('Tags for categorization (e.g., ["backend", "security"])')
+      .optional(),
   };
   const featureCreateSchema = z.object(featureCreateRawShape);
   server.registerTool(
     'feature_create',
     {
-      description: 'Create Feature',
+      description:
+        'Creates a new feature (epic) to organize complex work. Features group related tasks together. Creates directory with FEATURE_ prefix and an _overview.md file. Perfect for breaking down large functionality into manageable subtasks.',
       inputSchema: featureCreateRawShape,
       annotations: {
         title: 'Create Feature',
@@ -791,20 +810,26 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Feature update tool
   const featureUpdateRawShape = {
-    id: z.string(),
-    updates: z.object({
-      name: z.string().optional(),
-      title: z.string().optional(),
-      description: z.string().optional(),
-      status: z.string().optional(),
-    }),
-    phase: z.string().optional(),
+    id: z.string().describe('Feature ID to update (with or without FEATURE_ prefix)'),
+    updates: z
+      .object({
+        name: z
+          .string()
+          .describe('New feature name (renames directory - use carefully)')
+          .optional(),
+        title: z.string().describe('New human-readable title').optional(),
+        description: z.string().describe('New or updated description').optional(),
+        status: taskStatusEnum.describe('New feature status').optional(),
+      })
+      .describe('Fields to update (only specified fields are changed)'),
+    phase: z.string().describe('Current phase (helps locate feature)').optional(),
   };
   const featureUpdateSchema = z.object(featureUpdateRawShape);
   server.registerTool(
     'feature_update',
     {
-      description: 'Update Feature',
+      description:
+        'Updates feature properties like title, description, or status. Can rename features but use carefully as it changes task locations. Common uses: marking features "In Progress", updating descriptions as scope evolves.',
       inputSchema: featureUpdateRawShape,
       annotations: {
         title: 'Update Feature',
@@ -831,15 +856,19 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Feature delete tool
   const featureDeleteRawShape = {
-    id: z.string(),
-    phase: z.string().optional(),
-    force: z.boolean().optional(),
+    id: z.string().describe('Feature ID to delete (with or without FEATURE_ prefix)'),
+    phase: z.string().describe('Phase containing the feature').optional(),
+    force: z
+      .boolean()
+      .describe('Force deletion even if feature contains tasks (default: false)')
+      .optional(),
   };
   const featureDeleteSchema = z.object(featureDeleteRawShape);
   server.registerTool(
     'feature_delete',
     {
-      description: 'Delete Feature',
+      description:
+        'Deletes a feature directory and ALL its contents. Use with extreme caution as this removes all tasks within the feature. Consider archiving completed features instead. Requires force=true if feature contains tasks.',
       inputSchema: featureDeleteRawShape,
       annotations: {
         title: 'Delete Feature',
