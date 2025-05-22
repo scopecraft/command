@@ -16,6 +16,7 @@ import {
   deletePhase,
   deleteTask,
   findNextTask,
+  formatFeaturesList,
   formatPhasesList,
   formatTaskDetail,
   formatTasksList,
@@ -827,14 +828,18 @@ import fs from 'node:fs';
 export async function handleFeatureListCommand(options: {
   phase?: string;
   format?: string;
-  include_tasks?: boolean;
-  include_progress?: boolean;
+  includeTasks?: boolean;
+  includeProgress?: boolean;
+  includeContent?: boolean;
+  includeCompleted?: boolean;
 }): Promise<void> {
   try {
     const result = await listFeatures({
       phase: options.phase,
-      include_tasks: options.include_tasks === true,
-      include_progress: options.include_progress !== false,
+      include_tasks: options.includeTasks === true,
+      include_progress: options.includeProgress !== false,
+      include_content: options.includeContent === true,
+      include_completed: options.includeCompleted === true,
     });
 
     if (!result.success) {
@@ -847,27 +852,7 @@ export async function handleFeatureListCommand(options: {
       return;
     }
 
-    // Format output based on options
-    if (options.format === 'json') {
-      console.log(JSON.stringify(result.data, null, 2));
-      return;
-    }
-
-    console.log(`Found ${result.data.length} features:`);
-    console.log('-----------------');
-
-    for (const feature of result.data) {
-      console.log(`${feature.id} - ${feature.title}`);
-      if (feature.description) console.log(`  Description: ${feature.description}`);
-      if (feature.status) console.log(`  Status: ${feature.status}`);
-      if (feature.progress !== undefined) console.log(`  Progress: ${feature.progress}%`);
-      if (feature.phase) console.log(`  Phase: ${feature.phase}`);
-      if (options.include_tasks && feature.tasks) {
-        console.log(`  Tasks: ${feature.tasks.length}`);
-        feature.tasks.forEach((taskId) => console.log(`    - ${taskId}`));
-      }
-      console.log(); // Empty line between features
-    }
+    console.log(formatFeaturesList(result.data, options.format || 'table'));
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);

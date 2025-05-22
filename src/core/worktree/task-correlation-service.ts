@@ -279,18 +279,12 @@ export class TaskCorrelationService {
     let featureResult = await getFeature(featureId, {
       phase: undefined,
       config,
-      include_completed: true, // Include completed tasks in the feature
-      include_tasks: true, // Include tasks list
-      include_content: true, // Include full content
     });
 
     // If not found and config was provided, try without config (main repo fallback)
     if (!featureResult.success && config) {
       featureResult = await getFeature(featureId, {
         phase: undefined,
-        include_completed: true, // Include completed tasks in the feature
-        include_tasks: true, // Include tasks list
-        include_content: true, // Include full content
       });
     }
 
@@ -324,13 +318,8 @@ export class TaskCorrelationService {
       toDo: 0,
     };
 
-    // Force inclusion of completed tasks
-    const configWithCompleted = config
-      ? { ...config, include_completed: true }
-      : { include_completed: true };
-
     // Get tasks and count by status, passing through config
-    await this.processTaskStatuses(taskIds, counters, configWithCompleted);
+    await this.processTaskStatuses(taskIds, counters, config);
 
     return counters;
   }
@@ -347,17 +336,14 @@ export class TaskCorrelationService {
     config?: RuntimeConfig
   ): Promise<void> {
     for (const taskId of taskIds) {
-      // Try with config first (worktree-specific lookup), specifically including completed tasks
+      // Try with config first (worktree-specific lookup)
       let taskResult = await getTask(taskId, {
         config,
-        include_completed: true,
       });
 
       // If not found in worktree and config provided, try main repo as fallback
       if ((!taskResult.success || !taskResult.data) && config) {
-        taskResult = await getTask(taskId, {
-          include_completed: true,
-        });
+        taskResult = await getTask(taskId);
       }
 
       if (!taskResult.success || !taskResult.data) continue;
@@ -405,23 +391,15 @@ export class TaskCorrelationService {
   > {
     const taskDetails = [];
 
-    // Force inclusion of completed tasks
-    const configWithCompleted = config
-      ? { ...config, include_completed: true }
-      : { include_completed: true };
-
     for (const taskId of taskIds) {
-      // Try with config first (worktree-specific lookup with completed tasks)
+      // Try with config first (worktree-specific lookup)
       let taskResult = await getTask(taskId, {
-        config: configWithCompleted,
-        include_completed: true,
+        config,
       });
 
       // If not found in worktree and config provided, try main repo as fallback
       if ((!taskResult.success || !taskResult.data) && config) {
-        taskResult = await getTask(taskId, {
-          include_completed: true,
-        });
+        taskResult = await getTask(taskId);
       }
 
       if (taskResult.success && taskResult.data) {
