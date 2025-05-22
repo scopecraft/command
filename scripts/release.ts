@@ -209,22 +209,12 @@ async function analyzeRelease(requestedVersion?: string, verbose = false): Promi
     mkdirSync('.release');
   }
   
-  // Prepare prompt with data substitution
-  let prompt = readFileSync('scripts/prompts/release-analysis.md', 'utf-8');
-  for (const [key, value] of Object.entries(data)) {
-    prompt = prompt.replace(new RegExp(`\\$${key}`, 'g'), value);
-  }
-  
-  // Write temporary prompt file
-  const tempPromptPath = '.claude/commands/release-analysis.md';
-  writeFileSync(tempPromptPath, prompt);
-  
   console.log(`📋 Analysis Context:`);
   console.log(`  Current: ${currentVersion}`);
   console.log(`  Last Tag: ${lastTag}`);
   console.log(`  Requested: ${requestedVersion || 'auto-detect'}`);
   
-  // Call Claude using the proper utility
+  // Call Claude using the proper utility with direct piping
   console.log('🤖 Calling Claude for release analysis...');
   const result = await callClaude(
     'scripts/prompts/release-analysis.md',
