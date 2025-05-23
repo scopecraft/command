@@ -5,6 +5,20 @@ All notable changes to Scopecraft Command will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2025-05-23
+
+### Added
+- **Improved Init Flow**: Better guidance and template system with enhanced project setup
+- **New Project Configuration**: Added project-config.ts for better configuration management
+- **Simplified Templates**: New streamlined template files in src/templates/ directory
+
+### Changed
+- **Template System**: Complete refactor of template management with cleaner, more focused templates
+- **CLI Commands**: Enhanced commands with better project initialization guidance
+
+### Fixed
+- **Template Organization**: Removed duplicate and unused templates, consolidated to essential types only
+
 ## [0.13.0] - 2025-05-22
 
 ### Added
