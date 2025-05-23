@@ -191,7 +191,6 @@ export async function handleCreateCommand(options: {
 
       // Prepare values to apply to template
       const values: Record<string, any> = {
-        id: options.id || '', // Let task-crud generate the ID
         title: options.title,
         status: options.status || '🟡 To Do',
         type: options.type,
@@ -200,6 +199,11 @@ export async function handleCreateCommand(options: {
         updated_date: today,
         assigned_to: options.assignee || '',
       };
+      
+      // Only include ID if explicitly provided
+      if (options.id) {
+        values.id = options.id;
+      }
 
       // Add optional relationship fields
       if (options.phase) values.phase = options.phase;
@@ -218,22 +222,40 @@ export async function handleCreateCommand(options: {
         // Parse the generated content into a task
         task = parseTaskFile(taskContent);
       } catch (error) {
-        // If parsing failed due to missing ID, create task manually
+        // If parsing failed due to missing ID, extract content manually
         if (error instanceof Error && error.message.includes('Missing required field: id')) {
+          // Extract the markdown content from the generated template
+          const frontmatterRegex = /^\+\+\+\s*\n([\s\S]*?)\n\+\+\+\s*\n([\s\S]*)$/;
+          const match = taskContent.match(frontmatterRegex);
+          
+          let extractedContent = '';
+          let extractedMetadata = {};
+          
+          if (match) {
+            const [, tomlContent, markdownContent] = match;
+            extractedContent = markdownContent.trim();
+            
+            // Try to parse TOML to get other metadata
+            try {
+              extractedMetadata = parse(tomlContent) as Record<string, any>;
+            } catch {
+              // If TOML parsing fails, continue with empty metadata
+            }
+          }
+          
           task = {
             metadata: {
               id: options.id || '',
               title: options.title,
               type: options.type,
-              status: options.status || '🟡 To Do',
-              priority: options.priority || '▶️ Medium',
+              status: options.status || extractedMetadata.status || '🟡 To Do',
+              priority: options.priority || extractedMetadata.priority || '▶️ Medium',
               created_date: today,
               updated_date: today,
-              assigned_to: options.assignee || '',
+              assigned_to: options.assignee || extractedMetadata.assigned_to || '',
+              ...extractedMetadata, // Include all other fields from template
             },
-            content:
-              options.content ||
-              `## ${options.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`,
+            content: extractedContent || `## ${options.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`,
           };
 
           // Add optional relationship fields
@@ -782,9 +804,39 @@ export async function handleInitCommand(_options: {
     // Initialize templates
     initializeTemplates();
 
-    console.log('Project initialized');
-    console.log(`Tasks directory: ${projectConfig.getTasksDirectory()}`);
-    console.log(`Configuration directory: ${projectConfig.getConfigDirectory()}`);
+    // Enhanced welcome output
+    console.log('\n🚀 Welcome to Scopecraft Command!\n');
+
+    console.log(`Initializing project in: ${process.cwd()}`);
+    console.log('✓ Created .tasks directory structure');
+    console.log('✓ Installed 6 task templates');
+    console.log('✓ Generated quick start guide\n');
+
+    console.log('📁 Project Structure:');
+    console.log(`  ${path.relative(process.cwd(), projectConfig.getTasksDirectory())}/`);
+    console.log('  ├── 📋 Your tasks will live here');
+    console.log(
+      `  ├── ${path.relative(projectConfig.getTasksDirectory(), projectConfig.getConfigDirectory())}/ (configuration files)`
+    );
+    console.log(
+      `  └── ${path.relative(projectConfig.getTasksDirectory(), projectConfig.getTemplatesDirectory())}/ (customizable templates)\n`
+    );
+
+    console.log('🎯 Next Steps:');
+    console.log('  1. Create your first task: sc create --type feature --title "My Feature"');
+    console.log('  2. View available templates: sc list-templates');
+    console.log('  3. See all tasks: sc list\n');
+
+    console.log('📚 Resources:');
+    console.log(
+      `  - Quick Start: ${path.relative(process.cwd(), path.join(projectConfig.getTasksDirectory(), 'QUICKSTART.md'))}`
+    );
+    console.log(
+      `  - Templates: ${path.relative(process.cwd(), projectConfig.getTemplatesDirectory())}/`
+    );
+    console.log('  - Documentation: https://github.com/scopecraft/scopecraft-command\n');
+
+    console.log('💡 Tip: Use your AI assistant to customize templates in .tasks/.templates/\n');
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -1218,4 +1270,5 @@ export async function handleTaskMoveCommand(
   }
 }
 import path from 'node:path';
+import { parse } from '@iarna/toml';
 import { type TaskMetadata, parseTaskFile } from '../core/index.js';

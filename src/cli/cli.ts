@@ -96,10 +96,11 @@ setupEntityCommands(program);
  */
 function validateEnvironment() {
   if (!projectConfig.validateEnvironment()) {
-    console.error('Error: Task directory structure not found in the current directory');
-    console.error(
-      'Please run "scopecraft init" or "sc init" first to set up the necessary structure'
-    );
+    console.error('\n⚠️  No Scopecraft project found in this directory.\n');
+    console.error('To get started:');
+    console.error('  sc init               - Initialize a new project here');
+    console.error('  sc --root-dir <path>  - Use an existing project\n');
+    console.error('Learn more: https://github.com/scopecraft/scopecraft-command\n');
     process.exit(1);
   }
 
