@@ -48,10 +48,10 @@ export function initializeTemplates(config?: RuntimeConfig): void {
   const sourceTemplatesDir = path.join(process.cwd(), 'docs', 'templates');
 
   if (fs.existsSync(sourceTemplatesDir)) {
-    // Only copy MDTM task templates (01-06)
+    // Only copy task templates (01-06)
     const templateFiles = fs.readdirSync(sourceTemplatesDir).filter((file) => {
-      // Match files like 01_mdtm_feature.md, 02_mdtm_bug.md, etc.
-      return /^0[1-6]_mdtm_.+\.md$/.test(file);
+      // Match files like 01_feature.md, 02_bug.md, etc.
+      return /^0[1-6]_.+\.md$/.test(file);
     });
 
     for (const file of templateFiles) {
@@ -81,12 +81,12 @@ function createBasicTemplates(templatesDir: string): void {
     'templates'
   );
   const templateFiles = [
-    '01_mdtm_feature.md',
-    '02_mdtm_bug.md',
-    '03_mdtm_chore.md',
-    '04_mdtm_documentation.md',
-    '05_mdtm_test.md',
-    '06_mdtm_spike.md',
+    '01_feature.md',
+    '02_bug.md',
+    '03_chore.md',
+    '04_documentation.md',
+    '05_test.md',
+    '06_spike.md',
   ];
 
   let copiedFromBundled = false;
@@ -147,11 +147,11 @@ What actually happens?
 `;
 
     // Only create feature and bug templates as fallback
-    if (!fs.existsSync(path.join(templatesDir, '01_mdtm_feature.md'))) {
-      fs.writeFileSync(path.join(templatesDir, '01_mdtm_feature.md'), fallbackFeature);
+    if (!fs.existsSync(path.join(templatesDir, '01_feature.md'))) {
+      fs.writeFileSync(path.join(templatesDir, '01_feature.md'), fallbackFeature);
     }
-    if (!fs.existsSync(path.join(templatesDir, '02_mdtm_bug.md'))) {
-      fs.writeFileSync(path.join(templatesDir, '02_mdtm_bug.md'), fallbackBug);
+    if (!fs.existsSync(path.join(templatesDir, '02_bug.md'))) {
+      fs.writeFileSync(path.join(templatesDir, '02_bug.md'), fallbackBug);
     }
 
     console.warn('Only basic templates created. Full template set available after installation.');
@@ -182,24 +182,21 @@ export function listTemplates(config?: RuntimeConfig): TemplateInfo[] {
     const filePath = path.join(templatesDir, file);
 
     // Extract template ID and name from filename
-    const match = file.match(/^(\d+)_mdtm_(.+)\.md$/);
+    const match = file.match(/^(\d+)_(.+)\.md$/);
     if (match) {
       const [, _id, name] = match;
 
-      // Read first few lines to extract description
-      let description = '';
-      try {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        // Look for a description in a comment or content
-        const descMatch = content.match(/# Type of task|type = "([^"]+)"/);
-        if (descMatch?.[1]) {
-          description = descMatch[1];
-        } else {
-          description = name.replace(/_/g, ' ');
-        }
-      } catch (_error) {
-        description = name.replace(/_/g, ' ');
-      }
+      // Map template names to their task types
+      const typeMap: Record<string, string> = {
+        feature: '🌟 Feature',
+        bug: '🐞 Bug',
+        chore: '🧹 Chore',
+        documentation: '📖 Documentation',
+        test: '🧪 Test',
+        spike: '💡 Spike/Research'
+      };
+      
+      const description = typeMap[name] || name;
 
       templates.push({
         id: name,
@@ -303,7 +300,7 @@ export function applyTemplate(templateContent: string, values: Record<string, an
     // Replace title placeholder in Markdown body
     newContent = newContent.replace(/# \[Title\]/, `# ${values.title}`);
     // Replace various template title placeholders
-    newContent = newContent.replace(/# << CONCISE .+ >>/, `# ${values.title}`);
+    newContent = newContent.replace(/# << .+ >>/, `# ${values.title}`);
   }
 
   // Apply custom content if provided
