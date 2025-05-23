@@ -1,51 +1,28 @@
-+++
-id = ""
-title = ""
-status = "🟡 To Do"
-type = "📖 Documentation"
-priority = "▶️ Medium"
-created_date = ""
-updated_date = ""
-# due_date = ""
-# estimated_effort = ""
-assigned_to = ""
-# reporter = ""
-# parent_task = ""
-# depends_on = []
-related_docs = []
-tags = []
-template_schema_doc = ".ruru/templates/toml-md/04_mdtm_documentation.README.md" # Link to schema documentation
-# target_audience = []
-# ai_prompt_log = """"""
-# review_checklist = []
-# reviewed_by = ""
-+++
+# << DOCUMENTATION TITLE >>
 
-# << CONCISE DOCS TASK >>
+## Purpose
+**What is being documented?**
+- 
 
-## Description ✍️
+**Who is the audience?**
+- 
 
-*   **What needs to be documented?**
-*   **Why is it needed?**
-*   **Target Audience:**
-*   **Scope:**
+## Content Outline
+1. 
+2. 
+3. 
 
-## Acceptance Criteria ✅
+## Key Points to Cover
+- 
+- 
+- 
 
-*   - [ ] Criterion 1:
-*   - [ ] Criterion 2:
-*   - [ ] Criterion 3:
-*   - [ ] ...
+## References
+- 
 
-## Implementation Notes / Content Outline 📝
+## Writing Log
+_Track documentation progress_
+- 
 
-*   (Optional: Outline structure or key sections)
-*   (e.g., `- Introduction`)
-
-## AI Prompt Log 🤖 (Optional)
-
-*   (Log key prompts and AI responses)
-
-## Review Notes 👀 (For Reviewer)
-
-*   (Space for feedback)
+## Notes
+- 

@@ -1,52 +1,40 @@
-+++
-id = ""
-title = ""
-status = "🟡 To Do"
-type = "🧪 Test"
-priority = "▶️ Medium"
-created_date = ""
-updated_date = ""
-# due_date = ""
-# estimated_effort = ""
-assigned_to = ""
-# reporter = ""
-parent_task = ""
-# depends_on = []
-related_docs = []
-tags = []
-template_schema_doc = ".ruru/templates/toml-md/05_mdtm_test.README.md" # Link to schema documentation
-# test_type = ""
-# test_framework = ""
-# ai_prompt_log = """"""
-# review_checklist = []
-# reviewed_by = ""
-+++
+# << TEST TITLE >>
 
-# << CONCISE TEST TASK >>
+## Test Objective
+**What are we testing?**
+- 
 
-## Description ✍️
+**Why is this test important?**
+- 
 
-*   **What needs to be tested?**
-*   **Why is testing needed?**
-*   **Type of Test:**
-*   **Scope:**
+## Test Type
+- [ ] Unit Test
+- [ ] Integration Test
+- [ ] End-to-End Test
+- [ ] Performance Test
+- [ ] Other: 
 
-## Acceptance Criteria ✅
+## Test Cases
+### Test Case 1: 
+**Given:** 
+**When:** 
+**Then:** 
 
-*   - [ ] Criterion 1:
-*   - [ ] Criterion 2:
-*   - [ ] Criterion 3:
-*   - [ ] ...
+### Test Case 2: 
+**Given:** 
+**When:** 
+**Then:** 
 
-## Implementation Notes / Test Scenarios 📝
+## Test Data Requirements
+- 
 
-*   (Optional: List specific test cases)
-*   (e.g., `- Test login with valid credentials`)
+## Success Criteria
+- [ ] 
+- [ ] 
 
-## AI Prompt Log 🤖 (Optional)
+## Implementation Log
+_Track test development progress_
+- 
 
-*   (Log key prompts and AI responses)
-
-## Review Notes 👀 (For Reviewer)
-
-*   (Space for feedback)
+## Notes
+- 

@@ -1,65 +1,48 @@
-+++
-id = ""
-title = ""
-status = "🟡 To Do"
-type = "💡 Spike/Research"
-priority = "▶️ Medium"
-created_date = ""
-updated_date = ""
-# due_date = ""
-# timebox = ""
-assigned_to = ""
-# reporter = ""
-parent_task = ""
-# depends_on = []
-related_docs = []
-tags = []
-template_schema_doc = ".ruru/templates/toml-md/06_mdtm_spike.README.md" # Link to schema documentation
-# outcome = ""
-# recommendation = ""
-# evaluated_options = []
-# ai_prompt_log = """"""
-# reviewed_by = ""
-# key_learnings = ""
-+++
+# << SPIKE/RESEARCH TITLE >>
 
-# << CONCISE RESEARCH QUESTION >>
+## Research Question
+**What do we need to find out?**
+- 
 
-## Description ✍️
+**Why is this important?**
+- 
 
-*   **What is the research question or goal?**
-*   **Why is this research needed?**
-*   **Scope:**
-*   **Timebox:** (If applicable)
+## Timebox
+- Duration: 
 
-## Acceptance Criteria (Definition of Done) ✅
+## Approach
+1. 
+2. 
+3. 
 
-*   - [ ] Criterion 1:
-*   - [ ] Criterion 2:
-*   - [ ] Criterion 3:
-*   - [ ] ...
+## Options to Evaluate
+### Option A: 
+**Pros:**
+- 
 
-## Implementation Notes / Research Approach 📝
+**Cons:**
+- 
 
-*   (Optional: Outline research steps)
-*   (e.g., `- Search for libraries`)
+### Option B: 
+**Pros:**
+- 
 
-## Findings / Results 📊
+**Cons:**
+- 
 
-*   (Document results here)
+## Success Criteria
+- [ ] 
+- [ ] 
 
-## Recommendation / Conclusion 💡
+## Research Log
+_Track research activities and progress_
+- 
 
-*   (State conclusion and justification)
+## Findings
+- 
 
-## AI Prompt Log 🤖 (Optional)
+## Recommendation
+- 
 
-*   (Log key prompts and AI responses)
-
-## Review Notes 👀 (For Reviewer)
-
-*   (Space for feedback)
-
-## Key Learnings 💡 (Optional - Fill upon completion)
-
-*   (Summarize discoveries)
+## Next Steps
+- 
