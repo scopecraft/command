@@ -2,7 +2,7 @@
 id = "FEAT-MIGRATETOML-0524-UH"
 title = "Migrate from TOML to YAML frontmatter with dual-format support"
 type = "mdtm_feature"
-status = "🟡 To Do"
+status = "🔵 In Progress"
 priority = "🔼 High"
 created_date = "2025-05-24"
 updated_date = "2025-05-24"
