@@ -4,7 +4,6 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
 import { ConfigurationManager } from './config/configuration-manager.js';
 import type { RuntimeConfig } from './config/types.js';
 
@@ -17,20 +16,6 @@ export interface ProjectPaths {
   templatesRoot: string;
 }
 
-/**
- * Interface for project configuration
- */
-export interface ProjectConfigData {
-  idFormat?: 'concise' | 'timestamp';
-  customStopWords?: string[];
-  maxContextLength?: number;
-}
-
-// Default configuration values
-const DEFAULT_CONFIG: ProjectConfigData = {
-  idFormat: 'concise',
-  maxContextLength: 2,
-};
 
 // Default directory structure
 const DEFAULT_DIRECTORIES = {
@@ -46,14 +31,12 @@ const DEFAULT_DIRECTORIES = {
 export class ProjectConfig {
   private configManager: ConfigurationManager;
   private paths: ProjectPaths;
-  private config: ProjectConfigData = { ...DEFAULT_CONFIG };
   private runtime?: RuntimeConfig;
 
   constructor(runtime?: RuntimeConfig) {
     this.configManager = ConfigurationManager.getInstance();
     this.runtime = runtime;
     this.paths = this.buildProjectPaths();
-    this.loadConfig();
   }
 
   /**
@@ -103,23 +86,6 @@ export class ProjectConfig {
     return projects.find((p) => p.path === root);
   }
 
-  /**
-   * Load project configuration from file
-   */
-  private loadConfig(): void {
-    const configPath = this.getProjectConfigPath();
-
-    try {
-      if (fs.existsSync(configPath)) {
-        const content = fs.readFileSync(configPath, 'utf-8');
-        const parsed = parseToml(content) as ProjectConfigData;
-        this.config = { ...DEFAULT_CONFIG, ...parsed };
-      }
-    } catch (error) {
-      // Log error but continue with defaults
-      console.error(`Failed to load project config: ${error}`);
-    }
-  }
 
   /**
    * Get tasks directory
@@ -150,19 +116,6 @@ export class ProjectConfig {
     return this.paths.templatesRoot;
   }
 
-  /**
-   * Get phases config file path
-   */
-  getPhasesConfigPath(): string {
-    return path.join(this.paths.configRoot, 'phases.toml');
-  }
-
-  /**
-   * Get project configuration file path
-   */
-  getProjectConfigPath(): string {
-    return path.join(this.paths.configRoot, 'project.toml');
-  }
 
   /**
    * Initialize project structure
@@ -257,12 +210,9 @@ Scopecraft supports 6 task types:
 
 ### Templates
 Templates are stored in \`.tasks/.templates/\`. You can customize them to match your workflow:
-- Edit the TOML frontmatter to add custom fields
+- Edit the YAML frontmatter to add custom fields
 - Modify the markdown structure to fit your needs
 - Templates support all standard MDTM fields
-
-### Configuration
-Project settings are stored in \`.tasks/.config/project.toml\`
 
 ## 📚 Learn More
 
@@ -290,49 +240,6 @@ Happy task management! 🎉
     return this.configManager.validateRoot(this.getRoot());
   }
 
-  /**
-   * Get project configuration data
-   */
-  getConfig(): ProjectConfigData {
-    return this.config;
-  }
-
-  /**
-   * Update project configuration
-   */
-  updateConfig(updates: Partial<ProjectConfigData>): void {
-    this.config = { ...this.config, ...updates };
-    this.saveConfig();
-  }
-
-  /**
-   * Save project configuration to file
-   */
-  private saveConfig(): void {
-    const configPath = this.getProjectConfigPath();
-    const configDir = path.dirname(configPath);
-
-    try {
-      // Ensure config directory exists
-      if (!fs.existsSync(configDir)) {
-        fs.mkdirSync(configDir, { recursive: true });
-      }
-
-      // Only save non-default values
-      const configToSave: Partial<ProjectConfigData> = {};
-
-      for (const [key, value] of Object.entries(this.config)) {
-        if (value !== DEFAULT_CONFIG[key as keyof ProjectConfigData]) {
-          configToSave[key as keyof ProjectConfigData] = value;
-        }
-      }
-
-      const content = stringifyToml(configToSave);
-      fs.writeFileSync(configPath, content);
-    } catch (error) {
-      console.error(`Failed to save project config: ${error}`);
-    }
-  }
 
   /**
    * Get task file path

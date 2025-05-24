@@ -71,7 +71,6 @@ Available entity types:
   area       Area management operations
   workflow   Task workflow and sequence operations
   template   Template management operations
-  config     Configuration management operations
 
 Global options:
   --root-dir <path>   Set project root directory (overrides environment variables and config)

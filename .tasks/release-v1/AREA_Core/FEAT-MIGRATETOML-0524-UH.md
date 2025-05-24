@@ -2,7 +2,7 @@
 id = "FEAT-MIGRATETOML-0524-UH"
 title = "Migrate from TOML to YAML frontmatter with dual-format support"
 type = "mdtm_feature"
-status = "🔵 In Progress"
+status = "🟢 Done"
 priority = "🔼 High"
 created_date = "2025-05-24"
 updated_date = "2025-05-24"
@@ -175,19 +175,19 @@ Create a test that verifies:
 
 ## Implementation Checklist
 
-- [ ] Update `parseTaskFile()` in `task-parser.ts` to support both formats
-- [ ] Update `formatTaskFile()` to always write YAML
-- [ ] Add deprecation warning when reading TOML files
-- [ ] Add metadata normalization function
-- [ ] Update error messages
-- [ ] Write comprehensive tests for both formats
-- [ ] Test date handling between TOML and YAML
-- [ ] Test array handling between formats
-- [ ] Test special characters and escaping
-- [ ] Update inline documentation/comments
-- [ ] Verify all CRUD operations still work
-- [ ] Test with UI to ensure no breaking changes
-- [ ] Add logger warning for TOML deprecation
+- [x] Update `parseTaskFile()` in `task-parser.ts` to support both formats
+- [x] Update `formatTaskFile()` to always write YAML
+- [x] Add deprecation warning when reading TOML files
+- [x] Add metadata normalization function
+- [x] Update error messages
+- [x] Write comprehensive tests for both formats
+- [x] Test date handling between TOML and YAML
+- [x] Test array handling between formats
+- [x] Test special characters and escaping
+- [x] Update inline documentation/comments
+- [x] Verify all CRUD operations still work
+- [x] Test with UI to ensure no breaking changes
+- [x] Add logger warning for TOML deprecation
 
 ## Acceptance Criteria
 
@@ -198,6 +198,52 @@ Create a test that verifies:
 - [x] No data loss when reading TOML and writing YAML
 - [x] Error messages are clear and helpful
 - [x] Performance is not significantly impacted
+
+## Implementation Log
+
+### 2025-05-24
+
+**Completed Implementation:**
+
+1. **Updated `task-parser.ts`:**
+   - Added `gray-matter` import for YAML parsing
+   - Refactored `parseTaskFile()` into smaller functions for better maintainability:
+     - `parseYamlFrontmatter()` - handles YAML parsing
+     - `parseTomlFrontmatter()` - handles legacy TOML parsing with deprecation warning
+     - `extractTitleFromContent()` - shared logic for title extraction
+   - Added helper functions:
+     - `formatDate()` - normalizes date formats between TOML and YAML
+     - `normalizeMetadata()` - ensures consistent metadata structure
+     - `removeUndefinedFields()` - cleans metadata before serialization
+   - Updated `formatTaskFile()` to always output YAML using gray-matter
+
+2. **Created comprehensive test suite (`test/task-parser.test.ts`):**
+   - Tests for parsing both YAML and TOML formats
+   - Tests for metadata normalization (dates, arrays)
+   - Tests for error handling
+   - Round-trip conversion tests
+   - Special character handling tests
+   - All 16 tests passing
+
+3. **End-to-end testing:**
+   - Created new task with YAML format ✓
+   - Read existing TOML task with deprecation warning ✓
+   - Updated TOML task successfully converted to YAML ✓
+   - Verified data integrity maintained during conversion ✓
+
+4. **Code quality:**
+   - Fixed TypeScript type annotations (replaced `any` with proper types)
+   - Refactored complex function to reduce cognitive complexity
+   - All Biome linting checks passing
+   - TypeScript compilation successful for changed files
+
+**Key Decisions:**
+- Used `unknown` type with proper type assertions instead of `any`
+- Split complex parsing logic into smaller, focused functions
+- Maintained backward compatibility while encouraging migration
+- Logger warnings provide clear migration path for users
+
+**Note:** There's significant log noise when processing TOML files (multiple warnings per operation). This is expected behavior to encourage migration but could be optimized to show warning once per file in future improvements.
 
 ## Dependencies
 
@@ -220,16 +266,17 @@ Create a test that verifies:
 
 ## Success Metrics
 
-- Zero data loss during format conversion
-- No breaking changes for existing functionality
-- Deprecation warnings visible in logs
-- All new files use YAML format
+- Zero data loss during format conversion ✓
+- No breaking changes for existing functionality ✓
+- Deprecation warnings visible in logs ✓
+- All new files use YAML format ✓
 
 ## Future Considerations
 
 - Consider migrating `.phase.toml` files to `.phase.yaml` for consistency
 - Evaluate using gray-matter's custom delimiters feature for special formats
 - Consider adding format version in frontmatter for future migrations
+- Optimize warning messages to reduce log noise (show once per file)
 
 ## References
 

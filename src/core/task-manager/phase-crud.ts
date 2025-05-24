@@ -4,6 +4,7 @@ import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
 import type { RuntimeConfig } from '../config/types.js';
 import { ProjectConfig } from '../project-config.js';
 import type { OperationResult, Phase, Task } from '../types.js';
+import { formatTaskFile } from '../task-parser.js';
 import {
   ensureDirectoryExists,
   getAllFiles,
@@ -308,14 +309,6 @@ export async function updatePhase(
   }
 }
 
-/**
- * Helper function to format task file content
- * (Temporary implementation until we fix circular dependency)
- */
-function formatTaskFile(task: Task): string {
-  const frontmatter = stringifyToml(task.metadata);
-  return `+++\n${frontmatter}+++\n\n${task.content || ''}`;
-}
 
 /**
  * Deletes a phase
