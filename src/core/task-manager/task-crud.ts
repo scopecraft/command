@@ -9,7 +9,6 @@ import {
   normalizePriority,
   normalizeTaskStatus,
 } from '../field-normalizers.js';
-import { ProjectConfig } from '../project-config.js';
 import { formatTaskFile, parseTaskFile } from '../task-parser.js';
 import {
   type OperationResult,
@@ -232,39 +231,29 @@ export async function createTask(
 
     // Generate ID if not provided
     if (!task.metadata.id) {
-      // Use new concise format by default, unless explicitly set to timestamp
-      const projectConfigData = ProjectConfig.getInstance(options?.config).getConfig();
-      const useOldFormat = projectConfigData?.idFormat === 'timestamp';
+      // Generate new concise ID with collision retry
+      let attempts = 0;
+      const maxAttempts = 10;
 
-      if (!useOldFormat) {
-        // Generate new concise ID with collision retry (default behavior)
-        let attempts = 0;
-        const maxAttempts = 10;
+      while (attempts < maxAttempts) {
+        const newId = generateNewTaskId({
+          type: task.metadata.type,
+          title: task.metadata.title,
+        });
 
-        while (attempts < maxAttempts) {
-          const newId = generateNewTaskId({
-            type: task.metadata.type,
-            title: task.metadata.title,
-          });
-
-          // Check if ID already exists
-          const existingTask = await getTask(newId, { config: options?.config });
-          if (!existingTask.success) {
-            // ID doesn't exist, we can use it
-            task.metadata.id = newId;
-            break;
-          }
-
-          attempts++;
+        // Check if ID already exists
+        const existingTask = await getTask(newId, { config: options?.config });
+        if (!existingTask.success) {
+          // ID doesn't exist, we can use it
+          task.metadata.id = newId;
+          break;
         }
 
-        if (!task.metadata.id) {
-          throw new Error('Failed to generate unique task ID after multiple attempts');
-        }
-      } else {
-        // Use old timestamp format only if explicitly configured
-        const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '');
-        task.metadata.id = `TASK-${timestamp}`;
+        attempts++;
+      }
+
+      if (!task.metadata.id) {
+        throw new Error('Failed to generate unique task ID after multiple attempts');
       }
     }
 

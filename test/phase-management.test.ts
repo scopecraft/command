@@ -81,7 +81,6 @@ order = 2
     sandbox.stub(projectConfig, 'getTasksDirectory').returns(mockTasksRoot);
     sandbox.stub(projectConfig, 'getPhasesDirectory').returns(mockTasksRoot);
     sandbox.stub(projectConfig, 'getConfigDirectory').returns(mockConfigRoot);
-    sandbox.stub(projectConfig, 'getPhasesConfigPath').returns(mockPhasesConfig);
   });
 
   afterEach(() => {
