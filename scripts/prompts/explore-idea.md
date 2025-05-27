@@ -26,7 +26,6 @@ allowedTools:
   - mcp__scopecraft__phase_list
 
 input:
-  ideaTitle: string
   ideaDescription: string
   previousAnswers?: object
 
@@ -41,8 +40,7 @@ output:
 # Feature Idea Exploration
 
 ## Initial Idea
-**Title**: {ideaTitle}
-**Description**: {ideaDescription}
+{ideaDescription}
 
 {previousAnswers ? `## Previous Discussion
 ${Object.entries(previousAnswers).map(([q, a]) => `**Q**: ${q}\n**A**: ${a}`).join('\n\n')}

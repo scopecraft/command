@@ -1,196 +1,314 @@
 #!/usr/bin/env bun
 
-import { claude, stream } from 'channelcoder';
-import { execSync } from 'child_process';
+import { detached } from 'channelcoder';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { z } from 'zod';
+import { existsSync } from 'fs';
+import * as readline from 'readline';
 
-// Output schema for type safety
-const IdeaExplorationOutput = z.object({
-  expandedIdea: z.string(),
-  codebaseNotes: z.array(z.string()),
-  suggestions: z.array(z.string()),
-  questions: z.array(z.string()),
-  taskId: z.string().optional(),
-});
-
-// Session storage
-const SESSION_DIR = '.claude-sessions/ideas';
-
-async function ensureSessionDir() {
-  await fs.mkdir(SESSION_DIR, { recursive: true });
+// Types
+interface IdeaJob {
+  id: string;
+  description: string;
+  status: 'queued' | 'running' | 'completed' | 'failed';
+  pid?: number;
+  taskId?: string;  // Scopecraft task ID once created
+  startTime?: number;
+  endTime?: number;
+  logFile?: string;
 }
 
-async function saveSession(ideaId: string, data: any) {
-  await ensureSessionDir();
-  const sessionFile = path.join(SESSION_DIR, `${ideaId}.json`);
-  await fs.writeFile(sessionFile, JSON.stringify(data, null, 2));
+// In-memory state (no persistence)
+let jobQueue: IdeaJob[] = [];
+let parallelism = 3;
+let jobCounter = 0;
+
+// Directories (still need these for logs)
+const JOBS_DIR = '.idea-explorer/jobs';
+
+// Colors
+const colors = {
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  cyan: '\x1b[36m',
+};
+
+// Clear screen
+function clearScreen() {
+  console.clear();
+  console.log('\x1b[H\x1b[2J');
 }
 
-async function loadSession(ideaId: string) {
-  try {
-    const sessionFile = path.join(SESSION_DIR, `${ideaId}.json`);
-    const data = await fs.readFile(sessionFile, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return null;
+// Ensure log directory exists
+async function ensureLogDir() {
+  await fs.mkdir(JOBS_DIR, { recursive: true });
+}
+
+// Process job
+async function processJob(job: IdeaJob): Promise<number | undefined> {
+  const jobDir = path.join(JOBS_DIR, job.id);
+  await fs.mkdir(jobDir, { recursive: true });
+  
+  const logFile = path.join(jobDir, 'output.log');
+  job.logFile = logFile;
+
+  const result = await detached('scripts/prompts/explore-idea.md', {
+    data: {
+      ideaDescription: job.description,
+    },
+    logFile,
+  });
+  
+  return result.data?.pid;
+}
+
+// Format job status line
+function formatJob(job: IdeaJob): string {
+  const icon = {
+    queued: '⏳',
+    running: '⚡',
+    completed: '✅',
+    failed: '❌',
+  }[job.status];
+  
+  const color = {
+    queued: colors.yellow,
+    running: colors.blue,
+    completed: colors.green,
+    failed: colors.red,
+  }[job.status];
+  
+  // Build status info
+  let statusInfo = job.status.padEnd(10);
+  
+  // Add task ID if available
+  if (job.taskId) {
+    statusInfo += ` ${colors.cyan}[${job.taskId}]${colors.reset}`;
   }
-}
-
-async function exploreIdea(title: string, description: string, sessionId?: string) {
-  console.log('🚀 Exploring feature idea...\n');
   
-  // Load previous session if continuing
-  const session = sessionId ? await loadSession(sessionId) : null;
-  
-  try {
-    // Collect the full response while streaming
-    let fullResponse = '';
-    
-    console.log('🤖 Claude is thinking...\n');
-    
-    // Stream the response so we can see what's happening
-    for await (const chunk of stream('scripts/prompts/explore-idea.md', {
-      data: {
-        ideaTitle: title,
-        ideaDescription: description,
-        previousAnswers: session?.answers || undefined,
-      },
-    })) {
-      // Debug: log raw chunk
-      if (process.env.DEBUG) {
-        console.log('\n🔍 Raw chunk:', JSON.stringify(chunk));
-      }
-      
-      // Just output everything as JSON for now
-      console.log(JSON.stringify(chunk));
-    }
-    
-    console.log('\n\n📊 Processing response...\n');
-    
-    // Try to extract structured data from the response
-    try {
-      // Extract sections using regex
-      const expandedIdea = fullResponse.match(/### Expanded Idea\n([\s\S]*?)(?=\n###|$)/)?.[1]?.trim() || '';
-      const codebaseNotes = fullResponse.match(/### Codebase Notes\n([\s\S]*?)(?=\n###|$)/)?.[1]
-        ?.split('\n')
-        .filter(line => line.trim().startsWith('-'))
-        .map(line => line.replace(/^-\s*/, '').trim()) || [];
-      const taskIdMatch = fullResponse.match(/Task ID:\s*(\S+)/);
-      const taskId = taskIdMatch?.[1];
-      
-      const suggestions = fullResponse.match(/### Suggestions\n([\s\S]*?)(?=\n###|$)/)?.[1]
-        ?.split('\n')
-        .filter(line => line.trim().match(/^\d+\./))
-        .map(line => line.replace(/^\d+\.\s*/, '').trim()) || [];
-        
-      const questions = fullResponse.match(/### Questions for Further Exploration\n([\s\S]*?)(?=\n###|$)/)?.[1]
-        ?.split('\n')
-        .filter(line => line.trim().match(/^\d+\./))
-        .map(line => line.replace(/^\d+\.\s*/, '').trim()) || [];
-      
-      // Save session
-      const newSessionId = sessionId || `idea-${Date.now()}`;
-      await saveSession(newSessionId, {
-        title,
-        description,
-        exploration: {
-          expandedIdea,
-          codebaseNotes,
-          suggestions,
-          questions,
-          taskId,
-        },
-        fullResponse,
-        answers: session?.answers || {},
-        iterations: (session?.iterations || 0) + 1,
-      });
-      
-      console.log(`💾 Session saved: ${newSessionId}`);
-      console.log('\nTo continue exploring with answers:');
-      console.log(`  1. Edit ${SESSION_DIR}/${newSessionId}.json`);
-      console.log(`  2. Add your answers to the "answers" object`);
-      console.log(`  3. Run: bun run scripts/explore-idea.ts --continue ${newSessionId}`);
-      
-    } catch (parseError) {
-      console.error('⚠️  Could not parse structured data, but response was saved');
-      
-      // Still save the raw response
-      const newSessionId = sessionId || `idea-${Date.now()}`;
-      await saveSession(newSessionId, {
-        title,
-        description,
-        rawResponse: fullResponse,
-        answers: session?.answers || {},
-        iterations: (session?.iterations || 0) + 1,
-      });
-      
-      console.log(`💾 Raw session saved: ${newSessionId}`);
-    }
-    
-  } catch (error) {
-    console.error('❌ Error:', error);
+  // Add timing info
+  if (job.status === 'running' && job.startTime) {
+    const elapsed = Math.floor((Date.now() - job.startTime) / 1000);
+    statusInfo += ` ${colors.dim}(${elapsed}s)${colors.reset}`;
+  } else if (job.status === 'completed' && job.startTime && job.endTime) {
+    const duration = Math.floor((job.endTime - job.startTime) / 1000);
+    statusInfo += ` ${colors.dim}(${duration}s)${colors.reset}`;
   }
+  
+  // Truncate description for display
+  const displayDesc = job.description.length > 40 
+    ? job.description.substring(0, 40) + '...'
+    : job.description;
+  
+  return `  ${icon} ${color}${displayDesc.padEnd(45)}${colors.reset} ${statusInfo}`;
 }
 
-// CLI handling
-async function main() {
-  const args = process.argv.slice(2);
+// Display UI
+function displayUI() {
+  clearScreen();
   
-  if (args[0] === '--continue' && args[1]) {
-    // Continue existing session
-    const sessionId = args[1];
-    const session = await loadSession(sessionId);
-    
-    if (!session) {
-      console.error(`❌ Session not found: ${sessionId}`);
-      process.exit(1);
-    }
-    
-    console.log(`📂 Continuing session: ${sessionId}`);
-    console.log(`📋 Original idea: ${session.title}`);
-    console.log(`🔄 Iteration: ${(session.iterations || 0) + 1}\n`);
-    
-    await exploreIdea(session.title, session.description, sessionId);
-    
-  } else if (args[0] === '--list') {
-    // List existing sessions
-    await ensureSessionDir();
-    const files = await fs.readdir(SESSION_DIR);
-    const sessions = files.filter(f => f.endsWith('.json'));
-    
-    if (sessions.length === 0) {
-      console.log('No idea exploration sessions found.');
-      return;
-    }
-    
-    console.log('📚 Existing idea sessions:\n');
-    for (const file of sessions) {
-      const session = await loadSession(file.replace('.json', ''));
-      console.log(`  ${file.replace('.json', '')}: ${session.title} (${session.iterations || 1} iterations)`);
-    }
-    
-  } else if (args.length >= 2) {
-    // New idea
-    const title = args[0];
-    const description = args.slice(1).join(' ');
-    
-    console.log(`💡 New idea: ${title}`);
-    console.log(`📝 Description: ${description}\n`);
-    
-    await exploreIdea(title, description);
-    
+  // Header
+  console.log(`${colors.cyan}${colors.bright}┌─────────────────────────────────────────────────────┐${colors.reset}`);
+  console.log(`${colors.cyan}${colors.bright}│          🚀 Idea Explorer - Job Queue               │${colors.reset}`);
+  console.log(`${colors.cyan}${colors.bright}└─────────────────────────────────────────────────────┘${colors.reset}`);
+  
+  // Refresh indicator
+  const now = new Date().toLocaleTimeString();
+  console.log(`${colors.dim}Auto-refresh: ON (pauses while typing) | Last update: ${now}${colors.reset}`);
+  
+  // Stats
+  const stats = {
+    queued: jobQueue.filter(j => j.status === 'queued').length,
+    running: jobQueue.filter(j => j.status === 'running').length,
+    completed: jobQueue.filter(j => j.status === 'completed').length,
+  };
+  
+  console.log(`\n${colors.bright}Status:${colors.reset} Queue: ${colors.yellow}${stats.queued}${colors.reset} | Running: ${colors.blue}${stats.running}/${parallelism}${colors.reset} | Done: ${colors.green}${stats.completed}${colors.reset}\n`);
+  
+  // Queue
+  console.log(`${colors.bright}Jobs:${colors.reset}`);
+  if (jobQueue.length === 0) {
+    console.log(`${colors.dim}  No jobs in queue${colors.reset}`);
   } else {
-    // Help
-    console.log('🤔 Feature Idea Explorer\n');
-    console.log('Usage:');
-    console.log('  New idea:        bun run scripts/explore-idea.ts "Title" "Description of the idea"');
-    console.log('  Continue:        bun run scripts/explore-idea.ts --continue <session-id>');
-    console.log('  List sessions:   bun run scripts/explore-idea.ts --list');
-    console.log('\nExample:');
-    console.log('  bun run scripts/explore-idea.ts "Smart Task Dependencies" "Automatically detect task dependencies based on code analysis"');
+    jobQueue.forEach(job => console.log(formatJob(job)));
+  }
+  
+  // Commands
+  console.log(`\n${colors.bright}Commands:${colors.reset}`);
+  console.log(`  ${colors.green}Type any text${colors.reset} - Submit a new idea`);
+  console.log(`  ${colors.yellow}/refresh${colors.reset} or ${colors.yellow}/r${colors.reset} - Refresh display`);
+  console.log(`  ${colors.blue}/parallel <n>${colors.reset} - Set parallelism (current: ${parallelism})`);
+  console.log(`  ${colors.red}/clear${colors.reset} - Clear completed jobs`);
+  console.log(`  ${colors.dim}/quit${colors.reset} - Exit`);
+  console.log(`\n> `);
+}
+
+// Process queue
+async function processQueue() {
+  const running = jobQueue.filter(j => j.status === 'running');
+  const queued = jobQueue.filter(j => j.status === 'queued');
+  
+  if (running.length < parallelism && queued.length > 0) {
+    const job = queued[0];
+    job.status = 'running';
+    job.startTime = Date.now();
+    
+    const pid = await processJob(job);
+    if (pid) {
+      job.pid = pid;
+    }
   }
 }
 
+// Check for completed jobs
+async function checkCompletedJobs() {
+  for (const job of jobQueue.filter(j => j.status === 'running')) {
+    if (job.logFile && existsSync(job.logFile)) {
+      try {
+        const content = await fs.readFile(job.logFile, 'utf-8');
+        if (content.includes('"type":"result"')) {
+          job.status = 'completed';
+          job.endTime = Date.now();
+          
+          // Try to extract task ID - Scopecraft format: FEAT-WORD-MMDD-XX
+          const taskIdMatch = content.match(/(FEAT-[A-Z]+-\d{4}-[A-Z0-9]{2}|TASK-[A-Z]+-\d{3}|BUG-[A-Z]+-\d{3}|CHORE-[A-Z]+-\d{3}|SPIKE-[A-Z]+-\d{3}|TEST-[A-Z]+-\d{3})/);
+          if (taskIdMatch) {
+            job.taskId = taskIdMatch[0];
+          }
+        }
+      } catch {}
+    }
+  }
+}
+
+// Main loop
+async function main() {
+  await ensureLogDir();
+  
+  // Handle command line args
+  const args = process.argv.slice(2);
+  if (args.length > 0 && !args[0].startsWith('-')) {
+    // Single idea from command line
+    const description = args.join(' ');
+    console.log(`🚀 Processing idea: ${description}\n`);
+    
+    const job: IdeaJob = {
+      id: `idea-${++jobCounter}`,
+      description,
+      status: 'running',
+      startTime: Date.now(),
+    };
+    
+    const pid = await processJob(job);
+    if (pid) {
+      console.log(`✅ Started processing (PID: ${pid})`);
+      console.log(`📁 Log file: ${job.logFile}`);
+    }
+    return;
+  }
+  
+  // Interactive mode
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  
+  // Background processing
+  const processInterval = setInterval(processQueue, 2000);
+  const checkInterval = setInterval(checkCompletedJobs, 3000);
+  
+  // Auto-refresh with smart detection
+  let lastRefresh = Date.now();
+  const refreshInterval = setInterval(() => {
+    // Only refresh if readline prompt is empty
+    // @ts-ignore - accessing private property but it works
+    const currentLine = rl.line || '';
+    
+    if (currentLine.length === 0) {
+      displayUI();
+      lastRefresh = Date.now();
+    }
+  }, 10000);
+  
+  // Initial display
+  displayUI();
+  
+  // Command loop
+  rl.on('line', async (input) => {
+    const trimmed = input.trim();
+    
+    // Check if it's a slash command
+    if (trimmed.startsWith('/')) {
+      const [cmd, ...args] = trimmed.substring(1).split(' ');
+      
+      switch (cmd) {
+        case 'refresh':
+        case 'r':
+        case 'status':
+          // Just refresh - displayUI() will be called at the end
+          break;
+          
+        case 'parallel':
+        case 'p':
+          if (args[0]) {
+            const n = parseInt(args[0]);
+            if (n > 0 && n <= 10) {
+              parallelism = n;
+              console.log(`${colors.green}✓ Parallelism set to ${n}${colors.reset}`);
+            }
+          } else {
+            console.log(`${colors.yellow}Current parallelism: ${parallelism}${colors.reset}`);
+          }
+          break;
+          
+        case 'clear':
+        case 'c':
+          jobQueue = jobQueue.filter(j => j.status !== 'completed');
+          console.log(`${colors.green}✓ Cleared completed jobs${colors.reset}`);
+          break;
+          
+        case 'quit':
+        case 'q':
+        case 'exit':
+          clearInterval(processInterval);
+          clearInterval(checkInterval);
+          clearInterval(refreshInterval);
+          rl.close();
+          process.exit(0);
+          
+        default:
+          console.log(`${colors.red}Unknown command: /${cmd}${colors.reset}`);
+      }
+    } else if (trimmed.length > 0) {
+      // Any non-slash text is treated as a new idea
+      jobQueue.push({
+        id: `idea-${++jobCounter}`,
+        description: trimmed,
+        status: 'queued',
+      });
+      
+      const preview = trimmed.length > 50 ? trimmed.substring(0, 50) + '...' : trimmed;
+      console.log(`${colors.green}✓ Added idea: ${preview}${colors.reset}`);
+    }
+    
+    // Refresh display
+    displayUI();
+  });
+  
+  // Handle Ctrl+C
+  process.on('SIGINT', () => {
+    clearInterval(processInterval);
+    clearInterval(checkInterval);
+    clearInterval(refreshInterval);
+    rl.close();
+    process.exit(0);
+  });
+}
+
+// Run
 main().catch(console.error);
