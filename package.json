@@ -101,6 +101,7 @@
     "@iarna/toml": "^3.0.0",
     "@modelcontextprotocol/sdk": "1.11.4",
     "chalk": "^5.3.0",
+    "channelcoder": "link:channelcoder",
     "commander": "^11.1.0",
     "express": "^5.1.0",
     "fs-extra": "^11.2.0",

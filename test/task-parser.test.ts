@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'bun:test';
-import { parseTaskFile, formatTaskFile } from '../src/core/task-parser.js';
+import { describe, expect, it } from 'bun:test';
+import { formatTaskFile, parseTaskFile } from '../src/core/task-parser.js';
 import type { Task } from '../src/core/types.js';
 
 describe('Task Parser - Dual Format Support', () => {
@@ -22,7 +22,7 @@ tags:
 This is a test task with YAML frontmatter.`;
 
       const result = parseTaskFile(yamlContent);
-      
+
       expect(result.metadata.id).toBe('TASK-001');
       expect(result.metadata.title).toBe('Test Task');
       expect(result.metadata.type).toBe('mdtm_feature');
@@ -49,7 +49,7 @@ tags = ["test", "toml"]
 This is a test task with TOML frontmatter.`;
 
       const result = parseTaskFile(tomlContent);
-      
+
       expect(result.metadata.id).toBe('TASK-002');
       expect(result.metadata.title).toBe('Legacy Task');
       expect(result.metadata.type).toBe('mdtm_bug');
@@ -150,7 +150,7 @@ title: Empty Content
       };
 
       const result = formatTaskFile(task);
-      
+
       expect(result).toStartWith('---');
       expect(result).toContain('id: TASK-007');
       expect(result).toContain('title: YAML Output Test');
@@ -170,7 +170,7 @@ title: Empty Content
       };
 
       const result = formatTaskFile(task);
-      
+
       expect(result).not.toContain('due_date');
       expect(result).not.toContain('assignee');
       expect(result).not.toContain('undefined');
@@ -186,7 +186,7 @@ title: Empty Content
       };
 
       const result = formatTaskFile(task);
-      
+
       expect(result).toStartWith('---');
       expect(result).toContain('id: TASK-009');
       expect(result).toEndWith('\n');
@@ -233,13 +233,13 @@ This task tests the round-trip conversion from TOML to YAML.
 
       // Parse TOML
       const parsed = parseTaskFile(tomlContent);
-      
+
       // Format as YAML
       const yamlOutput = formatTaskFile(parsed);
-      
+
       // Parse the YAML output
       const reparsed = parseTaskFile(yamlOutput);
-      
+
       // Compare metadata
       expect(reparsed.metadata).toEqual(parsed.metadata);
       expect(reparsed.content).toBe(parsed.content);
@@ -259,7 +259,7 @@ Also: colons, dashes---and special chars like @#$%^&*()`,
 
       const formatted = formatTaskFile(task);
       const parsed = parseTaskFile(formatted);
-      
+
       expect(parsed.metadata).toEqual(task.metadata);
       expect(parsed.content).toBe(task.content);
     });

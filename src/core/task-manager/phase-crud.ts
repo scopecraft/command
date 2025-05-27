@@ -3,8 +3,8 @@ import path from 'node:path';
 import { parse as parseToml, stringify as stringifyToml } from '@iarna/toml';
 import type { RuntimeConfig } from '../config/types.js';
 import { ProjectConfig } from '../project-config.js';
-import type { OperationResult, Phase, Task } from '../types.js';
 import { formatTaskFile } from '../task-parser.js';
+import type { OperationResult, Phase, Task } from '../types.js';
 import {
   ensureDirectoryExists,
   getAllFiles,
@@ -308,7 +308,6 @@ export async function updatePhase(
     };
   }
 }
-
 
 /**
  * Deletes a phase

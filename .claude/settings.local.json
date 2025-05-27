@@ -116,7 +116,12 @@
       "mcp__scopecraft-cmd__task_update",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Bash(./test-claude-permissions.sh:*)",
+      "Bash(git init:*)",
+      "Bash(touch:*)",
+      "mcp__scopecraft__task_list",
+      "mcp__scopecraft__phase_list"
     ],
     "deny": []
   }

@@ -16,7 +16,6 @@ export interface ProjectPaths {
   templatesRoot: string;
 }
 
-
 // Default directory structure
 const DEFAULT_DIRECTORIES = {
   tasks: '.tasks',
@@ -86,7 +85,6 @@ export class ProjectConfig {
     return projects.find((p) => p.path === root);
   }
 
-
   /**
    * Get tasks directory
    */
@@ -115,7 +113,6 @@ export class ProjectConfig {
   getTemplatesDirectory(): string {
     return this.paths.templatesRoot;
   }
-
 
   /**
    * Initialize project structure
@@ -239,7 +236,6 @@ Happy task management! 🎉
   validateEnvironment(): boolean {
     return this.configManager.validateRoot(this.getRoot());
   }
-
 
   /**
    * Get task file path

@@ -1,0 +1,13 @@
+{
+  "title": "Inline editing of statuses and metadata in Task UI",
+  "description": "Allow in place edit when clicking on a\n field.  Not sure if they become in edit mode on click or fields are always display as input",
+  "exploration": {
+    "expandedIdea": "",
+    "codebaseNotes": [],
+    "suggestions": [],
+    "questions": []
+  },
+  "fullResponse": "",
+  "answers": {},
+  "iterations": 1
+}

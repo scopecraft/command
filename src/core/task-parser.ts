@@ -36,22 +36,22 @@ function formatDate(date: unknown): string | undefined {
 function normalizeMetadata(metadata: Record<string, unknown>): TaskMetadata {
   // Type assertion is safe here because we're working with parsed frontmatter
   const result = metadata as unknown as TaskMetadata;
-  
+
   // Override specific fields that need normalization
   return {
     ...result,
     // Ensure dates are properly formatted
     created_date: formatDate(metadata.created_date),
-    updated_date: formatDate(metadata.updated_date),  
+    updated_date: formatDate(metadata.updated_date),
     due_date: formatDate(metadata.due_date),
     // Ensure arrays are arrays (YAML might have single values as strings)
     tags: Array.isArray(metadata.tags)
-      ? metadata.tags as string[]
+      ? (metadata.tags as string[])
       : metadata.tags
         ? [metadata.tags as string]
         : undefined,
     depends: Array.isArray(metadata.depends)
-      ? metadata.depends as string[]
+      ? (metadata.depends as string[])
       : metadata.depends
         ? [metadata.depends as string]
         : undefined,
