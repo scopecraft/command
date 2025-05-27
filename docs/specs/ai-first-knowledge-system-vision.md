@@ -1,29 +1,31 @@
-# Vision: AI-First Knowledge & Task Management System
+# Knowledge System: Long-Lived Wisdom for AI-Assisted Development
 
-## Problem Statement
+*Part of the [Scopecraft Vision](./scopecraft-vision.md)*
 
-Current task management systems force artificial hierarchies between user-facing features and technical architecture, creating organizational friction. The system lacks rich context for AI assistance and conflates delivery phases with product milestones. Areas and features operate identically but serve different conceptual purposes.
+## Overview
 
-## Vision Summary
+The Knowledge System is Scopecraft's long-lived repository of wisdom, patterns, and decisions. Unlike the tactical Task System, the Knowledge System grows incrementally over time, capturing architectural decisions, design patterns, API contracts, and other reference material that transcends individual features or sprints.
 
-Transform the current system into a dual-architecture approach with organic, AI-discoverable relationships between entities. Enable natural markdown-based entity linking while supporting progressive formalization of concepts as they prove valuable.
+## Role: The Archivist
 
-## Core Architecture
+The Knowledge System acts as an organizational archivist, preserving and organizing:
+- **Architectural Patterns**: How we build things
+- **Design Decisions**: Why we built them that way
+- **API Specifications**: Contracts between systems
+- **Domain Models**: Business logic and rules
+- **Standards & Guidelines**: Team conventions
+- **Technical Decisions**: ADRs and rationale
 
-### Two-System Separation
+## Design Philosophy
 
-**Long-Lived: Knowledge System (Archivist Role)**
-- Architectural patterns and decisions
-- Domain models and business logic  
-- API specifications and contracts
-- Design systems and standards
-- **Stable, grows incrementally, referenced frequently**
+### 1. Stability Over Speed
+Knowledge artifacts are designed to last. They're updated deliberately, versioned carefully, and referenced frequently. A pattern documented today should still be valuable in two years.
 
-**Short-Lived: Task System (Developer Role)**
-- PRDs for specific features
-- TRDs for implementation approaches
-- Sprint tasks and implementation notes
-- **Tactical, gets archived after delivery**
+### 2. Discovery Over Structure  
+Rather than imposing rigid taxonomies, the Knowledge System uses natural language and entity linking to create organic relationships. AI agents discover connections through content, not through folder hierarchies.
+
+### 3. Context Over Isolation
+Every piece of knowledge exists in relation to others. Patterns reference decisions, decisions link to standards, standards connect to examples. This web of relationships provides rich context for both humans and AI.
 
 ### Work Documents Structure
 
