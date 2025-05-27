@@ -282,6 +282,201 @@ No forced hierarchy - each role sees their natural organization.
 - Context gathering built into workflows
 - Learning and adaptation over enforcement
 
+## The Feedback Pipeline: Human-in-the-Loop Evolution
+
+### Composable Review System
+
+Following our Unix philosophy, Scopecraft envisions feedback as a first-class, composable component:
+
+```
+work_output | aligner | reviewer | validator > refined_output
+```
+
+This enables:
+- **Aligner agents**: Ensure outputs match original intent
+- **Technical reviewers**: Validate correctness and patterns
+- **Consistency checkers**: Maintain standards across work
+- **Completeness validators**: Catch missing elements
+
+Each feedback component can be:
+- **Human-driven**: For critical decisions and nuanced review
+- **AI-driven**: For routine validation and pattern checking
+- **Hybrid**: AI suggests, human approves
+
+### Integration with Workflow
+
+Feedback isn't an interruption but a natural part of the pipeline:
+- **Optional composition**: Use only the reviewers you need
+- **Streaming or blocking**: Choose synchronous or async feedback
+- **Context preservation**: Feedback becomes part of work history
+- **Pattern learning**: Recurring feedback informs future work
+
+This approach maintains human oversight while enabling autonomous execution, balancing quality with efficiency.
+
+## Composition Patterns: Building Workflows from Primitives
+
+### The Universal Interface: Section-Based References
+
+Entity references use task IDs and sections, providing precise context access:
+
+```
+Mode A creates @task:explore-oauth2-0127-AB
+    ↓
+Mode B moves task to current/ and reads @task:explore-oauth2-0127-AB#deliverable
+    ↓
+Mode B creates @task:implement-oauth2-0201-DE
+    ↓
+Mode C updates @task:implement-oauth2-0201-DE#deliverable
+```
+
+### Configurable Dimensions
+
+Following Unix philosophy, organizational dimensions are configurable like templates:
+
+```yaml
+# scopecraft.json
+{
+  "dimensions": {
+    "sprint": {
+      "type": "string",
+      "label": "Sprint",
+      "values": ["2024-S1", "2024-S2"]  // Optional enum
+    },
+    "version": {
+      "type": "string", 
+      "label": "Target Version"
+    },
+    "priority": {
+      "type": "enum",
+      "values": ["P0", "P1", "P2", "P3"]
+    }
+  }
+}
+```
+
+This enables flexible queries without folder restructuring:
+```bash
+sc task list --sprint "2024-S1"
+sc task list --version "2.0" --priority "P0"
+sc task list current --area auth
+```
+
+### Interface-Specific Composition
+
+**UI Composition** - Visual orchestration:
+- Drag tasks between workflow states (backlog → current → archive)
+- Split views for parallel work on related tasks
+- Section editors for focused updates
+- Real-time section collaboration
+
+**CLI Composition** - Script-driven:
+```bash
+# Workflow progression
+sc task move backlog/explore-oauth2-0127-AB current/
+sc task start implement-oauth2-0201-DE
+
+# Section-based operations
+sc task update oauth2-0201-DE --section tasks --check "Research providers"
+sc task read oauth2-0201-DE --section deliverable
+
+# Configured dimension queries
+sc task list current --sprint "2024-S1"
+sc task list --area auth --status "In Progress"
+
+# Parallel work on related tasks
+for task in current/dashboard-redesign/*.task.md; do
+  sc mode implement @task:${task%.task.md} &
+done
+```
+
+**MCP Composition** - Programmatic:
+```javascript
+// AI agents orchestrating workflows
+const tasks = await mcp.task_list({
+  location: "current",
+  area: "auth"
+});
+
+// Section-based updates
+await mcp.task_update({
+  id: "implement-oauth2-0201-DE",
+  section: "deliverable",
+  operation: "append",
+  content: "## Implementation Complete\n..."
+});
+
+// Move completed work
+await mcp.task_move({
+  id: "implement-oauth2-0201-DE",
+  to: "archive/2024-01"
+});
+```
+
+### Composition Principles
+
+1. **ID-based references** - Task IDs remain stable across moves
+2. **Section targeting** - Precise updates to document parts
+3. **Workflow progression** - Physical moves reflect state changes
+4. **Configurable queries** - Filter by any defined dimension
+5. **Smart resolution** - System searches current → backlog → archive
+
+## Progressive Tooling Philosophy
+
+### From Simple to Sophisticated
+
+Scopecraft tools evolve with usage patterns rather than imposing structure upfront:
+
+**Level 1: Basic Operations**
+- Every section starts as simple markdown
+- Tools provide read/write for entire sections
+- No structure enforced or required
+
+**Level 2: Pattern Recognition**
+- Teams develop conventions naturally
+- Tools observe repeated patterns
+- Helper functions emerge for common operations
+
+**Level 3: Structured Support**
+- Validated operations for established patterns
+- Rich queries across documents
+- Specialized operations (queue, stack, etc.)
+
+**Level 4: Intelligent Assistance**
+- Pattern detection and suggestions
+- Cross-document insights
+- Workflow optimization
+
+### Learning from Memory Bank and Context Portal
+
+The community has shown two valid approaches to AI memory:
+
+**File-First (Memory Bank)**
+- Immediate, transparent, git-friendly
+- Mode-specific memory slices
+- Perfect for individual developers
+
+**Service-First (Context Portal)**
+- Structured, queryable, scalable
+- Relationship graphs and semantic search
+- Better for teams and multiple agents
+
+Scopecraft embraces both paths:
+- Start file-first with markdown sections
+- Graduate to service-backed when pain appears
+- Same tool interfaces work with either backend
+
+### Section Evolution Example
+
+A team's journey with decision tracking:
+
+**Week 1**: Free-form notes in deliverable section
+**Week 4**: Convention emerges: "Decision: X because Y"
+**Week 8**: Tool offers decision template helper
+**Week 12**: Cross-task decision queries available
+**Month 6**: Decision impact graph visualization
+
+The key: Tools follow practice, not vice versa.
+
 ## The Scopecraft Promise
 
 We believe development tools should:

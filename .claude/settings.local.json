@@ -121,7 +121,11 @@
       "Bash(git init:*)",
       "Bash(touch:*)",
       "mcp__scopecraft__task_list",
-      "mcp__scopecraft__phase_list"
+      "mcp__scopecraft__phase_list",
+      "mcp__scopecraft__task_create",
+      "mcp__scopecraft__task_get",
+      "mcp__scopecraft__feature_get",
+      "mcp__scopecraft__task_update"
     ],
     "deny": []
   }

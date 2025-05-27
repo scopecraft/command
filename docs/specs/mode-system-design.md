@@ -407,6 +407,310 @@ Always update tasks with mode outputs:
 - Subtasks from planning
 - Code from implementation
 
+## Prompt Design Principles
+
+### Strategic vs Tactical Guidance
+
+Based on operational experience, effective mode prompts follow a pattern of **strategic direction with tactical autonomy**:
+
+#### The Two-Layer Pattern
+1. **Strategic Layer** (human provides):
+   - High-level goals and outcomes
+   - Key aspects to consider
+   - Quality criteria and constraints
+   - Expected deliverable structure
+
+2. **Tactical Layer** (AI manages):
+   - Specific execution steps
+   - Internal task planning and sequencing
+   - Progress tracking through todos
+   - Discovery-based adjustments
+
+#### Example Transformation
+Instead of:
+```
+1. First, read file X
+2. Then analyze for patterns Y
+3. Create a document with sections A, B, C
+4. Review and submit
+```
+
+Use:
+```
+Create a technical design document that addresses [goal].
+Consider: security, performance, scalability.
+Structure should include problem analysis and recommended approach.
+Use your judgment on how to research and organize the content.
+```
+
+### Trade-offs and Considerations
+
+#### Autonomous Execution
+**Benefits:**
+- More thorough and coherent deliverables
+- Better maintained context across complex work
+- Natural flow without interruption
+
+**Risks:**
+- Single wrong assumption can cascade
+- Longer execution time
+- Less opportunity for course correction
+
+#### Conversational Flow
+**Benefits:**
+- Immediate error correction
+- Shared context building
+- Lower risk of derailment
+
+**Costs:**
+- Requires constant human attention
+- May lead to fragmented outputs
+- Cognitive load on human supervisor
+
+### Practical Guidelines
+
+1. **Match autonomy to risk**: 
+   - High-risk/novel work → More checkpoints
+   - Routine/well-understood → More autonomy
+
+2. **Leverage AI working memory**:
+   - Encourage todo list creation for complex work
+   - Let AI externalize planning and progress
+   - Avoid prescribing every micro-step
+
+3. **Design natural checkpoints**:
+   - "Share your understanding and approach"
+   - "Present initial findings before proceeding"
+   - "Validate assumptions with examples"
+
+4. **Optimize for discovery**:
+   - Allow AI to find patterns you didn't anticipate
+   - Build in exploration phases
+   - Value insights over rigid adherence
+
+### Integration with Feedback Pipeline
+
+These principles complement the feedback system by:
+- Creating natural points for review intervention
+- Producing more cohesive artifacts worth reviewing
+- Enabling both real-time and post-hoc feedback
+- Building patterns that can be systematized over time
+
+### Working with Unified Documents
+
+Modes interact with specific sections of the unified document structure:
+
+#### Reading Context
+```javascript
+// Mode reads specific sections for context
+const instruction = await mcp.task_read({
+  id: "implement-oauth2-0201-DE",
+  section: "instruction"
+});
+
+const existingWork = await mcp.task_read({
+  id: "implement-oauth2-0201-DE", 
+  section: "deliverable"
+});
+```
+
+#### Progressive Updates
+```javascript
+// Exploration mode updates deliverable section
+await mcp.task_update({
+  id: "explore-oauth2-0127-AB",
+  section: "deliverable",
+  operation: "append",
+  content: "### Technical Findings\n..."
+});
+
+// Planning mode updates task checklist
+await mcp.task_update({
+  id: "implement-oauth2-0201-DE",
+  section: "tasks",
+  operation: "add",
+  content: "- [ ] Configure OAuth provider"
+});
+```
+
+#### Section Templates by Type
+
+Different task types emphasize different sections:
+
+**Type: idea**
+```markdown
+## Instruction
+Brief exploration prompt
+
+## Tasks
+- [ ] Research feasibility
+- [ ] Document findings
+- [ ] Estimate effort
+
+## Deliverable
+### Expanded Concept
+### Technical Findings  
+### Open Questions
+### Recommendations
+
+## Log
+[Exploration timeline]
+```
+
+**Type: feature**
+```markdown
+## Instruction
+User story and acceptance criteria
+
+## Tasks
+- [ ] Design implementation
+- [ ] Build components
+- [ ] Write tests
+- [ ] Update documentation
+
+## Deliverable
+### Design Decisions
+### Implementation
+### Test Coverage
+### Documentation Updates
+
+## Log
+[Implementation progress]
+```
+
+**Note:** Section structures are evolving. Teams may add custom sections like Context, Decisions, or Questions based on their needs.
+
+### Mode-Section Interaction Philosophy
+
+Different modes naturally focus on different sections and operations:
+
+**Exploration Mode** - Discovery and documentation
+- Writes to deliverable sections with findings
+- Creates questions for human clarification
+- Builds context for future work
+
+**Planning Mode** - Structure and breakdown
+- Reads context and previous decisions
+- Writes task breakdowns and dependencies
+- Identifies questions that need answers before proceeding
+
+**Implementation Mode** - Execution and progress
+- Consumes tasks as a work queue
+- Updates deliverables incrementally
+- Logs significant events and decisions made
+
+**Diagnosis Mode** - Analysis and learning
+- Reads logs and error states
+- Writes root cause analysis to deliverables
+- Captures learnings for future reference
+
+**Review Mode** - Quality and completeness
+- Analyzes patterns across sections
+- Identifies missing documentation or decisions
+- Suggests improvements to capture
+
+### Section Operation Patterns
+
+The system provides different operation types based on section characteristics:
+
+**Simple Operations** - For freeform content
+- Read entire section
+- Replace or append content
+- Basic text manipulation
+
+**Queue Operations** - For task-like structures
+- Get next item
+- Mark complete
+- Reorder or prioritize
+
+**Structured Operations** - For data-oriented sections
+- Query by criteria
+- Update specific fields
+- Aggregate across documents
+
+**Temporal Operations** - For time-based content
+- Add timestamped entries
+- Query by date range
+- Track change history
+
+These operations emerge from how teams actually use sections, not from predetermined design.
+
+### Workflow Integration
+
+Modes respect the workflow folder structure:
+
+```bash
+# Exploration creates in backlog
+sc mode explore "AI-powered search" 
+# Creates: backlog/ai-search-0127-AB.task.md
+
+# Planning moves to current and breaks down
+sc mode plan @task:ai-search-0127-AB
+# Moves to: current/
+# Updates: tasks section with breakdown
+
+# Implementation updates deliverable
+sc mode implement @task:ai-search-0127-AB
+# Updates: deliverable section with code/design
+```
+
+### Orchestration Patterns
+
+#### Sequential with Natural Checkpoints
+Section updates create natural checkpoints:
+
+```
+Instruction → Tasks (planning)
+[Human Review]
+Tasks → Deliverable (execution)
+[Human Review]
+Deliverable → Archive (completion)
+```
+
+#### Parallel Variant Generation
+Create multiple tasks for parallel exploration:
+
+```
+backlog/
+  ui-approach-modal-0127-AB.task.md
+  ui-approach-inline-0127-BC.task.md
+  ui-approach-wizard-0127-CD.task.md
+```
+
+All can be worked on simultaneously, each updating their own deliverable section.
+
+#### Phase-Based Task Generation
+Use sections to guide phased work:
+
+```bash
+# Read deliverable from exploration
+sc task read explore-oauth2-0127-AB --section deliverable
+
+# Use findings to create implementation task
+sc mode plan --from @task:explore-oauth2-0127-AB#deliverable
+
+# Updates tasks section of new implementation task
+```
+
+### Working with AI Memory Systems
+
+When working with AI assistants that have internal task management:
+
+1. **Use sections as work boundaries**
+   ```
+   "Focus on updating the deliverable section with your findings"
+   ```
+
+2. **Leverage the unified structure**
+   ```
+   "The instruction section defines what to do, update the deliverable with results"
+   ```
+
+3. **Maintain the log**
+   ```
+   "Add significant progress to the log section as you work"
+   ```
+
 ## Future Enhancements
 
 ### Intelligent Mode Suggestion
@@ -435,6 +739,135 @@ Track mode effectiveness:
 - Average time per mode execution
 - Common mode sequences
 - Automation success rates
+
+## Real-World Examples with Unified Documents
+
+### Example 1: Feature Development with Unified Documents
+
+```bash
+# Exploration in backlog
+sc mode explore "User authentication improvements"
+# Creates: backlog/auth-improvements-0127-AB.task.md
+# Updates: deliverable section with findings
+
+# Review and promote to current
+sc task read auth-improvements-0127-AB --section deliverable
+sc task move backlog/auth-improvements-0127-AB.task.md current/
+
+# Break down into tasks
+sc mode plan @task:auth-improvements-0127-AB
+# Updates: tasks section with subtask checklist
+
+# Execute while updating sections
+sc mode implement @task:auth-improvements-0127-AB
+# Reads: instruction and tasks sections
+# Updates: deliverable section progressively
+# Logs: progress in log section
+
+# Archive when complete  
+sc task move current/auth-improvements-0127-AB.task.md archive/2024-01/
+```
+
+### Example 2: Parallel Exploration with Sections
+
+```bash
+# Brainstorm creates multiple exploration tasks
+sc mode brainstorm "Dashboard redesign approaches"
+# Creates in backlog/:
+# dashboard-cards-0127-AB.task.md
+# dashboard-tables-0127-BC.task.md  
+# dashboard-hybrid-0127-CD.task.md
+
+# Move all to current for parallel work
+sc task move backlog/dashboard-*.task.md current/
+
+# UI shows three panels, each showing deliverable section
+sc ui --parallel current/dashboard-*
+
+# Or CLI parallel execution
+for task in current/dashboard-*.task.md; do
+  sc mode implement @task:${task%.task.md} &
+done
+wait
+
+# Compare deliverable sections
+sc task read dashboard-cards-0127-AB --section deliverable
+sc task read dashboard-tables-0127-BC --section deliverable
+sc task read dashboard-hybrid-0127-CD --section deliverable
+```
+
+### Example 3: Section Evolution
+
+Initial task (backlog):
+```markdown
+# Optimize Database Queries
+
+---
+type: idea
+status: 🟡 To Do
+area: performance
+---
+
+## Instruction
+Investigate and optimize slow database queries affecting user dashboard
+
+## Tasks
+- [ ] Identify slow queries
+- [ ] Analyze query patterns
+- [ ] Propose optimizations
+
+## Deliverable
+[Empty - to be filled during exploration]
+
+## Log
+- 2024-01-27: Created from performance review meeting
+```
+
+After exploration (current):
+```markdown
+# Optimize Database Queries
+
+---
+type: feature
+status: 🔵 In Progress
+area: performance
+sprint: 2024-S1
+---
+
+## Instruction
+Investigate and optimize slow database queries affecting user dashboard
+
+## Tasks
+- [x] Identify slow queries
+- [x] Analyze query patterns
+- [x] Propose optimizations
+- [ ] Implement query caching
+- [ ] Add database indexes
+- [ ] Update ORM queries
+- [ ] Performance testing
+
+## Deliverable
+### Analysis Results
+- Found 3 N+1 queries in dashboard controller
+- Missing indexes on user_metrics table
+- Unnecessary joins in activity feed
+
+### Optimization Plan
+1. Add composite index on (user_id, created_at)
+2. Implement Redis caching for user stats
+3. Refactor activity feed to use single query
+
+### Performance Gains
+- Expected 70% reduction in page load time
+- Database CPU usage should drop by 40%
+
+## Log
+- 2024-01-27: Created from performance review meeting
+- 2024-01-28: Completed analysis, found major bottlenecks
+- 2024-01-29: Started implementation of caching layer
+```
+
+The unified document grows organically as work progresses, maintaining full history in one place.
 
 ---
 

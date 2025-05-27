@@ -27,27 +27,168 @@ Rather than imposing rigid taxonomies, the Knowledge System uses natural languag
 ### 3. Context Over Isolation
 Every piece of knowledge exists in relation to others. Patterns reference decisions, decisions link to standards, standards connect to examples. This web of relationships provides rich context for both humans and AI.
 
-### Work Documents Structure
+### Work Organization Structure
 
-**Feature-level work documents alongside tasks:**
+**Workflow-based organization with unified documents:**
 ```
-.tasks/FEATURE_login/
-├── _overview.md              # Feature summary/epic
-├── product-requirements.md   # PRD for this feature
-├── technical-approach.md     # TRD for implementation
-├── design-decisions.md       # Implementation-specific decisions
-├── tasks/                    # Individual implementation tasks
-│   ├── TASK-001.md
-│   └── TASK-002.md
-└── archive/                  # Completed work documents
+.tasks/
+  backlog/                               # Ideas and future work
+    explore-oauth2-0127-AB.task.md       # id: explore-oauth2-0127-AB
+    optimize-db-0128-BC.task.md          # id: optimize-db-0128-BC
+    
+  current/                               # Active work
+    implement-oauth2-0201-DE.task.md     # id: implement-oauth2-0201-DE
+    fix-login-0202-FG.task.md            # id: fix-login-0202-FG
+    dashboard-redesign/                  # Complex work as folder
+      _overview.md                       # Container description
+      01-user-research.task.md          
+      02-create-designs.task.md
+      03-implement-frontend.task.md
+      
+  archive/                               # Completed work
+    2024-01/
+      billing-integration-0115-HI.task.md  # id: billing-integration-0115-HI
+      security-audit-0120-JK.task.md       # id: security-audit-0120-JK
 ```
 
-**Benefits of work documents:**
-- **Separation of concerns**: Tasks focus on specific work, documents provide context
-- **Rich feature context**: PRD/TRD live with the feature, not mixed in task details
-- **AI context loading**: Can load relevant work documents based on current task
-- **Temporal documentation**: Implementation decisions captured at point-in-time
-- **Archival ready**: Work documents can be archived with completed features
+**ID Resolution:**
+- Task IDs are based on filename only, not folder location
+- References like `@task:explore-oauth2-0127-AB` search in order: current/ → backlog/ → archive/
+- Moving tasks between folders doesn't break references
+- Explicit paths available when needed: `@task:archive/security-audit-0120-JK`
+
+**Unified Document Structure:**
+All task files follow a consistent section-based format:
+
+```markdown
+# Title
+
+---
+type: feature|bug|chore|spike|idea
+status: 🟡 To Do | 🔵 In Progress | 🟢 Done
+area: auth|billing|dashboard          # Product area (permanent)
+[configurable dimensions]             # sprint, version, phase, etc.
+---
+
+## Instruction
+What needs to be done (required)
+
+## Tasks  
+- [ ] Subtask breakdown (required, can be empty)
+- [ ] Another subtask
+
+## Deliverable
+Work outputs, findings, code, designs (required, initially empty)
+
+## Log
+Execution history and notes (required, auto-updated by tools)
+```
+
+**Note on Document Sections:** The section structure (Instruction/Tasks/Deliverable/Log) represents our current best practice but is designed for extensibility. Teams may discover needs for additional sections or different organizations. The tooling will evolve to support these variations while maintaining the core principle of unified documents with accessible sections.
+
+### Section Philosophy: From Freeform to Structured
+
+The unified document model supports a spectrum of section types, each serving different needs:
+
+**Freeform Sections** - Natural markdown for human expression
+- Deliverables, context, and narrative content flow naturally
+- No structure imposed, maximum flexibility
+- Read and write as simple text blocks
+
+**Semi-Structured Sections** - Conventions that emerge from usage
+- Decisions might naturally evolve a pattern: date, choice, rationale
+- Questions might develop states: pending, answered, blocked
+- Structure emerges from practice, not prescription
+
+**Queue-Like Sections** - Natural operations for task-like content
+- Tasks as a checklist invite "next task" operations
+- Questions as a queue support "pop" and "answer" patterns
+- Implementation logs as a stack support "push" operations
+
+**Data-Oriented Sections** - When patterns benefit from tables
+- Progress tracking might evolve into component/status tables
+- Dependencies might become structured lists
+- Tools can offer richer operations while maintaining markdown readability
+
+### Tooling Evolution Pattern
+
+As sections mature, tooling can provide progressively richer operations:
+
+1. **Start Simple**: Every section begins as markdown read/write
+2. **Observe Patterns**: Teams develop conventions (e.g., decision format)
+3. **Offer Helpers**: Tools provide templates and validation
+4. **Enable Queries**: Structured sections enable cross-task insights
+5. **Support Workflows**: Queue operations, next-task suggestions
+
+This evolution happens organically based on actual usage, not predetermined design.
+
+**Key Principles:**
+- **Workflow states as folders**: Physical location shows work state
+- **Single source of truth**: One file contains all related information
+- **Section-based access**: Tools can read/update individual sections
+- **Configurable dimensions**: Teams define their own metadata fields
+- **Extensible structure**: Section patterns will evolve based on usage
+
+### Why Unified Documents with Sections
+
+The unified document model addresses several needs:
+
+1. **Single Source of Truth**: Everything about a piece of work lives in one file
+2. **Progressive Enhancement**: Documents start simple and grow sections as needed
+3. **Tooling Flexibility**: Read/update sections independently while maintaining one file
+4. **Human-Friendly**: Open one file to see the full picture
+5. **AI-Friendly**: Clear sections for context extraction
+
+### Emergent Section Patterns
+
+As teams use the system, they may discover needs for specialized sections beyond the core four:
+
+**Context & Memory Sections**
+- Links to related work, dependencies, and constraints
+- Mode-specific memory that different AI personas can reference
+- Accumulated knowledge that prevents repeated discoveries
+
+**Decision & Rationale Sections**
+- Choices made during the work with their reasoning
+- Trade-offs considered and why alternatives were rejected
+- Creates an audit trail of thinking for future reference
+
+**Human-in-the-Loop Sections**
+- Questions that need answers before proceeding
+- Approvals or reviews required at checkpoints
+- Collaborative notes between human and AI
+
+**Progress & State Sections**
+- Current status beyond simple todo checkboxes
+- Blockers and dependencies
+- Milestones achieved and upcoming
+
+**Learning & Patterns Sections**
+- Insights discovered during implementation
+- Mistakes to avoid in future similar work
+- Reusable patterns or code snippets
+
+These patterns emerge from real usage rather than upfront design. The tooling philosophy supports this emergence by starting with simple markdown and adding structure only when patterns prove valuable.
+
+**Section-Based Access Examples:**
+```bash
+# Read just the deliverable
+sc task read current/oauth2 --section deliverable
+
+# Update task checklist
+sc task check current/oauth2 "Complete research"
+
+# Add to execution log
+sc task log current/oauth2 "Blocked on security review"
+
+# Export section for sharing
+sc task export current/oauth2 --section deliverable > oauth2-findings.md
+```
+
+**Reference Patterns:**
+- `@task:oauth2-0127-AB` - Entire document (searches current → backlog → archive)
+- `@task:oauth2-0127-AB#deliverable` - Specific section
+- `@task:oauth2-0127-AB#tasks[2]` - Specific checklist item
 
 ### Organizational Dimensions
 
