@@ -2,15 +2,21 @@
 
 ---
 type: bug
-status: To Do
+status: Done
 area: general
 priority: High
 ---
 
 
 ## Instruction
-## Problem
 
+## Tasks
+
+## Deliverable
+
+## Log
+
+## Problem
 When using `sc task list`, subtasks that are inside parent task directories are displayed as standalone tasks instead of being grouped under their parent.
 
 Example:
@@ -24,25 +30,21 @@ CURRENT:
 
 These are all subtasks of `implement-v2-structure` but appear as standalone tasks.
 
-## Root Cause
-
+## Root cause
 The `listTasks` function in core is not populating `metadata.location.parentId` for subtasks. The tree formatter expects this field to properly group subtasks under their parents.
 
 ## Impact
-
 1. Tree view shows incorrect hierarchy
 2. Can't distinguish between standalone tasks and subtasks
 3. Parent tasks appear empty when they actually have subtasks
 
-## Solution Required
-
+## Solution required
 In `src/core/v2/task-crud.ts` or wherever task metadata is built, when a task is found inside a parent directory (e.g., `current/implement-v2-structure/01_core-refactor.task.md`), the system should:
 
 1. Set `metadata.location.parentId = 'implement-v2-structure'`
 2. Set `metadata.isSubtask = true` (if not already)
 
-## Test Case
-
+## Test case
 After fix, `sc task list --current` should show:
 ```
 CURRENT:
@@ -53,12 +55,6 @@ CURRENT:
     │ └─ ○ MCP update [02_mcp-update] • To Do
     └── ○ UI update [03_ui-update] • To Do
 ```
-
-## Tasks
-
-## Deliverable
-
-## Log
 
 ## Fix subtask parentid metadata not populated in listtasks
 Task description goes here.

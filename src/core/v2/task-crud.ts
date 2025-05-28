@@ -1,50 +1,46 @@
 /**
  * V2 Task CRUD Operations
- * 
+ *
  * Create, Read, Update, Delete operations for v2 tasks
  */
 
-import { readFileSync, writeFileSync, unlinkSync, renameSync } from 'node:fs';
-import { join, dirname, basename } from 'node:path';
-import { mkdirSync, existsSync } from 'node:fs';
-import type {
-  Task,
-  TaskDocument,
-  TaskCreateOptions,
-  TaskUpdateOptions,
-  TaskMoveOptions,
-  TaskListOptions,
-  TaskStatus,
-  WorkflowState,
-  OperationResult,
-  TaskMetadata,
-  TaskLocation,
-  V2Config
-} from './types.js';
+import { readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import {
-  getWorkflowDirectory,
-  getArchiveDirectory,
-  parseTaskLocation,
-  getTaskIdFromFilename,
-  getTaskFilesInWorkflow,
   createArchiveDate,
+  getArchiveDirectory,
+  getExistingWorkflowStates,
+  getTaskFilesInWorkflow,
+  getTaskIdFromFilename,
+  getWorkflowDirectory,
   isParentTaskFolder,
-  getExistingWorkflowStates
+  parseTaskLocation,
 } from './directory-utils.js';
+import { generateUniqueTaskId, parseTaskId, resolveTaskId } from './id-generator.js';
 import {
+  addLogEntry,
+  ensureRequiredSections,
+  formatLogTimestamp,
   parseTaskDocument,
   serializeTaskDocument,
-  validateTaskDocument,
-  ensureRequiredSections,
   updateSection as updateDocumentSection,
-  addLogEntry,
-  formatLogTimestamp
+  validateTaskDocument,
 } from './task-parser.js';
-import {
-  generateUniqueTaskId,
-  resolveTaskId,
-  parseTaskId
-} from './id-generator.js';
+import type {
+  OperationResult,
+  Task,
+  TaskCreateOptions,
+  TaskDocument,
+  TaskListOptions,
+  TaskLocation,
+  TaskMetadata,
+  TaskMoveOptions,
+  TaskStatus,
+  TaskUpdateOptions,
+  V2Config,
+  WorkflowState,
+} from './types.js';
 
 /**
  * Create a new task
@@ -57,10 +53,10 @@ export async function createTask(
   try {
     // Generate unique ID
     const taskId = generateUniqueTaskId(options.title, projectRoot, config);
-    
+
     // Determine workflow state (default to backlog)
     const workflowState = options.workflowState || config?.defaultWorkflowState || 'backlog';
-    
+
     // Create task document
     const document: TaskDocument = {
       title: options.title,
@@ -68,47 +64,47 @@ export async function createTask(
         type: options.type,
         status: options.status || 'To Do',
         area: options.area,
-        ...options.customMetadata
+        ...options.customMetadata,
       },
       sections: ensureRequiredSections({
         instruction: options.instruction || '',
         tasks: options.tasks ? formatTasksList(options.tasks) : '',
-        ...options.customSections
-      })
+        ...options.customSections,
+      }),
     };
-    
+
     // Validate document
     const errors = validateTaskDocument(document);
     if (errors.length > 0) {
       return {
         success: false,
         error: 'Invalid task document',
-        validationErrors: errors
+        validationErrors: errors,
       };
     }
-    
+
     // Determine file path
     const workflowDir = getWorkflowDirectory(projectRoot, workflowState, config);
     const filename = `${taskId}.task.md`;
     const filepath = join(workflowDir, filename);
-    
+
     // Ensure directory exists
     if (!existsSync(workflowDir)) {
       mkdirSync(workflowDir, { recursive: true });
     }
-    
+
     // Check if file already exists (shouldn't happen with unique ID)
     if (existsSync(filepath)) {
       return {
         success: false,
-        error: `Task file already exists: ${filename}`
+        error: `Task file already exists: ${filename}`,
       };
     }
-    
+
     // Write file
     const content = serializeTaskDocument(document);
     writeFileSync(filepath, content, 'utf-8');
-    
+
     // Create task object
     const task: Task = {
       metadata: {
@@ -116,19 +112,19 @@ export async function createTask(
         filename,
         path: filepath,
         location: { workflowState },
-        isParentTask: false
+        isParentTask: false,
       },
-      document
+      document,
     };
-    
+
     return {
       success: true,
-      data: task
+      data: task,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create task'
+      error: error instanceof Error ? error.message : 'Failed to create task',
     };
   }
 }
@@ -147,48 +143,46 @@ export async function getTask(
     if (!taskPath) {
       return {
         success: false,
-        error: `Task not found: ${taskId}`
+        error: `Task not found: ${taskId}`,
       };
     }
-    
+
     // Read file content
     const content = readFileSync(taskPath, 'utf-8');
-    
+
     // Parse document
     const document = parseTaskDocument(content);
-    
+
     // Parse location
     const location = parseTaskLocation(taskPath, projectRoot);
     if (!location) {
       return {
         success: false,
-        error: 'Failed to parse task location'
+        error: 'Failed to parse task location',
       };
     }
-    
+
     // Check if parent task
     const isParentTask = basename(taskPath) === '_overview.md';
     const id = getTaskIdFromFilename(taskPath);
-    
+
     // Detect if this is a subtask in a parent directory
     const fileDir = dirname(taskPath);
     let parentTask: string | undefined;
     let sequenceNumber: string | undefined;
-    
-    // Check if the task is inside a parent directory
-    if (isParentTaskFolder(fileDir)) {
+
+    // Check if the task is inside a parent directory (but not the parent task itself)
+    if (isParentTaskFolder(fileDir) && !isParentTask) {
       parentTask = basename(fileDir);
-      
+
       // Extract sequence number for subtasks
-      if (!isParentTask) {
-        const fileName = basename(taskPath);
-        const seqMatch = fileName.match(/^(\d{2})[_-]/);
-        if (seqMatch) {
-          sequenceNumber = seqMatch[1];
-        }
+      const fileName = basename(taskPath);
+      const seqMatch = fileName.match(/^(\d{2})[_-]/);
+      if (seqMatch) {
+        sequenceNumber = seqMatch[1];
       }
     }
-    
+
     // Create metadata
     const metadata: TaskMetadata = {
       id,
@@ -197,20 +191,20 @@ export async function getTask(
       location,
       isParentTask,
       parentTask,
-      sequenceNumber
+      sequenceNumber,
     };
-    
+
     return {
       success: true,
       data: {
         metadata,
-        document
-      }
+        document,
+      },
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to read task'
+      error: error instanceof Error ? error.message : 'Failed to read task',
     };
   }
 }
@@ -230,21 +224,21 @@ export async function updateTask(
     if (!result.success || !result.data) {
       return result;
     }
-    
+
     const task = result.data;
-    
+
     // Apply updates
     if (updates.title !== undefined) {
       task.document.title = updates.title;
     }
-    
+
     if (updates.frontmatter) {
       task.document.frontmatter = {
         ...task.document.frontmatter,
-        ...updates.frontmatter
+        ...updates.frontmatter,
       };
     }
-    
+
     if (updates.sections) {
       // Merge sections, ensuring all required sections remain
       for (const [key, value] of Object.entries(updates.sections)) {
@@ -253,29 +247,29 @@ export async function updateTask(
         }
       }
     }
-    
+
     // Validate updated document
     const errors = validateTaskDocument(task.document);
     if (errors.length > 0) {
       return {
         success: false,
         error: 'Invalid task document after update',
-        validationErrors: errors
+        validationErrors: errors,
       };
     }
-    
+
     // Write updated content
     const updatedContent = serializeTaskDocument(task.document);
     writeFileSync(task.metadata.path, updatedContent, 'utf-8');
-    
+
     return {
       success: true,
-      data: task
+      data: task,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update task'
+      error: error instanceof Error ? error.message : 'Failed to update task',
     };
   }
 }
@@ -294,28 +288,28 @@ export async function deleteTask(
     if (!taskPath) {
       return {
         success: false,
-        error: `Task not found: ${taskId}`
+        error: `Task not found: ${taskId}`,
       };
     }
-    
+
     // Check if it's a parent task
     if (isParentTaskFolder(dirname(taskPath))) {
       return {
         success: false,
-        error: 'Cannot delete parent task overview directly. Delete the entire folder.'
+        error: 'Cannot delete parent task overview directly. Delete the entire folder.',
       };
     }
-    
+
     // Delete file
     unlinkSync(taskPath);
-    
+
     return {
-      success: true
+      success: true,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete task'
+      error: error instanceof Error ? error.message : 'Failed to delete task',
     };
   }
 }
@@ -335,19 +329,19 @@ export async function moveTask(
     if (!result.success || !result.data) {
       return result;
     }
-    
+
     const task = result.data;
     const currentState = task.metadata.location.workflowState;
-    
+
     // Check if already in target state
-    if (currentState === options.targetState && 
-        options.targetState !== 'archive') { // Archive can have date subdirs
+    if (currentState === options.targetState && options.targetState !== 'archive') {
+      // Archive can have date subdirs
       return {
         success: false,
-        error: `Task is already in ${options.targetState}`
+        error: `Task is already in ${options.targetState}`,
       };
     }
-    
+
     // Determine target directory
     let targetDir: string;
     if (options.targetState === 'archive') {
@@ -356,23 +350,23 @@ export async function moveTask(
     } else {
       targetDir = getWorkflowDirectory(projectRoot, options.targetState, config);
     }
-    
+
     // Ensure target directory exists
     if (!existsSync(targetDir)) {
       mkdirSync(targetDir, { recursive: true });
     }
-    
+
     // Build new path
     const newPath = join(targetDir, task.metadata.filename);
-    
+
     // Check if target exists
     if (existsSync(newPath)) {
       return {
         success: false,
-        error: `Target file already exists: ${newPath}`
+        error: `Target file already exists: ${newPath}`,
       };
     }
-    
+
     // Update status if requested
     if (options.updateStatus || config?.autoStatusUpdate) {
       const newStatus = getStatusForWorkflow(options.targetState);
@@ -380,30 +374,30 @@ export async function moveTask(
         task.document.frontmatter.status = newStatus;
       }
     }
-    
+
     // Write to new location first (safer)
     const updatedContent = serializeTaskDocument(task.document);
     writeFileSync(newPath, updatedContent, 'utf-8');
-    
+
     // Delete from old location
     unlinkSync(task.metadata.path);
-    
+
     // Update metadata
     task.metadata.path = newPath;
     task.metadata.location = {
       workflowState: options.targetState,
-      archiveDate: options.targetState === 'archive' ? 
-        options.archiveDate || createArchiveDate() : undefined
+      archiveDate:
+        options.targetState === 'archive' ? options.archiveDate || createArchiveDate() : undefined,
     };
-    
+
     return {
       success: true,
-      data: task
+      data: task,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to move task'
+      error: error instanceof Error ? error.message : 'Failed to move task',
     };
   }
 }
@@ -418,7 +412,7 @@ export async function listTasks(
 ): Promise<OperationResult<Task[]>> {
   try {
     const tasks: Task[] = [];
-    
+
     // Determine which workflow states to search
     let statesToSearch: WorkflowState[];
     if (options.workflowStates && options.workflowStates.length > 0) {
@@ -428,68 +422,61 @@ export async function listTasks(
     } else {
       statesToSearch = ['current', 'backlog'];
     }
-    
+
     // Get existing states only
     const existingStates = getExistingWorkflowStates(projectRoot, config);
-    statesToSearch = statesToSearch.filter(state => existingStates.includes(state));
-    
+    statesToSearch = statesToSearch.filter((state) => existingStates.includes(state));
+
     // Collect tasks from each state
     for (const state of statesToSearch) {
       const files = getTaskFilesInWorkflow(projectRoot, state, config);
-      
+
       for (const file of files) {
         try {
           const content = readFileSync(file, 'utf-8');
           const document = parseTaskDocument(content);
-          
+
           // Apply filters
           if (options.type && document.frontmatter.type !== options.type) {
             continue;
           }
-          
+
           if (options.status && document.frontmatter.status !== options.status) {
             continue;
           }
-          
+
           if (options.area && document.frontmatter.area !== options.area) {
             continue;
           }
-          
+
           // Check parent task filter
           const isParent = basename(file) === '_overview.md';
           if (!options.includeParentTasks && isParent) {
             continue;
           }
-          
+
           // Parse location
           const location = parseTaskLocation(file, projectRoot);
           if (!location) continue;
-          
+
           // Detect if this is a subtask in a parent directory
           const fileDir = dirname(file);
           const taskId = getTaskIdFromFilename(file);
           let parentTask: string | undefined;
           let sequenceNumber: string | undefined;
-          
-          // Check if the task is inside a parent directory
-          if (isParentTaskFolder(fileDir)) {
+
+          // Check if the task is inside a parent directory (but not the parent task itself)
+          if (isParentTaskFolder(fileDir) && !isParent) {
             parentTask = basename(fileDir);
-            
+
             // Extract sequence number for subtasks
-            if (!isParent) {
-              const fileName = basename(file);
-              const seqMatch = fileName.match(/^(\d{2})[_-]/);
-              if (seqMatch) {
-                sequenceNumber = seqMatch[1];
-              }
+            const fileName = basename(file);
+            const seqMatch = fileName.match(/^(\d{2})[_-]/);
+            if (seqMatch) {
+              sequenceNumber = seqMatch[1];
             }
           }
-          
-          // Update location with parentId if it's a subtask
-          const taskLocation = parentTask ? 
-            { ...location, parentId: parentTask } : 
-            location;
-          
+
           // Create task object
           const task: Task = {
             metadata: {
@@ -499,11 +486,11 @@ export async function listTasks(
               location,
               isParentTask: isParent,
               parentTask,
-              sequenceNumber
+              sequenceNumber,
             },
-            document
+            document,
           };
-          
+
           tasks.push(task);
         } catch (error) {
           // Skip invalid files
@@ -511,7 +498,7 @@ export async function listTasks(
         }
       }
     }
-    
+
     // Sort by workflow state order: current, backlog, archive
     tasks.sort((a, b) => {
       const stateOrder = { current: 0, backlog: 1, archive: 2 };
@@ -519,15 +506,15 @@ export async function listTasks(
       const bOrder = stateOrder[b.metadata.location.workflowState];
       return aOrder - bOrder;
     });
-    
+
     return {
       success: true,
-      data: tasks
+      data: tasks,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to list tasks'
+      error: error instanceof Error ? error.message : 'Failed to list tasks',
     };
   }
 }
@@ -548,24 +535,24 @@ export async function updateSection(
     if (!result.success || !result.data) {
       return result;
     }
-    
+
     const task = result.data;
-    
+
     // Update section
     task.document.sections[sectionName.toLowerCase()] = content;
-    
+
     // Write updated content
     const updatedContent = serializeTaskDocument(task.document);
     writeFileSync(task.metadata.path, updatedContent, 'utf-8');
-    
+
     return {
       success: true,
-      data: task
+      data: task,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update section'
+      error: error instanceof Error ? error.message : 'Failed to update section',
     };
   }
 }
@@ -576,7 +563,7 @@ export async function updateSection(
  * Format tasks array into checklist markdown
  */
 function formatTasksList(tasks: string[]): string {
-  return tasks.map(task => `- [ ] ${task}`).join('\n');
+  return tasks.map((task) => `- [ ] ${task}`).join('\n');
 }
 
 /**

@@ -49,7 +49,7 @@ Refactor the core task management system to support the new workflow-based struc
 - [ ] Create subtask resequencing operations
 - [ ] Handle naming conflicts during conversions
 - [ ] Update moveTask to handle context changes
-- [ ] Add path-based ID resolution for subtasks
+- [x] Add path-based ID resolution for subtasks
 - [ ] Document dependencies/requires field usage
 
 ## Deliverable
@@ -148,6 +148,11 @@ Successfully created comprehensive e2e test that validates:
 - Document v2 API usage
 
 ## Log
+- 2025-05-28: Enhanced path-based ID resolution for subtasks
+  - Added recursive search within parent task folders
+  - Implemented resolveTaskIdWithContext function with parent support
+  - Now supports accessing subtasks directly (e.g., `01_core-refactor`) without full paths
+  - Eliminates need for workflow state prefixes when using parent context
 - 2025-05-28: Reopened - discovered edge cases with task naming and conversions
   - Current implementation doesn't handle floating ↔ subtask conversions
   - Missing filename transformation logic when moving between contexts

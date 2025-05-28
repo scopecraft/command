@@ -52,10 +52,12 @@ export async function handleListCommand(options: {
     const { projectConfig } = await import('../core/index.js');
     const tasksDir = projectConfig.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Build list options
-    const listOptions: v2.TaskListOptions = {};
-    
+    const listOptions: v2.TaskListOptions = {
+      includeParentTasks: true,
+    };
+
     // Handle workflow location
     if (options.all) {
       listOptions.workflowStates = ['current', 'backlog', 'archive'];
@@ -71,7 +73,7 @@ export async function handleListCommand(options: {
       // Default to current and backlog for better workflow visibility
       listOptions.workflowStates = ['current', 'backlog'];
     }
-    
+
     // Map other filters
     if (options.status) {
       // Remove emoji if present
@@ -83,15 +85,15 @@ export async function handleListCommand(options: {
     if (options.assignee) listOptions.assignee = options.assignee;
     if (options.tags) listOptions.tags = options.tags;
     if (options.subdirectory) listOptions.area = options.subdirectory;
-    
+
     // List tasks
     const result = await v2.listTasks(projectRoot, listOptions);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     const tasks = result.data || [];
 
     if (tasks.length === 0) {
@@ -124,7 +126,7 @@ export async function handleGetCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     const result = await v2.getTask(projectRoot, id);
 
     if (!result.success) {
@@ -230,7 +232,7 @@ export async function handleCreateCommand(options: {
         updated_date: today,
         assigned_to: options.assignee || '',
       };
-      
+
       // Only include ID if explicitly provided
       if (options.id) {
         values.id = options.id;
@@ -258,14 +260,14 @@ export async function handleCreateCommand(options: {
           // Extract the markdown content from the generated template
           const frontmatterRegex = /^\+\+\+\s*\n([\s\S]*?)\n\+\+\+\s*\n([\s\S]*)$/;
           const match = taskContent.match(frontmatterRegex);
-          
+
           let extractedContent = '';
           let extractedMetadata = {};
-          
+
           if (match) {
             const [, tomlContent, markdownContent] = match;
             extractedContent = markdownContent.trim();
-            
+
             // Try to parse TOML to get other metadata
             try {
               extractedMetadata = parse(tomlContent) as Record<string, any>;
@@ -273,7 +275,7 @@ export async function handleCreateCommand(options: {
               // If TOML parsing fails, continue with empty metadata
             }
           }
-          
+
           task = {
             metadata: {
               id: options.id || '',
@@ -286,7 +288,9 @@ export async function handleCreateCommand(options: {
               assigned_to: options.assignee || extractedMetadata.assigned_to || '',
               ...extractedMetadata, // Include all other fields from template
             },
-            content: extractedContent || `## ${options.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`,
+            content:
+              extractedContent ||
+              `## ${options.title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`,
           };
 
           // Add optional relationship fields
@@ -358,7 +362,7 @@ export async function handleCreateCommand(options: {
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Build create options
     const createOptions: v2.TaskCreateOptions = {
       title: task.metadata.title,
@@ -367,18 +371,20 @@ export async function handleCreateCommand(options: {
       workflowState: 'backlog',
       status: 'To Do',
       instruction: task.content,
-      customMetadata: {}
+      customMetadata: {},
     };
-    
+
     // Add optional metadata
     if (task.metadata.priority) createOptions.customMetadata!.priority = task.metadata.priority;
-    if (task.metadata.assigned_to) createOptions.customMetadata!.assignee = task.metadata.assigned_to;
+    if (task.metadata.assigned_to)
+      createOptions.customMetadata!.assignee = task.metadata.assigned_to;
     if (task.metadata.tags) createOptions.customMetadata!.tags = task.metadata.tags;
     if (task.metadata.parent_task) createOptions.customMetadata!.parent = task.metadata.parent_task;
     if (task.metadata.depends_on) createOptions.customMetadata!.depends = task.metadata.depends_on;
-    if (task.metadata.previous_task) createOptions.customMetadata!.previous = task.metadata.previous_task;
+    if (task.metadata.previous_task)
+      createOptions.customMetadata!.previous = task.metadata.previous_task;
     if (task.metadata.next_task) createOptions.customMetadata!.next = task.metadata.next_task;
-    
+
     const result = await v2.createTask(projectRoot, createOptions);
 
     if (!result.success) {
@@ -390,7 +396,9 @@ export async function handleCreateCommand(options: {
     const createdTask = result.data!;
     console.log(`Task created successfully!`);
     console.log(`ID: ${createdTask.metadata.id}`);
-    console.log(`Location: ${createdTask.metadata.location.workflowState}/${createdTask.metadata.filename}`);
+    console.log(
+      `Location: ${createdTask.metadata.location.workflowState}/${createdTask.metadata.filename}`
+    );
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -475,7 +483,7 @@ export async function handleUpdateCommand(
       const { projectConfig } = await import('../core/index.js');
       const tasksDir = projectConfig.getTasksDirectory();
       const projectRoot = tasksDir.replace('/.tasks', '');
-      
+
       // Handle parent option for subtasks
       let taskId = id;
       if (options.parent && !id.includes('/')) {
@@ -497,12 +505,12 @@ export async function handleUpdateCommand(
           }
         }
       }
-      
+
       // Build v2 update options
       const updateOptions: v2.TaskUpdateOptions = {};
-      
+
       if (options.title) updateOptions.title = options.title;
-      
+
       // Build frontmatter updates
       const frontmatter: any = {};
       if (options.type) frontmatter.type = options.type.replace(/^[^\s]+\s/, '').toLowerCase();
@@ -515,18 +523,18 @@ export async function handleUpdateCommand(
       if (options.previous) frontmatter.previous = options.previous;
       if (options.next) frontmatter.next = options.next;
       if (options.subdirectory) frontmatter.area = options.subdirectory;
-      
+
       if (Object.keys(frontmatter).length > 0) {
         updateOptions.frontmatter = frontmatter;
       }
-      
+
       // Handle content update
       if (options.content) {
         updateOptions.sections = {
-          instruction: options.content
+          instruction: options.content,
         };
       }
-      
+
       const result = await v2.updateTask(projectRoot, taskId, updateOptions);
 
       if (!result.success) {
@@ -558,7 +566,7 @@ export async function handleDeleteCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Handle parent option for subtasks
     let taskId = id;
     if (options.parent && !id.includes('/')) {
@@ -580,7 +588,7 @@ export async function handleDeleteCommand(
         }
       }
     }
-    
+
     const result = await v2.deleteTask(projectRoot, taskId);
 
     if (!result.success) {
@@ -1321,27 +1329,28 @@ export async function handleParentCreateCommand(options: {
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     const createOptions: v2.TaskCreateOptions = {
       title: options.title,
       type: (options.type || 'feature') as v2.TaskType,
       area: options.area || 'general',
       workflowState: 'backlog',
       status: 'To Do',
-      instruction: options.description || `This is a parent task that will be broken down into child tasks.`,
-      customMetadata: {}
+      instruction:
+        options.description || `This is a parent task that will be broken down into child tasks.`,
+      customMetadata: {},
     };
-    
+
     if (options.assignee) createOptions.customMetadata!.assignee = options.assignee;
     if (options.tags) createOptions.customMetadata!.tags = options.tags;
-    
+
     const result = await v2.createParentTask(projectRoot, createOptions);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(`Parent task ${result.data!.metadata.id} created successfully`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1364,12 +1373,12 @@ export async function handleParentListCommand(options: {
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Build list options
     const listOptions: v2.TaskListOptions = {
-      includeParentTasks: true
+      includeParentTasks: true,
     };
-    
+
     // Handle workflow location filters
     if (options.location) {
       listOptions.workflowStates = [options.location as v2.WorkflowState];
@@ -1379,47 +1388,52 @@ export async function handleParentListCommand(options: {
       if (options.current) listOptions.workflowStates.push('current');
       if (options.archive) listOptions.workflowStates.push('archive');
     }
-    
+
     const result = await v2.listTasks(projectRoot, listOptions);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     // Filter for parent tasks only
-    const parentTasks = result.data!.filter(task => task.metadata.isParentTask);
-    
+    const parentTasks = result.data!.filter((task) => task.metadata.isParentTask);
+
     if (parentTasks.length === 0) {
       console.log('No parent tasks found');
       return;
     }
-    
+
     if (options.format === 'json') {
       console.log(JSON.stringify(parentTasks, null, 2));
       return;
     }
-    
+
     // Table format
     console.log('Parent Tasks:');
-    console.log('ID                        Title                                              Status          Location');
+    console.log(
+      'ID                        Title                                              Status          Location'
+    );
     console.log('─'.repeat(100));
-    
+
     for (const task of parentTasks) {
       const { STATUS_EMOJIS } = await import('../core/formatters-v2.js');
       const id = task.metadata.id.padEnd(25);
       const title = task.document.title.substring(0, 50).padEnd(50);
-      const status = `${STATUS_EMOJIS[task.document.frontmatter.status]} ${task.document.frontmatter.status}`.padEnd(15);
+      const status =
+        `${STATUS_EMOJIS[task.document.frontmatter.status]} ${task.document.frontmatter.status}`.padEnd(
+          15
+        );
       const location = task.metadata.location.workflowState;
-      
+
       console.log(`${id} ${title} ${status} ${location}`);
-      
+
       if (options.includeSubtasks) {
         // TODO: Get subtask count from parent-tasks module
         console.log(`  └─ Subtasks: (use 'sc parent get ${task.metadata.id}' for details)`);
       }
     }
-    
+
     console.log(`\nTotal: ${parentTasks.length} parent tasks`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1442,27 +1456,27 @@ export async function handleParentGetCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     const result = await v2.getParentTask(projectRoot, id);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     const parentTask = result.data!;
-    
+
     if (options.format === 'json') {
       console.log(JSON.stringify(parentTask, null, 2));
       return;
     }
-    
+
     const { formatTaskDetail, STATUS_EMOJIS } = await import('../core/formatters-v2.js');
-    
+
     if (options.tree) {
       // Tree view with parallel indicators
       console.log(`${parentTask.metadata.id}: ${parentTask.overview.title}`);
-      
+
       if (parentTask.subtasks.length > 0) {
         // Group subtasks by sequence number
         const subtasksBySequence = new Map<string, typeof parentTask.subtasks>();
@@ -1473,24 +1487,31 @@ export async function handleParentGetCommand(
           }
           subtasksBySequence.get(seq)!.push(subtask);
         }
-        
+
         // Sort sequences
         const sequences = Array.from(subtasksBySequence.keys()).sort();
-        
+
         for (let i = 0; i < sequences.length; i++) {
           const seq = sequences[i];
           const tasks = subtasksBySequence.get(seq)!;
           const isLast = i === sequences.length - 1;
           const prefix = isLast ? '└' : '├';
-          
+
           if (tasks.length === 1) {
             // Single task at this sequence
             const task = tasks[0];
             const status = STATUS_EMOJIS[task.document.frontmatter.status];
-            const statusName = task.document.frontmatter.status === 'In Progress' ? '→' : 
-                              task.document.frontmatter.status === 'Done' ? '✓' :
-                              task.document.frontmatter.status === 'Blocked' ? '⧗' : '○';
-            console.log(`${prefix}── ${seq}-${task.metadata.id.split('-').slice(1).join('-')} ${statusName} (${task.document.frontmatter.status})`);
+            const statusName =
+              task.document.frontmatter.status === 'In Progress'
+                ? '→'
+                : task.document.frontmatter.status === 'Done'
+                  ? '✓'
+                  : task.document.frontmatter.status === 'Blocked'
+                    ? '⧗'
+                    : '○';
+            console.log(
+              `${prefix}── ${seq}-${task.metadata.id.split('-').slice(1).join('-')} ${statusName} (${task.document.frontmatter.status})`
+            );
           } else {
             // Multiple tasks at same sequence (parallel)
             console.log(`${prefix}─┬ [Parallel execution - sequence ${seq}]`);
@@ -1499,40 +1520,52 @@ export async function handleParentGetCommand(
               const taskIsLast = j === tasks.length - 1;
               const taskPrefix = isLast ? '  ' : '│ ';
               const taskBranch = taskIsLast ? '└' : '├';
-              const statusName = task.document.frontmatter.status === 'In Progress' ? '→' : 
-                                task.document.frontmatter.status === 'Done' ? '✓' :
-                                task.document.frontmatter.status === 'Blocked' ? '⧗' : '○';
-              console.log(`${taskPrefix}${taskBranch} ${seq}-${task.metadata.id.split('-').slice(1).join('-')} ${statusName} (${task.document.frontmatter.status})`);
+              const statusName =
+                task.document.frontmatter.status === 'In Progress'
+                  ? '→'
+                  : task.document.frontmatter.status === 'Done'
+                    ? '✓'
+                    : task.document.frontmatter.status === 'Blocked'
+                      ? '⧗'
+                      : '○';
+              console.log(
+                `${taskPrefix}${taskBranch} ${seq}-${task.metadata.id.split('-').slice(1).join('-')} ${statusName} (${task.document.frontmatter.status})`
+              );
             }
           }
         }
-        
+
         console.log('\nLegend: ✓ Done, → In Progress, ○ To Do, ⧗ Blocked');
       }
-      
+
       if (parentTask.supportingFiles.length > 0) {
         console.log(`\nSupporting files: ${parentTask.supportingFiles.length}`);
       }
     } else {
       // Default view
       console.log('=== PARENT TASK OVERVIEW ===\n');
-      console.log(formatTaskDetail({
-        metadata: parentTask.metadata,
-        document: parentTask.overview
-      }, options.format === 'full' ? 'full' : 'default'));
-      
+      console.log(
+        formatTaskDetail(
+          {
+            metadata: parentTask.metadata,
+            document: parentTask.overview,
+          },
+          options.format === 'full' ? 'full' : 'default'
+        )
+      );
+
       // Show subtasks
       if (parentTask.subtasks.length > 0) {
         console.log('\n=== SUBTASKS ===');
         console.log(`Total: ${parentTask.subtasks.length} subtasks\n`);
-        
+
         for (const subtask of parentTask.subtasks) {
           const seq = subtask.metadata.sequenceNumber || '??';
           const status = STATUS_EMOJIS[subtask.document.frontmatter.status];
           console.log(`${seq}. ${status} ${subtask.document.title} (${subtask.metadata.id})`);
         }
       }
-      
+
       // Show supporting files
       if (parentTask.supportingFiles.length > 0) {
         console.log('\n=== SUPPORTING FILES ===');
@@ -1566,36 +1599,31 @@ export async function handleAddSubtaskCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Build options object for enhanced addSubtask
     const addOptions: any = {
       type: options.type as v2.TaskType,
-      assignee: options.assignee
+      assignee: options.assignee,
     };
-    
+
     // Add sequencing options
     if (options.sequence) addOptions.sequence = options.sequence;
     if (options.parallelWith) addOptions.parallelWith = options.parallelWith;
     if (options.after) addOptions.after = options.after;
     if (options.before) addOptions.before = options.before;
-    
-    const result = await v2.addSubtask(
-      projectRoot,
-      parentId,
-      options.title,
-      addOptions
-    );
-    
+
+    const result = await v2.addSubtask(projectRoot, parentId, options.title, addOptions);
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     const subtask = result.data!;
     const seq = subtask.metadata.sequenceNumber || '--';
     console.log(`Subtask ${subtask.metadata.id} added to parent task ${parentId}`);
     console.log(`Sequence: ${seq}`);
-    
+
     if (options.parallelWith) {
       console.log('(Running in parallel with specified task)');
     }
@@ -1608,28 +1636,25 @@ export async function handleAddSubtaskCommand(
 /**
  * Handles the 'parent move' command
  */
-export async function handleParentMoveCommand(
-  id: string,
-  target: string
-): Promise<void> {
+export async function handleParentMoveCommand(id: string, target: string): Promise<void> {
   try {
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Validate target
     if (!['backlog', 'current', 'archive'].includes(target)) {
       console.error('Error: Target must be one of: backlog, current, archive');
       process.exit(1);
     }
-    
+
     const result = await v2.moveParentTask(projectRoot, id, target as v2.WorkflowState);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(`Parent task ${id} moved to ${target}`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1650,25 +1675,27 @@ export async function handleParentDeleteCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     if (!options.force) {
       // Get parent task to show what will be deleted
       const getResult = await v2.getParentTask(projectRoot, id);
       if (getResult.success && getResult.data) {
         const parentTask = getResult.data;
-        console.log(`Warning: This will delete the parent task and ${parentTask.subtasks.length} subtasks.`);
+        console.log(
+          `Warning: This will delete the parent task and ${parentTask.subtasks.length} subtasks.`
+        );
         console.log('Use --force to confirm deletion.');
         process.exit(1);
       }
     }
-    
+
     const result = await v2.deleteParentTask(projectRoot, id);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(`Parent task ${id} and all subtasks deleted successfully`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1693,26 +1720,26 @@ export async function handleTaskResequenceCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Get parent task to show current order
     const parentResult = await v2.getParentTask(projectRoot, parentId);
     if (!parentResult.success || !parentResult.data) {
       console.error(`Error: ${parentResult.error || 'Parent task not found'}`);
       process.exit(1);
     }
-    
+
     const parentTask = parentResult.data;
     const subtasks = parentTask.subtasks.sort((a, b) => {
       const seqA = a.metadata.sequenceNumber || '99';
       const seqB = b.metadata.sequenceNumber || '99';
       return seqA.localeCompare(seqB);
     });
-    
+
     if (subtasks.length === 0) {
       console.log('No subtasks to resequence');
       return;
     }
-    
+
     // Show current order
     console.log('\nCurrent subtask order:');
     subtasks.forEach((task, index) => {
@@ -1720,31 +1747,31 @@ export async function handleTaskResequenceCommand(
       const status = task.document.frontmatter.status;
       console.log(`  ${index + 1}. [${seq}] ${task.document.title} (${status})`);
     });
-    
+
     if (options.interactive) {
       console.log('\nInteractive reordering not yet implemented.');
       console.log('Please use --from and --to options instead.');
       return;
     }
-    
+
     if (!options.from || !options.to) {
       console.log('\nUsage: sc task resequence <parent-id> --from <positions> --to <positions>');
       console.log('Example: sc task resequence auth-05K --from 1,2,3 --to 3,1,2');
       return;
     }
-    
+
     // Parse positions
-    const fromPositions = options.from.split(',').map(p => parseInt(p.trim()));
-    const toPositions = options.to.split(',').map(p => parseInt(p.trim()));
-    
+    const fromPositions = options.from.split(',').map((p) => Number.parseInt(p.trim()));
+    const toPositions = options.to.split(',').map((p) => Number.parseInt(p.trim()));
+
     // Resequence
     const result = await v2.resequenceSubtasks(projectRoot, parentId, fromPositions, toPositions);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log('\nSubtasks resequenced successfully!');
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1766,15 +1793,15 @@ export async function handleTaskParallelizeCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     if (subtaskIds.length < 2) {
       console.error('Error: Must specify at least 2 subtasks to parallelize');
       process.exit(1);
     }
-    
+
     // Determine parent ID
     let parentId = options.parent;
-    
+
     if (!parentId) {
       // Try to infer parent from first subtask ID pattern
       // If it has a parent prefix like "auth-feature/02-impl", extract "auth-feature"
@@ -1785,14 +1812,14 @@ export async function handleTaskParallelizeCommand(
         process.exit(1);
       }
     }
-    
+
     // Show before state
     const beforeResult = await v2.getParentTask(projectRoot, parentId);
     if (beforeResult.success && beforeResult.data) {
       console.log('\nBefore:');
-      beforeResult.data.subtasks.forEach(task => {
-        const isTarget = subtaskIds.some(id => 
-          task.metadata.id.includes(id) || task.metadata.filename.includes(id)
+      beforeResult.data.subtasks.forEach((task) => {
+        const isTarget = subtaskIds.some(
+          (id) => task.metadata.id.includes(id) || task.metadata.filename.includes(id)
         );
         if (isTarget) {
           const seq = task.metadata.sequenceNumber || '--';
@@ -1800,22 +1827,27 @@ export async function handleTaskParallelizeCommand(
         }
       });
     }
-    
+
     // Parallelize
-    const result = await v2.parallelizeSubtasks(projectRoot, parentId, subtaskIds, options.sequence);
-    
+    const result = await v2.parallelizeSubtasks(
+      projectRoot,
+      parentId,
+      subtaskIds,
+      options.sequence
+    );
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     // Show after state
     const afterResult = await v2.getParentTask(projectRoot, parentId);
     if (afterResult.success && afterResult.data) {
       console.log('\nAfter:');
-      afterResult.data.subtasks.forEach(task => {
-        const isTarget = subtaskIds.some(id => 
-          task.metadata.id.includes(id) || task.metadata.filename.includes(id)
+      afterResult.data.subtasks.forEach((task) => {
+        const isTarget = subtaskIds.some(
+          (id) => task.metadata.id.includes(id) || task.metadata.filename.includes(id)
         );
         if (isTarget) {
           const seq = task.metadata.sequenceNumber || '--';
@@ -1823,7 +1855,7 @@ export async function handleTaskParallelizeCommand(
         }
       });
     }
-    
+
     console.log('\nSubtasks parallelized successfully!');
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1846,19 +1878,19 @@ export async function handleTaskSequenceCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Validate sequence format
     if (!/^\d{1,2}$/.test(newSequence)) {
       console.error('Error: Sequence must be a number (1-99)');
       process.exit(1);
     }
-    
+
     // Pad sequence
     const paddedSequence = newSequence.padStart(2, '0');
-    
+
     // Determine parent ID
     let parentId = options.parent;
-    
+
     if (!parentId) {
       // Try to infer from subtask ID
       if (subtaskId.includes('/')) {
@@ -1868,21 +1900,21 @@ export async function handleTaskSequenceCommand(
         process.exit(1);
       }
     }
-    
+
     // Update sequence
     const result = await v2.updateSubtaskSequence(
-      projectRoot, 
-      parentId, 
-      subtaskId, 
-      paddedSequence, 
+      projectRoot,
+      parentId,
+      subtaskId,
+      paddedSequence,
       { force: options.force }
     );
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(`Subtask sequence updated to ${paddedSequence}`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1906,29 +1938,29 @@ export async function handleTaskPromoteCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Parse subtasks if provided
-    const subtaskTitles = options.subtasks ? 
-      options.subtasks.split(',').map(s => s.trim()) : 
-      undefined;
-    
+    const subtaskTitles = options.subtasks
+      ? options.subtasks.split(',').map((s) => s.trim())
+      : undefined;
+
     // Promote task
     const result = await v2.promoteToParent(projectRoot, taskId, {
       subtasks: subtaskTitles,
-      keepOriginal: options.keepOriginal
+      keepOriginal: options.keepOriginal,
     });
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(`Task ${taskId} promoted to parent task successfully!`);
-    
+
     if (subtaskTitles) {
       console.log(`Created ${subtaskTitles.length} subtasks`);
     }
-    
+
     if (options.keepOriginal) {
       console.log('Original task content preserved as first subtask');
     }
@@ -1952,10 +1984,10 @@ export async function handleTaskExtractCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Determine parent ID
     let parentId = options.parent;
-    
+
     if (!parentId) {
       // Try to infer from subtask ID
       if (subtaskId.includes('/')) {
@@ -1965,17 +1997,17 @@ export async function handleTaskExtractCommand(
         process.exit(1);
       }
     }
-    
+
     const targetLocation = (options.target || 'backlog') as v2.WorkflowState;
-    
+
     // Extract subtask
     const result = await v2.extractSubtask(projectRoot, parentId, subtaskId, targetLocation);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(`Subtask extracted successfully!`);
     console.log(`New location: ${targetLocation}/${result.data!.metadata.id}.task.md`);
   } catch (error) {
@@ -2000,19 +2032,19 @@ export async function handleTaskAdoptCommand(
     const { projectConfig: pc } = await import('../core/index.js');
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Adopt task
     const result = await v2.adoptTask(projectRoot, parentId, taskId, {
       sequence: options.sequence,
       after: options.after,
-      before: options.before
+      before: options.before,
     });
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(`Task ${taskId} adopted into ${parentId} successfully!`);
     console.log(`New location: ${parentId}/${result.data!.metadata.id}`);
   } catch (error) {
