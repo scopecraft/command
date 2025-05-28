@@ -2,8 +2,12 @@
 
 A powerful command-line tool and MCP server for managing Markdown-Driven Task Management (MDTM) files. Scopecraft helps you organize tasks, features, and development workflows with a structured approach.
 
+> **Version 2.0**: Now with workflow-based task organization (backlog → current → archive), parent tasks for complex features, and advanced subtask sequencing capabilities!
+
 **Key Features:**
 * Works with any AI IDE (Cursor, Claude Desktop, etc.) via flexible project root configuration
+* Workflow-based task management with automatic state transitions
+* Parent tasks with subtask sequencing and parallel execution
 * Supports MDTM format with TOML/YAML frontmatter
 * Provides both CLI and MCP server interfaces
 * Includes specialized Claude commands for feature development
@@ -114,38 +118,62 @@ See [Project Root Configuration Guide](docs/project-root-configuration-guide.md)
 ```bash
 # List all tasks
 sc task list
+sc task list --current    # Show only active tasks
+sc task list --backlog    # Show backlog items
 
-# Create a new task
-sc task create "Implement user authentication" --type feature --status planning
+# Create a new task (goes to backlog by default)
+sc task create --title "Implement user authentication" --type feature
 
 # Update task status
-sc task update TASK-123 --status implementation
+sc task update TASK-123 --status "In Progress"
+sc task start TASK-123    # Shortcut for marking as "In Progress"
+sc task complete TASK-123 # Shortcut for marking as "Done"
 
 # View task details
 sc task get TASK-123
 ```
 
-### Feature Development Workflow
+### Parent Tasks (Complex Features)
 
 ```bash
-# Create and manage features
-sc feature create "Real-time collaboration"
-sc feature list --phase v1
+# Create a parent task with subtasks
+sc parent create --title "User Authentication" --type feature
 
-# Work with areas (technical domains)
-sc area create "api" --title "API Backend"
-sc area list
+# Add subtasks to a parent
+sc parent add-subtask auth-05K --title "Design login UI"
+sc parent add-subtask auth-05K --title "Implement API" --after 01-design
+
+# View parent task with tree visualization
+sc parent show auth-05K --tree
+
+# Work with subtasks (use full path or --parent option)
+sc task update current/auth-05K/02-impl-api --status "In Progress"
+sc task complete 02-impl-api --parent auth-05K
 ```
 
-### Phase Management
+### Task Sequencing
 
 ```bash
-# Create project phases
-sc phase create --id v1 --name "Version 1.0"
-sc phase list
+# Make subtasks run in parallel
+sc task parallelize 02-api 03-ui --parent auth-05K
 
-# Move tasks between phases
-sc task move TASK-123 --target-phase v1.1
+# Reorder subtasks
+sc task resequence auth-05K --from 1,2,3 --to 3,1,2
+
+# Convert simple task to parent with subtasks
+sc task promote simple-auth-05M --subtasks "Design,Build,Test"
+```
+
+### Workflow Management
+
+```bash
+# Tasks move through workflows: backlog → current → archive
+sc task create --title "New feature"          # Creates in backlog
+sc task update new-feature-05A --status "In Progress"  # Moves to current
+sc task complete new-feature-05A              # Marks as done
+
+# Move parent tasks between workflows
+sc parent move auth-05K current
 ```
 
 ### Worktree Management
@@ -172,12 +200,11 @@ Commands follow an intuitive pattern:
 ```
 
 Entities:
-- `task` - Task management
-- `phase` - Phase management
-- `feature` - Feature directories
-- `area` - Area directories
-- `workflow` - Task sequences
-- `template` - Templates
+- `task` - Task management (simple and subtasks)
+- `parent` - Parent task management (folders with subtasks)
+- `area` - Area directories (organizational units)
+- `workflow` - Task sequences and status
+- `template` - Task templates
 
 Example:
 ```bash

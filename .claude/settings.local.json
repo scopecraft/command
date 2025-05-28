@@ -144,7 +144,11 @@
       "Bash(../dist/cli/cli.js parent show user-authentication-system-0528-6J)",
       "Bash(../dist/cli/cli.js parent show user-authentication-system-0528-6J --tree)",
       "Bash(../dist/cli/cli.js parent add-subtask user-authentication-system-0528-6J --title \"Implement backend API\")",
-      "Bash(../dist/cli/cli.js parent add-subtask user-authentication-system-0528-6J --title \"Create database schema\")"
+      "Bash(../dist/cli/cli.js parent add-subtask user-authentication-system-0528-6J --title \"Create database schema\")",
+      "Bash(./dist/cli/cli.js parent show test-v2-parent --tree)",
+      "Bash(./dist/cli/cli.js parent list)",
+      "Bash(./dist/cli/cli.js parent show implement-v2-structure --tree)",
+      "Bash(./dist/cli/cli.js task create --title \"Test promotion task\" --type feature)"
     ],
     "deny": []
   }

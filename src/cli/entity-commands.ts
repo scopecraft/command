@@ -72,6 +72,11 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
     .option('-p, --phase <phase>', 'Phase to look in')
     .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
+    .option('--parent <parent>', 'Parent task ID (for subtasks)')
+    .addHelpText('after', `
+Note: For subtasks, use the full path or provide --parent:
+  sc task get current/parent-id/02-subtask
+  sc task get 02-subtask --parent parent-id`)
     .action(handleGetCommand);
 
   // task create command
@@ -116,13 +121,17 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .option('--subdirectory <subdirectory>', 'Subdirectory within phase (where to move the task)')
     .option('--search-phase <searchPhase>', 'Phase to search for the task')
     .option('--search-subdirectory <searchSubdirectory>', 'Subdirectory to search for the task')
-    .option('--parent <parent>', 'Parent task ID')
+    .option('--parent <parent>', 'Parent task ID (for subtasks, helps locate the task)')
     .option('--depends <depends...>', 'Dependencies (task IDs)')
     .option('--previous <previous>', 'Previous task in workflow')
     .option('--next <next>', 'Next task in workflow')
     .option('--tags <tags...>', 'Tags for the task')
     .option('--content <content>', 'Task content')
     .option('--file <file>', 'Update from file (JSON or TOML+Markdown)')
+    .addHelpText('after', `
+Note: For subtasks, use the full path or provide --parent:
+  sc task update current/parent-id/02-subtask --status "Done"
+  sc task update 02-subtask --parent parent-id --status "Done"`)
     .action(handleUpdateCommand);
 
   // task delete command
@@ -131,21 +140,36 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .description('Delete a task')
     .option('-p, --phase <phase>', 'Phase to look in')
     .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
+    .option('--parent <parent>', 'Parent task ID (for subtasks)')
+    .addHelpText('after', `
+Note: For subtasks, use the full path or provide --parent:
+  sc task delete current/parent-id/02-subtask
+  sc task delete 02-subtask --parent parent-id`)
     .action(handleDeleteCommand);
 
   // task status shortcut commands
   taskCommand
     .command('start <id>')
     .description('Mark a task as "In Progress"')
-    .action(async (id) => {
-      await handleUpdateCommand(id, { status: 'In Progress' });
+    .option('--parent <parent>', 'Parent task ID (for subtasks)')
+    .addHelpText('after', `
+Note: For subtasks, use the full path or provide --parent:
+  sc task start current/parent-id/02-subtask
+  sc task start 02-subtask --parent parent-id`)
+    .action(async (id, options) => {
+      await handleUpdateCommand(id, { status: 'In Progress', ...options });
     });
 
   taskCommand
     .command('complete <id>')
     .description('Mark a task as "Done"')
-    .action(async (id) => {
-      await handleUpdateCommand(id, { status: 'Done' });
+    .option('--parent <parent>', 'Parent task ID (for subtasks)')
+    .addHelpText('after', `
+Note: For subtasks, use the full path or provide --parent:
+  sc task complete current/parent-id/02-subtask
+  sc task complete 02-subtask --parent parent-id`)
+    .action(async (id, options) => {
+      await handleUpdateCommand(id, { status: 'Done', ...options });
     });
 
   taskCommand
@@ -176,6 +200,186 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
       'Source subdirectory to search for the task'
     )
     .action(handleTaskMoveCommand);
+
+  // ===== SEQUENCING COMMANDS =====
+  
+  // task resequence command
+  taskCommand
+    .command('resequence <parentId>')
+    .description('Reorder subtasks within a parent task by assigning new sequence numbers')
+    .option('-i, --interactive', 'Interactive mode to reorder tasks visually')
+    .option('--from <positions>', 'Current positions (comma-separated)')
+    .option('--to <positions>', 'New positions (comma-separated)')
+    .addHelpText('after', `
+Examples:
+  # Interactive reordering
+  sc task resequence auth-feature-05K --interactive
+  
+  # Move task from position 3 to position 1
+  sc task resequence auth-feature-05K --from 3 --to 1
+  
+  # Reorder multiple tasks
+  sc task resequence auth-feature-05K --from 1,2,3 --to 3,1,2
+  
+Notes:
+  - Shows current order before making changes
+  - Automatically adjusts other task sequences
+  - Preserves parallel execution (same numbers)`)
+    .action(async (parentId, options) => {
+      const { handleTaskResequenceCommand } = await import('./commands.js');
+      await handleTaskResequenceCommand(parentId, options);
+    });
+
+  // task parallelize command
+  taskCommand
+    .command('parallelize <subtaskIds...>')
+    .description('Make multiple subtasks run in parallel by giving them the same sequence number')
+    .option('--sequence <num>', 'Specific sequence number to use (default: lowest)')
+    .option('--parent <id>', 'Parent task (required if subtask IDs are ambiguous)')
+    .addHelpText('after', `
+Examples:
+  # Make two subtasks parallel (within same parent)
+  sc task parallelize 02-impl-api 03-impl-ui
+  
+  # Set specific parallel sequence
+  sc task parallelize 02-impl-api 03-impl-ui --sequence 02
+  
+  # With parent specified (for clarity)
+  sc task parallelize 02-impl-api 03-impl-ui --parent auth-feature-05K
+  
+Notes:
+  - Only works on subtasks within the same parent folder
+  - Shows before/after sequences
+  - Core handles all ID/filename updates
+  - Cannot parallelize floating tasks (they don't have sequences)`)
+    .action(async (subtaskIds, options) => {
+      const { handleTaskParallelizeCommand } = await import('./commands.js');
+      await handleTaskParallelizeCommand(subtaskIds, options);
+    });
+
+  // task sequence command
+  taskCommand
+    .command('sequence <subtaskId> <newSequence>')
+    .description('Change the sequence number of a subtask within its parent')
+    .option('--force', 'Force even if sequence exists (makes parallel)')
+    .option('--parent <id>', 'Parent task (required if subtask ID is ambiguous)')
+    .addHelpText('after', `
+Examples:
+  # Change subtask from sequence 03 to 01
+  sc task sequence 03-write-tests 01
+  
+  # Force parallel execution with existing 02
+  sc task sequence 04-deploy 02 --force
+  
+  # With parent specified
+  sc task sequence 03-write-tests 01 --parent auth-feature-05K
+  
+Notes:
+  - Only works on subtasks within parent folders
+  - Automatically shifts other subtasks if needed
+  - Use --force to create parallel tasks
+  - Shows impact on other subtask sequences
+  - Core handles all ID/filename transformations`)
+    .action(async (subtaskId, newSequence, options) => {
+      const { handleTaskSequenceCommand } = await import('./commands.js');
+      await handleTaskSequenceCommand(subtaskId, newSequence, options);
+    });
+
+  // ===== TASK CONVERSION COMMANDS =====
+
+  // task promote command
+  taskCommand
+    .command('promote <taskId>')
+    .description('Convert a simple task into a parent task with subtasks')
+    .option('--subtasks <titles>', 'Initial subtasks to create (comma-separated)')
+    .option('--keep-original', 'Keep original task as first subtask')
+    .addHelpText('after', `
+Examples:
+  # Basic promotion
+  sc task promote implement-auth-05K
+  
+  # Promote with initial subtasks
+  sc task promote implement-auth-05K --subtasks "Design UI,Build API,Write tests"
+  
+  # Keep original as subtask
+  sc task promote implement-auth-05K --keep-original
+  
+Results:
+  - Creates: implement-auth-05K/
+    - _overview.md (from original task)
+    - 01-design-ui-05A.task.md (if --subtasks)
+    - 02-build-api-05B.task.md
+    - 03-write-tests-05C.task.md
+  
+Notes:
+  - Preserves task metadata and content
+  - Generates new IDs for subtasks
+  - Updates any task references`)
+    .action(async (taskId, options) => {
+      const { handleTaskPromoteCommand } = await import('./commands.js');
+      await handleTaskPromoteCommand(taskId, options);
+    });
+
+  // task extract command
+  taskCommand
+    .command('extract <subtaskId>')
+    .description('Extract a subtask from its parent to become a standalone task')
+    .option('--target <location>', 'Target workflow location (backlog/current/archive)', 'backlog')
+    .option('--parent <id>', 'Parent task (required if subtask ID is ambiguous)')
+    .addHelpText('after', `
+Examples:
+  # Extract subtask to backlog
+  sc task extract auth-feature/02-impl-api
+  
+  # Extract to current workflow
+  sc task extract 02-impl-api --target current
+  
+  # With parent specified
+  sc task extract 02-impl-api --parent auth-feature-05K
+  
+Results:
+  - From: auth-feature/02-impl-api-05K.task.md
+  - To: backlog/impl-api-05K.task.md (keeps suffix, removes sequence)
+  
+Notes:
+  - Preserves task content and metadata
+  - Removes sequence prefix from ID
+  - Updates parent task if referenced`)
+    .action(async (subtaskId, options) => {
+      const { handleTaskExtractCommand } = await import('./commands.js');
+      await handleTaskExtractCommand(subtaskId, options);
+    });
+
+  // task adopt command
+  taskCommand
+    .command('adopt <parentId> <taskId>')
+    .description('Move a standalone task into a parent as a subtask')
+    .option('--sequence <num>', 'Specific sequence (default: next available)')
+    .option('--after <task-id>', 'Place after specific subtask')
+    .option('--before <task-id>', 'Place before specific subtask')
+    .addHelpText('after', `
+Examples:
+  # Adopt task as next subtask
+  sc task adopt auth-feature-05K login-ui-05M
+  
+  # Adopt at specific position
+  sc task adopt auth-feature-05K login-ui-05M --sequence 02
+  
+  # Insert after existing subtask
+  sc task adopt auth-feature-05K login-ui-05M --after 01-design
+  
+Results:
+  - From: backlog/login-ui-05M.task.md
+  - To: backlog/auth-feature-05K/03-login-ui-05M.task.md
+  
+Notes:
+  - Adds sequence prefix to task ID
+  - Adjusts other sequences if needed
+  - Maintains original task suffix`)
+    .action(async (parentId, taskId, options) => {
+      const { handleTaskAdoptCommand } = await import('./commands.js');
+      await handleTaskAdoptCommand(parentId, taskId, options);
+    });
 
   // Add task group to root program
   program.addCommand(taskCommand);
@@ -268,13 +472,30 @@ Examples:
       await handleParentGetCommand(id, options);
     });
 
-  // parent add-subtask command
+  // parent add-subtask command (enhanced)
   parentCommand
     .command('add-subtask <parentId>')
     .description('Add a subtask to a parent task')
     .requiredOption('--title <title>', 'Subtask title')
     .option('--type <type>', 'Task type (inherits from parent if not specified)')
     .option('--assignee <assignee>', 'Assigned to')
+    .option('--sequence <num>', 'Specific sequence (default: next)')
+    .option('--parallel-with <id>', 'Make parallel with existing subtask')
+    .option('--after <id>', 'Insert after specific subtask')
+    .option('--before <id>', 'Insert before specific subtask')
+    .addHelpText('after', `
+Examples:
+  # Add as next sequence
+  sc parent add-subtask auth-05K --title "Add OAuth support"
+  
+  # Insert at specific position
+  sc parent add-subtask auth-05K --title "Security review" --sequence 02
+  
+  # Create parallel task
+  sc parent add-subtask auth-05K --title "Update docs" --parallel-with 03-impl
+  
+  # Insert after existing task
+  sc parent add-subtask auth-05K --title "Integration tests" --after 02-impl`)
     .action(async (parentId, options) => {
       const { handleAddSubtaskCommand } = await import('./commands.js');
       await handleAddSubtaskCommand(parentId, options);

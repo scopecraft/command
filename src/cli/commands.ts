@@ -380,9 +380,11 @@ export async function handleCreateCommand(options: {
       process.exit(1);
     }
 
-    if (result.message) {
-      console.log(result.message);
-    }
+    // Provide feedback on successful creation
+    const createdTask = result.data!;
+    console.log(`Task created successfully!`);
+    console.log(`ID: ${createdTask.metadata.id}`);
+    console.log(`Location: ${createdTask.metadata.location.workflowState}/${createdTask.metadata.filename}`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -468,6 +470,28 @@ export async function handleUpdateCommand(
       const tasksDir = projectConfig.getTasksDirectory();
       const projectRoot = tasksDir.replace('/.tasks', '');
       
+      // Handle parent option for subtasks
+      let taskId = id;
+      if (options.parent && !id.includes('/')) {
+        // If parent is provided and ID doesn't have a path, try to find the task
+        // First try with parent path
+        const parentPath = `${options.parent}/${id}`;
+        const testResult = await v2.getTask(projectRoot, parentPath);
+        if (testResult.success) {
+          taskId = parentPath;
+        } else {
+          // Try with workflow states
+          for (const state of ['current', 'backlog', 'archive']) {
+            const fullPath = `${state}/${options.parent}/${id}`;
+            const stateResult = await v2.getTask(projectRoot, fullPath);
+            if (stateResult.success) {
+              taskId = fullPath;
+              break;
+            }
+          }
+        }
+      }
+      
       // Build v2 update options
       const updateOptions: v2.TaskUpdateOptions = {};
       
@@ -497,14 +521,14 @@ export async function handleUpdateCommand(
         };
       }
       
-      const result = await v2.updateTask(projectRoot, id, updateOptions);
+      const result = await v2.updateTask(projectRoot, taskId, updateOptions);
 
       if (!result.success) {
         console.error(`Error: ${result.error}`);
         process.exit(1);
       }
 
-      console.log(`Task ${id} updated successfully`);
+      console.log(`Task ${taskId} updated successfully`);
     }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -520,6 +544,7 @@ export async function handleDeleteCommand(
   options: {
     phase?: string;
     subdirectory?: string;
+    parent?: string;
   }
 ): Promise<void> {
   try {
@@ -528,14 +553,36 @@ export async function handleDeleteCommand(
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
     
-    const result = await v2.deleteTask(projectRoot, id);
+    // Handle parent option for subtasks
+    let taskId = id;
+    if (options.parent && !id.includes('/')) {
+      // If parent is provided and ID doesn't have a path, try to find the task
+      // First try with parent path
+      const parentPath = `${options.parent}/${id}`;
+      const testResult = await v2.getTask(projectRoot, parentPath);
+      if (testResult.success) {
+        taskId = parentPath;
+      } else {
+        // Try with workflow states
+        for (const state of ['current', 'backlog', 'archive']) {
+          const fullPath = `${state}/${options.parent}/${id}`;
+          const stateResult = await v2.getTask(projectRoot, fullPath);
+          if (stateResult.success) {
+            taskId = fullPath;
+            break;
+          }
+        }
+      }
+    }
+    
+    const result = await v2.deleteTask(projectRoot, taskId);
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
 
-    console.log(`Task ${id} deleted successfully`);
+    console.log(`Task ${taskId} deleted successfully`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -1512,7 +1559,7 @@ export async function handleParentGetCommand(
 }
 
 /**
- * Handles the 'parent add-subtask' command
+ * Handles the 'parent add-subtask' command (enhanced)
  */
 export async function handleAddSubtaskCommand(
   parentId: string,
@@ -1520,6 +1567,10 @@ export async function handleAddSubtaskCommand(
     title: string;
     type?: string;
     assignee?: string;
+    sequence?: string;
+    parallelWith?: string;
+    after?: string;
+    before?: string;
   }
 ): Promise<void> {
   try {
@@ -1527,17 +1578,23 @@ export async function handleAddSubtaskCommand(
     const tasksDir = pc.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
     
-    const subtaskOptions: Partial<v2.TaskCreateOptions> = {
+    // Build options object for enhanced addSubtask
+    const addOptions: any = {
       type: options.type as v2.TaskType,
-      instruction: `Complete the subtask: ${options.title}`,
-      customMetadata: options.assignee ? { assignee: options.assignee } : undefined
+      assignee: options.assignee
     };
+    
+    // Add sequencing options
+    if (options.sequence) addOptions.sequence = options.sequence;
+    if (options.parallelWith) addOptions.parallelWith = options.parallelWith;
+    if (options.after) addOptions.after = options.after;
+    if (options.before) addOptions.before = options.before;
     
     const result = await v2.addSubtask(
       projectRoot,
       parentId,
       options.title,
-      subtaskOptions
+      addOptions
     );
     
     if (!result.success) {
@@ -1545,7 +1602,14 @@ export async function handleAddSubtaskCommand(
       process.exit(1);
     }
     
-    console.log(`Subtask ${result.data!.metadata.id} added to parent task ${parentId}`);
+    const subtask = result.data!;
+    const seq = subtask.metadata.sequenceNumber || '--';
+    console.log(`Subtask ${subtask.metadata.id} added to parent task ${parentId}`);
+    console.log(`Sequence: ${seq}`);
+    
+    if (options.parallelWith) {
+      console.log('(Running in parallel with specified task)');
+    }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -1617,6 +1681,351 @@ export async function handleParentDeleteCommand(
     }
     
     console.log(`Parent task ${id} and all subtasks deleted successfully`);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+// ===== SEQUENCING COMMAND HANDLERS =====
+
+/**
+ * Handles the 'task resequence' command
+ */
+export async function handleTaskResequenceCommand(
+  parentId: string,
+  options: {
+    interactive?: boolean;
+    from?: string;
+    to?: string;
+  }
+): Promise<void> {
+  try {
+    const { projectConfig: pc } = await import('../core/index.js');
+    const tasksDir = pc.getTasksDirectory();
+    const projectRoot = tasksDir.replace('/.tasks', '');
+    
+    // Get parent task to show current order
+    const parentResult = await v2.getParentTask(projectRoot, parentId);
+    if (!parentResult.success || !parentResult.data) {
+      console.error(`Error: ${parentResult.error || 'Parent task not found'}`);
+      process.exit(1);
+    }
+    
+    const parentTask = parentResult.data;
+    const subtasks = parentTask.subtasks.sort((a, b) => {
+      const seqA = a.metadata.sequenceNumber || '99';
+      const seqB = b.metadata.sequenceNumber || '99';
+      return seqA.localeCompare(seqB);
+    });
+    
+    if (subtasks.length === 0) {
+      console.log('No subtasks to resequence');
+      return;
+    }
+    
+    // Show current order
+    console.log('\nCurrent subtask order:');
+    subtasks.forEach((task, index) => {
+      const seq = task.metadata.sequenceNumber || '--';
+      const status = task.document.frontmatter.status;
+      console.log(`  ${index + 1}. [${seq}] ${task.document.title} (${status})`);
+    });
+    
+    if (options.interactive) {
+      console.log('\nInteractive reordering not yet implemented.');
+      console.log('Please use --from and --to options instead.');
+      return;
+    }
+    
+    if (!options.from || !options.to) {
+      console.log('\nUsage: sc task resequence <parent-id> --from <positions> --to <positions>');
+      console.log('Example: sc task resequence auth-05K --from 1,2,3 --to 3,1,2');
+      return;
+    }
+    
+    // Parse positions
+    const fromPositions = options.from.split(',').map(p => parseInt(p.trim()));
+    const toPositions = options.to.split(',').map(p => parseInt(p.trim()));
+    
+    // Resequence
+    const result = await v2.resequenceSubtasks(projectRoot, parentId, fromPositions, toPositions);
+    
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+    
+    console.log('\nSubtasks resequenced successfully!');
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'task parallelize' command
+ */
+export async function handleTaskParallelizeCommand(
+  subtaskIds: string[],
+  options: {
+    sequence?: string;
+    parent?: string;
+  }
+): Promise<void> {
+  try {
+    const { projectConfig: pc } = await import('../core/index.js');
+    const tasksDir = pc.getTasksDirectory();
+    const projectRoot = tasksDir.replace('/.tasks', '');
+    
+    if (subtaskIds.length < 2) {
+      console.error('Error: Must specify at least 2 subtasks to parallelize');
+      process.exit(1);
+    }
+    
+    // Determine parent ID
+    let parentId = options.parent;
+    
+    if (!parentId) {
+      // Try to infer parent from first subtask ID pattern
+      // If it has a parent prefix like "auth-feature/02-impl", extract "auth-feature"
+      if (subtaskIds[0].includes('/')) {
+        parentId = subtaskIds[0].split('/')[0];
+      } else {
+        console.error('Error: Cannot determine parent. Please use --parent option.');
+        process.exit(1);
+      }
+    }
+    
+    // Show before state
+    const beforeResult = await v2.getParentTask(projectRoot, parentId);
+    if (beforeResult.success && beforeResult.data) {
+      console.log('\nBefore:');
+      beforeResult.data.subtasks.forEach(task => {
+        const isTarget = subtaskIds.some(id => 
+          task.metadata.id.includes(id) || task.metadata.filename.includes(id)
+        );
+        if (isTarget) {
+          const seq = task.metadata.sequenceNumber || '--';
+          console.log(`  [${seq}] ${task.document.title}`);
+        }
+      });
+    }
+    
+    // Parallelize
+    const result = await v2.parallelizeSubtasks(projectRoot, parentId, subtaskIds, options.sequence);
+    
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+    
+    // Show after state
+    const afterResult = await v2.getParentTask(projectRoot, parentId);
+    if (afterResult.success && afterResult.data) {
+      console.log('\nAfter:');
+      afterResult.data.subtasks.forEach(task => {
+        const isTarget = subtaskIds.some(id => 
+          task.metadata.id.includes(id) || task.metadata.filename.includes(id)
+        );
+        if (isTarget) {
+          const seq = task.metadata.sequenceNumber || '--';
+          console.log(`  [${seq}] ${task.document.title} (parallel)`);
+        }
+      });
+    }
+    
+    console.log('\nSubtasks parallelized successfully!');
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'task sequence' command
+ */
+export async function handleTaskSequenceCommand(
+  subtaskId: string,
+  newSequence: string,
+  options: {
+    force?: boolean;
+    parent?: string;
+  }
+): Promise<void> {
+  try {
+    const { projectConfig: pc } = await import('../core/index.js');
+    const tasksDir = pc.getTasksDirectory();
+    const projectRoot = tasksDir.replace('/.tasks', '');
+    
+    // Validate sequence format
+    if (!/^\d{1,2}$/.test(newSequence)) {
+      console.error('Error: Sequence must be a number (1-99)');
+      process.exit(1);
+    }
+    
+    // Pad sequence
+    const paddedSequence = newSequence.padStart(2, '0');
+    
+    // Determine parent ID
+    let parentId = options.parent;
+    
+    if (!parentId) {
+      // Try to infer from subtask ID
+      if (subtaskId.includes('/')) {
+        parentId = subtaskId.split('/')[0];
+      } else {
+        console.error('Error: Cannot determine parent. Please use --parent option.');
+        process.exit(1);
+      }
+    }
+    
+    // Update sequence
+    const result = await v2.updateSubtaskSequence(
+      projectRoot, 
+      parentId, 
+      subtaskId, 
+      paddedSequence, 
+      { force: options.force }
+    );
+    
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+    
+    console.log(`Subtask sequence updated to ${paddedSequence}`);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+// ===== TASK CONVERSION COMMAND HANDLERS =====
+
+/**
+ * Handles the 'task promote' command
+ */
+export async function handleTaskPromoteCommand(
+  taskId: string,
+  options: {
+    subtasks?: string;
+    keepOriginal?: boolean;
+  }
+): Promise<void> {
+  try {
+    const { projectConfig: pc } = await import('../core/index.js');
+    const tasksDir = pc.getTasksDirectory();
+    const projectRoot = tasksDir.replace('/.tasks', '');
+    
+    // Parse subtasks if provided
+    const subtaskTitles = options.subtasks ? 
+      options.subtasks.split(',').map(s => s.trim()) : 
+      undefined;
+    
+    // Promote task
+    const result = await v2.promoteToParent(projectRoot, taskId, {
+      subtasks: subtaskTitles,
+      keepOriginal: options.keepOriginal
+    });
+    
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+    
+    console.log(`Task ${taskId} promoted to parent task successfully!`);
+    
+    if (subtaskTitles) {
+      console.log(`Created ${subtaskTitles.length} subtasks`);
+    }
+    
+    if (options.keepOriginal) {
+      console.log('Original task content preserved as first subtask');
+    }
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'task extract' command
+ */
+export async function handleTaskExtractCommand(
+  subtaskId: string,
+  options: {
+    target?: string;
+    parent?: string;
+  }
+): Promise<void> {
+  try {
+    const { projectConfig: pc } = await import('../core/index.js');
+    const tasksDir = pc.getTasksDirectory();
+    const projectRoot = tasksDir.replace('/.tasks', '');
+    
+    // Determine parent ID
+    let parentId = options.parent;
+    
+    if (!parentId) {
+      // Try to infer from subtask ID
+      if (subtaskId.includes('/')) {
+        parentId = subtaskId.split('/')[0];
+      } else {
+        console.error('Error: Cannot determine parent. Please use --parent option.');
+        process.exit(1);
+      }
+    }
+    
+    const targetLocation = (options.target || 'backlog') as v2.WorkflowState;
+    
+    // Extract subtask
+    const result = await v2.extractSubtask(projectRoot, parentId, subtaskId, targetLocation);
+    
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+    
+    console.log(`Subtask extracted successfully!`);
+    console.log(`New location: ${targetLocation}/${result.data!.metadata.id}.task.md`);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handles the 'task adopt' command
+ */
+export async function handleTaskAdoptCommand(
+  parentId: string,
+  taskId: string,
+  options: {
+    sequence?: string;
+    after?: string;
+    before?: string;
+  }
+): Promise<void> {
+  try {
+    const { projectConfig: pc } = await import('../core/index.js');
+    const tasksDir = pc.getTasksDirectory();
+    const projectRoot = tasksDir.replace('/.tasks', '');
+    
+    // Adopt task
+    const result = await v2.adoptTask(projectRoot, parentId, taskId, {
+      sequence: options.sequence,
+      after: options.after,
+      before: options.before
+    });
+    
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+    
+    console.log(`Task ${taskId} adopted into ${parentId} successfully!`);
+    console.log(`New location: ${parentId}/${result.data!.metadata.id}`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);

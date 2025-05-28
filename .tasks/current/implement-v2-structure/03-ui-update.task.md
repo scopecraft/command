@@ -2,13 +2,14 @@
 
 ---
 type: chore
-status: 🟡 To Do
+status: Progress
 area: ui
-assignee: 
+assignee: null
+parent: implement-v2-structure
 ---
 
-## Instruction
 
+## Instruction
 Update the Task UI to work with the new workflow-based structure. This includes updating components, API calls, and navigation to match the new system.
 
 **IMPORTANT**: This plan is not complete. Start by reviewing the entire tasks-ui codebase to understand all the places that need updating. Look for phase/feature references, navigation patterns, and API calls. Don't hesitate to ask questions about design decisions.
@@ -28,7 +29,6 @@ Update the Task UI to work with the new workflow-based structure. This includes 
 - Type definitions
 
 ## Tasks
-
 - [ ] Review entire tasks-ui codebase for impact analysis
 - [ ] Document all components that reference phases
 - [ ] Document all API calls that need updating
@@ -59,9 +59,7 @@ Update the Task UI to work with the new workflow-based structure. This includes 
   - [ ] Quick actions for sequence operations
 
 ## Deliverable
-
 [To be updated as implementation progresses]
 
 ## Log
-
 - 2025-05-27: Task created as part of V2 implementation
