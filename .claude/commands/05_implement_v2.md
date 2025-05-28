@@ -23,7 +23,7 @@ Example: `.tasks/current/implement-v2-structure/` contains:
 
 Task IDs are just filenames without paths. References work as `@task:implement-v2-structure`.
 
-**CRITICAL**: When working on v2 implementation tasks, read files directly from the filesystem instead of using MCP commands, as we're updating the MCP server itself.
+Task IDs are just filenames without .task.md extension. Complex tasks use the parent folder name.
 </v2_structure_notice>
 
 <context_loading>
@@ -31,10 +31,7 @@ Parse arguments from: "$ARGUMENTS"
 - First word: implementation mode (typescript, ui, mcp, cli, etc.)
 - Remaining: task ID or path
 
-For V2 tasks, manually read from filesystem:
-- Check `.tasks/current/` first
-- Look for complex task folders
-- Read the specific subtask file
+Load task using appropriate tools based on the task ID.
 </context_loading>
 
 <v2_implementation_guidance>
@@ -77,8 +74,7 @@ Reference documents:
 Before writing any code:
 
 1. **Load task context**
-   - For V2 tasks: Read directly from filesystem
-   - For other tasks: Use mcp__scopecraft-cmd__task_get
+   - Use appropriate tools to load the task
    - Review task description, requirements, and acceptance criteria
    - Check task status and dependencies
 
