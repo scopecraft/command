@@ -134,8 +134,19 @@ function abbreviateWord(word: string): string {
     }
   }
   
-  // Default: truncate to 6 chars
-  return word.slice(0, 6);
+  // Default: smart truncation - keep first 3 + first consonant after
+  const first3 = word.slice(0, 3);
+  
+  // Find first consonant after position 3
+  for (let i = 3; i < word.length; i++) {
+    const char = word[i];
+    if (/[bcdfghjklmnpqrstvwxyz]/i.test(char)) {
+      return first3 + char;
+    }
+  }
+  
+  // If no consonant found, just use first 4 chars
+  return word.slice(0, 4);
 }
 
 /**
