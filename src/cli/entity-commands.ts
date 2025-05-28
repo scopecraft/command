@@ -51,18 +51,17 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
   // task list command
   taskCommand
     .command('list')
-    .description('List all tasks (Example: sc task list --current --status "To Do")')
+    .description('List tasks from current and backlog (Example: sc task list --status "To Do")')
     .option('-s, --status <status>', 'Filter by status (e.g., "To Do", "Done")')
     .option('-t, --type <type>', 'Filter by type (e.g., "feature", "bug")')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-g, --tags <tags...>', 'Filter by tags')
-    .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory (e.g., "FEATURE_Login")')
     .option('-l, --location <location>', 'Filter by workflow location: backlog, current, archive')
     .option('--backlog', 'Show only backlog tasks')
     .option('--current', 'Show only current tasks')
     .option('--archive', 'Show only archived tasks')
-    .option('-o, --overview', 'Show only overview files (_overview.md)')
-    .option('-f, --format <format>', 'Output format: table, json, minimal, workflow', 'table')
+    .option('--all', 'Show all workflow locations')
+    .option('-f, --format <format>', 'Output format: tree (default), table, json, minimal, workflow', 'tree')
     .action(handleListCommand);
 
   // task get command
@@ -70,8 +69,6 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .command('get <id>')
     .description('Get a task by ID')
     .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
-    .option('-p, --phase <phase>', 'Phase to look in')
-    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
     .option('--parent <parent>', 'Parent task ID (for subtasks)')
     .addHelpText('after', `
 Note: For subtasks, use the full path or provide --parent:
@@ -83,19 +80,19 @@ Note: For subtasks, use the full path or provide --parent:
   taskCommand
     .command('create')
     .description(
-      'Create a new task (Example: sc task create --title "New feature" --type "🌟 Feature" --phase "release-v1")'
+      'Create a new task (Example: sc task create --title "New feature" --type feature)'
     )
     .option(
       '--id <id>',
       'Task ID (generated if not provided, use "_overview" for feature overview files)'
     )
     .option('--title <title>', 'Task title')
-    .option('--type <type>', 'Task type (e.g., "🌟 Feature", "🐛 Bug")')
-    .option('--status <status>', 'Task status (default: "🟡 To Do")')
-    .option('--priority <priority>', 'Task priority (default: "▶️ Medium")')
+    .option('--type <type>', 'Task type (e.g., "feature", "bug")')
+    .option('--status <status>', 'Task status (default: "To Do")')
+    .option('--priority <priority>', 'Task priority (default: "Medium")')
     .option('--assignee <assignee>', 'Assigned to')
-    .option('--phase <phase>', 'Phase ID or name')
-    .option('--subdirectory <subdirectory>', 'Subdirectory within phase (e.g., "FEATURE_Login")')
+    .option('--location <location>', 'Workflow location: backlog (default), current, archive')
+    .option('--subdirectory <subdirectory>', 'Subdirectory/area (e.g., "FEATURE_Login")')
     .option('--parent <parent>', 'Parent task ID')
     .option('--depends <depends...>', 'Dependencies (task IDs)')
     .option('--previous <previous>', 'Previous task in workflow')
@@ -111,16 +108,14 @@ Note: For subtasks, use the full path or provide --parent:
   // task update command
   taskCommand
     .command('update <id>')
-    .description('Update a task (Example: sc task update TASK-123 --status "🔵 In Progress")')
+    .description('Update a task (Example: sc task update TASK-123 --status "In Progress")')
     .option('--title <title>', 'Task title')
     .option('--status <status>', 'Task status')
     .option('--type <type>', 'Task type')
     .option('--priority <priority>', 'Task priority')
     .option('--assignee <assignee>', 'Assigned to')
-    .option('--phase <phase>', 'Phase ID or name (where to move the task)')
-    .option('--subdirectory <subdirectory>', 'Subdirectory within phase (where to move the task)')
-    .option('--search-phase <searchPhase>', 'Phase to search for the task')
-    .option('--search-subdirectory <searchSubdirectory>', 'Subdirectory to search for the task')
+    .option('--location <location>', 'Move to workflow location: backlog, current, archive')
+    .option('--subdirectory <subdirectory>', 'Subdirectory/area to move the task')
     .option('--parent <parent>', 'Parent task ID (for subtasks, helps locate the task)')
     .option('--depends <depends...>', 'Dependencies (task IDs)')
     .option('--previous <previous>', 'Previous task in workflow')
@@ -138,8 +133,6 @@ Note: For subtasks, use the full path or provide --parent:
   taskCommand
     .command('delete <id>')
     .description('Delete a task')
-    .option('-p, --phase <phase>', 'Phase to look in')
-    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
     .option('--parent <parent>', 'Parent task ID (for subtasks)')
     .addHelpText('after', `
 Note: For subtasks, use the full path or provide --parent:
@@ -186,19 +179,15 @@ Note: For subtasks, use the full path or provide --parent:
       await handleUpdateCommand(id, { status: 'In Review' });
     });
 
-  // task move command
+  // task move command - updated for workflow transitions
   taskCommand
     .command('move <id>')
-    .description(
-      'Move a task to a different feature or area subdirectory (Example: sc task move TASK-123 --subdirectory "FEATURE_NewFeature")'
-    )
-    .requiredOption('--subdirectory <subdirectory>', 'Target subdirectory to move the task to')
-    .option('--phase <phase>', 'Target phase (if moving between phases)')
-    .option('--search-phase <searchPhase>', 'Source phase to search for the task')
-    .option(
-      '--search-subdirectory <searchSubdirectory>',
-      'Source subdirectory to search for the task'
-    )
+    .description('Move a task between workflow states')
+    .option('--to-backlog', 'Move task to backlog')
+    .option('--to-current', 'Move task to current')
+    .option('--to-archive', 'Move task to archive')
+    .option('--archive-date <date>', 'Archive date (YYYY-MM format)')
+    .option('--update-status', 'Automatically update task status based on move')
     .action(handleTaskMoveCommand);
 
   // ===== SEQUENCING COMMANDS =====
@@ -387,23 +376,22 @@ Notes:
   // Add only the most essential top-level commands for convenience
   program
     .command('list')
-    .description('List all tasks')
-    .option('-s, --status <status>', 'Filter by status (e.g., "🟡 To Do", "🟢 Done")')
-    .option('-t, --type <type>', 'Filter by type (e.g., "🌟 Feature", "🐛 Bug")')
+    .description('List tasks from current and backlog workflows (default)')
+    .option('-s, --status <status>', 'Filter by status (e.g., "To Do", "Done")')
+    .option('-t, --type <type>', 'Filter by type (e.g., "feature", "bug")')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-g, --tags <tags...>', 'Filter by tags')
-    .option('-p, --phase <phase>', 'Filter by phase')
-    .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory (e.g., "FEATURE_Login")')
-    .option('-o, --overview', 'Show only overview files (_overview.md)')
-    .option('-f, --format <format>', 'Output format: table, json, minimal, workflow', 'table')
+    .option('--backlog', 'Show only backlog tasks')
+    .option('--current', 'Show only current tasks')
+    .option('--archive', 'Show only archived tasks')
+    .option('--all', 'Show all workflow locations (current, backlog, archive)')
+    .option('-f, --format <format>', 'Output format: tree (default), table, json, minimal, workflow', 'tree')
     .action(handleListCommand);
 
   program
     .command('get <id>')
     .description('Get a task by ID')
     .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
-    .option('-p, --phase <phase>', 'Phase to look in')
-    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
     .action(handleGetCommand);
 }
 

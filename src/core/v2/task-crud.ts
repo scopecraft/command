@@ -170,13 +170,34 @@ export async function getTask(
     const isParentTask = basename(taskPath) === '_overview.md';
     const id = getTaskIdFromFilename(taskPath);
     
+    // Detect if this is a subtask in a parent directory
+    const fileDir = dirname(taskPath);
+    let parentTask: string | undefined;
+    let sequenceNumber: string | undefined;
+    
+    // Check if the task is inside a parent directory
+    if (isParentTaskFolder(fileDir)) {
+      parentTask = basename(fileDir);
+      
+      // Extract sequence number for subtasks
+      if (!isParentTask) {
+        const fileName = basename(taskPath);
+        const seqMatch = fileName.match(/^(\d{2})[_-]/);
+        if (seqMatch) {
+          sequenceNumber = seqMatch[1];
+        }
+      }
+    }
+    
     // Create metadata
     const metadata: TaskMetadata = {
       id,
       filename: basename(taskPath),
       path: taskPath,
       location,
-      isParentTask
+      isParentTask,
+      parentTask,
+      sequenceNumber
     };
     
     return {
@@ -444,14 +465,41 @@ export async function listTasks(
           const location = parseTaskLocation(file, projectRoot);
           if (!location) continue;
           
+          // Detect if this is a subtask in a parent directory
+          const fileDir = dirname(file);
+          const taskId = getTaskIdFromFilename(file);
+          let parentTask: string | undefined;
+          let sequenceNumber: string | undefined;
+          
+          // Check if the task is inside a parent directory
+          if (isParentTaskFolder(fileDir)) {
+            parentTask = basename(fileDir);
+            
+            // Extract sequence number for subtasks
+            if (!isParent) {
+              const fileName = basename(file);
+              const seqMatch = fileName.match(/^(\d{2})[_-]/);
+              if (seqMatch) {
+                sequenceNumber = seqMatch[1];
+              }
+            }
+          }
+          
+          // Update location with parentId if it's a subtask
+          const taskLocation = parentTask ? 
+            { ...location, parentId: parentTask } : 
+            location;
+          
           // Create task object
           const task: Task = {
             metadata: {
-              id: getTaskIdFromFilename(file),
+              id: taskId,
               filename: basename(file),
               path: file,
               location,
-              isParentTask: isParent
+              isParentTask: isParent,
+              parentTask,
+              sequenceNumber
             },
             document
           };

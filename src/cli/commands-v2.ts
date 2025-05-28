@@ -403,8 +403,9 @@ export async function handleTaskMoveCommand(
   }
 ): Promise<void> {
   try {
-    const configManager = ConfigurationManager.getInstance();
-    const projectRoot = configManager.getProjectRoot();
+    const { projectConfig } = await import('../core/index.js');
+    const tasksDir = projectConfig.getTasksDirectory();
+    const projectRoot = tasksDir.replace('/.tasks', '');
     
     // Determine target state
     let targetState: v2.WorkflowState;

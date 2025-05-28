@@ -51,13 +51,13 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .option('-t, --type <type>', 'Filter by type (e.g., "feature", "bug")')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-g, --tags <tags...>', 'Filter by tags')
-    .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory (e.g., "FEATURE_Login")')
+    .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory/area')
     .option('-l, --location <location>', 'Filter by workflow location: backlog, current, archive')
     .option('--backlog', 'Show only backlog tasks')
-    .option('--current', 'Show only current tasks')
+    .option('--current', 'Show only current tasks (default)')
     .option('--archive', 'Show only archived tasks')
-    .option('-o, --overview', 'Show only overview files (_overview.md)')
-    .option('-f, --format <format>', 'Output format: table, json, minimal, workflow', 'table')
+    .option('--all', 'Show all workflow locations')
+    .option('-f, --format <format>', 'Output format: tree (default), table, json, minimal, workflow', 'tree')
     .action(handleListCommand);
 
   // task get command
@@ -72,7 +72,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
   taskCommand
     .command('create')
     .description(
-      'Create a new task (Example: sc task create --title "New feature" --type "feature")'
+      'Create a new task (Example: sc task create --title "New feature" --type feature)'
     )
     .option(
       '--id <id>',
@@ -183,13 +183,13 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .option('-t, --type <type>', 'Filter by type')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-g, --tags <tags...>', 'Filter by tags')
-    .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory')
+    .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory/area')
     .option('-l, --location <location>', 'Filter by workflow location')
     .option('--backlog', 'Show only backlog tasks')
-    .option('--current', 'Show only current tasks')
+    .option('--current', 'Show only current tasks (default)')
     .option('--archive', 'Show only archived tasks')
-    .option('-o, --overview', 'Show only overview files')
-    .option('-f, --format <format>', 'Output format', 'table')
+    .option('--all', 'Show all workflow locations')
+    .option('-f, --format <format>', 'Output format', 'tree')
     .action(handleListCommand);
 
   program

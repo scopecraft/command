@@ -41,11 +41,12 @@ export async function handleListCommand(options: {
   phase?: string;
   subdirectory?: string;
   overview?: boolean;
-  format?: 'table' | 'json' | 'minimal' | 'workflow';
+  format?: 'tree' | 'table' | 'json' | 'minimal' | 'workflow';
   location?: string;
   backlog?: boolean;
   current?: boolean;
   archive?: boolean;
+  all?: boolean;
 }): Promise<void> {
   try {
     const { projectConfig } = await import('../core/index.js');
@@ -56,7 +57,9 @@ export async function handleListCommand(options: {
     const listOptions: v2.TaskListOptions = {};
     
     // Handle workflow location
-    if (options.backlog) {
+    if (options.all) {
+      listOptions.workflowStates = ['current', 'backlog', 'archive'];
+    } else if (options.backlog) {
       listOptions.workflowStates = ['backlog'];
     } else if (options.current) {
       listOptions.workflowStates = ['current'];
@@ -64,6 +67,9 @@ export async function handleListCommand(options: {
       listOptions.workflowStates = ['archive'];
     } else if (options.location) {
       listOptions.workflowStates = [options.location as v2.WorkflowState];
+    } else {
+      // Default to current and backlog for better workflow visibility
+      listOptions.workflowStates = ['current', 'backlog'];
     }
     
     // Map other filters
@@ -95,7 +101,7 @@ export async function handleListCommand(options: {
 
     // Format using v2 formatter
     const { formatTasksList: formatV2Tasks } = await import('../core/formatters-v2.js');
-    console.log(formatV2Tasks(tasks, options.format || 'table'));
+    console.log(formatV2Tasks(tasks, options.format || 'tree'));
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -1278,36 +1284,19 @@ export async function handleAreaUpdateCommand(
 export async function handleTaskMoveCommand(
   id: string,
   options: {
-    phase?: string;
+    toBacklog?: boolean;
+    toCurrent?: boolean;
+    toArchive?: boolean;
+    archiveDate?: string;
+    updateStatus?: boolean;
     subdirectory?: string;
-    search_phase?: string;
-    search_subdirectory?: string;
+    searchSubdirectory?: string;
   }
 ): Promise<void> {
   try {
-    if (!id) {
-      console.error('Error: Task ID is required');
-      process.exit(1);
-    }
-
-    if (!options.subdirectory) {
-      console.error('Error: Target subdirectory is required');
-      process.exit(1);
-    }
-
-    const result = await moveTask(id, {
-      targetSubdirectory: options.subdirectory,
-      targetPhase: options.phase,
-      searchPhase: options.search_phase,
-      searchSubdirectory: options.search_subdirectory,
-    });
-
-    if (!result.success) {
-      console.error(`Error: ${result.error}`);
-      process.exit(1);
-    }
-
-    console.log(result.message || `Task ${id} moved successfully to ${options.subdirectory}`);
+    // Import v2 handler
+    const { handleTaskMoveCommand: handleV2Move } = await import('./commands-v2.js');
+    await handleV2Move(id, options);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
