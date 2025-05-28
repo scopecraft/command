@@ -6,7 +6,7 @@ import type * as v2 from './v2/types.js';
 export type OutputFormat = 'table' | 'json' | 'minimal' | 'workflow' | 'default' | 'markdown' | 'full';
 
 // Emoji mappings for presentation layer
-const STATUS_EMOJIS: Record<v2.TaskStatus, string> = {
+export const STATUS_EMOJIS: Record<v2.TaskStatus, string> = {
   'To Do': '🟡',
   'In Progress': '🔵',
   'Done': '🟢',

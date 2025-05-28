@@ -43,6 +43,20 @@ Update the Task UI to work with the new workflow-based structure. This includes 
 - [ ] Add workflow state filters to task list
 - [ ] Update task creation UI for backlog default
 - [ ] Test all UI interactions
+- [ ] Add subtask sequencing UI:
+  - [ ] Drag-and-drop reordering for subtasks
+  - [ ] Visual indicators for parallel tasks (same sequence)
+  - [ ] Sequence number display with edit capability
+  - [ ] Bulk selection for making tasks parallel
+- [ ] Add task conversion UI:
+  - [ ] "Convert to Parent" button for simple tasks
+  - [ ] "Extract to Task" option for subtasks
+  - [ ] Confirmation dialogs for conversions
+- [ ] Update subtask display:
+  - [ ] Show sequence numbers prominently
+  - [ ] Group parallel tasks visually
+  - [ ] Add "Insert task here" buttons between sequences
+  - [ ] Quick actions for sequence operations
 
 ## Deliverable
 

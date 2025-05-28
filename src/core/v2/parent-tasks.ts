@@ -4,12 +4,15 @@
  * Handles folder-based tasks with child tasks (subtasks)
  */
 
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync, readFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import type {
   ParentTask,
   Task,
   TaskCreateOptions,
+  TaskType,
+  TaskStatus,
+  TaskMetadata,
   OperationResult,
   WorkflowState,
   SubtaskInfo,
@@ -20,11 +23,12 @@ import {
   isParentTaskFolder,
   getSubtaskFiles,
   getSubtaskSequence,
-  getTaskIdFromFilename
+  getTaskIdFromFilename,
+  parseTaskLocation
 } from './directory-utils.js';
 import { createTask, getTask, deleteTask, moveTask } from './task-crud.js';
-import { generateUniqueTaskId } from './id-generator.js';
-import { ensureRequiredSections } from './task-parser.js';
+import { generateUniqueTaskId, generateSubtaskId } from './id-generator.js';
+import { parseTaskDocument, ensureRequiredSections } from './task-parser.js';
 
 /**
  * Create a parent task (folder with _overview.md)
@@ -128,25 +132,21 @@ export async function addSubtask(
     // Determine next sequence number
     const nextSequence = getNextSequenceNumber(taskFolder);
     
-    // Create subtask filename
-    const subtaskName = subtaskTitle
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-    
-    const subtaskId = `${nextSequence}-${subtaskName}`;
+    // Generate subtask ID using the new format
+    const subtaskId = generateSubtaskId(subtaskTitle, nextSequence);
     const subtaskPath = join(taskFolder, `${subtaskId}.task.md`);
     
     // Create subtask options
     const subtaskOptions: TaskCreateOptions = {
       title: subtaskTitle,
-      type: options.type || parentTask.overview.frontmatter.type,
+      type: (options.type || parentTask.overview.frontmatter.type) as TaskType,
       area: options.area || parentTask.overview.frontmatter.area,
-      status: options.status || 'To Do',
-      ...options
+      status: (options.status || 'To Do') as TaskStatus,
+      workflowState: parentTask.metadata.location.workflowState,
+      instruction: options.instruction || `Complete the subtask: ${subtaskTitle}`,
+      tasks: options.tasks,
+      deliverable: options.deliverable,
+      customMetadata: options.customMetadata
     };
     
     // Create subtask using standard task creation
@@ -214,11 +214,38 @@ export async function getParentTask(
     const subtasks: Task[] = [];
     
     for (const subtaskPath of subtaskPaths) {
-      const subtaskId = getTaskIdFromFilename(subtaskPath);
-      const subtaskResult = await getTask(projectRoot, subtaskId, config);
-      
-      if (subtaskResult.success && subtaskResult.data) {
-        subtasks.push(subtaskResult.data);
+      // Read subtask directly instead of trying to resolve by ID
+      try {
+        const content = readFileSync(subtaskPath, 'utf-8');
+        const document = parseTaskDocument(content);
+        
+        // Parse location
+        const location = parseTaskLocation(subtaskPath, projectRoot);
+        if (!location) continue;
+        
+        // Get ID and sequence from filename
+        const filename = basename(subtaskPath);
+        const id = getTaskIdFromFilename(subtaskPath);
+        const sequence = getSubtaskSequence(filename);
+        
+        // Create metadata
+        const metadata: TaskMetadata = {
+          id,
+          filename,
+          path: subtaskPath,
+          location,
+          isParentTask: false,
+          parentTask: task.metadata.id,
+          sequenceNumber: sequence || undefined
+        };
+        
+        subtasks.push({
+          metadata,
+          document
+        });
+      } catch (error) {
+        // Skip files that can't be read
+        continue;
       }
     }
     

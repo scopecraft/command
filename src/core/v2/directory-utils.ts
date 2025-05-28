@@ -276,8 +276,8 @@ export function getSubtaskFiles(parentTaskDir: string): string[] {
   
   return files
     .filter(file => {
-      // Match pattern: NN-name.task.md
-      return /^\d{2}-.*\.task\.md$/.test(file);
+      // Match pattern: NN_name-MMX.task.md or NN-name.task.md (both supported)
+      return /^\d{2}[_-].*\.task\.md$/.test(file);
     })
     .sort() // Sort by sequence number
     .map(file => join(parentTaskDir, file));
@@ -288,7 +288,7 @@ export function getSubtaskFiles(parentTaskDir: string): string[] {
  */
 export function getSubtaskSequence(filename: string): string | null {
   const name = basename(filename);
-  const match = name.match(/^(\d{2})-/);
+  const match = name.match(/^(\d{2})[_-]/);
   return match ? match[1] : null;
 }
 

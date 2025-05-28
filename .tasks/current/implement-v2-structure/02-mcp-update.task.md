@@ -46,6 +46,18 @@ Update the MCP server handlers to work with the new workflow-based structure. Re
 - [ ] Update feature_list to find folders with _overview.md
 - [ ] Handle complex task operations (create folder structure)
 - [ ] Test all MCP operations
+- [ ] Add subtask sequencing tools:
+  - [ ] `task_reorder` - Reorder subtasks with new sequences
+  - [ ] `task_make_parallel` - Make tasks run in parallel
+  - [ ] `task_update_sequence` - Update task sequence numbers
+- [ ] Add task conversion tools:
+  - [ ] `task_convert_to_parent` - Convert simple task to parent folder
+  - [ ] `task_extract_subtask` - Extract subtask to floating task
+  - [ ] Handle filename transformations in task_move
+- [ ] Add subtask management tools:
+  - [ ] `subtask_add` - Add subtask with auto-sequence
+  - [ ] `subtask_list` - List subtasks with sequence info
+  - [ ] Include parallel execution info in responses
 
 ## Deliverable
 

@@ -204,6 +204,106 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
 }
 
 /**
+ * Set up parent task commands (replacement for features)
+ * @param program Root commander program
+ */
+export function setupParentCommands(program: Command): void {
+  // Create parent command group
+  const parentCommand = new Command('parent')
+    .description('Parent task management commands (folder-based tasks with subtasks)')
+    .addHelpText('before', '\nPARENT TASK COMMANDS\n==================\n')
+    .addHelpText(
+      'after',
+      `
+Parent tasks are folder-based tasks that can contain subtasks.
+They replace the old "feature" concept and provide better organization.
+
+Examples:
+  sc parent create --title "User Authentication" --type feature
+  sc parent list
+  sc parent add-subtask AUTH-TASK --title "Implement login form"
+`
+    );
+
+  // parent create command
+  parentCommand
+    .command('create')
+    .description('Create a new parent task (folder with _overview.md)')
+    .requiredOption('--title <title>', 'Parent task title')
+    .option('--type <type>', 'Task type', 'feature')
+    .option('--area <area>', 'Area (e.g., "auth", "api")', 'general')
+    .option('--assignee <assignee>', 'Assigned to')
+    .option('--tags <tags...>', 'Tags for the parent task')
+    .option('--description <description>', 'Parent task description')
+    .action(async (options) => {
+      const { handleParentCreateCommand } = await import('./commands.js');
+      await handleParentCreateCommand(options);
+    });
+
+  // parent list command
+  parentCommand
+    .command('list')
+    .description('List all parent tasks')
+    .option('--location <location>', 'Filter by workflow location: backlog, current, archive')
+    .option('--backlog', 'Show only backlog parent tasks')
+    .option('--current', 'Show only current parent tasks')
+    .option('--archive', 'Show only archived parent tasks')
+    .option('-f, --format <format>', 'Output format: table, json', 'table')
+    .option('--include-subtasks', 'Include subtask count and details')
+    .action(async (options) => {
+      const { handleParentListCommand } = await import('./commands.js');
+      await handleParentListCommand(options);
+    });
+
+  // parent get command (also aliased as 'show')
+  parentCommand
+    .command('get <id>')
+    .alias('show')
+    .description('Get details of a parent task including all subtasks')
+    .option('-f, --format <format>', 'Output format: default, json, full', 'default')
+    .option('--tree', 'Show as tree with parallel indicators')
+    .option('--timeline', 'Show execution timeline')
+    .action(async (id, options) => {
+      const { handleParentGetCommand } = await import('./commands.js');
+      await handleParentGetCommand(id, options);
+    });
+
+  // parent add-subtask command
+  parentCommand
+    .command('add-subtask <parentId>')
+    .description('Add a subtask to a parent task')
+    .requiredOption('--title <title>', 'Subtask title')
+    .option('--type <type>', 'Task type (inherits from parent if not specified)')
+    .option('--assignee <assignee>', 'Assigned to')
+    .action(async (parentId, options) => {
+      const { handleAddSubtaskCommand } = await import('./commands.js');
+      await handleAddSubtaskCommand(parentId, options);
+    });
+
+  // parent move command
+  parentCommand
+    .command('move <id> <target>')
+    .description('Move a parent task to a different workflow state')
+    .action(async (id, target) => {
+      const { handleParentMoveCommand } = await import('./commands.js');
+      await handleParentMoveCommand(id, target);
+    });
+
+  // parent delete command
+  parentCommand
+    .command('delete <id>')
+    .description('Delete a parent task and all its subtasks')
+    .option('-f, --force', 'Force deletion without confirmation')
+    .action(async (id, options) => {
+      const { handleParentDeleteCommand } = await import('./commands.js');
+      await handleParentDeleteCommand(id, options);
+    });
+
+  // Add parent group to root program
+  program.addCommand(parentCommand);
+}
+
+/**
  * Set up phase commands - DEPRECATED in v2
  * @param program Root commander program
  */
@@ -587,8 +687,8 @@ export function setupInitCommands(program: Command): void {
  */
 export function setupEntityCommands(program: Command): void {
   setupTaskCommands(program);
-  // Phase commands removed for v2
-  setupFeatureAreaCommands(program);
+  setupParentCommands(program);
+  // Phase and Feature/Area commands removed for v2
   setupWorkflowCommands(program);
   setupTemplateCommands(program);
   setupInitCommands(program);

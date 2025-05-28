@@ -135,7 +135,16 @@
       "Bash(../dist/cli/cli.js task start test-v2-task-creation-0528-8P)",
       "Bash(../dist/cli/cli.js task update test-v2-task-creation-0528-8P --title \"Updated title for v2 task\")",
       "Bash(../dist/cli/cli.js task update test-v2-task-creation-0528-8P --assignee \"david\")",
-      "Bash(./dist/cli/cli.js task list --current)"
+      "Bash(./dist/cli/cli.js task list --current)",
+      "Bash(../node_modules/.bin/sc parent create --title \"User Authentication System\" --type feature)",
+      "Bash(../dist/cli/cli.js parent create --title \"User Authentication System\" --type feature)",
+      "Bash(../dist/cli/cli.js parent list)",
+      "Bash(../dist/cli/cli.js parent add-subtask user-authentication-system-0528-6J --title \"Design login form UI\")",
+      "Bash(../dist/cli/cli.js parent get user-authentication-system-0528-6J)",
+      "Bash(../dist/cli/cli.js parent show user-authentication-system-0528-6J)",
+      "Bash(../dist/cli/cli.js parent show user-authentication-system-0528-6J --tree)",
+      "Bash(../dist/cli/cli.js parent add-subtask user-authentication-system-0528-6J --title \"Implement backend API\")",
+      "Bash(../dist/cli/cli.js parent add-subtask user-authentication-system-0528-6J --title \"Create database schema\")"
     ],
     "deny": []
   }

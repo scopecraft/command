@@ -44,6 +44,7 @@ export {
 // ID generator
 export {
   generateTaskId,
+  generateSubtaskId,
   parseTaskId,
   isValidTaskId,
   resolveTaskId,
@@ -54,6 +55,13 @@ export {
   listTaskIds,
   getAllTaskIds
 } from './id-generator.js';
+
+// Name abbreviation
+export {
+  abbreviateTaskName,
+  isReasonableAbbreviation,
+  getAbbreviationExamples
+} from './name-abbreviator.js';
 
 // Task CRUD operations
 export {
@@ -73,16 +81,37 @@ export {
   getInitStatus
 } from './project-init.js';
 
-// Parent task support
+// Parent task operations
 export {
   createParentTask,
-  addSubtask,
+  addSubtask as addSubtaskLowLevel,
   getParentTask,
   moveParentTask,
   deleteParentTask,
   listSubtasks,
   canConvertToParent
 } from './parent-tasks.js';
+
+// Subtask sequencing operations
+export {
+  reorderSubtasks as reorderSubtasksLowLevel,
+  makeTasksParallel,
+  insertTaskAfter,
+  getNextSequenceNumber,
+  isValidSequence,
+  listSubtasksWithSequence
+} from './subtask-sequencing.js';
+
+// High-level task operations
+export {
+  resequenceSubtasks,
+  parallelizeSubtasks,
+  updateSubtaskSequence,
+  promoteToParent,
+  extractSubtask,
+  adoptTask,
+  addSubtask
+} from './task-operations.js';
 
 // Template management
 export {
