@@ -16,15 +16,16 @@ import {
   handleFeatureListCommand,
   handleFeatureUpdateCommand,
   handleGetCommand,
-  handleInitCommand,
+  // handleInitCommand, // Using v2 init
   handleListCommand,
   handleListTemplatesCommand,
   handleMarkCompleteNextCommand,
   handleNextTaskCommand,
-  handlePhaseCreateCommand,
-  handlePhaseDeleteCommand,
-  handlePhaseUpdateCommand,
-  handlePhasesCommand,
+  // Phase commands removed for v2
+  // handlePhaseCreateCommand,
+  // handlePhaseDeleteCommand,
+  // handlePhaseUpdateCommand,
+  // handlePhasesCommand,
   handleTaskMoveCommand,
   handleUpdateCommand,
 } from './commands.js';
@@ -50,13 +51,16 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
   // task list command
   taskCommand
     .command('list')
-    .description('List all tasks (Example: sc task list --status "🟡 To Do" --phase "release-v1")')
-    .option('-s, --status <status>', 'Filter by status (e.g., "🟡 To Do", "🟢 Done")')
-    .option('-t, --type <type>', 'Filter by type (e.g., "🌟 Feature", "🐛 Bug")')
+    .description('List all tasks (Example: sc task list --current --status "To Do")')
+    .option('-s, --status <status>', 'Filter by status (e.g., "To Do", "Done")')
+    .option('-t, --type <type>', 'Filter by type (e.g., "feature", "bug")')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-g, --tags <tags...>', 'Filter by tags')
-    .option('-p, --phase <phase>', 'Filter by phase')
     .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory (e.g., "FEATURE_Login")')
+    .option('-l, --location <location>', 'Filter by workflow location: backlog, current, archive')
+    .option('--backlog', 'Show only backlog tasks')
+    .option('--current', 'Show only current tasks')
+    .option('--archive', 'Show only archived tasks')
     .option('-o, --overview', 'Show only overview files (_overview.md)')
     .option('-f, --format <format>', 'Output format: table, json, minimal, workflow', 'table')
     .action(handleListCommand);
@@ -134,28 +138,28 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .command('start <id>')
     .description('Mark a task as "In Progress"')
     .action(async (id) => {
-      await handleUpdateCommand(id, { status: '🔵 In Progress' });
+      await handleUpdateCommand(id, { status: 'In Progress' });
     });
 
   taskCommand
     .command('complete <id>')
     .description('Mark a task as "Done"')
     .action(async (id) => {
-      await handleUpdateCommand(id, { status: '🟢 Done' });
+      await handleUpdateCommand(id, { status: 'Done' });
     });
 
   taskCommand
     .command('block <id>')
     .description('Mark a task as "Blocked"')
     .action(async (id) => {
-      await handleUpdateCommand(id, { status: '⚪ Blocked' });
+      await handleUpdateCommand(id, { status: 'Blocked' });
     });
 
   taskCommand
     .command('review <id>')
     .description('Mark a task as "In Review"')
     .action(async (id) => {
-      await handleUpdateCommand(id, { status: '🟣 Review' });
+      await handleUpdateCommand(id, { status: 'In Review' });
     });
 
   // task move command
@@ -200,10 +204,11 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
 }
 
 /**
- * Set up phase commands
+ * Set up phase commands - DEPRECATED in v2
  * @param program Root commander program
  */
-export function setupPhaseCommands(program: Command): void {
+// @ts-ignore - Function kept for reference but not used
+function setupPhaseCommands_DEPRECATED(program: Command): void {
   // Create phase command group
   const phaseCommand = new Command('phase')
     .description('Phase management commands')
@@ -563,13 +568,17 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
  * @param program Root commander program
  */
 export function setupInitCommands(program: Command): void {
-  // Init command (directly on root program)
+  // Dynamically import v2 init handler
   program
     .command('init')
     .description('Initialize task directory structure')
     .option('--mode <mode>', 'Force project mode (roo or standalone)')
     .option('--root-dir <path>', 'Initialize in specific directory instead of current directory')
-    .action(handleInitCommand);
+    .option('--v1', 'Use v1 structure (phases) instead of v2 (workflow)')
+    .action(async (options) => {
+      const { handleInitV2Command } = await import('./init-v2.js');
+      await handleInitV2Command({ ...options, v2: !options.v1 });
+    });
 }
 
 /**
@@ -578,7 +587,7 @@ export function setupInitCommands(program: Command): void {
  */
 export function setupEntityCommands(program: Command): void {
   setupTaskCommands(program);
-  setupPhaseCommands(program);
+  // Phase commands removed for v2
   setupFeatureAreaCommands(program);
   setupWorkflowCommands(program);
   setupTemplateCommands(program);

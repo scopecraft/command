@@ -16,7 +16,7 @@ This specification covers:
 - **Task**: A unit of work represented by a `.task.md` file
 - **Workflow State**: One of backlog, current, or archive
 - **Section**: A named part of a task document (e.g., Instruction, Tasks)
-- **Complex Task**: A task represented by a folder containing subtasks
+- **Parent Task**: A task represented by a folder containing child tasks (subtasks)
 
 ## 2. File System Structure
 
@@ -39,7 +39,7 @@ The `.tasks/` directory MUST contain exactly three subdirectories:
 
 #### 2.2.2 Current Folder
 - Contains actively worked on tasks
-- Complex tasks MAY be represented as folders
+- Parent tasks MAY be represented as folders
 - No nested workflow states (no current/backlog/)
 
 #### 2.2.3 Archive Folder
@@ -48,20 +48,20 @@ The `.tasks/` directory MUST contain exactly three subdirectories:
 - Date folders are OPTIONAL but recommended
 - Archived tasks SHOULD NOT be modified
 
-### 2.3 Complex Task Folders
+### 2.3 Parent Task Folders
 A task MAY be represented as a folder when it contains subtasks:
 
 ```
 current/
-  dashboard-redesign/              # Complex task folder
-    _overview.md                   # Required: describes the complex task
+  dashboard-redesign/              # Parent task folder
+    _overview.md                   # Required: describes the parent task
     01-user-research.task.md       # Subtask
     02-implement-ui.task.md        # Subtask
     mockups/                       # Supporting materials (non-task)
 ```
 
 Rules:
-- Complex task folders MUST contain `_overview.md`
+- Parent task folders MUST contain `_overview.md`
 - Subtasks SHOULD use sequence prefixes (01-, 02-)
 - Same prefix indicates parallel execution capability
 - Non-task materials MAY be included
@@ -82,7 +82,7 @@ Examples:
 - `implement-oauth-0127-AB.task.md`
 - `fix-login-bug-0202-7K.task.md`
 
-#### 3.1.2 Subtasks in Complex Tasks
+#### 3.1.2 Subtasks in Parent Tasks
 Pattern: `{NN}-{descriptive-name}.task.md`
 
 - `{NN}`: Two-digit sequence number (01, 02, etc.)
@@ -361,7 +361,7 @@ $ sc task complete research-caching-0127-CD
 Moved: current/ → archive/2024-01/
 ```
 
-### 9.3 Complex Task Structure
+### 9.3 Parent Task Structure
 ```
 current/
   payment-integration/

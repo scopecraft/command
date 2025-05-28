@@ -10,7 +10,6 @@ import {
   createArea,
   createFeature,
   createPhase,
-  createTask,
   deleteArea,
   deleteFeature,
   deletePhase,
@@ -18,21 +17,19 @@ import {
   findNextTask,
   formatFeaturesList,
   formatPhasesList,
-  formatTaskDetail,
   formatTasksList,
   getArea,
   getFeature,
-  getTask,
   listAreas,
   listFeatures,
   listPhases,
-  listTasks,
   moveTask,
   updateArea,
   updateFeature,
   updatePhase,
   updateTask,
 } from '../core/index.js';
+import * as v2 from '../core/v2/index.js';
 
 /**
  * Handles the 'list' command
@@ -46,31 +43,60 @@ export async function handleListCommand(options: {
   subdirectory?: string;
   overview?: boolean;
   format?: 'table' | 'json' | 'minimal' | 'workflow';
+  location?: string;
+  backlog?: boolean;
+  current?: boolean;
+  archive?: boolean;
 }): Promise<void> {
   try {
-    // Runtime config is handled internally by CRUD functions
-
-    const result = await listTasks({
-      status: options.status,
-      type: options.type,
-      assignee: options.assignee,
-      tags: options.tags,
-      phase: options.phase,
-      subdirectory: options.subdirectory,
-      is_overview: options.overview,
-    });
-
+    const { projectConfig } = await import('../core/index.js');
+    const tasksDir = projectConfig.getTasksDirectory();
+    const projectRoot = tasksDir.replace('/.tasks', '');
+    
+    // Build list options
+    const listOptions: v2.TaskListOptions = {};
+    
+    // Handle workflow location
+    if (options.backlog) {
+      listOptions.workflowStates = ['backlog'];
+    } else if (options.current) {
+      listOptions.workflowStates = ['current'];
+    } else if (options.archive) {
+      listOptions.workflowStates = ['archive'];
+    } else if (options.location) {
+      listOptions.workflowStates = [options.location as v2.WorkflowState];
+    }
+    
+    // Map other filters
+    if (options.status) {
+      // Remove emoji if present
+      listOptions.status = options.status.replace(/^[^\s]+\s/, '') as v2.TaskStatus;
+    }
+    if (options.type) {
+      listOptions.type = options.type.replace(/^[^\s]+\s/, '').toLowerCase() as v2.TaskType;
+    }
+    if (options.assignee) listOptions.assignee = options.assignee;
+    if (options.tags) listOptions.tags = options.tags;
+    if (options.subdirectory) listOptions.area = options.subdirectory;
+    
+    // List tasks
+    const result = await v2.listTasks(projectRoot, listOptions);
+    
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
+    
+    const tasks = result.data || [];
 
-    if (result.data && result.data.length === 0) {
+    if (tasks.length === 0) {
       console.log('No tasks found matching the criteria');
       return;
     }
 
-    console.log(formatTasksList(result.data || [], options.format || 'table'));
+    // Format using v2 formatter
+    const { formatTasksList: formatV2Tasks } = await import('../core/formatters-v2.js');
+    console.log(formatV2Tasks(tasks, options.format || 'table'));
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -89,20 +115,20 @@ export async function handleGetCommand(
   }
 ): Promise<void> {
   try {
-    // Runtime config is handled internally by CRUD functions
-
-    const result = await getTask(id, {
-      phase: options.phase,
-      subdirectory: options.subdirectory,
-    });
+    // Use v2 for task retrieval
+    const { projectConfig: pc } = await import('../core/index.js');
+    const tasksDir = pc.getTasksDirectory();
+    const projectRoot = tasksDir.replace('/.tasks', '');
+    
+    const result = await v2.getTask(projectRoot, id);
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
 
-    // Ensure we have a proper Task object before formatting
-    if (result.data && 'metadata' in result.data && 'content' in result.data) {
+    if (result.data) {
+      const { formatTaskDetail } = await import('../core/formatters-v2.js');
       console.log(formatTaskDetail(result.data, options.format || 'default'));
     } else {
       console.log('No valid task data found');
@@ -323,11 +349,32 @@ export async function handleCreateCommand(options: {
       throw new Error('Task type is required');
     }
 
-    // Extract subdirectory from metadata for the createTask call
-    const subdirectory = task.metadata.subdirectory;
-
-    // Use new options pattern
-    const result = await createTask(task, { subdirectory });
+    // Use v2 for task creation
+    const { projectConfig: pc } = await import('../core/index.js');
+    const tasksDir = pc.getTasksDirectory();
+    const projectRoot = tasksDir.replace('/.tasks', '');
+    
+    // Build create options
+    const createOptions: v2.TaskCreateOptions = {
+      title: task.metadata.title,
+      type: (task.metadata.type?.replace(/^[^\s]+\s/, '').toLowerCase() || 'chore') as v2.TaskType,
+      area: task.metadata.subdirectory || 'general',
+      workflowState: 'backlog',
+      status: 'To Do',
+      instruction: task.content,
+      customMetadata: {}
+    };
+    
+    // Add optional metadata
+    if (task.metadata.priority) createOptions.customMetadata!.priority = task.metadata.priority;
+    if (task.metadata.assigned_to) createOptions.customMetadata!.assignee = task.metadata.assigned_to;
+    if (task.metadata.tags) createOptions.customMetadata!.tags = task.metadata.tags;
+    if (task.metadata.parent_task) createOptions.customMetadata!.parent = task.metadata.parent_task;
+    if (task.metadata.depends_on) createOptions.customMetadata!.depends = task.metadata.depends_on;
+    if (task.metadata.previous_task) createOptions.customMetadata!.previous = task.metadata.previous_task;
+    if (task.metadata.next_task) createOptions.customMetadata!.next = task.metadata.next_task;
+    
+    const result = await v2.createTask(projectRoot, createOptions);
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -371,89 +418,9 @@ export async function handleUpdateCommand(
     // Runtime config is handled internally by CRUD functions
 
     if (options.file) {
-      // Update from file
-      if (!fs.existsSync(options.file)) {
-        throw new Error(`File not found: ${options.file}`);
-      }
-
-      const fileContent = fs.readFileSync(options.file, 'utf-8');
-
-      try {
-        // Try parsing as JSON
-        const fileTask = JSON.parse(fileContent) as Task;
-
-        // Ensure ID matches
-        if (fileTask.metadata.id !== id) {
-          throw new Error(
-            `Task ID in file (${fileTask.metadata.id}) does not match the specified ID (${id})`
-          );
-        }
-
-        const result = await updateTask(
-          id,
-          {
-            metadata: fileTask.metadata,
-            content: fileTask.content,
-          },
-          {
-            phase: options.searchPhase,
-            subdirectory: options.searchSubdirectory,
-          }
-        );
-
-        if (!result.success) {
-          console.error(`Error: ${result.error}`);
-          process.exit(1);
-        }
-
-        console.log(result.message);
-      } catch (_parseError) {
-        // Not valid JSON, try as TOML+Markdown
-        try {
-          const task = parseTaskFile(fileContent);
-          if (task.metadata.id !== id) {
-            throw new Error(
-              `Task ID in file (${task.metadata.id}) does not match the specified ID (${id})`
-            );
-          }
-
-          const result = await updateTask(
-            id,
-            {
-              metadata: task.metadata,
-              content: task.content,
-            },
-            {
-              phase: options.searchPhase,
-              subdirectory: options.searchSubdirectory,
-            }
-          );
-
-          if (!result.success) {
-            console.error(`Error: ${result.error}`);
-            process.exit(1);
-          }
-
-          console.log(result.message);
-        } catch (_error) {
-          // If all parsing fails, just use as content
-          const result = await updateTask(
-            id,
-            { content: fileContent },
-            {
-              phase: options.searchPhase,
-              subdirectory: options.searchSubdirectory,
-            }
-          );
-
-          if (!result.success) {
-            console.error(`Error: ${result.error}`);
-            process.exit(1);
-          }
-
-          console.log(result.message);
-        }
-      }
+      // Update from file - TODO: implement v2 file parsing
+      console.error('File-based updates not yet implemented for v2');
+      process.exit(1);
     } else {
       // Update from options
       const updates: { metadata?: Partial<TaskMetadata>; content?: string } = {};
@@ -497,17 +464,48 @@ export async function handleUpdateCommand(
         return;
       }
 
-      const result = await updateTask(id, updates, {
-        phase: options.searchPhase,
-        subdirectory: options.searchSubdirectory,
-      });
+      // Use v2 for updates
+      const { projectConfig } = await import('../core/index.js');
+      const tasksDir = projectConfig.getTasksDirectory();
+      const projectRoot = tasksDir.replace('/.tasks', '');
+      
+      // Build v2 update options
+      const updateOptions: v2.TaskUpdateOptions = {};
+      
+      if (options.title) updateOptions.title = options.title;
+      
+      // Build frontmatter updates
+      const frontmatter: any = {};
+      if (options.type) frontmatter.type = options.type.replace(/^[^\s]+\s/, '').toLowerCase();
+      if (options.status) frontmatter.status = options.status.replace(/^[^\s]+\s/, '');
+      if (options.priority) frontmatter.priority = options.priority;
+      if (options.assignee) frontmatter.assignee = options.assignee;
+      if (options.tags) frontmatter.tags = options.tags;
+      if (options.parent) frontmatter.parent = options.parent;
+      if (options.depends) frontmatter.depends = options.depends;
+      if (options.previous) frontmatter.previous = options.previous;
+      if (options.next) frontmatter.next = options.next;
+      if (options.subdirectory) frontmatter.area = options.subdirectory;
+      
+      if (Object.keys(frontmatter).length > 0) {
+        updateOptions.frontmatter = frontmatter;
+      }
+      
+      // Handle content update
+      if (options.content) {
+        updateOptions.sections = {
+          instruction: options.content
+        };
+      }
+      
+      const result = await v2.updateTask(projectRoot, id, updateOptions);
 
       if (!result.success) {
         console.error(`Error: ${result.error}`);
         process.exit(1);
       }
 
-      console.log(result.message);
+      console.log(`Task ${id} updated successfully`);
     }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);

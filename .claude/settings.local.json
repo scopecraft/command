@@ -125,7 +125,17 @@
       "mcp__scopecraft__task_create",
       "mcp__scopecraft__task_get",
       "mcp__scopecraft__feature_get",
-      "mcp__scopecraft__task_update"
+      "mcp__scopecraft__task_update",
+      "Bash(../dist/cli/cli.js init)",
+      "Bash(../dist/cli/cli.js task create --title \"My first v2 task\" --type feature)",
+      "Bash(../dist/cli/cli.js task create --title \"Test v2 task creation\" --type feature)",
+      "Bash(../dist/cli/cli.js task list)",
+      "Bash(../dist/cli/cli.js task list --current)",
+      "Bash(../dist/cli/cli.js task list --backlog)",
+      "Bash(../dist/cli/cli.js task start test-v2-task-creation-0528-8P)",
+      "Bash(../dist/cli/cli.js task update test-v2-task-creation-0528-8P --title \"Updated title for v2 task\")",
+      "Bash(../dist/cli/cli.js task update test-v2-task-creation-0528-8P --assignee \"david\")",
+      "Bash(./dist/cli/cli.js task list --current)"
     ],
     "deny": []
   }
