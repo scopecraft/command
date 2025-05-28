@@ -70,28 +70,36 @@ Rules:
 
 ### 3.1 Filename Convention
 
-#### 3.1.1 Standard Tasks
-Pattern: `{descriptive-name}-{MMDD}-{XX}.task.md`
+#### 3.1.1 Standard Tasks (Floating Tasks)
+Pattern: `{descriptive-name}-{MM}{X}.task.md`
 
-- `{descriptive-name}`: Kebab-case, alphanumeric plus hyphens
-- `{MMDD}`: Month and day of creation
-- `{XX}`: Two random alphanumeric characters for uniqueness
+- `{descriptive-name}`: Kebab-case, intelligently abbreviated, **maximum 30 characters**
+- `{MM}`: Two-digit month of creation (01-12)
+- `{X}`: Single letter A-Z for uniqueness within month
 - Extension: MUST be `.task.md`
+- Maximum total ID length: 34 characters (30 + 3 for suffix + 1 hyphen)
 
 Examples:
-- `implement-oauth-0127-AB.task.md`
-- `fix-login-bug-0202-7K.task.md`
+- `impl-oauth-auth-05K.task.md`
+- `fix-user-mgmt-bug-05A.task.md`
+- `config-db-conn-12C.task.md`
+
+Note: An abbreviation algorithm SHOULD be applied to common words to keep IDs concise
+(e.g., "implementation" → "impl", "management" → "mgmt", "configuration" → "config")
 
 #### 3.1.2 Subtasks in Parent Tasks
-Pattern: `{NN}-{descriptive-name}.task.md`
+Pattern: `{NN}_{descriptive-name}-{MM}{X}.task.md`
 
 - `{NN}`: Two-digit sequence number (01, 02, etc.)
-- Same number indicates parallel execution capability
+- `_`: Underscore separator for visual clarity
+- `{descriptive-name}`: Same rules as floating tasks (max 30 chars)
+- `{MM}{X}`: Same suffix format as floating tasks
+- Same sequence number indicates parallel execution capability
 
 Examples:
-- `01-research.task.md`
-- `02-design.task.md`
-- `02-implement.task.md` (parallel with design)
+- `01_research-providers-05K.task.md`
+- `02_design-ui-05A.task.md`
+- `02_impl-api-05B.task.md` (parallel with design)
 
 ### 3.2 Document Structure
 
@@ -204,8 +212,10 @@ Teams MAY add additional sections as patterns emerge:
 A task ID is the filename without the `.task.md` extension.
 
 Examples:
-- File: `implement-oauth-0127-AB.task.md`
-- ID: `implement-oauth-0127-AB`
+- Floating task file: `impl-oauth-auth-05K.task.md`
+- Floating task ID: `impl-oauth-auth-05K`
+- Subtask file: `02-design-ui.task.md`
+- Subtask ID: `payment-integration/02-design-ui` (includes parent path)
 
 ### 5.2 ID Resolution Algorithm
 
@@ -264,6 +274,30 @@ Rules:
 - Frontmatter can be updated independently
 - Status changes SHOULD be reflected in moves
 
+#### 6.3.3 Task Conversion Operations
+When moving tasks between contexts (floating ↔ subtask):
+
+1. **Floating → Subtask**: 
+   - MUST add sequence prefix when moving into parent folder
+   - Sequence assignment requires explicit user decision
+   - Default to next available sequence if not specified
+
+2. **Subtask → Floating**:
+   - MUST remove sequence prefix when extracting from parent
+   - Apply standard ID format with month and letter suffix
+   - Handle naming conflicts appropriately
+
+#### 6.3.4 Subtask Sequencing Operations
+Tools SHOULD provide operations to manage subtask order:
+
+1. **Resequencing**: Change the sequence numbers of subtasks
+2. **Parallelization**: Assign same sequence number to indicate parallel execution
+3. **Sequential ordering**: Ensure unique sequence numbers for serial execution
+4. **Insertion**: Add tasks at specific positions in the sequence
+
+Note: Sequence numbers determine execution order. Tasks with identical sequence 
+numbers (e.g., two "02-" tasks) can be executed in parallel.
+
 ### 6.4 List Operations
 List commands MUST:
 - Search all workflow folders by default
@@ -321,13 +355,13 @@ Tools SHOULD validate:
 
 ### 9.1 Simple Task Creation
 ```bash
-$ sc task create "Implement OAuth"
-Created: backlog/implement-oauth-0127-AB.task.md
+$ sc task create "Implement OAuth Authentication"
+Created: backlog/impl-oauth-auth-01K.task.md
 ```
 
 File contents:
 ```markdown
-# Implement OAuth
+# Implement OAuth Authentication
 
 ---
 type: feature
@@ -349,28 +383,28 @@ Implement OAuth authentication
 ### 9.2 Task Lifecycle
 ```bash
 # Create in backlog
-$ sc task create "Research caching"
-Created: backlog/research-caching-0127-CD.task.md
+$ sc task create "Research caching strategies"
+Created: backlog/research-caching-strat-01D.task.md
 
 # Start work - move to current
-$ sc task start research-caching-0127-CD
+$ sc task start research-caching-strat-01D
 Moved: backlog/ → current/
 
 # Complete - move to archive
-$ sc task complete research-caching-0127-CD
+$ sc task complete research-caching-strat-01D
 Moved: current/ → archive/2024-01/
 ```
 
 ### 9.3 Parent Task Structure
 ```
 current/
-  payment-integration/
+  payment-integration-05C/
     _overview.md
-    01-research-providers.task.md
-    02-implement-stripe.task.md
-    02-implement-paypal.task.md    # Parallel with stripe
-    03-integration-tests.task.md
-    stripe-docs/                   # Supporting materials
+    01_research-providers-05D.task.md
+    02_impl-stripe-api-05E.task.md
+    02_impl-paypal-api-05F.task.md    # Parallel with stripe
+    03_integration-tests-05G.task.md
+    stripe-docs/                      # Supporting materials
       api-reference.pdf
 ```
 

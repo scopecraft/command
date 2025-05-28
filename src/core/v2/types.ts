@@ -127,9 +127,10 @@ export interface SubtaskInfo {
  * Components of a v2 task ID
  */
 export interface TaskIdComponents {
-  descriptiveName: string;  // kebab-case name
-  dateCode: string;         // MMDD format
-  randomSuffix: string;     // 2 alphanumeric chars
+  descriptiveName: string;  // intelligently abbreviated name
+  monthCode: string;        // MM format (01-12)
+  letterSuffix: string;     // Single letter A-Z
+  sequenceNumber?: string;  // NN format for subtasks (01, 02, etc)
 }
 
 /**

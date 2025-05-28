@@ -2,13 +2,13 @@
 
 ---
 type: chore
-status: 🟢 Done
+status: In Progress
 area: core
-assignee: 
+assignee: null
 ---
 
-## Instruction
 
+## Instruction
 Refactor the core task management system to support the new workflow-based structure. This is the foundation that all other components depend on.
 
 **IMPORTANT**: This plan is not complete. Start by reviewing the entire core codebase to understand all the implications. Pay special attention to:
@@ -33,7 +33,6 @@ Refactor the core task management system to support the new workflow-based struc
 - `src/core/types.ts`
 
 ## Tasks
-
 - [x] Create comprehensive implementation plan
 - [x] Create v2 type definitions
 - [x] Implement v2 directory utilities
@@ -45,9 +44,15 @@ Refactor the core task management system to support the new workflow-based struc
 - [x] Add complex task support (folders with _overview.md)
 - [x] Update template system for v2
 - [x] Write tests for new functionality
+- [ ] Implement task conversion operations (floating ↔ subtask)
+- [ ] Add filename transformation logic for moves
+- [ ] Create subtask resequencing operations
+- [ ] Handle naming conflicts during conversions
+- [ ] Update moveTask to handle context changes
+- [ ] Add path-based ID resolution for subtasks
+- [ ] Document dependencies/requires field usage
 
 ## Deliverable
-
 ### Completed Components (All Core Phases)
 
 #### 1. Implementation Plan
@@ -143,8 +148,12 @@ Successfully created comprehensive e2e test that validates:
 - Document v2 API usage
 
 ## Log
+- 2025-05-28: Reopened - discovered edge cases with task naming and conversions
+  - Current implementation doesn't handle floating ↔ subtask conversions
+  - Missing filename transformation logic when moving between contexts
+  - Need to support simplified naming (no MMDD suffix for floating tasks)
+  - Subtask resequencing operations not implemented
 - 2025-05-27: V2 core implementation complete with comprehensive e2e tests
-
 - 2025-05-27: Task created as part of V2 implementation
 - 2025-05-27: Created comprehensive implementation plan
 - 2025-05-27: Implemented Phases 1-5 of core v2 functionality

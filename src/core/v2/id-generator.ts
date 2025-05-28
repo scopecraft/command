@@ -2,6 +2,7 @@
  * V2 ID Generation and Resolution
  * 
  * Handles task ID generation and resolution for the v2 system
+ * Now uses abbreviated names and simplified suffix format
  */
 
 import { existsSync, readdirSync } from 'node:fs';
@@ -18,45 +19,47 @@ import {
   getExistingWorkflowStates,
   isParentTaskFolder
 } from './directory-utils.js';
+import { abbreviateTaskName } from './name-abbreviator.js';
 
-// Characters to use for random suffix (alphanumeric, no ambiguous chars)
-const SUFFIX_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+// Characters to use for month suffix (A-Z)
+const MONTH_SUFFIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 /**
  * Generate a v2 task ID from a title
+ * Format: {abbreviated-name}-{MM}{X}
  */
 export function generateTaskId(title: string, date: Date = new Date()): string {
-  // Generate descriptive name (kebab-case)
-  const descriptiveName = title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
-    .replace(/\s+/g, '-')          // Replace spaces with hyphens
-    .replace(/-+/g, '-')           // Replace multiple hyphens with single
-    .replace(/^-|-$/g, '')         // Remove leading/trailing hyphens
-    .slice(0, 50);                 // Limit length
+  // Use abbreviation utility for intelligent shortening
+  const descriptiveName = abbreviateTaskName(title, 30);
   
-  // Generate date code (MMDD)
+  // Generate month code (MM)
   const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const dateCode = `${month}${day}`;
   
-  // Generate random suffix (2 chars)
-  const randomSuffix = generateRandomSuffix();
+  // Generate random letter suffix (A-Z)
+  const randomLetter = generateMonthSuffix();
   
-  return `${descriptiveName}-${dateCode}-${randomSuffix}`;
+  return `${descriptiveName}-${month}${randomLetter}`;
 }
 
 /**
- * Generate a random suffix for task IDs
+ * Generate a subtask ID with sequence prefix
+ * Format: {NN}_{abbreviated-name}-{MM}{X}
  */
-function generateRandomSuffix(): string {
-  let suffix = '';
-  for (let i = 0; i < 2; i++) {
-    const index = Math.floor(Math.random() * SUFFIX_CHARS.length);
-    suffix += SUFFIX_CHARS[index];
-  }
-  return suffix;
+export function generateSubtaskId(
+  title: string, 
+  sequence: string,
+  date: Date = new Date()
+): string {
+  const baseId = generateTaskId(title, date);
+  return `${sequence}_${baseId}`;
+}
+
+/**
+ * Generate a random letter suffix for month uniqueness
+ */
+function generateMonthSuffix(): string {
+  const index = Math.floor(Math.random() * MONTH_SUFFIX_CHARS.length);
+  return MONTH_SUFFIX_CHARS[index];
 }
 
 /**
@@ -66,16 +69,27 @@ export function parseTaskId(taskId: string): TaskIdComponents | null {
   // Remove .task.md if present
   const id = taskId.replace(/\.task\.md$/, '');
   
-  // Match pattern: descriptive-name-MMDD-XX
-  const match = id.match(/^(.+)-(\d{4})-([A-Z0-9]{2})$/);
-  if (!match) {
+  // Check if it's a subtask (has sequence prefix)
+  const subtaskMatch = id.match(/^(\d{2})_(.+)-(\d{2})([A-Z])$/);
+  if (subtaskMatch) {
+    return {
+      sequenceNumber: subtaskMatch[1],
+      descriptiveName: subtaskMatch[2],
+      monthCode: subtaskMatch[3],
+      letterSuffix: subtaskMatch[4]
+    };
+  }
+  
+  // Match floating task pattern: descriptive-name-MM[A-Z]
+  const floatingMatch = id.match(/^(.+)-(\d{2})([A-Z])$/);
+  if (!floatingMatch) {
     return null;
   }
   
   return {
-    descriptiveName: match[1],
-    dateCode: match[2],
-    randomSuffix: match[3]
+    descriptiveName: floatingMatch[1],
+    monthCode: floatingMatch[2],
+    letterSuffix: floatingMatch[3]
   };
 }
 
@@ -86,11 +100,25 @@ export function isValidTaskId(taskId: string): boolean {
   const components = parseTaskId(taskId);
   if (!components) return false;
   
-  // Validate date code (MMDD)
-  const month = parseInt(components.dateCode.slice(0, 2), 10);
-  const day = parseInt(components.dateCode.slice(2, 4), 10);
+  // Validate month code (MM)
+  const month = parseInt(components.monthCode, 10);
+  if (month < 1 || month > 12) return false;
   
-  return month >= 1 && month <= 12 && day >= 1 && day <= 31;
+  // Validate letter suffix
+  if (!/^[A-Z]$/.test(components.letterSuffix)) return false;
+  
+  // Validate sequence number if present
+  if (components.sequenceNumber) {
+    const seq = parseInt(components.sequenceNumber, 10);
+    if (isNaN(seq) || seq < 1 || seq > 99) return false;
+  }
+  
+  // Validate descriptive name
+  if (!components.descriptiveName || components.descriptiveName.length > 30) {
+    return false;
+  }
+  
+  return true;
 }
 
 /**
@@ -247,26 +275,31 @@ export function taskIdExists(
 
 /**
  * Generate a unique task ID
- * If the generated ID exists, it will try with different random suffixes
+ * If the generated ID exists, it will try with different letter suffixes
  */
 export function generateUniqueTaskId(
   title: string,
   projectRoot: string,
   config?: V2Config,
-  maxAttempts: number = 10
+  maxAttempts: number = 26
 ): string {
   const date = new Date();
+  const abbreviated = abbreviateTaskName(title, 30);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
   
-  for (let i = 0; i < maxAttempts; i++) {
-    const id = generateTaskId(title, date);
+  // Try all letters A-Z for this month
+  for (let i = 0; i < maxAttempts && i < 26; i++) {
+    const letter = MONTH_SUFFIX_CHARS[i];
+    const id = `${abbreviated}-${month}${letter}`;
     if (!taskIdExists(id, projectRoot, config)) {
       return id;
     }
   }
   
-  // If we still can't find a unique ID, add timestamp
-  const timestamp = Date.now().toString(36).slice(-4).toUpperCase();
-  return generateTaskId(`${title}-${timestamp}`, date);
+  // If all 26 letters are taken for this month (unlikely!),
+  // append a number to the name and try again
+  const extendedTitle = `${title}-${Math.floor(Math.random() * 99)}`;
+  return generateTaskId(extendedTitle, date);
 }
 
 /**
