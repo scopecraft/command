@@ -28,19 +28,29 @@ export const ParentTaskDetailPage: Story = {
   render: () => {
     const parentTask = mockV2ParentTasks[0]; // User Authentication System
     const subtasks = mockV2Subtasks.filter((task) => task.parent_task === 'parent-001');
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [content, setContent] = React.useState(parentTask.overview || '');
+
+    const handleEdit = () => {
+      setIsEditing(true);
+    };
+
+    const handleCancel = () => {
+      setContent(parentTask.overview || '');
+      setIsEditing(false);
+    };
+
+    const handleSave = () => {
+      console.log('Save overview content:', content);
+      setIsEditing(false);
+      // In real app, would update the parent task
+    };
 
     return (
       <div className="min-h-screen bg-background">
         {/* Header */}
         <div className="bg-card border-b">
           <div className="max-w-6xl mx-auto px-6 py-4">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
-              <span>Projects</span>
-              <span>›</span>
-              <WorkflowStateBadge workflow={parentTask.workflow_state} size="sm" />
-              <span>›</span>
-              <span className="font-medium">Parent Tasks</span>
-            </div>
             <div className="flex items-start gap-3">
               <TaskTypeIcon task={parentTask} />
               <div className="flex-1 min-w-0">
@@ -67,13 +77,17 @@ export const ParentTaskDetailPage: Story = {
         {/* Actions Header */}
         <div className="max-w-6xl mx-auto px-6 py-4 border-b bg-card">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90">
+            <div className="flex items-center gap-3">
+              {/* Primary CTAs */}
+              <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 font-medium">
+                🤖 Start Agent
+              </button>
+              <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 font-medium">
                 + Add Subtask
               </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Secondary actions */}
               <button className="px-3 py-1.5 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
                 ↕ Reorder
               </button>
@@ -92,15 +106,57 @@ export const ParentTaskDetailPage: Story = {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Overview - Main Content (2/3) */}
             <div className="lg:col-span-2">
-              {/* Just the markdown content, no extra boxes or titles */}
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]}
-                >
-                  {parentTask.overview}
-                </ReactMarkdown>
-              </div>
+              {isEditing ? (
+                /* Edit Mode */
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-foreground">Edit Overview</h2>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={handleCancel}
+                        className="px-3 py-1.5 text-sm bg-muted text-foreground rounded hover:bg-muted/90"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleSave}
+                        className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg">
+                    <textarea
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      className="w-full h-96 bg-background text-foreground p-4 font-mono text-sm resize-none focus:outline-none rounded-lg"
+                      placeholder="Enter overview content using Markdown..."
+                    />
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Supports Markdown formatting (headers, lists, links, etc.)
+                  </div>
+                </div>
+              ) : (
+                /* View Mode */
+                <div className="group relative">
+                  <button
+                    onClick={handleEdit}
+                    className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 text-xs bg-muted text-foreground rounded hover:bg-muted/90"
+                  >
+                    Edit
+                  </button>
+                  <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={handleEdit}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Subtasks Navigation Sidebar (1/3) */}
