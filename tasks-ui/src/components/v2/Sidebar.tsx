@@ -99,9 +99,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
 
   return (
     <aside className={cn("w-64 h-full bg-card border-r border-border flex flex-col", className)}>
-      {/* Navigation Section */}
+      {/* Tasks Section */}
       <SectionHeader
-        title="Navigation"
+        title="Tasks"
         section="navigation"
         isCollapsed={collapsedSections.navigation}
         onToggle={() => toggleSection('navigation')}

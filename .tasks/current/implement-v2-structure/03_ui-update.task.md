@@ -12,15 +12,15 @@ parent: implement-v2-structure
 ## Instruction
 Build a new V2 Task UI using a UI-first approach with mock providers. Replace the old phase/feature structure with the new workflow-based system. Create fresh V2 components rather than fixing existing ones.
 
-**UPDATED APPROACH**: After analysis, we're using mock providers for Storybook to enable true UI-first development. This allows us to design components and iterate on data structures without defining APIs upfront. React Query can be added later as an optimization.
+**UPDATED APPROACH**: The MCP server is complete and production-ready. We can now adapt our UI to work with the existing MCP endpoints rather than designing new APIs. The mock providers were useful for Phase 1 design, but we can move directly to real implementation.
 
 ### Implementation Strategy
-1. Create mock V2 providers for Storybook development
-2. Build new V2 components using mock providers (UI-first)
-3. Design data structures based on UI needs
-4. Define API contracts only after UI stabilizes
-5. Replace mock with real implementation in Phase 3
-6. Consider React Query later if needed for performance
+1. ✅ Create mock V2 providers for Storybook development (Phase 1)
+2. ✅ Build new V2 components using mock providers (Phase 1)
+3. Adapt UI to work with completed MCP API endpoints (Phase 3)
+4. Build API client layer to connect to MCP server
+5. Replace mock providers with real implementation
+6. Document any gaps where MCP changes might be beneficial
 
 ### Key Principles
 - **UI-first development** - Design drives data, not vice versa
@@ -63,25 +63,26 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
 - [x] Build ComponentShowcase (overview of all components)
 - [x] Export all components in v2/index.ts
 
-### Phase 2: Pages & Navigation (Replace Entire Sections)
+### Phase 2: API Integration & Real Implementation (Moved up - do this first!)
+- [ ] Review completed MCP API endpoints and adapt UI to match
+- [ ] Build API client layer that connects to existing MCP server
+- [ ] Create real TaskContext implementation (replace mock)
+- [ ] Map UI operations to available MCP functions
+- [ ] Add error handling and loading states
+- [ ] Test integration between UI and MCP backend
+- [ ] Update showcase stories to use real data (verify components work)
+- [ ] Consider adding React Query if caching/optimization needed
+- [ ] Document any gaps where MCP team changes might be needed
+
+### Phase 3: Pages & Navigation (Now with real data!)
 - [ ] Rename old pages to .old.tsx (PhaseDetailPage, FeatureDetailPage, etc.)
 - [ ] Build ParentTaskPage (shows parent task with subtasks)
 - [ ] Build TaskDetailPage (shows simple task or subtask details)
 - [ ] Build DocumentPage (shows document with editing)
 - [ ] Rename TaskListView.tsx → TaskListView.old.tsx
 - [ ] Build new TaskListView with workflow/parent filtering
-- [ ] Rename Sidebar.tsx → Sidebar.old.tsx
-- [ ] Build new Sidebar with workflow/parent navigation
 - [ ] Update routing to use new components
-
-### Phase 3: API Integration & Real Implementation
-- [ ] Define API contracts based on UI needs from Phase 1-2
-- [ ] Create real TaskContext implementation (replace mock)
-- [ ] Update MCP endpoints to match UI requirements
-- [ ] Add error handling and loading states
-- [ ] Test integration between UI and backend
 - [ ] Remove all .old.tsx files once migration complete
-- [ ] Consider adding React Query if caching/optimization needed
 ### Phase 4: Advanced Features & Polish
 - [ ] Add drag-and-drop subtask reordering (with Storybook interaction testing)
 - [ ] Implement parallel task management UI:
@@ -235,3 +236,20 @@ Showcase Views (in V2Showcase.stories.tsx):
     - Shows document navigation in sidebar
     - Links back to parent task context
   - Result: Cleaner, more predictable UI that's easier to understand
+- 2025-05-29: Completed V2 Sidebar and ClaudeAgentButton
+  - Created V2 Sidebar with collapsible sections matching existing UI patterns:
+    - Navigation section with quick filters for Tasks and Parent Tasks (To Do, In Progress, All)
+    - Workflow section showing backlog/current/archive with counts
+    - Recent tasks section showing last 5 tasks with proper icons
+    - Single "New Task" button at bottom (simplified from 2 buttons)
+  - Built ClaudeAgentButton component:
+    - Atlas variant styling with chevron icon
+    - Three states: Default, Starting (disabled), Active (with pulse indicator)
+    - Proper session state management for future Claude integration
+  - Fixed icon system usage:
+    - Sidebar now uses shared TaskTypeIcon from lib/icons.tsx
+    - Removed duplicate icon mappings
+    - Consistent icon usage across all V2 components
+  - Created Storybook stories demonstrating functionality
+  - Removed redundant theme/responsive stories (Storybook handles these)
+  - Phase 1 is now FULLY COMPLETED with all core components ready
