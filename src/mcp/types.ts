@@ -132,12 +132,6 @@ export interface TaskCreateParams {
   assignee?: string;
   tags?: string[];
   
-  // Initial content
-  instruction?: string;
-  tasks?: string[];
-  deliverable?: string;
-  
-  content?: string; // Legacy support
   root_dir?: string; // Override for tasks directory location
 }
 

@@ -187,17 +187,6 @@ export async function handleTaskCreate(params: TaskCreateParams) {
       tags: params.tags,
     };
 
-  // Set initial content
-  if (params.content) {
-    // Parse content to extract sections
-    const sections = params.content.split(/^## /m);
-    for (const section of sections) {
-      if (section.startsWith('Instruction')) {
-        createOptions.instruction = section.replace('Instruction\n', '').trim();
-      }
-    }
-  }
-
   const result = await v2.createTask(projectRoot, createOptions);
 
   if (result.success && result.data) {

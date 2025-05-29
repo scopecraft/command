@@ -342,21 +342,6 @@ function registerTools(server: McpServer, verbose = false): McpServer {
         'Tags for categorization and filtering (e.g., ["backend", "api", "security", "urgent"]). Supports flexible organization beyond area/type.'
       )
       .optional(),
-
-    // Initial content
-    instruction: z.string().describe('Initial instruction section content (markdown)').optional(),
-    tasks: z
-      .array(z.string())
-      .describe(
-        'Checklist items for the tasks section (e.g., ["Design API", "Implement endpoints"])'
-      )
-      .optional(),
-    deliverable: z.string().describe('Initial deliverable section content (markdown)').optional(),
-
-    content: z
-      .string()
-      .describe('DEPRECATED: Use instruction/tasks/deliverable instead')
-      .optional(),
   };
 
   const taskCreateSchema = z.object(taskCreateRawShape);
@@ -364,7 +349,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     'task_create',
     {
       description:
-        'Creates a new task with auto-generated ID based on title. Can create standalone tasks or subtasks within a parent. Tasks default to backlog unless specified. V2: Uses workflow states and standardized sections.',
+        'Creates a new task with auto-generated ID based on title. Tasks are created with type-specific templates that provide initial content structure. To modify content after creation, use task_get to view the template, then task_update to customize sections. Can create standalone tasks or subtasks within a parent. Tasks default to backlog unless specified.',
       inputSchema: taskCreateRawShape,
       annotations: {
         title: 'Create Task',
@@ -431,7 +416,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     'task_update',
     {
       description:
-        "Updates a task's metadata and/or content. Supports partial updates - only specified fields change. V2: Can update individual sections and supports proper status values.",
+        "Updates a task's metadata and/or content. Use this after task_create to customize the template-generated content. Supports partial updates - only specified fields change. Can update metadata (status, priority, etc.) and individual sections (instruction, tasks, deliverable, log) independently.",
       inputSchema: taskUpdateRawShape,
       annotations: {
         title: 'Update Task',
