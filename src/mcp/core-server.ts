@@ -62,7 +62,7 @@ function createTaskMetadata(params: {
     id: params.id || '',
     title: params.title,
     type: params.type,
-    status: params.status || '🟡 To Do',
+    status: params.status || 'To Do',
     priority: params.priority || 'Medium',
     created_date: new Date().toISOString().split('T')[0],
     updated_date: new Date().toISOString().split('T')[0],
@@ -132,26 +132,26 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   const availableTaskTypes =
     taskTypes.length > 0
       ? taskTypes
-      : ['🌟 Feature', '🐞 Bug', '🧹 Chore', '📚 Documentation', '🧪 Test', '🔬 Spike'];
+      : ['feature', 'bug', 'chore', 'documentation', 'test', 'spike'];
 
   // Common enums used across multiple tools
   const taskStatusEnum = z.enum([
-    '🟡 To Do',
-    '🔵 In Progress',
-    '🟢 Done',
-    '⚪ Archived',
-    '🔴 Blocked',
+    'To Do',
+    'In Progress',
+    'Done',
+    'Archived',
+    'Blocked',
   ]);
   const taskPriorityEnum = z.enum(['High', 'Medium', 'Low']);
   const taskTypeEnum = z.enum(availableTaskTypes as [string, ...string[]]);
 
   // Phase status enum
   const phaseStatusEnum = z.enum([
-    '🟡 Pending',
-    '🔵 In Progress',
-    '🟢 Completed',
-    '⚪ Blocked',
-    '🗄️ Archived',
+    'Pending',
+    'In Progress',
+    'Completed',
+    'Blocked',
+    'Archived',
   ]);
 
   // Task list tool
@@ -245,7 +245,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     id: z.string().describe('Custom task ID (auto-generated if not provided)').optional(),
     title: z.string().describe('Task title/summary'),
     type: taskTypeEnum.describe('Task type (must match available templates)'),
-    status: taskStatusEnum.describe('Initial task status').default('🟡 To Do').optional(),
+    status: taskStatusEnum.describe('Initial task status').default('To Do').optional(),
     priority: taskPriorityEnum.describe('Task priority level').default('Medium').optional(),
     assignee: z.string().describe('Username of person assigned to this task').optional(),
     phase: z.string().describe('Phase to create task in (e.g., "release-v1")').optional(),
@@ -432,7 +432,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .describe('Unique phase identifier (e.g., "release-v2", "sprint-23"). Should be URL-safe.'),
     name: z.string().describe('Human-readable phase name (e.g., "Release 2.0", "Sprint 23")'),
     description: z.string().describe('Detailed description of phase goals and scope').optional(),
-    status: phaseStatusEnum.describe('Initial phase status').default('🟡 Pending').optional(),
+    status: phaseStatusEnum.describe('Initial phase status').default('Pending').optional(),
     order: z
       .number()
       .describe('Numeric order for sorting phases (lower numbers appear first)')
@@ -765,8 +765,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       ),
     title: z.string().describe('Human-readable feature title (e.g., "User Authentication System")'),
     phase: z.string().describe('Phase to create feature in (must exist, e.g., "release-v1")'),
-    type: taskTypeEnum.describe('Task type for overview file').default('🌟 Feature').optional(),
-    status: taskStatusEnum.describe('Initial feature status').default('🟡 To Do').optional(),
+    type: taskTypeEnum.describe('Task type for overview file').default('feature').optional(),
+    status: taskStatusEnum.describe('Initial feature status').default('To Do').optional(),
     description: z
       .string()
       .describe('Detailed feature description explaining purpose and scope')

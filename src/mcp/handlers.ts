@@ -112,7 +112,7 @@ export async function handleTaskCreate(params: TaskCreateParams) {
     id: params.id || '', // Let task-crud generate the ID
     title: params.title,
     type: params.type,
-    status: normalizeTaskStatus(params.status || '🟡 To Do'),
+    status: normalizeTaskStatus(params.status || 'To Do'),
     priority: normalizePriority(params.priority || 'Medium'),
     created_date: new Date().toISOString().split('T')[0],
     updated_date: new Date().toISOString().split('T')[0],
@@ -423,7 +423,7 @@ export async function handleFeatureCreate(params: FeatureCreateParams) {
   return await createFeature(params.name, {
     title: params.title,
     phase: params.phase,
-    type: params.type || '🌟 Feature',
+    type: params.type || 'feature',
     description: params.description,
     assignee: params.assignee,
     tags: params.tags,
@@ -501,7 +501,7 @@ export async function handleAreaCreate(params: AreaCreateParams) {
   return await createArea(params.name, {
     title: params.title,
     phase: params.phase,
-    type: params.type || '🧹 Chore',
+    type: params.type || 'chore',
     description: params.description,
     assignee: params.assignee,
     tags: params.tags,

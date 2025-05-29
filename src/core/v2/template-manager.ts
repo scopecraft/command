@@ -108,7 +108,7 @@ export function applyTemplate(
     title: options.title,
     frontmatter: {
       type: options.type,
-      status: options.status || '🟡 To Do',
+      status: options.status || 'To Do',
       area: options.area,
       ...options.customMetadata
     },

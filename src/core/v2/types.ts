@@ -154,7 +154,7 @@ export interface TaskCreateOptions {
   type: TaskType;
   area: string;
   workflowState?: WorkflowState; // defaults to 'backlog'
-  status?: TaskStatus; // defaults to '🟡 To Do'
+  status?: TaskStatus; // defaults to 'To Do'
   template?: string; // template ID to use
   instruction?: string; // initial instruction content
   tasks?: string[]; // initial checklist items

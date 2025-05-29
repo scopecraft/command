@@ -677,8 +677,8 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .requiredOption('--title <title>', 'Feature title')
     .requiredOption('--phase <phase>', 'Phase to create the feature in')
     .option('--description <description>', 'Feature description')
-    .option('--type <type>', 'Feature type (default: "🌟 Feature")')
-    .option('--status <status>', 'Feature status (default: "🟡 To Do")')
+    .option('--type <type>', 'Feature type (default: "feature")')
+    .option('--status <status>', 'Feature status (default: "To Do")')
     .option('--priority <priority>', 'Feature priority (default: "Medium")')
     .option('--assignee <assignee>', 'Assigned to')
     .option('--tags <tags...>', 'Tags for the feature')
@@ -690,8 +690,8 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
         const _result = await handleCreateCommand({
           id: '_overview',
           title: options.title,
-          type: options.type || '🌟 Feature',
-          status: options.status || '🟡 To Do',
+          type: options.type || 'feature',
+          status: options.status || 'To Do',
           priority: options.priority || 'Medium',
           assignee: options.assignee,
           phase: options.phase,
@@ -771,8 +771,8 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .requiredOption('--title <title>', 'Area title')
     .requiredOption('--phase <phase>', 'Phase to create the area in')
     .option('--description <description>', 'Area description')
-    .option('--type <type>', 'Area type (default: "🧹 Chore")')
-    .option('--status <status>', 'Area status (default: "🟡 To Do")')
+    .option('--type <type>', 'Area type (default: "chore")')
+    .option('--status <status>', 'Area status (default: "To Do")')
     .option('--priority <priority>', 'Area priority (default: "Medium")')
     .option('--assignee <assignee>', 'Assigned to')
     .option('--tags <tags...>', 'Tags for the area')
@@ -784,8 +784,8 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
         const _result = await handleCreateCommand({
           id: '_overview',
           title: options.title,
-          type: options.type || '🧹 Chore',
-          status: options.status || '🟡 To Do',
+          type: options.type || 'chore',
+          status: options.status || 'To Do',
           priority: options.priority || 'Medium',
           assignee: options.assignee,
           phase: options.phase,

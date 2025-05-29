@@ -225,7 +225,7 @@ export async function handleCreateCommand(options: {
       // Prepare values to apply to template
       const values: Record<string, any> = {
         title: options.title,
-        status: options.status || '🟡 To Do',
+        status: options.status || 'To Do',
         type: options.type,
         priority: options.priority || 'Medium',
         created_date: today,
@@ -281,7 +281,7 @@ export async function handleCreateCommand(options: {
               id: options.id || '',
               title: options.title,
               type: options.type,
-              status: options.status || extractedMetadata.status || '🟡 To Do',
+              status: options.status || extractedMetadata.status || 'To Do',
               priority: options.priority || extractedMetadata.priority || 'Medium',
               created_date: today,
               updated_date: today,
@@ -327,7 +327,7 @@ export async function handleCreateCommand(options: {
           id,
           title: options.title,
           type: options.type,
-          status: options.status || '🟡 To Do',
+          status: options.status || 'To Do',
           priority: options.priority || 'Medium',
           created_date: today,
           updated_date: today,
