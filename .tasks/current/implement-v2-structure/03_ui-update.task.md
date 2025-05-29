@@ -2,7 +2,7 @@
 
 ---
 type: chore
-status: Progress
+status: In Progress
 area: ui
 assignee: null
 parent: implement-v2-structure

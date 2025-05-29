@@ -113,7 +113,7 @@ export async function handleTaskCreate(params: TaskCreateParams) {
     title: params.title,
     type: params.type,
     status: normalizeTaskStatus(params.status || '🟡 To Do'),
-    priority: normalizePriority(params.priority || '▶️ Medium'),
+    priority: normalizePriority(params.priority || 'Medium'),
     created_date: new Date().toISOString().split('T')[0],
     updated_date: new Date().toISOString().split('T')[0],
     assigned_to: params.assignee || '',

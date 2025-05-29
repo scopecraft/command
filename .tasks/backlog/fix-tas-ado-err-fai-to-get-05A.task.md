@@ -4,7 +4,7 @@
 type: bug
 status: To Do
 area: core
-priority: ▶️ Medium
+priority: Medium
 ---
 
 ## Instruction

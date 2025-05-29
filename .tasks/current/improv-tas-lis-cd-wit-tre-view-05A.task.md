@@ -4,7 +4,7 @@
 type: feature
 status: Done
 area: cli
-priority: "\U0001F53C High"
+priority: High
 ---
 
 

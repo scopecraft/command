@@ -110,7 +110,7 @@ Every task document MUST follow this structure:
 
 ---
 type: {task-type}
-status: {status-emoji} {status-text}
+status: {status-text}
 area: {product-area}
 {additional-metadata}
 ---
@@ -135,24 +135,24 @@ area: {product-area}
 
 #### 3.3.1 Required Fields
 - `type`: One of: feature, bug, chore, spike, idea
-- `status`: Status emoji + text (see section 3.4)
+- `status`: Status text without emoji (see section 3.4)
 - `area`: Product area (e.g., auth, billing, ui)
 
 #### 3.3.2 Optional Fields
 Teams may add custom fields:
 - `sprint`: Current sprint identifier
 - `version`: Target version
-- `priority`: Priority level
+- `priority`: One of: Low, Medium, High, Critical
 - `assignee`: Assigned person
 - Custom fields as needed
 
 ### 3.4 Status Values
-Standard status values with emoji prefixes:
-- `🟡 To Do`: Not started
-- `🔵 In Progress`: Currently being worked on
-- `🟢 Done`: Completed
-- `🔴 Blocked`: Cannot proceed
-- `⚪ Archived`: No longer relevant
+Standard status values (without emoji prefixes):
+- `To Do`: Not started
+- `In Progress`: Currently being worked on
+- `Done`: Completed
+- `Blocked`: Cannot proceed
+- `Archived`: No longer relevant
 
 ## 4. Section Specifications
 
@@ -365,7 +365,7 @@ File contents:
 
 ---
 type: feature
-status: 🟡 To Do
+status: To Do
 area: auth
 ---
 

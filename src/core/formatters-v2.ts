@@ -32,7 +32,8 @@ const TYPE_EMOJIS: Record<v2.TaskType, string> = {
   idea: '💡',
 };
 
-const PRIORITY_EMOJIS = {
+const PRIORITY_EMOJIS: Record<v2.TaskPriority, string> = {
+  Highest: '🔥',
   High: '🔼',
   Medium: '▶️',
   Low: '🔽',

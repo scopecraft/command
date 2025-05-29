@@ -63,7 +63,7 @@ function createTaskMetadata(params: {
     title: params.title,
     type: params.type,
     status: params.status || '🟡 To Do',
-    priority: params.priority || '▶️ Medium',
+    priority: params.priority || 'Medium',
     created_date: new Date().toISOString().split('T')[0],
     updated_date: new Date().toISOString().split('T')[0],
     assigned_to: params.assignee || '',
@@ -142,7 +142,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     '⚪ Archived',
     '🔴 Blocked',
   ]);
-  const taskPriorityEnum = z.enum(['🔼 High', '▶️ Medium', '🔽 Low']);
+  const taskPriorityEnum = z.enum(['High', 'Medium', 'Low']);
   const taskTypeEnum = z.enum(availableTaskTypes as [string, ...string[]]);
 
   // Phase status enum
@@ -246,7 +246,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     title: z.string().describe('Task title/summary'),
     type: taskTypeEnum.describe('Task type (must match available templates)'),
     status: taskStatusEnum.describe('Initial task status').default('🟡 To Do').optional(),
-    priority: taskPriorityEnum.describe('Task priority level').default('▶️ Medium').optional(),
+    priority: taskPriorityEnum.describe('Task priority level').default('Medium').optional(),
     assignee: z.string().describe('Username of person assigned to this task').optional(),
     phase: z.string().describe('Phase to create task in (e.g., "release-v1")').optional(),
     subdirectory: z

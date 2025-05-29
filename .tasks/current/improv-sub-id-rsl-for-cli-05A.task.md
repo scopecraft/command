@@ -4,7 +4,7 @@
 type: chore
 status: Done
 area: cli
-priority: ▶️ Medium
+priority: Medium
 ---
 
 
@@ -58,7 +58,7 @@ Users should be able to use simple subtask IDs for common operations:
 ```bash
 # These should all work:
 sc task complete 02-cli-update
-sc task complete parent/02-cli-update  
+sc task complete parent/02-cli-update
 sc task complete current/parent/02-cli-update
 
 # With helpful errors for ambiguous cases:

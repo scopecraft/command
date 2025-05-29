@@ -1,4 +1,0 @@
-id = "backlog"
-name = "Backlog"
-description = "Future enhancements and features that are not scheduled for immediate implementation but should be tracked for later releases."
-status = "🟡 Pending"

@@ -679,7 +679,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .option('--description <description>', 'Feature description')
     .option('--type <type>', 'Feature type (default: "🌟 Feature")')
     .option('--status <status>', 'Feature status (default: "🟡 To Do")')
-    .option('--priority <priority>', 'Feature priority (default: "▶️ Medium")')
+    .option('--priority <priority>', 'Feature priority (default: "Medium")')
     .option('--assignee <assignee>', 'Assigned to')
     .option('--tags <tags...>', 'Tags for the feature')
     .action(async (options) => {
@@ -692,7 +692,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
           title: options.title,
           type: options.type || '🌟 Feature',
           status: options.status || '🟡 To Do',
-          priority: options.priority || '▶️ Medium',
+          priority: options.priority || 'Medium',
           assignee: options.assignee,
           phase: options.phase,
           subdirectory,
@@ -773,7 +773,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .option('--description <description>', 'Area description')
     .option('--type <type>', 'Area type (default: "🧹 Chore")')
     .option('--status <status>', 'Area status (default: "🟡 To Do")')
-    .option('--priority <priority>', 'Area priority (default: "▶️ Medium")')
+    .option('--priority <priority>', 'Area priority (default: "Medium")')
     .option('--assignee <assignee>', 'Assigned to')
     .option('--tags <tags...>', 'Tags for the area')
     .action(async (options) => {
@@ -786,7 +786,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
           title: options.title,
           type: options.type || '🧹 Chore',
           status: options.status || '🟡 To Do',
-          priority: options.priority || '▶️ Medium',
+          priority: options.priority || 'Medium',
           assignee: options.assignee,
           phase: options.phase,
           subdirectory,

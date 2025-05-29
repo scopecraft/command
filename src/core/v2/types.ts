@@ -1,6 +1,6 @@
 /**
  * Scopecraft Task System V2 Types
- * 
+ *
  * Core type definitions for the workflow-based task system
  */
 
@@ -12,16 +12,13 @@ export type WorkflowState = 'backlog' | 'current' | 'archive';
 
 export type TaskType = 'feature' | 'bug' | 'chore' | 'documentation' | 'test' | 'spike' | 'idea';
 
-export type TaskStatus = 
-  | 'To Do'
-  | 'In Progress'
-  | 'Done'
-  | 'Blocked'
-  | 'Archived';
+export type TaskStatus = 'To Do' | 'In Progress' | 'Done' | 'Blocked' | 'Archived';
+
+export type TaskPriority = 'Highest' | 'High' | 'Medium' | 'Low';
 
 // Required sections in v2 task documents
 export const REQUIRED_SECTIONS = ['instruction', 'tasks', 'deliverable', 'log'] as const;
-export type RequiredSection = typeof REQUIRED_SECTIONS[number];
+export type RequiredSection = (typeof REQUIRED_SECTIONS)[number];
 
 // ============================================
 // Task Document Structure
@@ -35,7 +32,10 @@ export interface TaskFrontmatter {
   type: TaskType;
   status: TaskStatus;
   area: string;
-  
+
+  // Optional typed fields
+  priority?: TaskPriority;
+
   // Allow custom fields for extensibility
   [key: string]: unknown;
 }
@@ -49,7 +49,7 @@ export interface TaskSections {
   tasks: string;
   deliverable: string;
   log: string;
-  
+
   // Allow custom sections
   [key: string]: string;
 }
@@ -79,12 +79,12 @@ export interface TaskLocation {
  * Task metadata including file system info
  */
 export interface TaskMetadata {
-  id: string;              // filename without .task.md
-  filename: string;        // full filename with extension
-  path: string;            // absolute file path
-  location: TaskLocation;  // workflow location
-  isParentTask: boolean;   // true if task is a folder with subtasks
-  parentTask?: string;     // for subtasks in complex tasks
+  id: string; // filename without .task.md
+  filename: string; // full filename with extension
+  path: string; // absolute file path
+  location: TaskLocation; // workflow location
+  isParentTask: boolean; // true if task is a folder with subtasks
+  parentTask?: string; // for subtasks in complex tasks
   sequenceNumber?: string; // e.g., "01" for ordered subtasks
 }
 
@@ -105,16 +105,16 @@ export interface Task {
  */
 export interface ParentTask {
   metadata: TaskMetadata;
-  overview: TaskDocument;      // _overview.md content
-  subtasks: Task[];           // ordered subtasks
-  supportingFiles: string[];  // non-task files in folder
+  overview: TaskDocument; // _overview.md content
+  subtasks: Task[]; // ordered subtasks
+  supportingFiles: string[]; // non-task files in folder
 }
 
 /**
  * Subtask info for parent tasks
  */
 export interface SubtaskInfo {
-  sequenceNumber: string;  // "01", "02", etc.
+  sequenceNumber: string; // "01", "02", etc.
   filename: string;
   canRunParallel: boolean; // true if same sequence number as another
 }
@@ -127,10 +127,10 @@ export interface SubtaskInfo {
  * Components of a v2 task ID
  */
 export interface TaskIdComponents {
-  descriptiveName: string;  // intelligently abbreviated name
-  monthCode: string;        // MM format (01-12)
-  letterSuffix: string;     // Single letter A-Z
-  sequenceNumber?: string;  // NN format for subtasks (01, 02, etc)
+  descriptiveName: string; // intelligently abbreviated name
+  monthCode: string; // MM format (01-12)
+  letterSuffix: string; // Single letter A-Z
+  sequenceNumber?: string; // NN format for subtasks (01, 02, etc)
 }
 
 /**
@@ -139,7 +139,7 @@ export interface TaskIdComponents {
 export interface TaskReference {
   id: string;
   section?: string;
-  explicitPath?: string;  // e.g., "current/implement-oauth-0127-AB"
+  explicitPath?: string; // e.g., "current/implement-oauth-0127-AB"
 }
 
 // ============================================
@@ -153,11 +153,11 @@ export interface TaskCreateOptions {
   title: string;
   type: TaskType;
   area: string;
-  workflowState?: WorkflowState;  // defaults to 'backlog'
-  status?: TaskStatus;             // defaults to '🟡 To Do'
-  template?: string;               // template ID to use
-  instruction?: string;            // initial instruction content
-  tasks?: string[];               // initial checklist items
+  workflowState?: WorkflowState; // defaults to 'backlog'
+  status?: TaskStatus; // defaults to '🟡 To Do'
+  template?: string; // template ID to use
+  instruction?: string; // initial instruction content
+  tasks?: string[]; // initial checklist items
   customMetadata?: Record<string, unknown>;
   customSections?: Record<string, string>;
 }
@@ -176,7 +176,7 @@ export interface TaskUpdateOptions {
  */
 export interface TaskMoveOptions {
   targetState: WorkflowState;
-  archiveDate?: string;   // YYYY-MM format for archive
+  archiveDate?: string; // YYYY-MM format for archive
   updateStatus?: boolean; // auto-update status based on move
 }
 
@@ -260,10 +260,10 @@ export interface V2Config {
     current: string;
     archive: string;
   };
-  archiveDateFormat?: string;      // default "YYYY-MM"
+  archiveDateFormat?: string; // default "YYYY-MM"
   defaultWorkflowState?: WorkflowState;
-  autoStatusUpdate?: boolean;      // update status on workflow transitions
-  complexTaskPrefix?: string;      // prefix for subtask numbering
+  autoStatusUpdate?: boolean; // update status on workflow transitions
+  complexTaskPrefix?: string; // prefix for subtask numbering
 }
 
 // ============================================

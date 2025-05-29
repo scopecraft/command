@@ -4,7 +4,7 @@
 type: feature
 status: To Do
 area: general
-priority: ▶️ Medium
+priority: Medium
 ---
 
 

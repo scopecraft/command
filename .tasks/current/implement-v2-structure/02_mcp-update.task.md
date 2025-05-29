@@ -2,9 +2,9 @@
 
 ---
 type: chore
-status: 🟡 To Do
+status: To Do
 area: mcp
-assignee: 
+assignee:
 ---
 
 ## Instruction
