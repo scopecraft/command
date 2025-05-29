@@ -2,7 +2,7 @@
 
 ---
 type: chore
-status: To Do
+status: Done
 area: general
 priority: Medium
 tags:
@@ -27,12 +27,12 @@ Add `tags?: string[]` as an optional typed field in TaskFrontmatter, similar to 
 
 ## Tasks
 
-- [ ] Review current tag usage across the codebase
-- [ ] Add `tags?: string[]` to TaskFrontmatter interface in v2/types.ts
-- [ ] Update task CRUD operations to properly handle tags
-- [ ] Ensure TaskListOptions includes typed tag filtering
-- [ ] Update formatters to display tags consistently
-- [ ] Add tests for tag operations
+- [x] Review current tag usage across the codebase
+- [x] Add `tags?: string[]` to TaskFrontmatter interface in v2/types.ts
+- [x] Update task CRUD operations to properly handle tags
+- [x] Ensure TaskListOptions includes typed tag filtering
+- [x] Update formatters to display tags consistently
+- [x] Add tests for tag operations
 
 ## Deliverable
 
@@ -44,3 +44,4 @@ Add `tags?: string[]` as an optional typed field in TaskFrontmatter, similar to 
 ## Log
 
 - 2025-05-28: Task created during MCP v2 update planning. Identified that tags are used everywhere but not properly typed in core v2.
+- 2025-05-28: Implemented tags support as typed field in TaskFrontmatter interface. Added tags?: string[] to both TaskFrontmatter and TaskCreateOptions interfaces. Updated CRUD operations to handle tags properly (including empty array handling). Tag filtering already existed in formatters but now uses properly typed field. Created comprehensive test suite for tag operations - all tests passing.

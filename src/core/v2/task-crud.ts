@@ -65,6 +65,7 @@ export async function createTask(
         type: options.type,
         status: options.status || 'To Do',
         area: options.area,
+        ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
         ...options.customMetadata,
       },
       sections: ensureRequiredSections({
@@ -449,6 +450,13 @@ export async function listTasks(
 
           if (options.area && document.frontmatter.area !== options.area) {
             continue;
+          }
+
+          if (options.tags && options.tags.length > 0) {
+            const taskTags = document.frontmatter.tags;
+            if (!taskTags || !options.tags.some((tag) => taskTags.includes(tag))) {
+              continue;
+            }
           }
 
           // Check parent task filter

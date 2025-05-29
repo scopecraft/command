@@ -35,6 +35,7 @@ export interface TaskFrontmatter {
 
   // Optional typed fields
   priority?: TaskPriority;
+  tags?: string[];
 
   // Allow custom fields for extensibility
   [key: string]: unknown;
@@ -155,6 +156,7 @@ export interface TaskCreateOptions {
   area: string;
   workflowState?: WorkflowState; // defaults to 'backlog'
   status?: TaskStatus; // defaults to 'To Do'
+  tags?: string[]; // task tags
   template?: string; // template ID to use
   instruction?: string; // initial instruction content
   tasks?: string[]; // initial checklist items
@@ -188,6 +190,7 @@ export interface TaskListOptions {
   type?: TaskType;
   status?: TaskStatus;
   area?: string;
+  tags?: string[];
   includeArchived?: boolean;
   includeParentTasks?: boolean;
   // Additional filters
