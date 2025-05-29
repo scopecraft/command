@@ -1,4 +1,7 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 import { TaskTypeIcon } from './TaskTypeIcon';
 import { WorkflowStateBadge, StatusBadge, PriorityIndicator } from './WorkflowStateBadge';
 import { Button } from '../ui/button';
@@ -7,9 +10,10 @@ import type { ParentTask } from '../../lib/types';
 
 interface ParentTaskCardProps {
   parentTask: ParentTask;
-  variant?: 'default' | 'compact';
+  variant?: 'default' | 'compact' | 'detailed';
   onClick?: () => void;
   className?: string;
+  showOverview?: boolean; // For detailed variant
 }
 
 export function ParentTaskCard({
@@ -17,6 +21,7 @@ export function ParentTaskCard({
   variant = 'default',
   onClick,
   className = '',
+  showOverview = false,
 }: ParentTaskCardProps) {
   const {
     title,
@@ -70,6 +75,51 @@ export function ParentTaskCard({
                 +{tags.length - 3}
               </span>
             )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Detailed variant - for overview display
+  if (variant === 'detailed') {
+    return (
+      <div className={cn('space-y-4', className)}>
+        {/* Header */}
+        <div className="flex items-start gap-3">
+          <TaskTypeIcon task={parentTask} />
+          <div className="flex-1 min-w-0">
+            <h3 className="font-mono font-medium text-lg">{title}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <StatusBadge status={status} />
+              <PriorityIndicator priority={priority} />
+              <WorkflowStateBadge workflow={workflow_state} />
+            </div>
+          </div>
+        </div>
+
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {tags.map((tag) => (
+              <span key={tag} className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Full Overview with Markdown */}
+        {showOverview && overview && (
+          <div className="bg-card border rounded-lg p-4">
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+              >
+                {overview}
+              </ReactMarkdown>
+            </div>
           </div>
         )}
       </div>

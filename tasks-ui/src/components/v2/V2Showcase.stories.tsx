@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
+import { mockV2ParentTasks, mockV2SimpleTasks, mockV2Subtasks } from '../../lib/api/mock-data-v2';
 import { ParentTaskCard } from './ParentTaskCard';
 import { SubtaskList } from './SubtaskList';
 import { TaskTypeIcon } from './TaskTypeIcon';
-import { WorkflowStateBadge, StatusBadge, PriorityIndicator } from './WorkflowStateBadge';
-import { mockV2ParentTasks, mockV2Subtasks, mockV2SimpleTasks } from '../../lib/api/mock-data-v2';
+import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 const meta: Meta = {
   title: 'V2 Components/Complete Showcase',
@@ -24,7 +24,7 @@ type Story = StoryObj<typeof meta>;
 export const ParentTaskDetailPage: Story = {
   render: () => {
     const parentTask = mockV2ParentTasks[0]; // User Authentication System
-    const subtasks = mockV2Subtasks.filter(task => task.parent_task === 'parent-001');
+    const subtasks = mockV2Subtasks.filter((task) => task.parent_task === 'parent-001');
 
     return (
       <div className="min-h-screen bg-background">
@@ -42,111 +42,75 @@ export const ParentTaskDetailPage: Story = {
           </div>
         </div>
 
+        {/* Actions Header */}
+        <div className="max-w-6xl mx-auto px-6 py-4 border-b bg-card">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90">
+                + Add Subtask
+              </button>
+              <button className="px-3 py-1.5 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
+                ↕ Reorder
+              </button>
+              <button className="px-3 py-1.5 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
+                ⚹ Make Parallel
+              </button>
+              <button className="px-3 py-1.5 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
+                🔄 Convert
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Main Content */}
         <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Parent Task Card */}
-              <ParentTaskCard 
-                parentTask={parentTask}
-                variant="detailed"
-                showOverview={true}
-                showProgress={true}
-                showMetadata={true}
-              />
-
-              {/* Subtasks Section */}
-              <div className="bg-card border rounded-lg">
-                <div className="p-4 border-b">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-foreground">🔗 Subtasks</h2>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{subtasks.filter(t => t.status === 'done').length} completed</span>
-                      <span>•</span>
-                      <span>{subtasks.length} total</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4">
-                  <SubtaskList 
-                    subtasks={subtasks}
-                    variant="tree"
-                    showSequence={true}
-                    showParallel={true}
-                    showMetadata={true}
-                    onTaskClick={(task) => console.log('Navigate to task:', task.id)}
-                  />
-                </div>
+            {/* Overview - Main Content (2/3) */}
+            <div className="lg:col-span-2">
+              <div className="bg-card border rounded-lg p-6">
+                <h2 className="text-lg font-semibold text-foreground mb-4">📖 Overview</h2>
+                <ParentTaskCard
+                  parentTask={parentTask}
+                  variant="detailed"
+                  showOverview={true}
+                />
               </div>
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Quick Stats */}
+            {/* Subtasks Navigation Sidebar (1/3) */}
+            <div>
               <div className="bg-card border rounded-lg p-4">
-                <h3 className="font-semibold text-foreground mb-3">Quick Stats</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Total Subtasks</span>
-                    <span className="font-medium">{subtasks.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Completed</span>
-                    <span className="font-medium text-green-600">
-                      {subtasks.filter(t => t.status === 'done').length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">In Progress</span>
-                    <span className="font-medium text-blue-600">
-                      {subtasks.filter(t => t.status === 'in_progress').length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Blocked</span>
-                    <span className="font-medium text-red-600">
-                      {subtasks.filter(t => t.status === 'blocked').length}
-                    </span>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-foreground">🔗 Subtasks</h3>
+                  <div className="text-sm text-muted-foreground">
+                    {subtasks.filter((t) => t.status === 'done').length}/{subtasks.length}
                   </div>
                 </div>
-              </div>
+                
+                {/* Progress Bar */}
+                <div className="mb-4">
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${Math.round((subtasks.filter(t => t.status === 'done').length / subtasks.length) * 100)}%` 
+                      }}
+                    />
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {Math.round((subtasks.filter(t => t.status === 'done').length / subtasks.length) * 100)}% complete
+                  </div>
+                </div>
 
-              {/* Related Tasks */}
-              <div className="bg-card border rounded-lg p-4">
-                <h3 className="font-semibold text-foreground mb-3">Related Simple Tasks</h3>
-                <div className="space-y-2">
-                  {mockV2SimpleTasks.slice(0, 2).map((task) => (
-                    <div key={task.id} className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer">
-                      <TaskTypeIcon task={task} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">{task.title}</div>
-                        <div className="flex items-center gap-1 mt-1">
-                          <StatusBadge status={task.status} size="sm" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="bg-card border rounded-lg p-4">
-                <h3 className="font-semibold text-foreground mb-3">Quick Actions</h3>
-                <div className="space-y-2">
-                  <button className="w-full text-left px-3 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90">
-                    + Add Subtask
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
-                    ↕ Reorder Subtasks
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
-                    ⚹ Make Parallel
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
-                    🔄 Convert to Simple Task
-                  </button>
-                </div>
+                {/* Condensed Subtask List */}
+                <SubtaskList
+                  subtasks={subtasks}
+                  variant="compact"
+                  onTaskClick={(task) => console.log('Navigate to task detail:', task.id)}
+                />
               </div>
             </div>
           </div>
@@ -174,13 +138,15 @@ export const WorkflowDashboard: Story = {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <WorkflowStateBadge workflow="backlog" />
-              <span className="text-muted-foreground">({mockV2ParentTasks.filter(t => t.workflow_state === 'backlog').length})</span>
+              <span className="text-muted-foreground">
+                ({mockV2ParentTasks.filter((t) => t.workflow_state === 'backlog').length})
+              </span>
             </div>
             <div className="space-y-3">
               {mockV2ParentTasks
-                .filter(task => task.workflow_state === 'backlog')
+                .filter((task) => task.workflow_state === 'backlog')
                 .map((task) => (
-                  <ParentTaskCard 
+                  <ParentTaskCard
                     key={task.id}
                     parentTask={task}
                     variant="compact"
@@ -194,13 +160,15 @@ export const WorkflowDashboard: Story = {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <WorkflowStateBadge workflow="current" />
-              <span className="text-muted-foreground">({mockV2ParentTasks.filter(t => t.workflow_state === 'current').length})</span>
+              <span className="text-muted-foreground">
+                ({mockV2ParentTasks.filter((t) => t.workflow_state === 'current').length})
+              </span>
             </div>
             <div className="space-y-3">
               {mockV2ParentTasks
-                .filter(task => task.workflow_state === 'current')
+                .filter((task) => task.workflow_state === 'current')
                 .map((task) => (
-                  <ParentTaskCard 
+                  <ParentTaskCard
                     key={task.id}
                     parentTask={task}
                     variant="compact"
@@ -214,13 +182,15 @@ export const WorkflowDashboard: Story = {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <WorkflowStateBadge workflow="archive" />
-              <span className="text-muted-foreground">({mockV2ParentTasks.filter(t => t.workflow_state === 'archive').length})</span>
+              <span className="text-muted-foreground">
+                ({mockV2ParentTasks.filter((t) => t.workflow_state === 'archive').length})
+              </span>
             </div>
             <div className="space-y-3">
               {mockV2ParentTasks
-                .filter(task => task.workflow_state === 'archive')
+                .filter((task) => task.workflow_state === 'archive')
                 .map((task) => (
-                  <ParentTaskCard 
+                  <ParentTaskCard
                     key={task.id}
                     parentTask={task}
                     variant="compact"
@@ -247,11 +217,15 @@ export const MixedTaskList: Story = {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-foreground">All Tasks</h1>
-                <p className="text-muted-foreground mt-1">Mixed view of parent tasks and simple tasks</p>
+                <p className="text-muted-foreground mt-1">
+                  Mixed view of parent tasks and simple tasks
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <WorkflowStateBadge workflow="current" size="sm" />
-                <span className="text-muted-foreground">{allTasks.filter(t => t.workflow_state === 'current').length} tasks</span>
+                <span className="text-muted-foreground">
+                  {allTasks.filter((t) => t.workflow_state === 'current').length} tasks
+                </span>
               </div>
             </div>
           </div>
@@ -261,12 +235,12 @@ export const MixedTaskList: Story = {
         <div className="max-w-4xl mx-auto px-6 py-8">
           <div className="space-y-4">
             {allTasks
-              .filter(task => task.workflow_state === 'current')
+              .filter((task) => task.workflow_state === 'current')
               .map((task) => {
                 if ('subtasks' in task) {
                   // Parent task
                   return (
-                    <ParentTaskCard 
+                    <ParentTaskCard
                       key={task.id}
                       parentTask={task}
                       variant="default"
@@ -276,7 +250,7 @@ export const MixedTaskList: Story = {
                 } else {
                   // Simple task
                   return (
-                    <div 
+                    <div
                       key={task.id}
                       className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => console.log('Navigate to task:', task.title)}
@@ -293,7 +267,10 @@ export const MixedTaskList: Story = {
                           {task.tags && task.tags.length > 0 && (
                             <div className="flex gap-1 mt-2">
                               {task.tags.slice(0, 3).map((tag) => (
-                                <span key={tag} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
+                                <span
+                                  key={tag}
+                                  className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded"
+                                >
                                   #{tag}
                                 </span>
                               ))}
@@ -317,7 +294,9 @@ export const ComponentShowcase: Story = {
     <div className="max-w-4xl mx-auto p-8 space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-foreground mb-2">V2 Component Library</h1>
-        <p className="text-muted-foreground">Clean, modern UI components for workflow-based task management</p>
+        <p className="text-muted-foreground">
+          Clean, modern UI components for workflow-based task management
+        </p>
       </div>
 
       {/* Icons */}
@@ -382,17 +361,14 @@ export const ComponentShowcase: Story = {
       {/* Sample Parent Task */}
       <div className="bg-card border rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">Parent Task Card</h2>
-        <ParentTaskCard 
-          parentTask={mockV2ParentTasks[0]}
-          variant="default"
-        />
+        <ParentTaskCard parentTask={mockV2ParentTasks[0]} variant="default" />
       </div>
 
       {/* Sample Subtask List */}
       <div className="bg-card border rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">Subtask Tree View</h2>
-        <SubtaskList 
-          subtasks={mockV2Subtasks.filter(t => t.parent_task === 'parent-001').slice(0, 5)}
+        <SubtaskList
+          subtasks={mockV2Subtasks.filter((t) => t.parent_task === 'parent-001').slice(0, 5)}
           variant="tree"
         />
       </div>
