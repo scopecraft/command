@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 import { mockV2ParentTasks, mockV2SimpleTasks, mockV2Subtasks } from '../../lib/api/mock-data-v2';
 import { ParentTaskCard } from './ParentTaskCard';
 import { SubtaskList } from './SubtaskList';
@@ -38,7 +41,26 @@ export const ParentTaskDetailPage: Story = {
               <span>›</span>
               <span className="font-medium">Parent Tasks</span>
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Parent Task Details</h1>
+            <div className="flex items-start gap-3">
+              <TaskTypeIcon task={parentTask} />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl font-bold text-foreground">{parentTask.title}</h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <StatusBadge status={parentTask.status} />
+                  <PriorityIndicator priority={parentTask.priority} />
+                  <WorkflowStateBadge workflow={parentTask.workflow_state} />
+                </div>
+                {parentTask.tags && parentTask.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {parentTask.tags.map((tag) => (
+                      <span key={tag} className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -70,13 +92,14 @@ export const ParentTaskDetailPage: Story = {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Overview - Main Content (2/3) */}
             <div className="lg:col-span-2">
-              <div className="bg-card border rounded-lg p-6">
-                <h2 className="text-lg font-semibold text-foreground mb-4">📖 Overview</h2>
-                <ParentTaskCard
-                  parentTask={parentTask}
-                  variant="detailed"
-                  showOverview={true}
-                />
+              {/* Just the markdown content, no extra boxes or titles */}
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                >
+                  {parentTask.overview}
+                </ReactMarkdown>
               </div>
             </div>
 
