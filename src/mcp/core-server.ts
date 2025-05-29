@@ -2,1232 +2,39 @@ import fs from 'node:fs';
 import path from 'node:path';
 /**
  * Core MCP server implementation using the official SDK
- * This file contains the core server logic that can be reused across different transports
+ * V2 implementation with workflow-based task system
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-// Import core functionality
+import * as v2 from '../core/v2/index.js';
 import {
-  type AreaFilterOptions,
-  type AreaUpdateOptions,
-  type FeatureFilterOptions,
-  type FeatureUpdateOptions,
-  type Task,
-  type TaskFilterOptions,
-  type TaskMetadata,
-  createArea,
-  createFeature,
-  createPhase,
-  createTask,
-  deleteArea,
-  deleteFeature,
-  deletePhase,
-  deleteTask,
-  findNextTask,
-  getArea,
-  getFeature,
-  getTask,
-  listAreas,
-  listFeatures,
-  listPhases,
-  listTasks,
-  listTemplates,
-  moveTask,
-  updateArea,
-  updateFeature,
-  updatePhase,
-  updateTask,
-} from '../core/index.js';
-
-/**
- * Create task metadata from parameters
- */
-function createTaskMetadata(params: {
-  id?: string;
-  title: string;
-  type: string;
-  status?: string;
-  priority?: string;
-  assignee?: string;
-  phase?: string;
-  subdirectory?: string;
-  parent?: string;
-  depends?: string[];
-  previous?: string;
-  next?: string;
-  tags?: string[];
-}): TaskMetadata {
-  const metadata: TaskMetadata = {
-    id: params.id || '',
-    title: params.title,
-    type: params.type,
-    status: params.status || 'To Do',
-    priority: params.priority || 'Medium',
-    created_date: new Date().toISOString().split('T')[0],
-    updated_date: new Date().toISOString().split('T')[0],
-    assigned_to: params.assignee || '',
-  };
-
-  // Add optional fields
-  if (params.phase) metadata.phase = params.phase;
-  if (params.subdirectory) metadata.subdirectory = params.subdirectory;
-  if (params.parent) metadata.parent_task = params.parent;
-  if (params.depends) metadata.depends_on = params.depends;
-  if (params.previous) metadata.previous_task = params.previous;
-  if (params.next) metadata.next_task = params.next;
-  if (params.tags) metadata.tags = params.tags;
-
-  return metadata;
-}
-
-/**
- * Get default task content
- */
-function getDefaultTaskContent(title: string): string {
-  return `## ${title}\n\nTask description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n`;
-}
-
-/**
- * Create a server instance with all tools registered
- * @param options Additional options
- * @returns A McpServer instance with all tools registered
- */
-export function createServerInstance(options: { verbose?: boolean } = {}): McpServer {
-  // Read package version from package.json
-  let version = '0.2.0'; // Default
-  try {
-    const packageJson = JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
-    );
-    version = packageJson.version || version;
-  } catch (_error) {
-    // Silently fail and use default version
-  }
-
-  // Create an MCP server instance
-  const server = new McpServer({
-    name: 'Scopecraft Command MCP Server',
-    version,
-  });
-
-  if (options.verbose) {
-    // No logging output to avoid interfering with MCP protocol
-  }
-
-  // Register all tools
-  registerTools(server, options.verbose);
-
-  return server;
-}
-
-/**
- * Register all tools with the MCP server
- */
-function registerTools(server: McpServer, verbose = false): McpServer {
-  // Get available task types from templates for dynamic enum
-  const templates = listTemplates();
-  const taskTypes = templates.map((t) => t.description).filter(Boolean);
-  // Fallback to common types if no templates found
-  const availableTaskTypes =
-    taskTypes.length > 0
-      ? taskTypes
-      : ['feature', 'bug', 'chore', 'documentation', 'test', 'spike'];
-
-  // Common enums used across multiple tools
-  const taskStatusEnum = z.enum([
-    'To Do',
-    'In Progress',
-    'Done',
-    'Archived',
-    'Blocked',
-  ]);
-  const taskPriorityEnum = z.enum(['High', 'Medium', 'Low']);
-  const taskTypeEnum = z.enum(availableTaskTypes as [string, ...string[]]);
-
-  // Phase status enum
-  const phaseStatusEnum = z.enum([
-    'Pending',
-    'In Progress',
-    'Completed',
-    'Blocked',
-    'Archived',
-  ]);
-
-  // Task list tool
-  const taskListRawShape = {
-    status: taskStatusEnum.describe('Filter by task status').optional(),
-    type: taskTypeEnum.describe('Filter by task type (based on available templates)').optional(),
-    assignee: z.string().describe('Filter by assigned username').optional(),
-    tags: z.array(z.string()).describe('Filter by tags (e.g., ["backend", "api"])').optional(),
-    phase: z.string().describe('Filter by phase ID (e.g., "release-v1")').optional(),
-    format: z.string().describe('Output format (reserved for future use)').optional(),
-    include_content: z
-      .boolean()
-      .describe('Include full task content in response (default: false)')
-      .optional(),
-    include_completed: z
-      .boolean()
-      .describe('Include completed tasks in results (default: false)')
-      .optional(),
-    subdirectory: z
-      .string()
-      .describe('Filter by subdirectory/feature/area (e.g., "FEATURE_Authentication")')
-      .optional(),
-    is_overview: z.boolean().describe('Filter for overview files only').optional(),
-  };
-  const taskListSchema = z.object(taskListRawShape);
-  server.registerTool(
-    'task_list',
-    {
-      description:
-        'Lists tasks with powerful filtering capabilities. Use this to find specific tasks by status, type, phase, assignee, tags, or location. Supports filtering by completion status and can optionally include task content. Task types are dynamic based on available templates - use template_list to see valid types.',
-      inputSchema: taskListRawShape,
-      annotations: {
-        title: 'List Tasks',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof taskListSchema>) => {
-      const filterOptions: TaskFilterOptions = {
-        status: params.status,
-        type: params.type,
-        assignee: params.assignee,
-        tags: params.tags,
-        phase: params.phase,
-        include_content: params.include_content,
-        include_completed: params.include_completed,
-        subdirectory: params.subdirectory,
-        is_overview: params.is_overview,
-      };
-      try {
-        const result = await listTasks(filterOptions);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Task get tool
-  const taskGetRawShape = {
-    id: z.string().describe('Task ID to retrieve (e.g., "TASK-001", "FEAT-AUTH-001")'),
-    format: z.string().describe('Output format (reserved for future use)').optional(),
-  };
-  const taskGetSchema = z.object(taskGetRawShape);
-  server.registerTool(
-    'task_get',
-    {
-      description:
-        'Retrieves complete details of a specific task including all metadata and content. Use this when you need full information about a task, including its relationships (parent, dependencies), dates, and complete content. Essential for reading task details before updates.',
-      inputSchema: taskGetRawShape,
-      annotations: {
-        title: 'Get Task',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof taskGetSchema>) => {
-      try {
-        const result = await getTask(params.id);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Task create tool
-  const taskCreateRawShape = {
-    id: z.string().describe('Custom task ID (auto-generated if not provided)').optional(),
-    title: z.string().describe('Task title/summary'),
-    type: taskTypeEnum.describe('Task type (must match available templates)'),
-    status: taskStatusEnum.describe('Initial task status').default('To Do').optional(),
-    priority: taskPriorityEnum.describe('Task priority level').default('Medium').optional(),
-    assignee: z.string().describe('Username of person assigned to this task').optional(),
-    phase: z.string().describe('Phase to create task in (e.g., "release-v1")').optional(),
-    subdirectory: z
-      .string()
-      .describe('Feature/area subdirectory (e.g., "FEATURE_Authentication")')
-      .optional(),
-    parent: z.string().describe('Parent task ID for creating subtasks').optional(),
-    depends: z.array(z.string()).describe('Array of task IDs this task depends on').optional(),
-    previous: z.string().describe('Previous task ID in sequence').optional(),
-    next: z.string().describe('Next task ID in sequence').optional(),
-    tags: z
-      .array(z.string())
-      .describe('Tags for categorization (e.g., ["backend", "api"])')
-      .optional(),
-    content: z.string().describe('Task description/content in Markdown format').optional(),
-  };
-  const taskCreateSchema = z.object(taskCreateRawShape);
-  server.registerTool(
-    'task_create',
-    {
-      description:
-        'Creates a new task with specified metadata and content. Tasks can be standalone or organized within features/areas in specific phases. Supports parent-child relationships, dependencies, and task sequences. Task types must match available templates - use template_list to see valid types. Auto-generates ID if not provided.',
-      inputSchema: taskCreateRawShape,
-      annotations: {
-        title: 'Create Task',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-      },
-    },
-    async (params: z.infer<typeof taskCreateSchema>) => {
-      try {
-        const metadata = createTaskMetadata(params);
-        const task: Task = {
-          metadata,
-          content: params.content || getDefaultTaskContent(params.title),
-        };
-        const result = await createTask(task, { subdirectory: params.subdirectory });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Task update tool
-  const taskUpdateRawShape = {
-    id: z.string().describe('Task ID to update'),
-    updates: z
-      .object({
-        status: taskStatusEnum.describe('New task status').optional(),
-        priority: taskPriorityEnum.describe('New priority level').optional(),
-        phase: z.string().describe('Move to different phase').optional(),
-        subdirectory: z.string().describe('Move to different subdirectory').optional(),
-        new_id: z.string().describe('Rename task (change ID)').optional(),
-        metadata: z.record(z.unknown()).describe('Update any metadata field').optional(),
-        content: z.string().describe('Replace task content/description').optional(),
-      })
-      .describe('Fields to update (only specified fields are changed)')
-      .optional(),
-    phase: z.string().describe('Current phase (helps locate task)').optional(),
-    subdirectory: z.string().describe('Current subdirectory (helps locate task)').optional(),
-  };
-  const taskUpdateSchema = z.object(taskUpdateRawShape);
-  server.registerTool(
-    'task_update',
-    {
-      description:
-        "Updates an existing task's metadata and/or content. Supports partial updates - only specified fields are changed. Use this to change status, reassign, update content, or move tasks between phases/subdirectories. Can also rename tasks by providing new_id.",
-      inputSchema: taskUpdateRawShape,
-      annotations: {
-        title: 'Update Task',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof taskUpdateSchema>) => {
-      try {
-        if (!params.updates) {
-          return formatError(new Error('No updates provided'));
-        }
-        const result = await updateTask(params.id, params.updates, {
-          phase: params.phase,
-          subdirectory: params.subdirectory,
-        });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Task delete tool
-  const taskDeleteRawShape = {
-    id: z.string().describe('Task ID to delete'),
-  };
-  const taskDeleteSchema = z.object(taskDeleteRawShape);
-  server.registerTool(
-    'task_delete',
-    {
-      description:
-        'Permanently deletes a task and its file. Use with caution as this is destructive and cannot be undone. Useful for removing cancelled, obsolete, or test tasks.',
-      inputSchema: taskDeleteRawShape,
-      annotations: {
-        title: 'Delete Task',
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof taskDeleteSchema>) => {
-      try {
-        const result = await deleteTask(params.id);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Task next tool
-  const taskNextRawShape = {
-    id: z.string().describe('Current task ID (to find next in sequence)').optional(),
-    format: z.string().describe('Output format (reserved for future use)').optional(),
-  };
-  const taskNextSchema = z.object(taskNextRawShape);
-  server.registerTool(
-    'task_next',
-    {
-      description:
-        'Finds the next recommended task to work on based on dependencies, priorities, and workflow. Helps maintain task flow by suggesting what to work on next, either after completing a specific task or when starting fresh. Respects task sequences and dependencies.',
-      inputSchema: taskNextRawShape,
-      annotations: {
-        title: 'Get Next Task',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof taskNextSchema>) => {
-      try {
-        const result = await findNextTask(params.id);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Phase list tool
-  const phaseListRawShape = {
-    format: z.string().describe('Output format (reserved for future use)').optional(),
-  };
-  const phaseListSchema = z.object(phaseListRawShape);
-  server.registerTool(
-    'phase_list',
-    {
-      description:
-        'Lists all phases in the project with their current status and metadata. Phases represent logical groupings like releases, sprints, or milestones. Use this to understand project structure and timeline.',
-      inputSchema: phaseListRawShape,
-      annotations: {
-        title: 'List Phases',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (_params: z.infer<typeof phaseListSchema>) => {
-      try {
-        const result = await listPhases();
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Phase create tool
-  const phaseCreateRawShape = {
-    id: z
-      .string()
-      .describe('Unique phase identifier (e.g., "release-v2", "sprint-23"). Should be URL-safe.'),
-    name: z.string().describe('Human-readable phase name (e.g., "Release 2.0", "Sprint 23")'),
-    description: z.string().describe('Detailed description of phase goals and scope').optional(),
-    status: phaseStatusEnum.describe('Initial phase status').default('Pending').optional(),
-    order: z
-      .number()
-      .describe('Numeric order for sorting phases (lower numbers appear first)')
-      .optional(),
-  };
-  const phaseCreateSchema = z.object(phaseCreateRawShape);
-  server.registerTool(
-    'phase_create',
-    {
-      description:
-        'Creates a new phase to organize work. Phases represent releases, sprints, or milestones. Use URL-safe IDs (lowercase, hyphens). Common patterns: "release-v2", "2024-q1", "sprint-23".',
-      inputSchema: phaseCreateRawShape,
-      annotations: {
-        title: 'Create Phase',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-      },
-    },
-    async (params: z.infer<typeof phaseCreateSchema>) => {
-      try {
-        const phase = {
-          id: params.id,
-          name: params.name,
-          description: params.description,
-          status: params.status || '🟡 Pending',
-          order: params.order,
-          tasks: [],
-        };
-        const result = await createPhase(phase);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Phase update tool
-  const phaseUpdateRawShape = {
-    id: z.string().describe('Current phase ID to update'),
-    updates: z
-      .object({
-        id: z.string().describe('New phase ID (renames the phase and directory)').optional(),
-        name: z.string().describe('New human-readable name').optional(),
-        description: z.string().describe('New description').optional(),
-        status: phaseStatusEnum.describe('New phase status').optional(),
-        order: z.number().describe('New numeric order').optional(),
-      })
-      .describe('Fields to update (only specified fields are changed)'),
-  };
-  const phaseUpdateSchema = z.object(phaseUpdateRawShape);
-  server.registerTool(
-    'phase_update',
-    {
-      description:
-        'Updates phase properties like name, status, or order. Can rename phases by changing ID. Common uses: marking phases as "In Progress", updating descriptions, reordering phases.',
-      inputSchema: phaseUpdateRawShape,
-      annotations: {
-        title: 'Update Phase',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof phaseUpdateSchema>) => {
-      try {
-        const result = await updatePhase(params.id, params.updates);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Phase delete tool
-  const phaseDeleteRawShape = {
-    id: z.string().describe('Phase ID to delete'),
-    force: z
-      .boolean()
-      .describe('Force deletion even if phase contains tasks (default: false)')
-      .optional(),
-  };
-  const phaseDeleteSchema = z.object(phaseDeleteRawShape);
-  server.registerTool(
-    'phase_delete',
-    {
-      description:
-        'Deletes a phase and optionally all its contents. Use caution as this can delete many tasks. Consider updating status to "Archived" instead of deleting. Requires force=true to delete phases with tasks.',
-      inputSchema: phaseDeleteRawShape,
-      annotations: {
-        title: 'Delete Phase',
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof phaseDeleteSchema>) => {
-      try {
-        const result = await deletePhase(params.id, { force: params.force });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Workflow current tool
-  const workflowCurrentRawShape = {
-    format: z.string().describe('Output format (reserved for future use)').optional(),
-  };
-  const workflowCurrentSchema = z.object(workflowCurrentRawShape);
-  server.registerTool(
-    'workflow_current',
-    {
-      description:
-        'Shows all tasks currently in progress across the project. Useful for status updates, checking active work, and ensuring no task conflicts. Returns tasks with status "🔵 In Progress".',
-      inputSchema: workflowCurrentRawShape,
-      annotations: {
-        title: 'Get Current Workflow',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (_params: z.infer<typeof workflowCurrentSchema>) => {
-      try {
-        const inProgressResult = await listTasks({ status: '🔵 In Progress' });
-        if (!inProgressResult.success) {
-          return formatResponse(inProgressResult);
-        }
-        if (inProgressResult.data && inProgressResult.data.length === 0) {
-          const alternativeResult = await listTasks({ status: 'In Progress' });
-          return formatResponse(alternativeResult);
-        }
-        return formatResponse(inProgressResult);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Workflow mark complete next tool
-  const workflowMarkCompleteNextRawShape = {
-    id: z.string().describe('Task ID to mark as complete'),
-    format: z.string().describe('Output format (reserved for future use)').optional(),
-  };
-  const workflowMarkCompleteNextSchema = z.object(workflowMarkCompleteNextRawShape);
-  server.registerTool(
-    'workflow_mark_complete_next',
-    {
-      description:
-        'Marks a task as complete (🟢 Done) and immediately suggests the next task to work on. Streamlines workflow by combining task completion with next task recommendation. Useful for maintaining momentum and following proper task sequences.',
-      inputSchema: workflowMarkCompleteNextRawShape,
-      annotations: {
-        title: 'Mark Complete and Get Next',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof workflowMarkCompleteNextSchema>) => {
-      try {
-        const nextTaskResult = await findNextTask(params.id);
-        const updateResult = await updateTask(params.id, { metadata: { status: '🟢 Done' } });
-        if (!updateResult.success) {
-          return formatResponse(updateResult);
-        }
-        if (!nextTaskResult.success) {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: JSON.stringify(
-                  {
-                    success: true,
-                    data: { updated: updateResult.data, next: null },
-                    message: `Task ${params.id} marked as Done. Error finding next task: ${nextTaskResult.error}`,
-                  },
-                  null,
-                  2
-                ),
-              },
-            ],
-          };
-        }
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: JSON.stringify(
-                {
-                  success: true,
-                  data: { updated: updateResult.data, next: nextTaskResult.data },
-                  message: updateResult.message,
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Task move tool
-  const taskMoveRawShape = {
-    id: z.string().describe('Task ID to move'),
-    target_subdirectory: z
-      .string()
-      .describe('Target feature/area directory (e.g., "FEATURE_Security")'),
-    target_phase: z.string().describe('Target phase if moving between phases').optional(),
-    search_phase: z.string().describe('Current phase to search in (helps locate task)').optional(),
-    search_subdirectory: z
-      .string()
-      .describe('Current subdirectory to search in (helps locate task)')
-      .optional(),
-  };
-  const taskMoveSchema = z.object(taskMoveRawShape);
-  server.registerTool(
-    'task_move',
-    {
-      description:
-        'Moves a task to a different feature/area subdirectory or phase while preserving all metadata and relationships. Use this to reorganize tasks, reassign to different features/areas, or move between project phases. Requires target_subdirectory parameter.',
-      inputSchema: taskMoveRawShape,
-      annotations: {
-        title: 'Move Task',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof taskMoveSchema>) => {
-      try {
-        const result = await moveTask(params.id, {
-          targetSubdirectory: params.target_subdirectory,
-          targetPhase: params.target_phase,
-          searchPhase: params.search_phase,
-          searchSubdirectory: params.search_subdirectory,
-        });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Feature list tool
-  const featureListRawShape = {
-    phase: z.string().describe('Filter by phase ID (e.g., "release-v1")').optional(),
-    status: z.string().describe('Filter by feature status (e.g., "🔵 In Progress")').optional(),
-    format: z.string().describe('Output format (reserved for future use)').optional(),
-    include_tasks: z
-      .boolean()
-      .describe('Include task IDs within each feature (default: false)')
-      .optional(),
-    include_progress: z
-      .boolean()
-      .describe('Include completion percentage (default: true)')
-      .optional(),
-  };
-  const featureListSchema = z.object(featureListRawShape);
-  server.registerTool(
-    'feature_list',
-    {
-      description:
-        'Lists all features (epics) in the project with progress tracking. Features organize complex work into subtasks. Use this to see major functionality being developed, check progress, and understand project scope.',
-      inputSchema: featureListRawShape,
-      annotations: {
-        title: 'List Features',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof featureListSchema>) => {
-      try {
-        const filterOptions: FeatureFilterOptions = {
-          phase: params.phase,
-          status: params.status,
-          include_tasks: params.include_tasks,
-          include_progress: params.include_progress !== false,
-        };
-        const result = await listFeatures(filterOptions);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Feature get tool
-  const featureGetRawShape = {
-    id: z.string().describe('Feature ID (e.g., "Authentication" or "FEATURE_Authentication")'),
-    phase: z.string().describe('Phase to search in (helps locate feature faster)').optional(),
-    format: z.string().describe('Output format (reserved for future use)').optional(),
-  };
-  const featureGetSchema = z.object(featureGetRawShape);
-  server.registerTool(
-    'feature_get',
-    {
-      description:
-        'Gets complete details about a feature including overview, tasks, and progress. Features are epics that group related work. Use this to understand feature scope, read documentation, and see all tasks.',
-      inputSchema: featureGetRawShape,
-      annotations: {
-        title: 'Get Feature',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof featureGetSchema>) => {
-      try {
-        const result = await getFeature(params.id, { phase: params.phase });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Feature create tool
-  const featureCreateRawShape = {
-    name: z
-      .string()
-      .describe(
-        'Feature name without spaces (e.g., "UserAuthentication"). Will be prefixed with FEATURE_'
-      ),
-    title: z.string().describe('Human-readable feature title (e.g., "User Authentication System")'),
-    phase: z.string().describe('Phase to create feature in (must exist, e.g., "release-v1")'),
-    type: taskTypeEnum.describe('Task type for overview file').default('feature').optional(),
-    status: taskStatusEnum.describe('Initial feature status').default('To Do').optional(),
-    description: z
-      .string()
-      .describe('Detailed feature description explaining purpose and scope')
-      .optional(),
-    assignee: z.string().describe('Person responsible for this feature/epic').optional(),
-    tags: z
-      .array(z.string())
-      .describe('Tags for categorization (e.g., ["backend", "security"])')
-      .optional(),
-  };
-  const featureCreateSchema = z.object(featureCreateRawShape);
-  server.registerTool(
-    'feature_create',
-    {
-      description:
-        'Creates a new feature (epic) to organize complex work. Features group related tasks together. Creates directory with FEATURE_ prefix and an _overview.md file. Perfect for breaking down large functionality into manageable subtasks.',
-      inputSchema: featureCreateRawShape,
-      annotations: {
-        title: 'Create Feature',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof featureCreateSchema>) => {
-      try {
-        const result = await createFeature(params.name, {
-          title: params.title,
-          phase: params.phase,
-          type: params.type || '🌟 Feature',
-          description: params.description,
-          assignee: params.assignee,
-          tags: params.tags,
-        });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Feature update tool
-  const featureUpdateRawShape = {
-    id: z.string().describe('Feature ID to update (with or without FEATURE_ prefix)'),
-    updates: z
-      .object({
-        name: z
-          .string()
-          .describe('New feature name (renames directory - use carefully)')
-          .optional(),
-        title: z.string().describe('New human-readable title').optional(),
-        description: z.string().describe('New or updated description').optional(),
-        status: taskStatusEnum.describe('New feature status').optional(),
-      })
-      .describe('Fields to update (only specified fields are changed)'),
-    phase: z.string().describe('Current phase (helps locate feature)').optional(),
-  };
-  const featureUpdateSchema = z.object(featureUpdateRawShape);
-  server.registerTool(
-    'feature_update',
-    {
-      description:
-        'Updates feature properties like title, description, or status. Can rename features but use carefully as it changes task locations. Common uses: marking features "In Progress", updating descriptions as scope evolves.',
-      inputSchema: featureUpdateRawShape,
-      annotations: {
-        title: 'Update Feature',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof featureUpdateSchema>) => {
-      try {
-        const updateOptions: FeatureUpdateOptions = {
-          name: params.updates.name,
-          title: params.updates.title,
-          description: params.updates.description,
-          status: params.updates.status,
-        };
-        const result = await updateFeature(params.id, updateOptions, { phase: params.phase });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Feature delete tool
-  const featureDeleteRawShape = {
-    id: z.string().describe('Feature ID to delete (with or without FEATURE_ prefix)'),
-    phase: z.string().describe('Phase containing the feature').optional(),
-    force: z
-      .boolean()
-      .describe('Force deletion even if feature contains tasks (default: false)')
-      .optional(),
-  };
-  const featureDeleteSchema = z.object(featureDeleteRawShape);
-  server.registerTool(
-    'feature_delete',
-    {
-      description:
-        'Deletes a feature directory and ALL its contents. Use with extreme caution as this removes all tasks within the feature. Consider archiving completed features instead. Requires force=true if feature contains tasks.',
-      inputSchema: featureDeleteRawShape,
-      annotations: {
-        title: 'Delete Feature',
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof featureDeleteSchema>) => {
-      try {
-        const result = await deleteFeature(params.id, {
-          phase: params.phase,
-          force: params.force,
-        });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Area list tool
-  const areaListRawShape = {
-    phase: z.string().optional(),
-    status: z.string().optional(),
-    format: z.string().optional(),
-    include_tasks: z.boolean().optional(),
-    include_progress: z.boolean().optional(),
-  };
-  const areaListSchema = z.object(areaListRawShape);
-  server.registerTool(
-    'area_list',
-    {
-      description: 'List Areas',
-      inputSchema: areaListRawShape,
-      annotations: {
-        title: 'List Areas',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof areaListSchema>) => {
-      try {
-        const filterOptions: AreaFilterOptions = {
-          phase: params.phase,
-          status: params.status,
-          include_tasks: params.include_tasks,
-          include_progress: params.include_progress !== false,
-        };
-        const result = await listAreas(filterOptions);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Area get tool
-  const areaGetRawShape = {
-    id: z.string(),
-    phase: z.string().optional(),
-    format: z.string().optional(),
-  };
-  const areaGetSchema = z.object(areaGetRawShape);
-  server.registerTool(
-    'area_get',
-    {
-      description: 'Get Area',
-      inputSchema: areaGetRawShape,
-      annotations: {
-        title: 'Get Area',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof areaGetSchema>) => {
-      try {
-        const result = await getArea(params.id, { phase: params.phase });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Area create tool
-  const areaCreateRawShape = {
-    name: z.string(),
-    title: z.string(),
-    phase: z.string(),
-    type: z.string().optional(),
-    status: z.string().optional(),
-    description: z.string().optional(),
-    assignee: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-  };
-  const areaCreateSchema = z.object(areaCreateRawShape);
-  server.registerTool(
-    'area_create',
-    {
-      description: 'Create Area',
-      inputSchema: areaCreateRawShape,
-      annotations: {
-        title: 'Create Area',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof areaCreateSchema>) => {
-      try {
-        const result = await createArea(params.name, {
-          title: params.title,
-          phase: params.phase,
-          type: params.type || '🧹 Chore',
-          description: params.description,
-          assignee: params.assignee,
-          tags: params.tags,
-        });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Area update tool
-  const areaUpdateRawShape = {
-    id: z.string(),
-    updates: z.object({
-      name: z.string().optional(),
-      title: z.string().optional(),
-      description: z.string().optional(),
-      status: z.string().optional(),
-    }),
-    phase: z.string().optional(),
-  };
-  const areaUpdateSchema = z.object(areaUpdateRawShape);
-  server.registerTool(
-    'area_update',
-    {
-      description: 'Update Area',
-      inputSchema: areaUpdateRawShape,
-      annotations: {
-        title: 'Update Area',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof areaUpdateSchema>) => {
-      try {
-        const updateOptions: AreaUpdateOptions = {
-          name: params.updates.name,
-          title: params.updates.title,
-          description: params.updates.description,
-          status: params.updates.status,
-        };
-        const result = await updateArea(params.id, updateOptions, { phase: params.phase });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Area delete tool
-  const areaDeleteRawShape = {
-    id: z.string(),
-    phase: z.string().optional(),
-    force: z.boolean().optional(),
-  };
-  const areaDeleteSchema = z.object(areaDeleteRawShape);
-  server.registerTool(
-    'area_delete',
-    {
-      description: 'Delete Area',
-      inputSchema: areaDeleteRawShape,
-      annotations: {
-        title: 'Delete Area',
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof areaDeleteSchema>) => {
-      try {
-        const result = await deleteArea(params.id, { phase: params.phase, force: params.force });
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Template list tool
-  const templateListRawShape = {
-    format: z.string().describe('Output format (reserved for future use)').optional(),
-  };
-  const templateListSchema = z.object(templateListRawShape);
-  server.registerTool(
-    'template_list',
-    {
-      description:
-        'Lists available task templates with their types and descriptions. Essential for discovering valid task types in your project since types are template-driven. Each template defines a task type (like "🌟 Feature", "🐞 Bug") that can be used when creating or filtering tasks. Always check this before using task_create or filtering by type.',
-      inputSchema: templateListRawShape,
-      annotations: {
-        title: 'List Templates',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (_params: z.infer<typeof templateListSchema>) => {
-      try {
-        const templates = listTemplates();
-        return formatResponse({
-          success: true,
-          data: templates,
-          message: `Found ${templates.length} templates`,
-        });
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Init root configuration tool
-  const initRootRawShape = {
-    path: z
-      .string()
-      .describe(
-        'Absolute path to project root directory. Must already contain a .tasks or .ruru directory to be valid.'
-      ),
-  };
-  const initRootSchema = z.object(initRootRawShape);
-  server.registerTool(
-    'init_root',
-    {
-      description:
-        'Sets the project root directory for the MCP session. The directory must already contain a .tasks or .ruru subdirectory to be valid. This configuration is session-specific and allows the MCP server to work with the correct project context. Note: Unlike the CLI, this does not create the .tasks directory - it must already exist.',
-      inputSchema: initRootRawShape,
-      annotations: {
-        title: 'Initialize Root Configuration',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof initRootSchema>) => {
-      try {
-        const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
-        const configManager = ConfigurationManager.getInstance();
-        if (!configManager.validateRoot(params.path)) {
-          return formatResponse({
-            success: false,
-            error: `Invalid project root: ${params.path} does not contain .tasks or .ruru directory`,
-          });
-        }
-        configManager.setRootFromSession(params.path);
-        return formatResponse({
-          success: true,
-          data: {
-            path: params.path,
-            source: 'session',
-            validated: true,
-          },
-          message: `Successfully set project root to: ${params.path}`,
-        });
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Get current root tool
-  const getCurrentRootRawShape = {};
-  const getCurrentRootSchema = z.object(getCurrentRootRawShape);
-  server.registerTool(
-    'get_current_root',
-    {
-      description:
-        'Returns the currently configured project root directory, including its source (how it was detected) and validation status. Useful for debugging configuration issues or confirming the active project context.',
-      inputSchema: getCurrentRootRawShape,
-      annotations: {
-        title: 'Get Current Root',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (_params: z.infer<typeof getCurrentRootSchema>) => {
-      try {
-        const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
-        const configManager = ConfigurationManager.getInstance();
-        const rootConfig = configManager.getRootConfig();
-        return formatResponse({
-          success: true,
-          data: {
-            path: rootConfig.path,
-            source: rootConfig.source,
-            validated: rootConfig.validated,
-            projectName: rootConfig.projectName,
-          },
-          message: `Current root: ${rootConfig.path} (source: ${rootConfig.source})`,
-        });
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // List projects tool
-  const listProjectsRawShape = {};
-  const listProjectsSchema = z.object(listProjectsRawShape);
-  server.registerTool(
-    'list_projects',
-    {
-      description:
-        'Lists all configured projects from the Scopecraft configuration file. Returns project names and paths, useful for switching between multiple projects or understanding the available project contexts.',
-      inputSchema: listProjectsRawShape,
-      annotations: {
-        title: 'List Projects',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (_params: z.infer<typeof listProjectsSchema>) => {
-      try {
-        const { ConfigurationManager } = await import('../core/config/configuration-manager.js');
-        const configManager = ConfigurationManager.getInstance();
-        const projects = configManager.getProjects();
-        return formatResponse({
-          success: true,
-          data: projects,
-          message: `Found ${projects.length} configured projects`,
-        });
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  if (verbose) {
-    // No logging output to avoid interfering with MCP protocol
-  }
-
-  return server;
-}
+  handleTaskList,
+  handleTaskGet,
+  handleTaskCreate,
+  handleTaskUpdate,
+  handleTaskDelete,
+  handleTaskMove,
+  handleTaskNext,
+  handleTaskTransform,
+  handleParentList,
+  handleParentCreate,
+  handleParentOperations,
+  handleTemplateList,
+  handleWorkflowCurrent,
+  handleWorkflowMarkCompleteNext,
+  handleInitRoot,
+  handleGetCurrentRoot,
+  handleListProjects,
+  handleDebugCodePath,
+} from './handlers.js';
 
 /**
  * Format a successful response
  * @param result The operation result
  * @returns Formatted response for the MCP SDK
  */
-export function formatResponse(result: {
+function formatResponse(result: {
   success: boolean;
   data?: unknown;
   error?: string;
@@ -1275,7 +82,7 @@ export function formatResponse(result: {
  * @param error The error
  * @returns Formatted error for the MCP SDK
  */
-export function formatError(error: unknown) {
+function formatError(error: unknown) {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
   return {
     content: [
@@ -1293,4 +100,852 @@ export function formatError(error: unknown) {
     ],
     isError: true,
   };
+}
+
+/**
+ * Create a server instance with all tools registered
+ * @param options Additional options
+ * @returns A McpServer instance with all tools registered
+ */
+export function createServerInstance(options: { verbose?: boolean } = {}): McpServer {
+  // Read package version from package.json
+  let version = '0.3.0'; // V2 version
+  try {
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
+    );
+    version = packageJson.version || version;
+  } catch (_error) {
+    // Silently fail and use default version
+  }
+
+  // Create an MCP server instance
+  const server = new McpServer({
+    name: 'Scopecraft Command MCP Server V2',
+    version,
+  });
+
+  if (options.verbose) {
+    // No logging output to avoid interfering with MCP protocol
+  }
+
+  // Register all tools
+  registerTools(server, options.verbose);
+
+  return server;
+}
+
+/**
+ * Register all tools with the MCP server
+ */
+function registerTools(server: McpServer, verbose = false): McpServer {
+  // Get available task types from templates for dynamic enum
+  const projectRoot = process.cwd(); // Default to cwd, will be overridden by root_dir param
+  const templates = v2.listTemplates(projectRoot);
+  const taskTypes = templates.map((t) => t.name).filter(Boolean);
+  // Fallback to common types if no templates found
+  const availableTaskTypes =
+    taskTypes.length > 0
+      ? taskTypes
+      : ['feature', 'bug', 'chore', 'documentation', 'test', 'spike', 'idea'];
+
+  // Common enums used across multiple tools
+  const taskStatusEnum = z.enum(['To Do', 'In Progress', 'Done', 'Blocked', 'Archived']);
+  const taskPriorityEnum = z.enum(['Highest', 'High', 'Medium', 'Low']);
+  const taskTypeEnum = z.enum(availableTaskTypes as [string, ...string[]]);
+  const workflowStateEnum = z.enum(['backlog', 'current', 'archive']);
+
+  // Task list tool
+  const taskListRawShape = {
+    // V2 native filters
+    location: z
+      .union([workflowStateEnum, z.array(workflowStateEnum)])
+      .describe('Filter by workflow location(s): backlog, current, or archive')
+      .optional(),
+    type: taskTypeEnum.describe('Filter by task type (based on available templates)').optional(),
+    status: taskStatusEnum.describe('Filter by task status').optional(),
+    area: z.string().describe('Filter by area (e.g., "cli", "mcp", "ui")').optional(),
+
+    // Include options
+    include_archived: z
+      .boolean()
+      .describe('Include archived tasks in results (default: false)')
+      .optional(),
+    include_parent_tasks: z
+      .boolean()
+      .describe('Include parent task folders in results (default: true)')
+      .optional(),
+    include_content: z
+      .boolean()
+      .describe('Include full task content in response (default: false)')
+      .optional(),
+    include_completed: z
+      .boolean()
+      .describe('Include completed tasks in results (default: false)')
+      .optional(),
+
+    // Subtask filtering
+    parent_id: z.string().describe('List only subtasks of this parent task ID').optional(),
+
+    // Custom frontmatter filters
+    priority: taskPriorityEnum.describe('Filter by priority level').optional(),
+    assignee: z.string().describe('Filter by assigned username').optional(),
+    tags: z.array(z.string()).describe('Filter by tags (e.g., ["backend", "api"])').optional(),
+
+    // Legacy support
+    phase: z
+      .string()
+      .describe('DEPRECATED: Use location instead. Maps to workflow states.')
+      .optional(),
+    subdirectory: z
+      .string()
+      .describe('DEPRECATED: Use area instead. Maps to area filter.')
+      .optional(),
+  };
+
+  const taskListSchema = z.object(taskListRawShape);
+  server.registerTool(
+    'task_list',
+    {
+      description:
+        'Lists tasks with powerful filtering across workflow states. Supports filtering by type, status, area, priority, assignee, and tags. Can list subtasks of a specific parent or search across all tasks. V2: Uses workflow states (backlog/current/archive) instead of phases.',
+      inputSchema: taskListRawShape,
+      annotations: {
+        title: 'List Tasks',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof taskListSchema>) => {
+      try {
+        const result = await handleTaskList(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Task get tool
+  const taskGetRawShape = {
+    id: z
+      .string()
+      .describe('Task ID to retrieve (e.g., "auth-feature-05A" or "02_implement-api-05B")')
+      .min(1),
+    parent_id: z
+      .string()
+      .describe(
+        'Parent task ID for subtask resolution. Helps locate subtasks like "02_implement-api"'
+      )
+      .optional(),
+    format: z
+      .enum(['full', 'summary'])
+      .describe('Output format: full (all content), summary (metadata only)')
+      .default('full')
+      .optional(),
+  };
+
+  const taskGetSchema = z.object(taskGetRawShape);
+  server.registerTool(
+    'task_get',
+    {
+      description:
+        'Retrieves complete details of a specific task. For subtasks, provide parent_id to help with resolution. V2: Returns task with workflow location and v2 structure.',
+      inputSchema: taskGetRawShape,
+      annotations: {
+        title: 'Get Task Details',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof taskGetSchema>) => {
+      try {
+        const result = await handleTaskGet(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Task create tool
+  const taskCreateRawShape = {
+    // Required fields
+    title: z
+      .string()
+      .describe('Task title/summary. Will be used to generate task ID.')
+      .min(3)
+      .max(200),
+    type: taskTypeEnum.describe('Task type (must match available templates)'),
+    area: z
+      .string()
+      .describe('Task area (e.g., "cli", "mcp", "ui", "core")')
+      .default('general')
+      .optional(),
+
+    // Optional metadata
+    status: taskStatusEnum.describe('Initial task status').default('To Do').optional(),
+    priority: taskPriorityEnum.describe('Task priority level').default('Medium').optional(),
+    location: workflowStateEnum
+      .describe('Workflow location for new task')
+      .default('backlog')
+      .optional(),
+
+    // Parent/subtask relationship
+    parent_id: z
+      .string()
+      .describe('Parent task ID - creates this as a subtask with auto-generated sequence number')
+      .optional(),
+
+    // Custom frontmatter
+    assignee: z.string().describe('Username of person assigned to this task').optional(),
+    tags: z
+      .array(z.string())
+      .describe('Tags for categorization (e.g., ["backend", "api"])')
+      .optional(),
+
+    // Initial content
+    instruction: z.string().describe('Initial instruction section content (markdown)').optional(),
+    tasks: z
+      .array(z.string())
+      .describe(
+        'Checklist items for the tasks section (e.g., ["Design API", "Implement endpoints"])'
+      )
+      .optional(),
+    deliverable: z.string().describe('Initial deliverable section content (markdown)').optional(),
+
+    // Legacy support
+    phase: z.string().describe('DEPRECATED: Use location instead').optional(),
+    subdirectory: z.string().describe('DEPRECATED: Use area instead').optional(),
+    content: z
+      .string()
+      .describe('DEPRECATED: Use instruction/tasks/deliverable instead')
+      .optional(),
+  };
+
+  const taskCreateSchema = z.object(taskCreateRawShape);
+  server.registerTool(
+    'task_create',
+    {
+      description:
+        'Creates a new task with auto-generated ID based on title. Can create standalone tasks or subtasks within a parent. Tasks default to backlog unless specified. V2: Uses workflow states and standardized sections.',
+      inputSchema: taskCreateRawShape,
+      annotations: {
+        title: 'Create Task',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
+    },
+    async (params: z.infer<typeof taskCreateSchema>) => {
+      try {
+        const result = await handleTaskCreate(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Task update tool
+  const taskUpdateRawShape = {
+    id: z.string().describe('Task ID to update'),
+    parent_id: z.string().describe('Parent task ID for subtask resolution').optional(),
+
+    // Update options
+    updates: z
+      .object({
+        // Metadata updates
+        title: z.string().describe('New task title (Note: does not change task ID)').optional(),
+        status: taskStatusEnum.describe('New task status').optional(),
+        priority: taskPriorityEnum.describe('New priority level').optional(),
+        area: z.string().describe('New area').optional(),
+        assignee: z.string().describe('New assignee').optional(),
+        tags: z.array(z.string()).describe('New tags (replaces existing)').optional(),
+
+        // Section updates
+        instruction: z.string().describe('Replace instruction section content').optional(),
+        tasks: z
+          .string()
+          .describe('Replace tasks section content (use markdown checklist format)')
+          .optional(),
+        deliverable: z.string().describe('Replace deliverable section content').optional(),
+        log: z
+          .string()
+          .describe('Replace log section content (usually append new entries)')
+          .optional(),
+
+        // Add log entry helper
+        add_log_entry: z
+          .string()
+          .describe(
+            "Convenience: Add a timestamped entry to the log section (appends, doesn't replace)"
+          )
+          .optional(),
+
+        // Legacy support
+        metadata: z.record(z.unknown()).describe('DEPRECATED: Use individual fields').optional(),
+        content: z.string().describe('DEPRECATED: Use section updates').optional(),
+      })
+      .describe('Fields to update. Only specified fields are changed.'),
+  };
+
+  const taskUpdateSchema = z.object(taskUpdateRawShape);
+  server.registerTool(
+    'task_update',
+    {
+      description:
+        "Updates a task's metadata and/or content. Supports partial updates - only specified fields change. V2: Can update individual sections and supports proper status values.",
+      inputSchema: taskUpdateRawShape,
+      annotations: {
+        title: 'Update Task',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof taskUpdateSchema>) => {
+      try {
+        const result = await handleTaskUpdate(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Task move tool
+  const taskMoveRawShape = {
+    id: z.string().describe('Task ID to move'),
+    parent_id: z.string().describe('Parent task ID for subtask resolution').optional(),
+    target_state: workflowStateEnum.describe(
+      'Target workflow location: backlog, current, or archive'
+    ),
+    archive_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/)
+      .describe('Archive month in YYYY-MM format (required when moving to archive)')
+      .optional(),
+    update_status: z
+      .boolean()
+      .describe(
+        'Auto-update task status based on workflow transition (e.g., current→Done, backlog→To Do)'
+      )
+      .default(true)
+      .optional(),
+
+    // Legacy support
+    target_subdirectory: z.string().describe('DEPRECATED: Use target_state instead').optional(),
+  };
+
+  const taskMoveSchema = z.object(taskMoveRawShape);
+  server.registerTool(
+    'task_move',
+    {
+      description:
+        'Moves tasks between workflow states (backlog/current/archive). Automatically updates status based on transition unless disabled. Archive moves require YYYY-MM date. V2: Replaces phase-based moves.',
+      inputSchema: taskMoveRawShape,
+      annotations: {
+        title: 'Move Task',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof taskMoveSchema>) => {
+      try {
+        const result = await handleTaskMove(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Task delete tool
+  const taskDeleteRawShape = {
+    id: z.string().describe('Task ID to delete'),
+    parent_id: z.string().describe('Parent task ID for subtask resolution').optional(),
+    cascade: z
+      .boolean()
+      .describe('For parent tasks: delete entire folder including all subtasks')
+      .default(false)
+      .optional(),
+  };
+
+  const taskDeleteSchema = z.object(taskDeleteRawShape);
+  server.registerTool(
+    'task_delete',
+    {
+      description:
+        'Permanently deletes a task file. For parent tasks, use cascade:true to delete the entire folder with subtasks. This operation cannot be undone.',
+      inputSchema: taskDeleteRawShape,
+      annotations: {
+        title: 'Delete Task',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof taskDeleteSchema>) => {
+      try {
+        const result = await handleTaskDelete(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Task next tool (legacy)
+  const taskNextRawShape = {
+    id: z.string().describe('Current task ID (to find next in sequence)').optional(),
+  };
+
+  const taskNextSchema = z.object(taskNextRawShape);
+  server.registerTool(
+    'task_next',
+    {
+      description:
+        'DEPRECATED: Task sequencing not implemented in V2. Returns null. Use parent task subtask ordering instead.',
+      inputSchema: taskNextRawShape,
+      annotations: {
+        title: 'Get Next Task',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof taskNextSchema>) => {
+      try {
+        const result = await handleTaskNext(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Workflow current tool
+  const workflowCurrentRawShape = {
+    format: z.string().describe('Output format (reserved for future use)').optional(),
+  };
+
+  const workflowCurrentSchema = z.object(workflowCurrentRawShape);
+  server.registerTool(
+    'workflow_current',
+    {
+      description:
+        'Lists all in-progress tasks in the current workflow state. V2: Searches current/ folder for tasks with "In Progress" status.',
+      inputSchema: workflowCurrentRawShape,
+      annotations: {
+        title: 'Get Current Workflow',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof workflowCurrentSchema>) => {
+      try {
+        const result = await handleWorkflowCurrent(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Workflow mark complete next tool
+  const workflowMarkCompleteNextRawShape = {
+    id: z.string().describe('Task ID to mark as complete'),
+  };
+
+  const workflowMarkCompleteNextSchema = z.object(workflowMarkCompleteNextRawShape);
+  server.registerTool(
+    'workflow_mark_complete_next',
+    {
+      description:
+        'Marks a task as Done. V2: Updates status to "Done". Next task functionality not available in V2.',
+      inputSchema: workflowMarkCompleteNextRawShape,
+      annotations: {
+        title: 'Mark Complete & Get Next',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof workflowMarkCompleteNextSchema>) => {
+      try {
+        const result = await handleWorkflowMarkCompleteNext(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Template list tool
+  const templateListRawShape = {
+    format: z.string().describe('Output format (reserved for future use)').optional(),
+  };
+
+  const templateListSchema = z.object(templateListRawShape);
+  server.registerTool(
+    'template_list',
+    {
+      description:
+        'Lists available task templates. Templates define initial content for different task types.',
+      inputSchema: templateListRawShape,
+      annotations: {
+        title: 'List Templates',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof templateListSchema>) => {
+      try {
+        const result = await handleTemplateList(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Area tools - still using v1
+  // ... (keeping area tools as they are for now)
+
+  // Configuration tools
+  const initRootRawShape = {
+    path: z.string().describe('Project root path to initialize'),
+  };
+
+  const initRootSchema = z.object(initRootRawShape);
+  server.registerTool(
+    'init_root',
+    {
+      description: 'Initialize or set the project root directory for the current session.',
+      inputSchema: initRootRawShape,
+      annotations: {
+        title: 'Initialize Root',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof initRootSchema>) => {
+      try {
+        const result = await handleInitRoot(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Get current root tool
+  server.registerTool(
+    'get_current_root',
+    {
+      description: 'Get the current project root configuration.',
+      inputSchema: {},
+      annotations: {
+        title: 'Get Current Root',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async () => {
+      try {
+        const result = await handleGetCurrentRoot({});
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // List projects tool
+  server.registerTool(
+    'list_projects',
+    {
+      description: 'List all configured projects.',
+      inputSchema: {},
+      annotations: {
+        title: 'List Projects',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async () => {
+      try {
+        const result = await handleListProjects({});
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Debug tool
+  server.registerTool(
+    'debug_code_path',
+    {
+      description: 'Debug tool to verify which version of the code is running.',
+      inputSchema: {},
+      annotations: {
+        title: 'Debug Code Path',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async () => {
+      try {
+        const result = await handleDebugCodePath({});
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Parent list tool
+  const parentListRawShape = {
+    location: z
+      .union([workflowStateEnum, z.array(workflowStateEnum)])
+      .describe('Filter by workflow location(s)')
+      .optional(),
+    area: z.string().describe('Filter by area').optional(),
+    include_progress: z
+      .boolean()
+      .describe('Include subtask completion statistics (done/total count)')
+      .default(true)
+      .optional(),
+    include_subtasks: z
+      .boolean()
+      .describe('Include full subtask list with each parent')
+      .default(false)
+      .optional(),
+  };
+
+  const parentListSchema = z.object(parentListRawShape);
+  server.registerTool(
+    'parent_list',
+    {
+      description:
+        'Lists parent tasks (folders with _overview.md). Shows task hierarchies and optionally includes progress stats and subtask details. Parent tasks represent complex work with multiple subtasks.',
+      inputSchema: parentListRawShape,
+      annotations: {
+        title: 'List Parent Tasks',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof parentListSchema>) => {
+      try {
+        const result = await handleParentList(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Parent create tool
+  const parentCreateRawShape = {
+    title: z
+      .string()
+      .describe('Parent task title. Will create folder with _overview.md')
+      .min(3)
+      .max(200),
+    type: taskTypeEnum.describe('Task type for the parent overview'),
+    area: z.string().describe('Task area').default('general').optional(),
+    status: taskStatusEnum.describe('Initial status').default('To Do').optional(),
+    priority: taskPriorityEnum.describe('Priority level').default('Medium').optional(),
+    location: workflowStateEnum.describe('Workflow location').default('backlog').optional(),
+    overview_content: z
+      .string()
+      .describe('Initial content for _overview.md instruction section')
+      .optional(),
+    subtasks: z
+      .array(
+        z.object({
+          title: z.string().describe('Subtask title'),
+          sequence: z
+            .string()
+            .regex(/^\d{2}$/)
+            .describe('Sequence number (e.g., "01", "02"). Auto-generated if not provided.')
+            .optional(),
+          parallel_with: z
+            .string()
+            .describe('Make parallel with this subtask ID (same sequence number)')
+            .optional(),
+        })
+      )
+      .describe('Initial subtasks to create')
+      .optional(),
+    assignee: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+  };
+
+  const parentCreateSchema = z.object(parentCreateRawShape);
+  server.registerTool(
+    'parent_create',
+    {
+      description:
+        'Creates a parent task folder with _overview.md and optional initial subtasks. Parent tasks organize complex work with multiple subtasks that can be sequenced or run in parallel.',
+      inputSchema: parentCreateRawShape,
+      annotations: {
+        title: 'Create Parent Task',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
+    },
+    async (params: z.infer<typeof parentCreateSchema>) => {
+      try {
+        const result = await handleParentCreate(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Parent operations tool
+  const parentOperationsRawShape = {
+    parent_id: z.string().describe('Parent task ID to operate on'),
+    operation: z
+      .enum(['resequence', 'parallelize', 'add_subtask'])
+      .describe("Operation to perform on parent's subtasks"),
+    sequence_map: z
+      .array(
+        z.object({
+          id: z.string().describe('Subtask ID (without parent path)'),
+          sequence: z
+            .string()
+            .regex(/^\d{2}$/)
+            .describe('New sequence number'),
+        })
+      )
+      .describe('[resequence] New sequence assignments for subtasks')
+      .optional(),
+    subtask_ids: z
+      .array(z.string())
+      .describe('[parallelize] Subtask IDs to make parallel (will share same sequence)')
+      .min(2)
+      .optional(),
+    target_sequence: z
+      .string()
+      .regex(/^\d{2}$/)
+      .describe('[parallelize] Sequence number to assign to all parallel tasks')
+      .optional(),
+    subtask: z
+      .object({
+        title: z.string().describe('New subtask title'),
+        type: taskTypeEnum.describe('Subtask type').optional(),
+        after: z
+          .string()
+          .describe('Insert after this subtask ID (e.g., "02_design-api")')
+          .optional(),
+        sequence: z
+          .string()
+          .regex(/^\d{2}$/)
+          .describe('Explicit sequence number (alternative to "after")')
+          .optional(),
+        template: z.string().describe('Template to use for subtask content').optional(),
+      })
+      .describe('[add_subtask] New subtask details')
+      .optional(),
+  };
+
+  const parentOperationsSchema = z.object(parentOperationsRawShape);
+  server.registerTool(
+    'parent_operations',
+    {
+      description:
+        "Perform bulk operations on a parent task's subtasks. Resequence to reorder tasks, parallelize to make tasks run simultaneously, or add new subtasks at specific positions.",
+      inputSchema: parentOperationsRawShape,
+      annotations: {
+        title: 'Parent Task Operations',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
+    },
+    async (params: z.infer<typeof parentOperationsSchema>) => {
+      try {
+        const result = await handleParentOperations(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Task transform tool
+  const taskTransformRawShape = {
+    id: z.string().describe('Task ID to transform'),
+    parent_id: z
+      .string()
+      .describe('Current parent ID (required for extract operation on subtasks)')
+      .optional(),
+    operation: z
+      .enum(['promote', 'extract', 'adopt'])
+      .describe(
+        'Transformation operation: promote (simple→parent), extract (subtask→simple), adopt (simple→subtask)'
+      ),
+    initial_subtasks: z
+      .array(z.string())
+      .describe('[promote] Checklist items from tasks section to convert to subtasks')
+      .optional(),
+    target_parent_id: z
+      .string()
+      .describe(
+        '[adopt] Parent task to adopt this task into (WARNING: adoption is currently broken in core)'
+      )
+      .optional(),
+    sequence: z
+      .string()
+      .regex(/^\d{2}$/)
+      .describe('[adopt] Sequence number for adopted subtask')
+      .optional(),
+    after: z
+      .string()
+      .describe('[adopt] Insert after this existing subtask (alternative to sequence)')
+      .optional(),
+  };
+
+  const taskTransformSchema = z.object(taskTransformRawShape);
+  server.registerTool(
+    'task_transform',
+    {
+      description:
+        'Transform tasks between simple and parent forms. Promote creates a parent folder from a simple task. Extract pulls a subtask out to standalone. Adopt moves a task into a parent (currently broken - will document in response).',
+      inputSchema: taskTransformRawShape,
+      annotations: {
+        title: 'Transform Task Structure',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+      },
+    },
+    async (params: z.infer<typeof taskTransformSchema>) => {
+      try {
+        const result = await handleTaskTransform(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  return server;
 }
