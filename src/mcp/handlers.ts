@@ -42,6 +42,54 @@ function formatV2Response<T>(result: v2.OperationResult<T>) {
 }
 
 /**
+ * Apply task_type filtering to V2 tasks
+ */
+function filterTasksByType(tasks: v2.Task[], taskType: string): v2.Task[] {
+  if (taskType === 'all') return tasks;
+
+  return tasks.filter((task) => {
+    const isParent = task.metadata.isParentTask;
+    const isSubtask = task.metadata.parentTask !== undefined;
+    const isSimple = !isParent && !isSubtask;
+
+    switch (taskType) {
+      case 'simple':
+        return isSimple;
+      case 'parent':
+        return isParent;
+      case 'subtask':
+        return isSubtask;
+      case 'top-level':
+        return isSimple || isParent; // Simple tasks + Parent overviews (no subtasks)
+      default:
+        return true;
+    }
+  });
+}
+
+/**
+ * Transform V2 tasks to V1 format for MCP compatibility
+ */
+function transformTasksToV1Format(tasks: v2.Task[], includeContent: boolean): unknown[] {
+  return tasks.map((task) => ({
+    metadata: {
+      id: task.metadata.id,
+      title: task.document.title,
+      type: task.document.frontmatter.type,
+      status: task.document.frontmatter.status,
+      priority: task.document.frontmatter.priority || 'Medium',
+      created_date: '', // Not available in v2
+      updated_date: '', // Not available in v2
+      assigned_to: (task.document.frontmatter.assignee as string) || '',
+      location: task.metadata.location.workflowState,
+      area: task.document.frontmatter.area,
+      tags: (task.document.frontmatter.tags as string[]) || [],
+    },
+    content: includeContent ? v2.serializeTaskDocument(task.document) : undefined,
+  }));
+}
+
+/**
  * Handler for task_list method
  */
 export async function handleTaskList(params: TaskListParams) {
@@ -79,50 +127,10 @@ export async function handleTaskList(params: TaskListParams) {
 
   const result = await v2.listTasks(projectRoot, listOptions);
 
-  // Transform v2 tasks to v1 format for compatibility
   if (result.success && result.data) {
-    // Apply task_type filtering
-    let filteredTasks = result.data;
-
-    const taskType = params.task_type || 'top-level'; // Default to top-level
-
-    if (taskType !== 'all') {
-      filteredTasks = result.data.filter((task) => {
-        const isParent = task.metadata.isParentTask;
-        const isSubtask = task.metadata.parentTask !== undefined;
-        const isSimple = !isParent && !isSubtask;
-
-        switch (taskType) {
-          case 'simple':
-            return isSimple;
-          case 'parent':
-            return isParent;
-          case 'subtask':
-            return isSubtask;
-          case 'top-level':
-            return isSimple || isParent; // Simple tasks + Parent overviews (no subtasks)
-          default:
-            return true;
-        }
-      });
-    }
-
-    const v1Tasks = filteredTasks.map((task) => ({
-      metadata: {
-        id: task.metadata.id,
-        title: task.document.title,
-        type: task.document.frontmatter.type,
-        status: task.document.frontmatter.status,
-        priority: task.document.frontmatter.priority || 'Medium',
-        created_date: '', // Not available in v2
-        updated_date: '', // Not available in v2
-        assigned_to: (task.document.frontmatter.assignee as string) || '',
-        location: task.metadata.location.workflowState,
-        area: task.document.frontmatter.area,
-        tags: (task.document.frontmatter.tags as string[]) || [],
-      },
-      content: params.include_content ? v2.serializeTaskDocument(task.document) : undefined,
-    }));
+    const taskType = params.task_type || 'top-level';
+    const filteredTasks = filterTasksByType(result.data, taskType);
+    const v1Tasks = transformTasksToV1Format(filteredTasks, params.include_content || false);
 
     return {
       success: true,
@@ -349,7 +357,7 @@ export async function handleTaskMove(params: TaskMoveParams) {
 /**
  * Handler for task_next method
  */
-export async function handleTaskNext(params: TaskNextParams) {
+export async function handleTaskNext(_params: TaskNextParams) {
   // V2 doesn't have a direct equivalent - return empty for now
   return {
     success: true,
@@ -674,9 +682,9 @@ export async function handleParentCreate(params: {
     customMetadata: {},
   };
 
-  if (params.priority) createOptions.customMetadata!.priority = params.priority;
-  if (params.assignee) createOptions.customMetadata!.assignee = params.assignee;
-  if (params.tags) createOptions.customMetadata!.tags = params.tags;
+  if (params.priority) createOptions.customMetadata.priority = params.priority;
+  if (params.assignee) createOptions.customMetadata.assignee = params.assignee;
+  if (params.tags) createOptions.customMetadata.tags = params.tags;
 
   const result = await v2.createParentTask(projectRoot, createOptions);
 
@@ -825,7 +833,7 @@ export async function handleTaskTransform(params: {
 
       const result = await v2.extractSubtask(
         projectRoot,
-        params.parent_id!,
+        params.parent_id,
         params.id,
         'backlog' // Default target location
       );
@@ -842,12 +850,12 @@ export async function handleTaskTransform(params: {
 
       // Note: adoption is currently broken in core
       try {
-        const result = await v2.adoptTask(projectRoot, params.id, params.target_parent_id!, {
+        const result = await v2.adoptTask(projectRoot, params.id, params.target_parent_id, {
           sequence: params.sequence,
           after: params.after,
         });
         return formatV2Response(result);
-      } catch (error) {
+      } catch (_error) {
         return {
           success: false,
           error:
