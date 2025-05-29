@@ -154,6 +154,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   const taskPriorityEnum = z.enum(['Highest', 'High', 'Medium', 'Low']);
   const taskTypeEnum = z.enum(availableTaskTypes as [string, ...string[]]);
   const workflowStateEnum = z.enum(['backlog', 'current', 'archive']);
+  const taskStructureEnum = z.enum(['simple', 'parent', 'subtask', 'top-level', 'all']);
 
   // Task list tool
   const taskListRawShape = {
@@ -163,6 +164,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .describe('Filter by workflow location(s): "backlog", "current", or "archive". Use array for multiple locations.')
       .optional(),
     type: taskTypeEnum.describe('Filter by task type: "feature", "bug", "chore", "documentation", "test", "spike", or "idea" (varies by templates)').optional(),
+    task_type: taskStructureEnum.describe('Filter by task structure: "simple" (standalone tasks), "parent" (overview tasks), "subtask" (tasks within parents), "top-level" (simple + parent, no subtasks), or "all" (everything)').default('top-level').optional(),
     status: taskStatusEnum.describe('Filter by exact task status: "To Do", "In Progress", "Done", "Blocked", or "Archived"').optional(),
     area: z
       .string()
@@ -222,7 +224,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     'task_list',
     {
       description:
-        'Lists tasks with comprehensive filtering across the workflow-based task system. Essential for discovering work, checking status, and navigating task hierarchies. Supports filtering by workflow location, task type, status, functional area, priority, assignee, and tags. Can list subtasks of specific parent tasks or search across all tasks. Token-efficient by default - excludes completed tasks and content unless explicitly requested. Use this as your primary tool for exploring and understanding the current state of work.',
+        'Lists tasks with comprehensive filtering across the workflow-based task system. By default shows "top-level" view (simple tasks + parent overviews, no subtasks) - the most useful overview for understanding what work is available. Supports filtering by task structure, workflow location, task type, status, functional area, priority, assignee, and tags. Token-efficient by default. Use this as your primary tool for exploring and understanding the current state of work.',
       inputSchema: taskListRawShape,
       annotations: {
         title: 'List Tasks',

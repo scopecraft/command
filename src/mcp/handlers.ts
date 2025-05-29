@@ -78,7 +78,33 @@ export async function handleTaskList(params: TaskListParams) {
 
   // Transform v2 tasks to v1 format for compatibility
   if (result.success && result.data) {
-    const v1Tasks = result.data.map((task) => ({
+    // Apply task_type filtering
+    let filteredTasks = result.data;
+    
+    const taskType = params.task_type || 'top-level'; // Default to top-level
+    
+    if (taskType !== 'all') {
+      filteredTasks = result.data.filter((task) => {
+        const isParent = task.metadata.isParentTask;
+        const isSubtask = task.metadata.parentTask !== undefined;
+        const isSimple = !isParent && !isSubtask;
+        
+        switch (taskType) {
+          case 'simple':
+            return isSimple;
+          case 'parent':
+            return isParent;
+          case 'subtask':
+            return isSubtask;
+          case 'top-level':
+            return isSimple || isParent; // Simple tasks + Parent overviews (no subtasks)
+          default:
+            return true;
+        }
+      });
+    }
+    
+    const v1Tasks = filteredTasks.map((task) => ({
       metadata: {
         id: task.metadata.id,
         title: task.document.title,

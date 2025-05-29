@@ -84,6 +84,7 @@ export interface TaskListParams {
   // V2 native filters
   location?: WorkflowState | WorkflowState[];
   type?: TaskType;
+  task_type?: 'simple' | 'parent' | 'subtask' | 'top-level' | 'all';
   status?: TaskStatus;
   area?: string;
   
