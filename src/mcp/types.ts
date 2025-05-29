@@ -5,14 +5,25 @@ import {
   Area,
   AreaFilterOptions,
   AreaUpdateOptions,
-  Feature,
-  FeatureFilterOptions,
-  FeatureUpdateOptions,
-  Phase,
   Task,
   type TaskFilterOptions,
   type TaskUpdateOptions,
 } from '../core/types.js';
+
+import type {
+  OperationResult,
+  ParentTask,
+  TaskCreateOptions,
+  TaskDocument,
+  TaskListOptions,
+  TaskMoveOptions,
+  TaskPriority,
+  TaskStatus,
+  TaskType,
+  Task as V2Task,
+  TaskUpdateOptions as V2TaskUpdateOptions,
+  WorkflowState,
+} from '../core/v2/types.js';
 
 // MCP method names
 export enum McpMethod {
@@ -24,19 +35,12 @@ export enum McpMethod {
   TASK_DELETE = 'task_delete',
   TASK_NEXT = 'task_next',
   TASK_MOVE = 'task_move',
+  TASK_TRANSFORM = 'task_transform',
 
-  // Phase methods
-  PHASE_LIST = 'phase_list',
-  PHASE_CREATE = 'phase_create',
-  PHASE_UPDATE = 'phase_update',
-  PHASE_DELETE = 'phase_delete',
-
-  // Feature methods
-  FEATURE_LIST = 'feature_list',
-  FEATURE_GET = 'feature_get',
-  FEATURE_CREATE = 'feature_create',
-  FEATURE_UPDATE = 'feature_update',
-  FEATURE_DELETE = 'feature_delete',
+  // Parent task methods
+  PARENT_LIST = 'parent_list',
+  PARENT_CREATE = 'parent_create',
+  PARENT_OPERATIONS = 'parent_operations',
 
   // Area methods
   AREA_LIST = 'area_list',
@@ -76,64 +80,91 @@ export interface McpResponse<T = unknown> {
 }
 
 // Task list request params
-export interface TaskListParams extends TaskFilterOptions {
+export interface TaskListParams {
+  // V2 native filters
+  location?: WorkflowState | WorkflowState[];
+  type?: TaskType;
+  status?: TaskStatus;
+  area?: string;
+  
+  // Include options
+  include_archived?: boolean;
+  include_parent_tasks?: boolean;
+  include_content?: boolean;
+  include_completed?: boolean;
+  
+  // Subtask filtering
+  parent_id?: string;
+  
+  // Custom frontmatter filters
+  priority?: TaskPriority;
+  assignee?: string;
+  tags?: string[];
+  
   format?: string;
-  include_content?: boolean; // Controls whether task content is included in the response (default: false)
-  include_completed?: boolean; // Controls whether completed tasks are included in the response (default: false)
   root_dir?: string; // Override for tasks directory location
 }
 
 // Task get request params
 export interface TaskGetParams {
   id: string;
+  parent_id?: string;
   format?: string;
-  phase?: string;
-  subdirectory?: string;
   root_dir?: string; // Override for tasks directory location
 }
 
 // Task create request params
 export interface TaskCreateParams {
-  root_dir?: string; // Override for tasks directory location
-  id?: string;
+  // Required fields
   title: string;
-  type: string;
-  status?: string;
-  priority?: string;
+  type: TaskType;
+  area?: string;
+  
+  // Optional metadata
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  location?: WorkflowState;
+  
+  // Parent/subtask relationship
+  parent_id?: string;
+  
+  // Custom frontmatter
   assignee?: string;
-  phase?: string;
-  subdirectory?: string;
-  parent?: string;
-  depends?: string[];
-  previous?: string;
-  next?: string;
   tags?: string[];
-  content?: string;
+  
+  // Initial content
+  instruction?: string;
+  tasks?: string[];
+  deliverable?: string;
+  
+  content?: string; // Legacy support
+  root_dir?: string; // Override for tasks directory location
 }
 
 // Task update request params
 export interface TaskUpdateParams {
-  root_dir?: string; // Override for tasks directory location
   id: string;
-  updates: TaskUpdateOptions;
-  phase?: string;
-  subdirectory?: string;
+  parent_id?: string;
+  updates: V2TaskUpdateOptions;
+  root_dir?: string; // Override for tasks directory location
 }
 
 // Task delete request params
 export interface TaskDeleteParams {
-  root_dir?: string; // Override for tasks directory location
   id: string;
-  phase?: string;
-  subdirectory?: string;
+  parent_id?: string;
+  cascade?: boolean;
+  root_dir?: string; // Override for tasks directory location
 }
 
 // Task move request params
 export interface TaskMoveParams {
-  root_dir?: string; // Override for tasks directory location
   id: string;
-  target_subdirectory: string;
-  phase?: string;
+  parent_id?: string;
+  target_state: WorkflowState;
+  archive_date?: string;
+  update_status?: boolean;
+  root_dir?: string; // Override for tasks directory location
 }
 
 // Task next request params
@@ -141,60 +172,6 @@ export interface TaskNextParams {
   root_dir?: string; // Override for tasks directory location
   id?: string;
   format?: string;
-}
-
-// Feature list request params
-export interface FeatureListParams {
-  root_dir?: string; // Override for tasks directory location
-  phase?: string;
-  status?: string;
-  format?: string;
-  include_tasks?: boolean;
-  include_progress?: boolean;
-  include_content?: boolean; // Controls whether feature content is included (default: false)
-  include_completed?: boolean; // Controls whether completed features are included (default: false)
-}
-
-// Feature get request params
-export interface FeatureGetParams {
-  root_dir?: string; // Override for tasks directory location
-  id: string;
-  phase?: string;
-  format?: string;
-}
-
-// Feature create request params
-export interface FeatureCreateParams {
-  root_dir?: string; // Override for tasks directory location
-  name: string;
-  title: string;
-  phase: string;
-  type?: string;
-  status?: string;
-  description?: string;
-  assignee?: string;
-  tags?: string[];
-}
-
-// Feature update request params
-export interface FeatureUpdateParams {
-  root_dir?: string; // Override for tasks directory location
-  id: string;
-  updates: {
-    name?: string;
-    title?: string;
-    description?: string;
-    status?: string;
-  };
-  phase?: string;
-}
-
-// Feature delete request params
-export interface FeatureDeleteParams {
-  root_dir?: string; // Override for tasks directory location
-  id: string;
-  phase?: string;
-  force?: boolean;
 }
 
 // Area list request params
@@ -246,42 +223,6 @@ export interface AreaDeleteParams {
   root_dir?: string; // Override for tasks directory location
   id: string;
   phase?: string;
-  force?: boolean;
-}
-
-// Phase list request params
-export interface PhaseListParams {
-  root_dir?: string; // Override for tasks directory location
-  format?: string;
-}
-
-// Phase create request params
-export interface PhaseCreateParams {
-  root_dir?: string; // Override for tasks directory location
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  order?: number;
-}
-
-// Phase update request params
-export interface PhaseUpdateParams {
-  root_dir?: string; // Override for tasks directory location
-  id: string;
-  updates: {
-    id?: string;
-    name?: string;
-    description?: string;
-    status?: string;
-    order?: number;
-  };
-}
-
-// Phase delete request params
-export interface PhaseDeleteParams {
-  root_dir?: string; // Override for tasks directory location
-  id: string;
   force?: boolean;
 }
 

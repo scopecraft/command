@@ -1,37 +1,5 @@
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import {
-  type Task,
-  type TaskMetadata,
-  createArea,
-  createFeature,
-  createPhase,
-  createTask,
-  deleteArea,
-  deleteFeature,
-  deletePhase,
-  deleteTask,
-  findNextTask,
-  getArea,
-  getFeature,
-  getTask,
-  listAreas,
-  listFeatures,
-  listPhases,
-  listTasks,
-  listTemplates,
-  moveTask,
-  normalizePhaseStatus,
-  normalizePriority,
-  normalizeTaskStatus,
-  updateArea,
-  updateFeature,
-  updatePhase,
-  updateTask,
-} from '../core/index.js';
-/**
- * MCP method handlers
- * Each handler implements a specific MCP method
- */
+import * as v2 from '../core/v2/index.js';
 import {
   type AreaCreateParams,
   type AreaDeleteParams,
@@ -42,17 +10,8 @@ import {
   type ConfigInitRootParams,
   type ConfigListProjectsParams,
   type DebugCodePathParams,
-  type FeatureCreateParams,
-  type FeatureDeleteParams,
-  type FeatureGetParams,
-  type FeatureListParams,
-  type FeatureUpdateParams,
   McpMethod,
   type McpMethodRegistry,
-  type PhaseCreateParams,
-  type PhaseDeleteParams,
-  type PhaseListParams,
-  type PhaseUpdateParams,
   type TaskCreateParams,
   type TaskDeleteParams,
   type TaskGetParams,
@@ -65,437 +24,423 @@ import {
   type WorkflowMarkCompleteNextParams,
 } from './types.js';
 
+// Keep area imports from v1 for now
+import { createArea, deleteArea, getArea, listAreas, updateArea } from '../core/index.js';
+
+/**
+ * Format v2 operation result for MCP response
+ */
+function formatV2Response<T>(result: v2.OperationResult<T>) {
+  return {
+    success: result.success,
+    data: result.data,
+    error: result.error,
+    message:
+      result.error || (result.success ? 'Operation completed successfully' : 'Operation failed'),
+  };
+}
+
 /**
  * Handler for task_list method
  */
 export async function handleTaskList(params: TaskListParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
-  // Pass all parameters to the core function, including runtime config
-  // The core implementation now defaults to excluding content and completed tasks
-  // Only when explicitly set to true will these be included
-  return await listTasks({
-    status: params.status,
-    type: params.type,
-    assignee: params.assignee,
-    tags: params.tags,
-    phase: params.phase,
-    subdirectory: params.subdirectory,
-    is_overview: params.is_overview,
-    include_content: params.include_content, // Only include content when explicitly set to true
-    include_completed: params.include_completed, // Only include completed tasks when explicitly set to true
-    config, // Pass runtime config with tasksDir
-  });
+  // Build v2 list options
+  const listOptions: v2.TaskListOptions = {};
+
+  // Map location parameter to workflowStates
+  if (params.location) {
+    listOptions.workflowStates = Array.isArray(params.location) ? params.location : [params.location];
+  }
+
+  // Add other filters
+  if (params.type) listOptions.type = params.type as v2.TaskType;
+  if (params.status) listOptions.status = params.status as v2.TaskStatus;
+  if (params.area) listOptions.area = params.area;
+  
+  // Token efficiency: exclude completed tasks by default for MCP
+  if (!params.include_completed) {
+    listOptions.excludeStatuses = ['Done', 'Archived'];
+  }
+  
+  // Handle include_archived separately from include_completed
+  if (params.include_archived) {
+    listOptions.includeArchived = true;
+  }
+
+  // Custom filters through extensible system
+  if (params.assignee) listOptions.assignee = params.assignee;
+  if (params.tags) listOptions.tags = params.tags;
+
+  const result = await v2.listTasks(projectRoot, listOptions);
+
+  // Transform v2 tasks to v1 format for compatibility
+  if (result.success && result.data) {
+    const v1Tasks = result.data.map((task) => ({
+      metadata: {
+        id: task.metadata.id,
+        title: task.document.title,
+        type: task.document.frontmatter.type,
+        status: task.document.frontmatter.status,
+        priority: task.document.frontmatter.priority || 'Medium',
+        created_date: '', // Not available in v2
+        updated_date: '', // Not available in v2
+        assigned_to: (task.document.frontmatter.assignee as string) || '',
+        location: task.metadata.location.workflowState,
+        area: task.document.frontmatter.area,
+        tags: (task.document.frontmatter.tags as string[]) || [],
+      },
+      content: params.include_content ? v2.serializeTaskDocument(task.document) : undefined,
+    }));
+
+    return {
+      success: true,
+      data: v1Tasks,
+      message: `Found ${v1Tasks.length} tasks`,
+    };
+  }
+
+  return formatV2Response(result);
 }
 
 /**
  * Handler for task_get method
  */
-export async function handleTaskGet(params: TaskGetParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
+export async function handleTaskGet(params: TaskGetParams | any) {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
-  return await getTask(params.id, {
-    phase: params.phase,
-    subdirectory: params.subdirectory,
-    config, // Pass runtime config with tasksDir
-  });
+  // Use parent_id for subtask resolution
+  const parentId = params.parent_id;
+
+  // Use v2 getTask with parent context if available
+  const result = await v2.getTask(
+    projectRoot,
+    params.id,
+    undefined, // config
+    parentId
+  );
+
+  if (result.success && result.data) {
+    const task = result.data;
+
+    // Return V2 format with backward compatibility fields
+    const v2Task = {
+      success: true,
+      data: {
+        metadata: {
+          ...task.metadata,
+          title: task.document.title,
+          type: task.document.frontmatter.type,
+          status: task.document.frontmatter.status,
+          priority: task.document.frontmatter.priority || 'Medium',
+          created_date: '',
+          updated_date: '',
+          assigned_to: (task.document.frontmatter.assignee as string) || '',
+          location: task.metadata.location.workflowState,
+          area: task.document.frontmatter.area,
+          tags: (task.document.frontmatter.tags as string[]) || [],
+        },
+        document: task.document,
+        content: params.format === 'full' ? v2.serializeTaskDocument(task.document) : undefined,
+      },
+    };
+
+    return v2Task;
+  }
+
+  return formatV2Response(result);
 }
 
 /**
  * Handler for task_create method
  */
 export async function handleTaskCreate(params: TaskCreateParams) {
-  // Create the task object from the parameters with normalization
-  const metadata: TaskMetadata = {
-    id: params.id || '', // Let task-crud generate the ID
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
+
+  // Build v2 create options
+  const createOptions: v2.TaskCreateOptions = {
     title: params.title,
-    type: params.type,
-    status: normalizeTaskStatus(params.status || 'To Do'),
-    priority: normalizePriority(params.priority || 'Medium'),
-    created_date: new Date().toISOString().split('T')[0],
-    updated_date: new Date().toISOString().split('T')[0],
-    assigned_to: params.assignee || '',
+    type: params.type as v2.TaskType,
+    area: params.area || 'general',
+    status: (params.status as v2.TaskStatus) || 'To Do',
+    workflowState: params.location || 'backlog',
   };
 
   // Add optional fields
-  if (params.phase) metadata.phase = params.phase;
-  if (params.subdirectory) metadata.subdirectory = params.subdirectory;
-  if (params.parent) metadata.parent_task = params.parent;
-  if (params.depends) metadata.depends_on = params.depends;
-  if (params.previous) metadata.previous_task = params.previous;
-  if (params.next) metadata.next_task = params.next;
-  if (params.tags) metadata.tags = params.tags;
+  if (params.priority)
+    createOptions.customMetadata = {
+      ...createOptions.customMetadata,
+      priority: params.priority,
+    };
+  if (params.assignee)
+    createOptions.customMetadata = {
+      ...createOptions.customMetadata,
+      assignee: params.assignee,
+    };
+  if (params.tags)
+    createOptions.customMetadata = {
+      ...createOptions.customMetadata,
+      tags: params.tags,
+    };
 
-  // Handle special case for _overview.md files
-  const isOverview = params.id === '_overview' || params.id?.endsWith('/_overview');
-
-  if (isOverview) {
-    metadata.is_overview = true;
+  // Set initial content
+  if (params.content) {
+    // Parse content to extract sections
+    const sections = params.content.split(/^## /m);
+    for (const section of sections) {
+      if (section.startsWith('Instruction')) {
+        createOptions.instruction = section.replace('Instruction\n', '').trim();
+      }
+    }
   }
 
-  const task: Task = {
-    metadata,
-    content:
-      params.content ||
-      `## ${params.title}\n\n${isOverview ? 'Overview of this feature.\n\n## Tasks\n\n- [ ] Task 1\n' : 'Task description goes here.\n\n## Acceptance Criteria\n\n- [ ] Criteria 1\n'}`,
-  };
+  const result = await v2.createTask(projectRoot, createOptions);
 
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
+  if (result.success && result.data) {
+    return {
+      success: true,
+      data: {
+        id: result.data.metadata.id,
+        path: result.data.metadata.path,
+      },
+      message: `Task ${result.data.metadata.id} created successfully`,
+    };
+  }
 
-  return await createTask(task, {
-    subdirectory: params.subdirectory,
-    config, // Pass runtime config with tasksDir
-  });
+  return formatV2Response(result);
 }
 
 /**
  * Handler for task_update method
  */
-export async function handleTaskUpdate(params: TaskUpdateParams) {
-  // Normalize status and priority values if provided
-  const updates = { ...params.updates };
+export async function handleTaskUpdate(params: TaskUpdateParams | any) {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
-  // Normalize direct property updates
-  if (updates.status !== undefined) {
-    updates.status = normalizeTaskStatus(updates.status);
-  }
+  // Build v2 update options
+  const updateOptions: v2.TaskUpdateOptions = {};
 
-  if (updates.priority !== undefined) {
-    updates.priority = normalizePriority(updates.priority);
-  }
-
-  // Normalize metadata property updates if present
-  if (updates.metadata) {
-    if (updates.metadata.status !== undefined) {
-      updates.metadata.status = normalizeTaskStatus(updates.metadata.status);
+  // Map both v1 and v2 style updates
+  if (params.updates) {
+    // Handle direct status/priority updates (V1 style)
+    if (params.updates.status || params.updates.priority) {
+      updateOptions.frontmatter = {};
+      if (params.updates.status) {
+        updateOptions.frontmatter.status = params.updates.status as v2.TaskStatus;
+      }
+      if (params.updates.priority) {
+        updateOptions.frontmatter.priority = params.updates.priority as v2.TaskPriority;
+      }
     }
 
-    if (updates.metadata.priority !== undefined) {
-      updates.metadata.priority = normalizePriority(updates.metadata.priority);
+    // Handle V2 style direct section updates
+    if (params.updates.instruction) {
+      updateOptions.sections = { ...updateOptions.sections, instruction: params.updates.instruction };
+    }
+    if (params.updates.tasks) {
+      updateOptions.sections = { ...updateOptions.sections, tasks: params.updates.tasks };
+    }
+    if (params.updates.deliverable) {
+      updateOptions.sections = { ...updateOptions.sections, deliverable: params.updates.deliverable };
+    }
+    if (params.updates.log) {
+      updateOptions.sections = { ...updateOptions.sections, log: params.updates.log };
+    }
+    if (params.updates.add_log_entry) {
+      // Get current task to append log entry
+      const currentTask = await v2.getTask(projectRoot, params.id);
+      if (currentTask.success && currentTask.data) {
+        const currentLog = currentTask.data.document.sections.log || '';
+        const timestamp = new Date().toISOString().split('T')[0];
+        const newLog = currentLog + `\n- ${timestamp}: ${params.updates.add_log_entry}`;
+        updateOptions.sections = { ...updateOptions.sections, log: newLog };
+      }
+    }
+
+    // Handle metadata updates
+    if (params.updates.metadata) {
+      updateOptions.frontmatter = {
+        ...updateOptions.frontmatter,
+        ...(params.updates.metadata as Partial<v2.TaskFrontmatter>),
+      };
+    }
+
+    // Handle content updates
+    if (params.updates.content) {
+      // Parse content into sections
+      const sections = params.updates.content.split(/^## /m);
+      updateOptions.sections = {};
+
+      for (const section of sections) {
+        if (section.startsWith('Instruction')) {
+          updateOptions.sections.instruction = section.replace('Instruction\n', '').trim();
+        } else if (section.startsWith('Tasks')) {
+          updateOptions.sections.tasks = section.replace('Tasks\n', '').trim();
+        } else if (section.startsWith('Deliverable')) {
+          updateOptions.sections.deliverable = section.replace('Deliverable\n', '').trim();
+        } else if (section.startsWith('Log')) {
+          updateOptions.sections.log = section.replace('Log\n', '').trim();
+        }
+      }
     }
   }
 
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
+  const result = await v2.updateTask(projectRoot, params.id, updateOptions);
 
-  return await updateTask(params.id, updates, {
-    phase: params.phase,
-    subdirectory: params.subdirectory,
-    config, // Pass runtime config with tasksDir
-  });
+  return formatV2Response(result);
 }
 
 /**
  * Handler for task_delete method
  */
 export async function handleTaskDelete(params: TaskDeleteParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
-  return await deleteTask(params.id, {
-    phase: params.phase,
-    subdirectory: params.subdirectory,
-    config, // Pass runtime config with tasksDir
-  });
-}
+  const result = await v2.deleteTask(projectRoot, params.id);
 
-/**
- * Handler for task_next method
- */
-export async function handleTaskNext(params: TaskNextParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-  return await findNextTask(params.id, { config });
-}
-
-/**
- * Handler for phase_list method
- */
-export async function handlePhaseList(params: PhaseListParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-  return await listPhases({ config });
-}
-
-/**
- * Handler for phase_create method
- */
-export async function handlePhaseCreate(params: PhaseCreateParams) {
-  const phase = {
-    id: params.id,
-    name: params.name,
-    description: params.description,
-    status: normalizePhaseStatus(params.status || '🟡 Pending'),
-    order: params.order,
-    tasks: [],
-  };
-
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-  return await createPhase(phase, { config });
-}
-
-/**
- * Handler for phase_update method
- */
-export async function handlePhaseUpdate(params: PhaseUpdateParams) {
-  // Normalize phase status if provided
-  const updates = { ...params.updates };
-
-  if (updates.status !== undefined) {
-    updates.status = normalizePhaseStatus(updates.status);
-  }
-
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-  return await updatePhase(params.id, updates, { config });
-}
-
-/**
- * Handler for phase_delete method
- */
-export async function handlePhaseDelete(params: PhaseDeleteParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-  return await deletePhase(params.id, {
-    force: params.force,
-    config, // Pass runtime config with tasksDir
-  });
-}
-
-/**
- * Handler for workflow_current method
- */
-export async function handleWorkflowCurrent(params: WorkflowCurrentParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-  // Using the normalized status value means we'll find all in-progress tasks
-  // regardless of their specific format
-  const inProgressResult = await listTasks({
-    status: normalizeTaskStatus('In Progress'),
-    config, // Pass runtime config with tasksDir
-  });
-
-  if (!inProgressResult.success) {
-    return inProgressResult;
-  }
-
-  return inProgressResult;
-}
-
-/**
- * Handler for workflow_mark_complete_next method
- */
-export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkCompleteNextParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-  // Get the next task before marking current as complete
-  const nextTaskResult = await findNextTask(params.id, { config });
-
-  // Mark current task as complete, using the normalized "Done" status
-  const updateResult = await updateTask(
-    params.id,
-    {
-      metadata: { status: normalizeTaskStatus('Done') },
-    },
-    { config }
-  );
-
-  if (!updateResult.success) {
-    return updateResult;
-  }
-
-  if (!nextTaskResult.success) {
-    return {
-      success: true,
-      data: { updated: updateResult.data, next: null },
-      message: `Task ${params.id} marked as Done. Error finding next task: ${nextTaskResult.error}`,
-    };
-  }
-
-  return {
-    success: true,
-    data: { updated: updateResult.data, next: nextTaskResult.data },
-    message: updateResult.message,
-  };
-}
-
-/**
- * Handler for debug_code_path method
- * This is a diagnostic handler to verify which version of the code is running
- */
-export async function handleDebugCodePath(_params: DebugCodePathParams) {
-  const version = '20250513-2110'; // Unique identifier for this specific version
-  return {
-    success: true,
-    data: {
-      version,
-      timestamp: new Date().toISOString(),
-      implemented_features: {
-        task_list_content_exclusion: true,
-        task_list_completed_exclusion: true,
-        phase_management_complete: true,
-        phase_update: true,
-        phase_delete: true,
-        feature_management_complete: true,
-        area_management_complete: true,
-        feature_mcp_tools_complete: true,
-        area_mcp_tools_complete: true,
-        task_move: true,
-        overview_file_support: true,
-      },
-      documentation: {
-        feature_area_tools: 'docs/mcp-tool-descriptions.md',
-      },
-      message:
-        'Debug code path handler is responding - this is the updated MCP server with complete feature/area management',
-    },
-    message: `Debug code path handler is responding with version ${version}`,
-  };
+  return formatV2Response(result);
 }
 
 /**
  * Handler for task_move method
  */
 export async function handleTaskMove(params: TaskMoveParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
-  return await moveTask(params.id, {
-    targetSubdirectory: params.target_subdirectory,
-    targetPhase: params.phase,
-    config, // Pass runtime config with tasksDir
+  // Use target_state directly
+  const targetState = params.target_state;
+
+  const result = await v2.moveTask(projectRoot, params.id, {
+    targetState,
+    updateStatus: true,
   });
+
+  return formatV2Response(result);
 }
 
 /**
- * Handler for feature_list method
+ * Handler for task_next method
  */
-export async function handleFeatureList(params: FeatureListParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-  return await listFeatures({
-    phase: params.phase,
-    status: params.status,
-    include_tasks: params.include_tasks,
-    include_progress: params.include_progress !== false, // Default to true
-    include_content: params.include_content, // Only include content when explicitly set to true
-    include_completed: params.include_completed, // Only include completed features when explicitly set to true
-    config, // Pass runtime config with tasksDir
-  });
+export async function handleTaskNext(params: TaskNextParams) {
+  // V2 doesn't have a direct equivalent - return empty for now
+  return {
+    success: true,
+    data: null,
+    message: 'Task sequencing not implemented in v2',
+  };
 }
 
 /**
- * Handler for feature_get method
+ * Handler for workflow_current method
  */
-export async function handleFeatureGet(params: FeatureGetParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
+export async function handleWorkflowCurrent(params: WorkflowCurrentParams) {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
-  return await getFeature(params.id, {
-    phase: params.phase,
-    config, // Pass runtime config with tasksDir
+  // List tasks in current workflow state with In Progress status
+  const result = await v2.listTasks(projectRoot, {
+    workflowStates: ['current'],
+    status: 'In Progress',
   });
+
+  if (result.success && result.data) {
+    // Transform to v1 format
+    const v1Tasks = result.data.map((task) => ({
+      metadata: {
+        id: task.metadata.id,
+        title: task.document.title,
+        type: task.document.frontmatter.type,
+        status: task.document.frontmatter.status,
+        priority: task.document.frontmatter.priority || 'Medium',
+        created_date: '',
+        updated_date: '',
+        assigned_to: (task.document.frontmatter.assignee as string) || '',
+        location: 'current',
+        area: task.document.frontmatter.area,
+        tags: (task.document.frontmatter.tags as string[]) || [],
+      },
+    }));
+
+    return {
+      success: true,
+      data: v1Tasks,
+      message: `Found ${v1Tasks.length} in-progress tasks`,
+    };
+  }
+
+  return formatV2Response(result);
 }
 
 /**
- * Handler for feature_create method
+ * Handler for workflow_mark_complete_next method
  */
-export async function handleFeatureCreate(params: FeatureCreateParams) {
-  console.log(
-    `[DEBUG] Feature Create: description=${params.description}, assignee=${params.assignee}`
-  );
+export async function handleWorkflowMarkCompleteNext(params: WorkflowMarkCompleteNextParams) {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-  return await createFeature(params.name, {
-    title: params.title,
-    phase: params.phase,
-    type: params.type || 'feature',
-    description: params.description,
-    assignee: params.assignee,
-    tags: params.tags,
-    config, // Pass runtime config with tasksDir
+  // Update task status to Done
+  const result = await v2.updateTask(projectRoot, params.id, {
+    frontmatter: { status: 'Done' },
   });
+
+  return {
+    success: result.success,
+    data: {
+      updated: result.data,
+      next: null, // No next task in v2
+    },
+    error: result.error,
+    message: result.success ? `Task ${params.id} marked as Done` : result.error,
+  };
 }
 
 /**
- * Handler for feature_update method
+ * Handler for template_list method
  */
-export async function handleFeatureUpdate(params: FeatureUpdateParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
+export async function handleTemplateList(params: TemplateListParams) {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
-  return await updateFeature(params.id, params.updates, {
-    phase: params.phase,
-    config, // Pass runtime config with tasksDir
-  });
+  const templates = v2.listTemplates(projectRoot);
+
+  return {
+    success: true,
+    data: templates,
+    message: `Found ${templates.length} templates`,
+  };
 }
 
 /**
- * Handler for feature_delete method
- */
-export async function handleFeatureDelete(params: FeatureDeleteParams) {
-  // Extract root_dir parameter to create runtime config if provided
-  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-  return await deleteFeature(params.id, {
-    phase: params.phase,
-    force: params.force,
-    config, // Pass runtime config with tasksDir
-  });
-}
-
-/**
- * Handler for area_list method
+ * Handler for area operations - still using v1 for now
  */
 export async function handleAreaList(params: AreaListParams) {
-  // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
   return await listAreas({
     phase: params.phase,
     status: params.status,
     include_tasks: params.include_tasks,
-    include_progress: params.include_progress !== false, // Default to true
-    config, // Pass runtime config with tasksDir
+    include_progress: params.include_progress !== false,
+    config,
   });
 }
 
-/**
- * Handler for area_get method
- */
 export async function handleAreaGet(params: AreaGetParams) {
-  // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
   return await getArea(params.id, {
     phase: params.phase,
-    config, // Pass runtime config with tasksDir
+    config,
   });
 }
 
-/**
- * Handler for area_create method
- */
 export async function handleAreaCreate(params: AreaCreateParams) {
-  console.log(
-    `[DEBUG] Area Create: description=${params.description}, assignee=${params.assignee}`
-  );
-
-  // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
   return await createArea(params.name, {
@@ -505,77 +450,43 @@ export async function handleAreaCreate(params: AreaCreateParams) {
     description: params.description,
     assignee: params.assignee,
     tags: params.tags,
-    config, // Pass runtime config with tasksDir
+    config,
   });
 }
 
-/**
- * Handler for area_update method
- */
 export async function handleAreaUpdate(params: AreaUpdateParams) {
-  // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
   return await updateArea(params.id, params.updates, {
     phase: params.phase,
-    config, // Pass runtime config with tasksDir
+    config,
   });
 }
 
-/**
- * Handler for area_delete method
- */
 export async function handleAreaDelete(params: AreaDeleteParams) {
-  // Extract root_dir parameter to create runtime config if provided
   const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
 
   return await deleteArea(params.id, {
     phase: params.phase,
     force: params.force,
-    config, // Pass runtime config with tasksDir
+    config,
   });
 }
 
 /**
- * Handler for template_list method
- */
-export async function handleTemplateList(params: TemplateListParams) {
-  try {
-    // Extract root_dir parameter to create runtime config if provided
-    const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
-
-    // Pass runtime config to listTemplates
-    const templates = listTemplates(config);
-
-    return {
-      success: true,
-      data: templates,
-      message: `Found ${templates.length} templates`,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Handler for init_root method
+ * Handler for config operations
  */
 export async function handleInitRoot(params: ConfigInitRootParams) {
   try {
     const configManager = ConfigurationManager.getInstance();
 
-    // Validate the path exists
     if (!configManager.validateRoot(params.path)) {
       return {
         success: false,
-        error: `Invalid project root: ${params.path} does not contain .tasks or .ruru directory`,
+        error: `Invalid project root: ${params.path} does not contain .tasks directory`,
       };
     }
 
-    // Set the root for the current session
     configManager.setRootFromSession(params.path);
 
     return {
@@ -595,9 +506,6 @@ export async function handleInitRoot(params: ConfigInitRootParams) {
   }
 }
 
-/**
- * Handler for get_current_root method
- */
 export async function handleGetCurrentRoot(_params: ConfigGetCurrentRootParams) {
   try {
     const configManager = ConfigurationManager.getInstance();
@@ -621,9 +529,6 @@ export async function handleGetCurrentRoot(_params: ConfigGetCurrentRootParams) 
   }
 }
 
-/**
- * Handler for list_projects method
- */
 export async function handleListProjects(_params: ConfigListProjectsParams) {
   try {
     const configManager = ConfigurationManager.getInstance();
@@ -643,6 +548,320 @@ export async function handleListProjects(_params: ConfigListProjectsParams) {
 }
 
 /**
+ * Handler for parent_list method
+ */
+export async function handleParentList(params: {
+  location?: v2.WorkflowState | v2.WorkflowState[];
+  area?: string;
+  include_progress?: boolean;
+  include_subtasks?: boolean;
+  root_dir?: string;
+}) {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
+
+  // Build list options
+  const listOptions: v2.TaskListOptions = {
+    includeParentTasks: true,
+  };
+
+  // Handle workflow location filters
+  if (params.location) {
+    listOptions.workflowStates = Array.isArray(params.location)
+      ? params.location
+      : [params.location];
+  }
+
+  if (params.area) {
+    listOptions.area = params.area;
+  }
+
+  const result = await v2.listTasks(projectRoot, listOptions);
+
+  if (!result.success) {
+    return formatV2Response(result);
+  }
+
+  // Filter to only parent tasks
+  const parentTasks = result.data?.filter((task) => task.metadata.isParentTask) || [];
+
+  // Enhance with progress info if requested
+  const enhancedParents = await Promise.all(
+    parentTasks.map(async (parentTask) => {
+      const parentResult = await v2.getParentTask(projectRoot, parentTask.metadata.id);
+
+      if (!parentResult.success || !parentResult.data) {
+        return parentTask;
+      }
+
+      const parent = parentResult.data;
+      const subtaskCount = parent.subtasks.length;
+      const completedCount = parent.subtasks.filter(
+        (st) => st.document.frontmatter.status === 'Done'
+      ).length;
+
+      return {
+        ...parentTask,
+        subtask_count: subtaskCount,
+        completed_count: completedCount,
+        progress_percentage:
+          subtaskCount > 0 ? Math.round((completedCount / subtaskCount) * 100) : 0,
+        subtasks: params.include_subtasks ? parent.subtasks : undefined,
+      };
+    })
+  );
+
+  return {
+    success: true,
+    data: enhancedParents,
+    message: `Found ${enhancedParents.length} parent tasks`,
+  };
+}
+
+/**
+ * Handler for parent_create method
+ */
+export async function handleParentCreate(params: {
+  title: string;
+  type: v2.TaskType;
+  area?: string;
+  status?: v2.TaskStatus;
+  priority?: v2.TaskPriority;
+  location?: v2.WorkflowState;
+  overview_content?: string;
+  subtasks?: Array<{
+    title: string;
+    sequence?: string;
+    parallel_with?: string;
+  }>;
+  assignee?: string;
+  tags?: string[];
+  root_dir?: string;
+}) {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
+
+  // Create parent task
+  const createOptions: v2.TaskCreateOptions = {
+    title: params.title,
+    type: params.type,
+    area: params.area || 'general',
+    status: params.status || 'To Do',
+    workflowState: params.location || 'backlog',
+    instruction: params.overview_content,
+    customMetadata: {},
+  };
+
+  if (params.priority) createOptions.customMetadata!.priority = params.priority;
+  if (params.assignee) createOptions.customMetadata!.assignee = params.assignee;
+  if (params.tags) createOptions.customMetadata!.tags = params.tags;
+
+  const result = await v2.createParentTask(projectRoot, createOptions);
+
+  if (!result.success || !result.data) {
+    return formatV2Response(result);
+  }
+
+  // Add initial subtasks if provided
+  if (params.subtasks && params.subtasks.length > 0) {
+    for (const subtaskDef of params.subtasks) {
+      await v2.addSubtask(projectRoot, result.data.metadata.id, subtaskDef.title, {
+        type: params.type,
+        area: params.area,
+      });
+    }
+
+    // Handle parallel tasks if specified
+    if (params.subtasks.some((st) => st.parallel_with)) {
+      // TODO: Implement parallel task logic
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      id: result.data.metadata.id,
+      path: result.data.metadata.path,
+      message: `Created parent task ${result.data.metadata.id}`,
+    },
+  };
+}
+
+/**
+ * Handler for parent_operations method
+ */
+export async function handleParentOperations(params: {
+  parent_id: string;
+  operation: 'resequence' | 'parallelize' | 'add_subtask';
+  sequence_map?: Array<{ id: string; sequence: string }>;
+  subtask_ids?: string[];
+  target_sequence?: string;
+  subtask?: {
+    title: string;
+    type?: v2.TaskType;
+    after?: string;
+    sequence?: string;
+    template?: string;
+  };
+  root_dir?: string;
+}) {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
+
+  switch (params.operation) {
+    case 'resequence': {
+      if (!params.sequence_map) {
+        return {
+          success: false,
+          error: 'sequence_map required for resequence operation',
+        };
+      }
+
+      const result = await v2.resequenceSubtasks(
+        projectRoot,
+        params.parent_id,
+        params.sequence_map.map((item) => ({ taskId: item.id, newSequence: item.sequence }))
+      );
+      return formatV2Response(result);
+    }
+
+    case 'parallelize': {
+      if (!params.subtask_ids || params.subtask_ids.length < 2) {
+        return {
+          success: false,
+          error: 'At least 2 subtask_ids required for parallelize operation',
+        };
+      }
+
+      const targetSeq = params.target_sequence || undefined;
+      const result = await v2.parallelizeSubtasks(
+        projectRoot,
+        params.parent_id,
+        params.subtask_ids,
+        targetSeq
+      );
+      return formatV2Response(result);
+    }
+
+    case 'add_subtask': {
+      if (!params.subtask) {
+        return {
+          success: false,
+          error: 'subtask definition required for add_subtask operation',
+        };
+      }
+
+      const result = await v2.addSubtask(projectRoot, params.parent_id, params.subtask.title, {
+        type: params.subtask.type,
+        template: params.subtask.template,
+      });
+
+      return formatV2Response(result);
+    }
+
+    default:
+      return {
+        success: false,
+        error: `Unknown operation: ${params.operation}`,
+      };
+  }
+}
+
+/**
+ * Handler for task_transform method
+ */
+export async function handleTaskTransform(params: {
+  id: string;
+  parent_id?: string;
+  operation: 'promote' | 'extract' | 'adopt';
+  initial_subtasks?: string[];
+  target_parent_id?: string;
+  sequence?: string;
+  after?: string;
+  root_dir?: string;
+}) {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
+
+  switch (params.operation) {
+    case 'promote': {
+      const result = await v2.promoteToParent(projectRoot, params.id, {
+        subtasks: params.initial_subtasks || [],
+        keepOriginal: false,
+      });
+      return formatV2Response(result);
+    }
+
+    case 'extract': {
+      if (!params.parent_id) {
+        return {
+          success: false,
+          error: 'parent_id required for extract operation',
+        };
+      }
+
+      const result = await v2.extractSubtask(projectRoot, params.id, params.parent_id!);
+      return formatV2Response(result);
+    }
+
+    case 'adopt': {
+      if (!params.target_parent_id) {
+        return {
+          success: false,
+          error: 'target_parent_id required for adopt operation',
+        };
+      }
+
+      // Note: adoption is currently broken in core
+      try {
+        const result = await v2.adoptTask(projectRoot, params.id, params.target_parent_id!, {
+          sequence: params.sequence,
+          after: params.after,
+        });
+        return formatV2Response(result);
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            'Task adoption is currently broken in core v2. Workaround: manually move the file and rename with sequence prefix.',
+        };
+      }
+    }
+
+    default:
+      return {
+        success: false,
+        error: `Unknown operation: ${params.operation}`,
+      };
+  }
+}
+
+/**
+ * Handler for debug_code_path method
+ */
+export async function handleDebugCodePath(_params: DebugCodePathParams) {
+  const version = '20250528-mcp';
+  return {
+    success: true,
+    data: {
+      version,
+      timestamp: new Date().toISOString(),
+      implemented_features: {
+        task_system: true,
+        workflow_states: true,
+        parent_tasks: true,
+        task_transformations: true,
+        section_updates: true,
+        phase_removed: true,
+        feature_removed: true,
+      },
+      message: 'MCP server running with workflow-based task system',
+    },
+    message: `Debug code path handler is responding with version ${version}`,
+  };
+}
+
+/**
  * Registry of all MCP method handlers
  */
 export const methodRegistry: McpMethodRegistry = {
@@ -653,20 +872,15 @@ export const methodRegistry: McpMethodRegistry = {
   [McpMethod.TASK_DELETE]: handleTaskDelete,
   [McpMethod.TASK_NEXT]: handleTaskNext,
   [McpMethod.TASK_MOVE]: handleTaskMove,
-  [McpMethod.FEATURE_LIST]: handleFeatureList,
-  [McpMethod.FEATURE_GET]: handleFeatureGet,
-  [McpMethod.FEATURE_CREATE]: handleFeatureCreate,
-  [McpMethod.FEATURE_UPDATE]: handleFeatureUpdate,
-  [McpMethod.FEATURE_DELETE]: handleFeatureDelete,
+  [McpMethod.TASK_TRANSFORM]: handleTaskTransform,
+  [McpMethod.PARENT_LIST]: handleParentList,
+  [McpMethod.PARENT_CREATE]: handleParentCreate,
+  [McpMethod.PARENT_OPERATIONS]: handleParentOperations,
   [McpMethod.AREA_LIST]: handleAreaList,
   [McpMethod.AREA_GET]: handleAreaGet,
   [McpMethod.AREA_CREATE]: handleAreaCreate,
   [McpMethod.AREA_UPDATE]: handleAreaUpdate,
   [McpMethod.AREA_DELETE]: handleAreaDelete,
-  [McpMethod.PHASE_LIST]: handlePhaseList,
-  [McpMethod.PHASE_CREATE]: handlePhaseCreate,
-  [McpMethod.PHASE_UPDATE]: handlePhaseUpdate,
-  [McpMethod.PHASE_DELETE]: handlePhaseDelete,
   [McpMethod.WORKFLOW_CURRENT]: handleWorkflowCurrent,
   [McpMethod.WORKFLOW_MARK_COMPLETE_NEXT]: handleWorkflowMarkCompleteNext,
   [McpMethod.TEMPLATE_LIST]: handleTemplateList,

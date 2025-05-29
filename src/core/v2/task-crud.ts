@@ -525,6 +525,10 @@ export async function listTasks(
             continue;
           }
 
+          if (options.excludeStatuses && options.excludeStatuses.includes(document.frontmatter.status)) {
+            continue;
+          }
+
           if (options.area && document.frontmatter.area !== options.area) {
             continue;
           }

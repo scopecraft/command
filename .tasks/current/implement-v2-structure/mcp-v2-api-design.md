@@ -703,85 +703,102 @@ export async function handleTaskUpdate(params: z.infer<typeof taskUpdateSchema>)
 }
 ```
 
-## File Strategy (IMPORTANT)
+## Architecture Strategy (CRITICAL)
 
-### NO V2 FOLDERS
-We will NOT create separate v2 files or folders. Instead:
-
-1. **Update in place**: Modify existing files directly
-2. **Gradual migration**: Keep working handlers while updating
-3. **Temporary backups**: If needed, rename old functions with `.old` suffix
-4. **Clean as you go**: Delete phase-related code immediately
-
-### File Modification Plan
+### PROPER MCP PATTERN - Use Handler Functions
+The .old file shows the correct pattern. We must use **handlers** not direct core calls:
 
 ```typescript
-// src/mcp/handlers.ts
-// 1. Update imports from core to core/v2
-import * as v2 from '../core/v2/index.js';
-
-// 2. Delete phase handlers completely
-// DELETE: handlePhaseList, handlePhaseCreate, handlePhaseUpdate, handlePhaseDelete
-
-// 3. Update existing handlers in place
-export async function handleTaskList(params) {
-  // Updated implementation using v2
+// CORRECT: Use handler functions (like .old file)
+// In core-server.ts tool registration:
+async (params: z.infer<typeof taskListSchema>) => {
+  try {
+    const result = await handleTaskList(params);  // ← Handler function
+    return result; // Handler already formats for MCP
+  } catch (error) {
+    return formatError(error);
+  }
 }
 
-// 4. Add new handlers to same file
-export async function handleParentList(params) {
-  // New parent implementation
+// In handlers.ts:
+export async function handleTaskList(params: TaskListParams) {
+  const config = params.root_dir ? { tasksDir: params.root_dir } : undefined;
+  
+  // Convert to V2 list options
+  const listOptions: v2.TaskListOptions = { ... };
+  const result = await v2.listTasks(projectRoot, listOptions);
+  
+  // Transform V2 format to MCP format
+  return formatV2Response(result);
 }
-
-// 5. Delete all feature handlers
-// DELETED: handleFeatureList, handleFeatureGet, handleFeatureCreate, etc.
 ```
 
-### Benefits of In-Place Updates
-1. **UI compatibility**: Task UI continues working with same imports
-2. **No migration**: Consumers don't need to change imports
-3. **Cleaner codebase**: No duplicate v2 folders
-4. **Easier testing**: Can test incrementally
+**Why handlers are essential:**
+1. **MCP-specific parameter handling** (`root_dir` → config mapping)
+2. **Parameter transformation** (MCP params → V2 core params)  
+3. **Response formatting** (V2 format → MCP format)
+4. **Separation of concerns** (MCP logic separate from core business logic)
 
-## Implementation Order
+### File Strategy
 
-1. **Phase 1: Clean Up** (High Priority)
-   - Delete all phase handlers from handlers.ts
-   - Remove phase types from types.ts
-   - Update method registry to remove phase methods
+1. **Update handlers.ts**: Convert all handlers to use V2 core functions
+2. **Update core-server.ts**: Use handler functions, NOT direct core calls
+3. **Keep .old files**: As reference until migration complete
+4. **Remove methodRegistry**: Dead code causing format issues
+
+### Handler Responsibilities
+
+**Handlers must:**
+- Handle `root_dir` parameter properly
+- Transform MCP parameters to V2 parameters  
+- Call appropriate V2 core functions
+- Transform V2 responses to MCP format
+- Handle errors consistently
+
+**Core-server.ts must:**
+- Register tools with proper Zod schemas
+- Call handler functions (not core directly)
+- Use proper formatResponse/formatError from .old file
+
+## Implementation Priority Order
+
+### CRITICAL (Must fix first)
+1. **Refactor Architecture** - Fix handler pattern to match .old file
+2. **Remove V2 Terminology** - Clean user-facing strings  
+3. **Remove Legacy Parameters** - No backward compatibility (phase/subdirectory)
+4. **Fix Zod Enums** - Restore proper enum definitions
+
+### HIGH (Core functionality failures)  
+5. **Fix Core Operations** - Get basic CRUD working
+   - task_list filters (area, parent tasks, completed exclusion)
+   - task_move (workflow transitions)
+   - resequence operation parameter mapping
+   - task transformations (promote/extract)
+
+### MEDIUM (Enhanced functionality)
+6. **Complete V2 Features**
+   - template functions with V2 core
+   - task_update V2 section support
    
-2. **Phase 2: Update Imports** (High Priority)
-   - Change core imports to use v2 in handlers.ts
-   - Update type imports in types.ts
-   - Keep same export names
+### LOW (Cleanup)
+7. **Remove Dead Code** - methodRegistry after refactor complete
 
-3. **Phase 3: Update Existing** (High Priority)
-   - Modify handleTaskList to use v2.listTasks
-   - Update handleTaskGet to support parent_id
-   - Update handleTaskCreate for workflow locations
-   - Keep function signatures compatible
+## Current Status (As of 2025-05-28)
 
-2. **Core Task Tools** (High Priority)
-   - task_list with v2 filters
-   - task_get with parent_id
-   - task_create with location
-   - task_update with sections
-   - task_move for workflow transitions
-   - task_delete with cascade
+**✅ FIXED - Critical Issues:**
+- ✅ MCP tool registration pattern - now uses proper handler pattern from .old file
+- ✅ Tool registration format error - fixed "no outputSchema" by adding formatResponse() calls  
+- ✅ V2 terminology removed - clean user-facing experience (server name, descriptions, etc.)
+- ✅ Legacy parameters completely removed - NO phase/subdirectory in schemas or handlers
 
-3. **Parent Task Tools** (Medium Priority)
-   - parent_list
-   - parent_create
-   - parent_operations
+**🔄 REMAINING - High Priority:**
+- ❌ Zod enum definitions inconsistent - need to restore .old file enums
+- ❌ Core operations failing in tests (resequence, transform, move, listing filters)
 
-4. **Transformation Tools** (Low Priority)
-   - task_transform with all operations
-   - Document adoption workaround
-
-5. **Legacy Support** (Ongoing)
-   - Feature tool mapping
-   - Area tools (keep as-is)
-   - Template tools (keep as-is)
+**📋 REMAINING - Medium Priority:**
+- ❌ Template functions need V2 core integration
+- ❌ Task update V2 section support incomplete
+- ❌ methodRegistry cleanup after refactor
 
 ## Testing Considerations
 

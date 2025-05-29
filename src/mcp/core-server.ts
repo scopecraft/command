@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 /**
  * Core MCP server implementation using the official SDK
- * V2 implementation with workflow-based task system
+ * Implementation with workflow-based task system
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
@@ -121,7 +121,7 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
 
   // Create an MCP server instance
   const server = new McpServer({
-    name: 'Scopecraft Command MCP Server V2',
+    name: 'Scopecraft Command MCP Server',
     version,
   });
 
@@ -167,10 +167,6 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     area: z.string().describe('Filter by area (e.g., "cli", "mcp", "ui")').optional(),
 
     // Include options
-    include_archived: z
-      .boolean()
-      .describe('Include archived tasks in results (default: false)')
-      .optional(),
     include_parent_tasks: z
       .boolean()
       .describe('Include parent task folders in results (default: true)')
@@ -181,7 +177,11 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .optional(),
     include_completed: z
       .boolean()
-      .describe('Include completed tasks in results (default: false)')
+      .describe('Include completed/done tasks in results (default: false for token efficiency)')
+      .optional(),
+    include_archived: z
+      .boolean()
+      .describe('Include tasks from archive workflow folder (default: false)')
       .optional(),
 
     // Subtask filtering
@@ -192,15 +192,6 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     assignee: z.string().describe('Filter by assigned username').optional(),
     tags: z.array(z.string()).describe('Filter by tags (e.g., ["backend", "api"])').optional(),
 
-    // Legacy support
-    phase: z
-      .string()
-      .describe('DEPRECATED: Use location instead. Maps to workflow states.')
-      .optional(),
-    subdirectory: z
-      .string()
-      .describe('DEPRECATED: Use area instead. Maps to area filter.')
-      .optional(),
   };
 
   const taskListSchema = z.object(taskListRawShape);
@@ -316,9 +307,6 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .optional(),
     deliverable: z.string().describe('Initial deliverable section content (markdown)').optional(),
 
-    // Legacy support
-    phase: z.string().describe('DEPRECATED: Use location instead').optional(),
-    subdirectory: z.string().describe('DEPRECATED: Use area instead').optional(),
     content: z
       .string()
       .describe('DEPRECATED: Use instruction/tasks/deliverable instead')
@@ -435,9 +423,6 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       )
       .default(true)
       .optional(),
-
-    // Legacy support
-    target_subdirectory: z.string().describe('DEPRECATED: Use target_state instead').optional(),
   };
 
   const taskMoveSchema = z.object(taskMoveRawShape);

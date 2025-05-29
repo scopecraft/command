@@ -189,6 +189,7 @@ export interface TaskListOptions {
   workflowStates?: WorkflowState[];
   type?: TaskType;
   status?: TaskStatus;
+  excludeStatuses?: TaskStatus[]; // Filter OUT multiple statuses for token efficiency
   area?: string;
   tags?: string[];
   includeArchived?: boolean;
