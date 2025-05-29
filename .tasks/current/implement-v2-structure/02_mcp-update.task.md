@@ -169,3 +169,4 @@ Please use a more specific ID or provide parent_id
 - 2025-05-28: **COMPLETED**: Removed ALL V2 terminology from user-facing descriptions, tool titles, server name - clean end-user experience
 - 2025-05-28: **CRITICAL FIX #3**: Completely removed ALL backward compatibility fields (phase, subdirectory) from MCP schemas and handlers - NO deprecation warnings, clean V2-only API
 - 2025-05-28: **BUG FIX**: Fixed include_completed parameter to filter by task status (not workflow location) for MCP token efficiency - added excludeStatuses support to V2 core
+- 2025-05-28: **IMPROVEMENT**: Enhanced Zod schema descriptions and enum usage - removed redundant enum value repetition, improved tool descriptions for better LLM understanding while leveraging proper MCP enum support

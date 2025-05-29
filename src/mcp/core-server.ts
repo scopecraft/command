@@ -9,24 +9,24 @@ import { z } from 'zod';
 
 import * as v2 from '../core/v2/index.js';
 import {
-  handleTaskList,
-  handleTaskGet,
+  handleDebugCodePath,
+  handleGetCurrentRoot,
+  handleInitRoot,
+  handleListProjects,
+  handleParentCreate,
+  handleParentList,
+  handleParentOperations,
   handleTaskCreate,
-  handleTaskUpdate,
   handleTaskDelete,
+  handleTaskGet,
+  handleTaskList,
   handleTaskMove,
   handleTaskNext,
   handleTaskTransform,
-  handleParentList,
-  handleParentCreate,
-  handleParentOperations,
+  handleTaskUpdate,
   handleTemplateList,
   handleWorkflowCurrent,
   handleWorkflowMarkCompleteNext,
-  handleInitRoot,
-  handleGetCurrentRoot,
-  handleListProjects,
-  handleDebugCodePath,
 } from './handlers.js';
 
 /**
@@ -160,38 +160,61 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     // V2 native filters
     location: z
       .union([workflowStateEnum, z.array(workflowStateEnum)])
-      .describe('Filter by workflow location(s): backlog, current, or archive')
+      .describe('Filter by workflow location(s): "backlog", "current", or "archive". Use array for multiple locations.')
       .optional(),
-    type: taskTypeEnum.describe('Filter by task type (based on available templates)').optional(),
-    status: taskStatusEnum.describe('Filter by task status').optional(),
-    area: z.string().describe('Filter by area (e.g., "cli", "mcp", "ui")').optional(),
+    type: taskTypeEnum.describe('Filter by task type: "feature", "bug", "chore", "documentation", "test", "spike", or "idea" (varies by templates)').optional(),
+    status: taskStatusEnum.describe('Filter by exact task status: "To Do", "In Progress", "Done", "Blocked", or "Archived"').optional(),
+    area: z
+      .string()
+      .describe('Filter by functional area/component (e.g., "cli", "mcp", "ui", "core", "docs")')
+      .optional(),
 
-    // Include options
+    // Include options for response control
     include_parent_tasks: z
       .boolean()
-      .describe('Include parent task folders in results (default: true)')
+      .describe(
+        'Include parent task folders with _overview.md in results. Parent tasks organize complex work with multiple subtasks (default: true)'
+      )
       .optional(),
     include_content: z
       .boolean()
-      .describe('Include full task content in response (default: false)')
+      .describe(
+        'Include full task markdown content in response. WARNING: Significantly increases token usage - use sparingly (default: false)'
+      )
       .optional(),
     include_completed: z
       .boolean()
-      .describe('Include completed/done tasks in results (default: false for token efficiency)')
+      .describe(
+        'Include completed/done tasks in results. Default excludes "Done" and "Archived" status tasks for token efficiency (default: false)'
+      )
       .optional(),
     include_archived: z
       .boolean()
-      .describe('Include tasks from archive workflow folder (default: false)')
+      .describe(
+        'Include tasks from archive workflow folders. Archive contains completed work organized by month (default: false)'
+      )
       .optional(),
 
     // Subtask filtering
-    parent_id: z.string().describe('List only subtasks of this parent task ID').optional(),
+    parent_id: z
+      .string()
+      .describe(
+        'List only subtasks of this parent task ID (e.g., "implement-v2-structure"). Useful for viewing task breakdowns'
+      )
+      .optional(),
 
-    // Custom frontmatter filters
-    priority: taskPriorityEnum.describe('Filter by priority level').optional(),
-    assignee: z.string().describe('Filter by assigned username').optional(),
-    tags: z.array(z.string()).describe('Filter by tags (e.g., ["backend", "api"])').optional(),
-
+    // Advanced frontmatter filters
+    priority: taskPriorityEnum.describe('Filter by priority level: "Highest", "High", "Medium", or "Low"').optional(),
+    assignee: z
+      .string()
+      .describe('Filter by assigned username/person responsible for the task')
+      .optional(),
+    tags: z
+      .array(z.string())
+      .describe(
+        'Filter by tags for categorization (e.g., ["backend", "api", "security"]). Returns tasks matching any tag'
+      )
+      .optional(),
   };
 
   const taskListSchema = z.object(taskListRawShape);
@@ -199,7 +222,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     'task_list',
     {
       description:
-        'Lists tasks with powerful filtering across workflow states. Supports filtering by type, status, area, priority, assignee, and tags. Can list subtasks of a specific parent or search across all tasks. V2: Uses workflow states (backlog/current/archive) instead of phases.',
+        'Lists tasks with comprehensive filtering across the workflow-based task system. Essential for discovering work, checking status, and navigating task hierarchies. Supports filtering by workflow location, task type, status, functional area, priority, assignee, and tags. Can list subtasks of specific parent tasks or search across all tasks. Token-efficient by default - excludes completed tasks and content unless explicitly requested. Use this as your primary tool for exploring and understanding the current state of work.',
       inputSchema: taskListRawShape,
       annotations: {
         title: 'List Tasks',
@@ -222,17 +245,19 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   const taskGetRawShape = {
     id: z
       .string()
-      .describe('Task ID to retrieve (e.g., "auth-feature-05A" or "02_implement-api-05B")')
+      .describe(
+        'Task ID to retrieve (e.g., "auth-feature-05A", "02_implement-api-05B", or "01_design-api"). Use parent_id if task is a subtask.'
+      )
       .min(1),
     parent_id: z
       .string()
       .describe(
-        'Parent task ID for subtask resolution. Helps locate subtasks like "02_implement-api"'
+        'Parent task ID for subtask resolution. Required when accessing subtasks like "02_implement-api" within "auth-feature-05A". Helps locate the correct subtask file.'
       )
       .optional(),
     format: z
       .enum(['full', 'summary'])
-      .describe('Output format: full (all content), summary (metadata only)')
+      .describe('Output format: "full" (complete content) or "summary" (metadata only)')
       .default('full')
       .optional(),
   };
@@ -242,7 +267,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     'task_get',
     {
       description:
-        'Retrieves complete details of a specific task. For subtasks, provide parent_id to help with resolution. V2: Returns task with workflow location and v2 structure.',
+        'Retrieves complete details of a specific task including all metadata, content sections, and relationships. Essential for understanding task requirements, current status, and context before making updates. For subtasks within parent tasks, provide parent_id to ensure correct resolution. Returns workflow location, task structure, and all available content. Use this when you need full information about a task including its instruction, tasks checklist, deliverable, and log sections.',
       inputSchema: taskGetRawShape,
       annotations: {
         title: 'Get Task Details',
@@ -266,35 +291,56 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     // Required fields
     title: z
       .string()
-      .describe('Task title/summary. Will be used to generate task ID.')
+      .describe(
+        'Task title/summary. Should be clear and actionable (e.g., "Implement user authentication API", "Fix memory leak in parser"). Used to auto-generate task ID.'
+      )
       .min(3)
       .max(200),
-    type: taskTypeEnum.describe('Task type (must match available templates)'),
+    type: taskTypeEnum.describe(
+      'Task type that determines template and structure: "feature", "bug", "chore", "documentation", "test", "spike", or "idea" (use template_list to see available types)'
+    ),
     area: z
       .string()
-      .describe('Task area (e.g., "cli", "mcp", "ui", "core")')
+      .describe(
+        'Functional area/component this task belongs to (e.g., "cli", "mcp", "ui", "core", "docs"). Helps with organization and filtering.'
+      )
       .default('general')
       .optional(),
 
     // Optional metadata
-    status: taskStatusEnum.describe('Initial task status').default('To Do').optional(),
-    priority: taskPriorityEnum.describe('Task priority level').default('Medium').optional(),
+    status: taskStatusEnum
+      .describe('Initial task status: "To Do" (default), "In Progress", "Done", "Blocked", or "Archived"')
+      .default('To Do')
+      .optional(),
+    priority: taskPriorityEnum
+      .describe('Task priority level: "Highest", "High", "Medium" (default), or "Low"')
+      .default('Medium')
+      .optional(),
     location: workflowStateEnum
-      .describe('Workflow location for new task')
+      .describe('Workflow location: "backlog" (default), "current", or "archive"')
       .default('backlog')
       .optional(),
 
     // Parent/subtask relationship
     parent_id: z
       .string()
-      .describe('Parent task ID - creates this as a subtask with auto-generated sequence number')
+      .describe(
+        'Parent task ID to create this as a subtask. Creates organized task hierarchy with auto-generated sequence number (e.g., "01_", "02_"). Useful for breaking down complex work.'
+      )
       .optional(),
 
     // Custom frontmatter
-    assignee: z.string().describe('Username of person assigned to this task').optional(),
+    assignee: z
+      .string()
+      .describe(
+        'Username or name of person assigned to this task. Helps with responsibility tracking and workload distribution.'
+      )
+      .optional(),
     tags: z
       .array(z.string())
-      .describe('Tags for categorization (e.g., ["backend", "api"])')
+      .describe(
+        'Tags for categorization and filtering (e.g., ["backend", "api", "security", "urgent"]). Supports flexible organization beyond area/type.'
+      )
       .optional(),
 
     // Initial content
@@ -347,8 +393,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .object({
         // Metadata updates
         title: z.string().describe('New task title (Note: does not change task ID)').optional(),
-        status: taskStatusEnum.describe('New task status').optional(),
-        priority: taskPriorityEnum.describe('New priority level').optional(),
+        status: taskStatusEnum.describe('New task status: "To Do", "In Progress", "Done", "Blocked", or "Archived"').optional(),
+        priority: taskPriorityEnum.describe('New priority level: "Highest", "High", "Medium", or "Low"').optional(),
         area: z.string().describe('New area').optional(),
         assignee: z.string().describe('New assignee').optional(),
         tags: z.array(z.string()).describe('New tags (replaces existing)').optional(),
@@ -408,9 +454,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   const taskMoveRawShape = {
     id: z.string().describe('Task ID to move'),
     parent_id: z.string().describe('Parent task ID for subtask resolution').optional(),
-    target_state: workflowStateEnum.describe(
-      'Target workflow location: backlog, current, or archive'
-    ),
+    target_state: workflowStateEnum.describe('Target workflow location: "backlog", "current", or "archive"'),
     archive_date: z
       .string()
       .regex(/^\d{4}-\d{2}$/)
@@ -430,7 +474,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     'task_move',
     {
       description:
-        'Moves tasks between workflow states (backlog/current/archive). Automatically updates status based on transition unless disabled. Archive moves require YYYY-MM date. V2: Replaces phase-based moves.',
+        'Moves tasks between workflow states. Automatically updates status based on transition unless disabled. Archive moves require YYYY-MM date.',
       inputSchema: taskMoveRawShape,
       annotations: {
         title: 'Move Task',
@@ -704,7 +748,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   const parentListRawShape = {
     location: z
       .union([workflowStateEnum, z.array(workflowStateEnum)])
-      .describe('Filter by workflow location(s)')
+      .describe('Filter by workflow location(s): "backlog", "current", or "archive". Use array for multiple locations.')
       .optional(),
     area: z.string().describe('Filter by area').optional(),
     include_progress: z
@@ -750,11 +794,11 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .describe('Parent task title. Will create folder with _overview.md')
       .min(3)
       .max(200),
-    type: taskTypeEnum.describe('Task type for the parent overview'),
+    type: taskTypeEnum.describe('Task type for the parent overview: "feature", "bug", "chore", "documentation", "test", "spike", or "idea"'),
     area: z.string().describe('Task area').default('general').optional(),
-    status: taskStatusEnum.describe('Initial status').default('To Do').optional(),
-    priority: taskPriorityEnum.describe('Priority level').default('Medium').optional(),
-    location: workflowStateEnum.describe('Workflow location').default('backlog').optional(),
+    status: taskStatusEnum.describe('Initial status: "To Do" (default), "In Progress", "Done", "Blocked", or "Archived"').default('To Do').optional(),
+    priority: taskPriorityEnum.describe('Priority level: "Highest", "High", "Medium" (default), or "Low"').default('Medium').optional(),
+    location: workflowStateEnum.describe('Workflow location: "backlog" (default), "current", or "archive"').default('backlog').optional(),
     overview_content: z
       .string()
       .describe('Initial content for _overview.md instruction section')
@@ -809,7 +853,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     parent_id: z.string().describe('Parent task ID to operate on'),
     operation: z
       .enum(['resequence', 'parallelize', 'add_subtask'])
-      .describe("Operation to perform on parent's subtasks"),
+      .describe('Operation to perform on parent\'s subtasks: "resequence", "parallelize", or "add_subtask"'),
     sequence_map: z
       .array(
         z.object({
@@ -835,7 +879,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     subtask: z
       .object({
         title: z.string().describe('New subtask title'),
-        type: taskTypeEnum.describe('Subtask type').optional(),
+        type: taskTypeEnum.describe('Subtask type: "feature", "bug", "chore", "documentation", "test", "spike", or "idea"').optional(),
         after: z
           .string()
           .describe('Insert after this subtask ID (e.g., "02_design-api")')
@@ -885,7 +929,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     operation: z
       .enum(['promote', 'extract', 'adopt'])
       .describe(
-        'Transformation operation: promote (simple→parent), extract (subtask→simple), adopt (simple→subtask)'
+        'Transformation operation: "promote" (simple→parent), "extract" (subtask→simple), or "adopt" (simple→subtask)'
       ),
     initial_subtasks: z
       .array(z.string())

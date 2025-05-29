@@ -792,7 +792,7 @@ export async function handleTaskList(params: TaskListParams) {
 - ✅ Legacy parameters completely removed - NO phase/subdirectory in schemas or handlers
 
 **🔄 REMAINING - High Priority:**
-- ❌ Zod enum definitions inconsistent - need to restore .old file enums
+- ✅ Zod enum definitions improved - leveraging proper MCP enum support, enhanced descriptions
 - ❌ Core operations failing in tests (resequence, transform, move, listing filters)
 
 **📋 REMAINING - Medium Priority:**

@@ -1,90 +1,43 @@
-// Define our own types instead of importing from core
-// In a real implementation, we would directly import these from the core library
-// import { Task, Phase, Template, OperationResult } from '../../../../src/core/types';
+// Import v2 core types
+export type {
+  Task,
+  ParentTask,
+  TaskDocument,
+  TaskFrontmatter,
+  TaskSections,
+  TaskMetadata,
+  TaskLocation,
+  TaskCreateOptions,
+  TaskUpdateOptions,
+  TaskMoveOptions,
+  TaskListOptions,
+  SectionUpdateOptions,
+  SectionContent,
+  OperationResult,
+  ValidationError,
+  TaskSearchResult,
+  TaskIdComponents,
+  TaskReference,
+  SubtaskInfo,
+  WorkflowState,
+  TaskType,
+  TaskStatus,
+  TaskPriority,
+  V2Config,
+  StructureVersion,
+  MigrationResult
+} from '../../../../src/core/v2/types';
 
-// Result type for operation responses
-export interface OperationResult<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: Error;
-}
-
-// Basic task model
-export interface Task {
-  id: string;
-  title: string;
-  type: string;
-  status: string;
-  priority?: string;
-  created_date?: string;
-  updated_date?: string;
-  assigned_to?: string;
-  parent_task?: string;
-  subtasks?: string[];
-  depends_on?: string[];
-  previous_task?: string;
-  next_task?: string;
-  phase?: string;
-  subdirectory?: string;
-  feature?: string;
-  area?: string;
-  tags?: string[];
-  content?: string;
-  [key: string]: any;
-}
-
-// Phase model
-export interface Phase {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  order: number;
-}
-
-// Feature model
-export interface Feature {
-  id: string;
-  name: string;
-  title?: string;
-  description?: string;
-  status?: string;
-  created_date?: string;
-  updated_date?: string;
-  assigned_to?: string;
-  phase?: string;
-  phases?: string[]; // Array of phases this feature exists in
-  is_overview?: boolean;
-  subtasks?: string[];
-  progress?: {
-    completed: number;
-    total: number;
-    percentage: number;
-  };
-  tags?: string[];
-}
-
-// Area model
+// UI-specific area model (simplified for organizational purposes)
 export interface Area {
   id: string;
   name: string;
   title?: string;
   description?: string;
-  status?: string;
   created_date?: string;
   updated_date?: string;
-  assigned_to?: string;
-  phase?: string;
-  phases?: string[]; // Array of phases this area exists in
-  is_overview?: boolean;
-  subtasks?: string[];
-  progress?: {
-    completed: number;
-    total: number;
-    percentage: number;
-  };
-  tags?: string[];
+  taskCount?: number;
+  parentTaskCount?: number;
 }
 
 // Template model
@@ -100,30 +53,33 @@ export interface Template {
 
 // Additional UI-specific types
 export interface TaskListFilter {
-  status?: string;
-  priority?: string;
-  type?: string;
-  phase?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  type?: TaskType;
+  workflowState?: WorkflowState;
   searchTerm?: string;
   assignedTo?: string;
-  subdirectory?: string;
-  feature?: string;
   area?: string;
   tag?: string;
-  sortBy?: keyof Task;
+  parentTask?: string; // Filter by parent task
+  includeCompleted?: boolean;
+  includeArchived?: boolean;
+  sortBy?: 'title' | 'status' | 'priority' | 'created_date' | 'updated_date';
   sortDirection?: 'asc' | 'desc';
 }
 
 export interface UIState {
   sidebarOpen: boolean;
   darkMode: boolean;
-  activeView: 'home' | 'list' | 'detail' | 'form' | 'create' | 'graph';
+  activeView: 'home' | 'list' | 'detail' | 'form' | 'create' | 'graph' | 'workflow' | 'parent-task';
   activeTaskId: string | null;
+  activeParentTaskId: string | null;
+  activeWorkflowState: WorkflowState | null;
   toasts: Toast[];
   collapsedSections: {
     views?: boolean;
-    phases?: boolean;
-    features?: boolean;
+    workflow?: boolean;
+    parentTasks?: boolean;
     areas?: boolean;
   };
 }
@@ -139,7 +95,7 @@ export interface Toast {
 export interface TaskRelationship {
   source: string;
   target: string;
-  type: 'depends-on' | 'parent-child' | 'next-previous';
+  type: 'depends-on' | 'parent-child' | 'sequence-follows';
 }
 
 export interface TemplateField {
