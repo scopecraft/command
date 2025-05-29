@@ -213,6 +213,40 @@ export async function getTask(
 }
 
 /**
+ * Determine if automatic workflow transition should occur based on status change
+ */
+function shouldAutoTransition(
+  currentWorkflow: WorkflowState,
+  oldStatus: TaskStatus | undefined,
+  newStatus: TaskStatus,
+  config?: V2Config
+): WorkflowState | null {
+  // Only transition if auto-transitions are enabled (default: true)
+  const autoTransitionsEnabled = config?.autoWorkflowTransitions !== false;
+  if (!autoTransitionsEnabled) {
+    return null;
+  }
+
+  // Only transition when status actually changes
+  if (oldStatus === newStatus) {
+    return null;
+  }
+
+  // Main rule: backlog tasks that become "In Progress" should move to current
+  if (currentWorkflow === 'backlog' && newStatus === 'In Progress') {
+    return 'current';
+  }
+
+  // Re-opening archived tasks: move to current when status changes from non-active to active
+  if (currentWorkflow === 'archive' && (newStatus === 'In Progress' || newStatus === 'To Do')) {
+    return 'current';
+  }
+
+  // No other automatic transitions
+  return null;
+}
+
+/**
  * Update a task
  */
 export async function updateTask(
@@ -229,6 +263,18 @@ export async function updateTask(
     }
 
     const task = result.data;
+
+    // Capture original state for auto-transition logic
+    const originalStatus = task.document.frontmatter.status;
+    const taskLocation = parseTaskLocation(task.metadata.path, projectRoot);
+    const currentWorkflow = taskLocation?.workflowState;
+    
+    if (!currentWorkflow) {
+      return {
+        success: false,
+        error: 'Could not determine current workflow state for task',
+      };
+    }
 
     // Apply updates
     if (updates.title !== undefined) {
@@ -258,6 +304,37 @@ export async function updateTask(
         success: false,
         error: 'Invalid task document after update',
         validationErrors: errors,
+      };
+    }
+
+    // Check for automatic workflow transition
+    const newStatus = task.document.frontmatter.status;
+    const targetWorkflow = shouldAutoTransition(currentWorkflow, originalStatus, newStatus, config);
+
+    if (targetWorkflow && targetWorkflow !== currentWorkflow) {
+      // First, write updated content to current location to preserve status change
+      const updatedContent = serializeTaskDocument(task.document);
+      writeFileSync(task.metadata.path, updatedContent, 'utf-8');
+      
+      // Then use moveTask with updateStatus: false to move to new workflow
+      const moveResult = await moveTask(
+        projectRoot,
+        taskId,
+        {
+          targetState: targetWorkflow,
+          updateStatus: false, // Don't override the status we just set
+        },
+        config
+      );
+
+      if (moveResult.success && moveResult.data) {
+        // Return the moved task
+        return moveResult;
+      }
+      // If move fails, the task is still updated in current location
+      return {
+        success: true,
+        data: task,
       };
     }
 

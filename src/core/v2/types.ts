@@ -266,6 +266,7 @@ export interface V2Config {
   archiveDateFormat?: string; // default "YYYY-MM"
   defaultWorkflowState?: WorkflowState;
   autoStatusUpdate?: boolean; // update status on workflow transitions
+  autoWorkflowTransitions?: boolean; // automatically move tasks between workflows on status changes
   complexTaskPrefix?: string; // prefix for subtask numbering
 }
 
