@@ -125,7 +125,6 @@ Before writing any code:
 
 <common_pitfalls>
 AVOID these mistakes:
-- ❌ Using MCP commands when working on MCP implementation itself
 - ❌ Starting to code without understanding the full context
 - ❌ Ignoring existing patterns in the area
 - ❌ Skipping code quality checks
@@ -139,8 +138,7 @@ AVOID these mistakes:
 Throughout implementation:
 
 1. **Update task regularly**
-   - For V2: Update the .task.md file directly
-   - For others: Use mcp__scopecraft-cmd__task_update
+   - Use appropriate tools to update the task
    - Document decisions and challenges
    - Update checklists as items are completed
 

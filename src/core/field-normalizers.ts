@@ -6,38 +6,38 @@
  */
 
 /**
- * Standard priority values
+ * Standard priority values (clean text only - emojis added by formatters)
  */
 export const PRIORITY_VALUES = {
-  HIGHEST: '🔥 Highest',
-  HIGH: '🔼 High',
-  MEDIUM: '▶️ Medium',
-  LOW: '🔽 Low',
-  DEFAULT: '▶️ Medium',
+  HIGHEST: 'Highest',
+  HIGH: 'High',
+  MEDIUM: 'Medium',
+  LOW: 'Low',
+  DEFAULT: 'Medium',
 };
 
 /**
- * Standard task status values
+ * Standard task status values (clean text only - emojis added by formatters)
  */
 export const TASK_STATUS_VALUES = {
-  TODO: '🟡 To Do',
-  IN_PROGRESS: '🔵 In Progress',
-  DONE: '🟢 Done',
-  BLOCKED: '⚪ Blocked',
-  REVIEW: '🟣 Review',
-  DEFAULT: '🟡 To Do',
+  TODO: 'To Do',
+  IN_PROGRESS: 'In Progress',
+  DONE: 'Done',
+  BLOCKED: 'Blocked',
+  REVIEW: 'Review',
+  DEFAULT: 'To Do',
 };
 
 /**
- * Standard phase status values
+ * Standard phase status values (clean text only - emojis added by formatters)
  */
 export const PHASE_STATUS_VALUES = {
-  PENDING: '🟡 Pending',
-  IN_PROGRESS: '🔵 In Progress',
-  COMPLETED: '🟢 Completed',
-  BLOCKED: '⚪ Blocked',
-  ARCHIVED: '🗄️ Archived',
-  DEFAULT: '🟡 Pending',
+  PENDING: 'Pending',
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed',
+  BLOCKED: 'Blocked',
+  ARCHIVED: 'Archived',
+  DEFAULT: 'Pending',
 };
 
 /**

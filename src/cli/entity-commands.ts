@@ -61,7 +61,11 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .option('--current', 'Show only current tasks')
     .option('--archive', 'Show only archived tasks')
     .option('--all', 'Show all workflow locations')
-    .option('-f, --format <format>', 'Output format: tree (default), table, json, minimal, workflow', 'tree')
+    .option(
+      '-f, --format <format>',
+      'Output format: tree (default), table, json, minimal, workflow',
+      'tree'
+    )
     .action(handleListCommand);
 
   // task get command
@@ -70,18 +74,19 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .description('Get a task by ID')
     .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
     .option('--parent <parent>', 'Parent task ID (for subtasks)')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Note: For subtasks, use the full path or provide --parent:
   sc task get current/parent-id/02-subtask
-  sc task get 02-subtask --parent parent-id`)
+  sc task get 02-subtask --parent parent-id`
+    )
     .action(handleGetCommand);
 
   // task create command
   taskCommand
     .command('create')
-    .description(
-      'Create a new task (Example: sc task create --title "New feature" --type feature)'
-    )
+    .description('Create a new task (Example: sc task create --title "New feature" --type feature)')
     .option(
       '--id <id>',
       'Task ID (generated if not provided, use "_overview" for feature overview files)'
@@ -123,10 +128,13 @@ Note: For subtasks, use the full path or provide --parent:
     .option('--tags <tags...>', 'Tags for the task')
     .option('--content <content>', 'Task content')
     .option('--file <file>', 'Update from file (JSON or TOML+Markdown)')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Note: For subtasks, use the full path or provide --parent:
   sc task update current/parent-id/02-subtask --status "Done"
-  sc task update 02-subtask --parent parent-id --status "Done"`)
+  sc task update 02-subtask --parent parent-id --status "Done"`
+    )
     .action(handleUpdateCommand);
 
   // task delete command
@@ -134,10 +142,13 @@ Note: For subtasks, use the full path or provide --parent:
     .command('delete <id>')
     .description('Delete a task')
     .option('--parent <parent>', 'Parent task ID (for subtasks)')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Note: For subtasks, use the full path or provide --parent:
   sc task delete current/parent-id/02-subtask
-  sc task delete 02-subtask --parent parent-id`)
+  sc task delete 02-subtask --parent parent-id`
+    )
     .action(handleDeleteCommand);
 
   // task status shortcut commands
@@ -145,10 +156,13 @@ Note: For subtasks, use the full path or provide --parent:
     .command('start <id>')
     .description('Mark a task as "In Progress"')
     .option('--parent <parent>', 'Parent task ID (for subtasks)')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Note: For subtasks, use the full path or provide --parent:
   sc task start current/parent-id/02-subtask
-  sc task start 02-subtask --parent parent-id`)
+  sc task start 02-subtask --parent parent-id`
+    )
     .action(async (id, options) => {
       await handleUpdateCommand(id, { status: 'In Progress', ...options });
     });
@@ -157,10 +171,13 @@ Note: For subtasks, use the full path or provide --parent:
     .command('complete <id>')
     .description('Mark a task as "Done"')
     .option('--parent <parent>', 'Parent task ID (for subtasks)')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Note: For subtasks, use the full path or provide --parent:
   sc task complete current/parent-id/02-subtask
-  sc task complete 02-subtask --parent parent-id`)
+  sc task complete 02-subtask --parent parent-id`
+    )
     .action(async (id, options) => {
       await handleUpdateCommand(id, { status: 'Done', ...options });
     });
@@ -191,7 +208,7 @@ Note: For subtasks, use the full path or provide --parent:
     .action(handleTaskMoveCommand);
 
   // ===== SEQUENCING COMMANDS =====
-  
+
   // task resequence command
   taskCommand
     .command('resequence <parentId>')
@@ -199,7 +216,9 @@ Note: For subtasks, use the full path or provide --parent:
     .option('-i, --interactive', 'Interactive mode to reorder tasks visually')
     .option('--from <positions>', 'Current positions (comma-separated)')
     .option('--to <positions>', 'New positions (comma-separated)')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Examples:
   # Interactive reordering
   sc task resequence auth-feature-05K --interactive
@@ -213,7 +232,8 @@ Examples:
 Notes:
   - Shows current order before making changes
   - Automatically adjusts other task sequences
-  - Preserves parallel execution (same numbers)`)
+  - Preserves parallel execution (same numbers)`
+    )
     .action(async (parentId, options) => {
       const { handleTaskResequenceCommand } = await import('./commands.js');
       await handleTaskResequenceCommand(parentId, options);
@@ -225,7 +245,9 @@ Notes:
     .description('Make multiple subtasks run in parallel by giving them the same sequence number')
     .option('--sequence <num>', 'Specific sequence number to use (default: lowest)')
     .option('--parent <id>', 'Parent task (required if subtask IDs are ambiguous)')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Examples:
   # Make two subtasks parallel (within same parent)
   sc task parallelize 02-impl-api 03-impl-ui
@@ -240,7 +262,8 @@ Notes:
   - Only works on subtasks within the same parent folder
   - Shows before/after sequences
   - Core handles all ID/filename updates
-  - Cannot parallelize floating tasks (they don't have sequences)`)
+  - Cannot parallelize floating tasks (they don't have sequences)`
+    )
     .action(async (subtaskIds, options) => {
       const { handleTaskParallelizeCommand } = await import('./commands.js');
       await handleTaskParallelizeCommand(subtaskIds, options);
@@ -252,7 +275,9 @@ Notes:
     .description('Change the sequence number of a subtask within its parent')
     .option('--force', 'Force even if sequence exists (makes parallel)')
     .option('--parent <id>', 'Parent task (required if subtask ID is ambiguous)')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Examples:
   # Change subtask from sequence 03 to 01
   sc task sequence 03-write-tests 01
@@ -268,7 +293,8 @@ Notes:
   - Automatically shifts other subtasks if needed
   - Use --force to create parallel tasks
   - Shows impact on other subtask sequences
-  - Core handles all ID/filename transformations`)
+  - Core handles all ID/filename transformations`
+    )
     .action(async (subtaskId, newSequence, options) => {
       const { handleTaskSequenceCommand } = await import('./commands.js');
       await handleTaskSequenceCommand(subtaskId, newSequence, options);
@@ -282,7 +308,9 @@ Notes:
     .description('Convert a simple task into a parent task with subtasks')
     .option('--subtasks <titles>', 'Initial subtasks to create (comma-separated)')
     .option('--keep-original', 'Keep original task as first subtask')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Examples:
   # Basic promotion
   sc task promote implement-auth-05K
@@ -303,7 +331,8 @@ Results:
 Notes:
   - Preserves task metadata and content
   - Generates new IDs for subtasks
-  - Updates any task references`)
+  - Updates any task references`
+    )
     .action(async (taskId, options) => {
       const { handleTaskPromoteCommand } = await import('./commands.js');
       await handleTaskPromoteCommand(taskId, options);
@@ -315,7 +344,9 @@ Notes:
     .description('Extract a subtask from its parent to become a standalone task')
     .option('--target <location>', 'Target workflow location (backlog/current/archive)', 'backlog')
     .option('--parent <id>', 'Parent task (required if subtask ID is ambiguous)')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Examples:
   # Extract subtask to backlog
   sc task extract auth-feature/02-impl-api
@@ -333,7 +364,8 @@ Results:
 Notes:
   - Preserves task content and metadata
   - Removes sequence prefix from ID
-  - Updates parent task if referenced`)
+  - Updates parent task if referenced`
+    )
     .action(async (subtaskId, options) => {
       const { handleTaskExtractCommand } = await import('./commands.js');
       await handleTaskExtractCommand(subtaskId, options);
@@ -346,7 +378,9 @@ Notes:
     .option('--sequence <num>', 'Specific sequence (default: next available)')
     .option('--after <task-id>', 'Place after specific subtask')
     .option('--before <task-id>', 'Place before specific subtask')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Examples:
   # Adopt task as next subtask
   sc task adopt auth-feature-05K login-ui-05M
@@ -364,7 +398,8 @@ Results:
 Notes:
   - Adds sequence prefix to task ID
   - Adjusts other sequences if needed
-  - Maintains original task suffix`)
+  - Maintains original task suffix`
+    )
     .action(async (parentId, taskId, options) => {
       const { handleTaskAdoptCommand } = await import('./commands.js');
       await handleTaskAdoptCommand(parentId, taskId, options);
@@ -385,7 +420,11 @@ Notes:
     .option('--current', 'Show only current tasks')
     .option('--archive', 'Show only archived tasks')
     .option('--all', 'Show all workflow locations (current, backlog, archive)')
-    .option('-f, --format <format>', 'Output format: tree (default), table, json, minimal, workflow', 'tree')
+    .option(
+      '-f, --format <format>',
+      'Output format: tree (default), table, json, minimal, workflow',
+      'tree'
+    )
     .action(handleListCommand);
 
   program
@@ -471,7 +510,9 @@ Examples:
     .option('--parallel-with <id>', 'Make parallel with existing subtask')
     .option('--after <id>', 'Insert after specific subtask')
     .option('--before <id>', 'Insert before specific subtask')
-    .addHelpText('after', `
+    .addHelpText(
+      'after',
+      `
 Examples:
   # Add as next sequence
   sc parent add-subtask auth-05K --title "Add OAuth support"
@@ -483,7 +524,8 @@ Examples:
   sc parent add-subtask auth-05K --title "Update docs" --parallel-with 03-impl
   
   # Insert after existing task
-  sc parent add-subtask auth-05K --title "Integration tests" --after 02-impl`)
+  sc parent add-subtask auth-05K --title "Integration tests" --after 02-impl`
+    )
     .action(async (parentId, options) => {
       const { handleAddSubtaskCommand } = await import('./commands.js');
       await handleAddSubtaskCommand(parentId, options);

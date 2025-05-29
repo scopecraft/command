@@ -3,15 +3,15 @@
  * Uses the v2 core with workflow-based task management
  */
 
-import * as v2 from '../core/v2/index.js';
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
 import type { OutputFormat } from '../core/formatters-v2.js';
-import { 
-  formatTaskDetail, 
-  formatTasksList, 
+import {
+  formatProgress,
+  formatTaskDetail,
+  formatTasksList,
   formatTemplatesList,
-  formatProgress 
 } from '../core/formatters-v2.js';
+import * as v2 from '../core/v2/index.js';
 
 /**
  * Handle init command with v2 structure
@@ -23,21 +23,21 @@ export async function handleInitCommand(options: {
   try {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = options.rootDir || process.cwd();
-    
+
     // Check if already initialized
     const initStatus = v2.getInitStatus(projectRoot);
     if (initStatus.initialized) {
       console.log(`✓ Project already initialized with ${initStatus.version} structure`);
-      
+
       if (initStatus.hasV1) {
         console.log('\n⚠️  This project has v1 phase folders. Consider migrating to v2.');
       }
       return;
     }
-    
+
     // Initialize v2 structure
     const result = await v2.initializeV2ProjectStructure(projectRoot);
-    
+
     if (result.success) {
       console.log('✓ Initialized Scopecraft v2 project structure:');
       console.log('  .tasks/backlog/     - Tasks waiting to be worked on');
@@ -48,7 +48,7 @@ export async function handleInitCommand(options: {
       console.log('  sc task create --title "My first task" --type feature');
       console.log('  sc task list');
       console.log('  sc workflow next');
-      
+
       // Update config if needed
       if (options.rootDir) {
         configManager.setRootFromCLI(options.rootDir);
@@ -82,10 +82,10 @@ export async function handleListCommand(options: {
   try {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getProjectRoot();
-    
+
     // Build filter options
     const listOptions: v2.TaskListOptions = {};
-    
+
     // Handle workflow location filters
     if (options.backlog) {
       listOptions.workflowStates = ['backlog'];
@@ -96,7 +96,7 @@ export async function handleListCommand(options: {
     } else if (options.location) {
       listOptions.workflowStates = [options.location as v2.WorkflowState];
     }
-    
+
     // Add other filters
     if (options.status) listOptions.status = options.status as v2.TaskStatus;
     if (options.type) listOptions.type = options.type;
@@ -104,27 +104,30 @@ export async function handleListCommand(options: {
     if (options.tags) listOptions.tags = options.tags;
     if (options.subdirectory) listOptions.subdirectory = options.subdirectory;
     if (options.overview) listOptions.onlyParentOverviews = true;
-    
+
     // List tasks
     const result = await v2.listTasks(projectRoot, listOptions);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     // Format and display
     const format = (options.format || 'table') as OutputFormat;
     console.log(formatTasksList(result.data || [], format));
-    
+
     // Show summary
     if (format === 'table' && result.data && result.data.length > 0) {
-      const byStatus = result.data.reduce((acc, task) => {
-        const status = task.document.frontmatter.status;
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      
+      const byStatus = result.data.reduce(
+        (acc, task) => {
+          const status = task.document.frontmatter.status;
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+
       console.log(`\nTotal: ${result.data.length} tasks`);
       Object.entries(byStatus).forEach(([status, count]) => {
         console.log(`  ${status}: ${count}`);
@@ -149,15 +152,15 @@ export async function handleGetCommand(
   try {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getProjectRoot();
-    
+
     // Get task
     const result = await v2.getTask(projectRoot, id);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     // Format and display
     const format = (options.format || 'default') as OutputFormat;
     console.log(formatTaskDetail(result.data!, format));
@@ -191,7 +194,7 @@ export async function handleCreateCommand(options: {
   try {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getProjectRoot();
-    
+
     // Build create options
     const createOptions: v2.TaskCreateOptions = {
       title: options.title,
@@ -201,9 +204,9 @@ export async function handleCreateCommand(options: {
       status: (options.status as v2.TaskStatus) || 'To Do',
       template: options.template,
       instruction: options.content,
-      customMetadata: {}
+      customMetadata: {},
     };
-    
+
     // Add optional metadata
     if (options.priority) createOptions.customMetadata!.priority = options.priority;
     if (options.assignee) createOptions.customMetadata!.assignee = options.assignee;
@@ -212,30 +215,32 @@ export async function handleCreateCommand(options: {
     if (options.depends) createOptions.customMetadata!.depends = options.depends;
     if (options.previous) createOptions.customMetadata!.previous = options.previous;
     if (options.next) createOptions.customMetadata!.next = options.next;
-    
+
     // Handle file input
     if (options.file) {
       // TODO: Implement file parsing
       console.error('File input not yet implemented in v2');
       process.exit(1);
     }
-    
+
     // Create task
     const result = await v2.createTask(projectRoot, createOptions);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       if (result.validationErrors) {
-        result.validationErrors.forEach(err => {
+        result.validationErrors.forEach((err) => {
           console.error(`  - ${err.field}: ${err.message}`);
         });
       }
       process.exit(1);
     }
-    
+
     console.log(`✓ Created task: ${result.data!.metadata.id}`);
-    console.log(`  Location: ${result.data!.metadata.location.workflowState}/${result.data!.metadata.filename}`);
-    
+    console.log(
+      `  Location: ${result.data!.metadata.location.workflowState}/${result.data!.metadata.filename}`
+    );
+
     // Show next steps
     if (result.data!.metadata.location.workflowState === 'backlog') {
       console.log('\nNext steps:');
@@ -273,12 +278,12 @@ export async function handleUpdateCommand(
   try {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getProjectRoot();
-    
+
     // Build update options
     const updateOptions: v2.TaskUpdateOptions = {};
-    
+
     if (options.title) updateOptions.title = options.title;
-    
+
     // Build frontmatter updates
     const frontmatter: any = {};
     if (options.type) frontmatter.type = options.type;
@@ -291,47 +296,47 @@ export async function handleUpdateCommand(
     if (options.depends) frontmatter.depends = options.depends;
     if (options.previous) frontmatter.previous = options.previous;
     if (options.next) frontmatter.next = options.next;
-    
+
     if (Object.keys(frontmatter).length > 0) {
       updateOptions.frontmatter = frontmatter;
     }
-    
+
     // Handle content update
     if (options.content) {
       updateOptions.sections = {
-        instruction: options.content
+        instruction: options.content,
       };
     }
-    
+
     // Handle file input
     if (options.file) {
       // TODO: Implement file parsing
       console.error('File input not yet implemented in v2');
       process.exit(1);
     }
-    
+
     // Update task
     const result = await v2.updateTask(projectRoot, id, updateOptions);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       if (result.validationErrors) {
-        result.validationErrors.forEach(err => {
+        result.validationErrors.forEach((err) => {
           console.error(`  - ${err.field}: ${err.message}`);
         });
       }
       process.exit(1);
     }
-    
+
     console.log(`✓ Updated task: ${result.data!.metadata.id}`);
-    
+
     // Handle location moves
     if (options.location) {
       const moveResult = await v2.moveTask(projectRoot, id, {
         targetState: options.location as v2.WorkflowState,
-        updateStatus: true
+        updateStatus: true,
       });
-      
+
       if (moveResult.success) {
         console.log(`✓ Moved to ${options.location}`);
       } else {
@@ -357,29 +362,29 @@ export async function handleDeleteCommand(
   try {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getProjectRoot();
-    
+
     // Confirm deletion if not forced
     if (!options.force) {
       const result = await v2.getTask(projectRoot, id);
       if (result.success && result.data) {
         console.log(`About to delete: ${result.data.document.title}`);
         console.log('Use --force to skip this confirmation.');
-        
+
         // In a real implementation, we'd prompt for confirmation
         // For now, we'll just exit
         console.log('Deletion cancelled (use --force to delete)');
         return;
       }
     }
-    
+
     // Delete task
     const result = await v2.deleteTask(projectRoot, id);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(`✓ Deleted task: ${id}`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -406,7 +411,7 @@ export async function handleTaskMoveCommand(
     const { projectConfig } = await import('../core/index.js');
     const tasksDir = projectConfig.getTasksDirectory();
     const projectRoot = tasksDir.replace('/.tasks', '');
-    
+
     // Determine target state
     let targetState: v2.WorkflowState;
     if (options.toBacklog) {
@@ -416,24 +421,26 @@ export async function handleTaskMoveCommand(
     } else if (options.toArchive) {
       targetState = 'archive';
     } else {
-      console.error('Error: Must specify target location (--to-backlog, --to-current, or --to-archive)');
+      console.error(
+        'Error: Must specify target location (--to-backlog, --to-current, or --to-archive)'
+      );
       process.exit(1);
     }
-    
+
     // Move task
     const result = await v2.moveTask(projectRoot, id, {
       targetState,
       archiveDate: options.archiveDate,
-      updateStatus: options.updateStatus
+      updateStatus: options.updateStatus,
     });
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     console.log(`✓ Moved task to ${targetState}`);
-    
+
     if (options.updateStatus && result.data) {
       console.log(`  Status: ${result.data.document.frontmatter.status}`);
     }
@@ -455,27 +462,27 @@ export async function handleNextTaskCommand(
   try {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getProjectRoot();
-    
+
     // List current tasks with "To Do" status
     const result = await v2.listTasks(projectRoot, {
       workflowStates: ['current'],
-      status: 'To Do'
+      status: 'To Do',
     });
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     const tasks = result.data || [];
-    
+
     if (tasks.length === 0) {
       // Check backlog
       const backlogResult = await v2.listTasks(projectRoot, {
         workflowStates: ['backlog'],
-        status: 'To Do'
+        status: 'To Do',
       });
-      
+
       if (backlogResult.success && backlogResult.data && backlogResult.data.length > 0) {
         console.log('No tasks in current. Consider promoting from backlog:');
         const format = (options.format || 'default') as OutputFormat;
@@ -486,7 +493,7 @@ export async function handleNextTaskCommand(
       }
       return;
     }
-    
+
     // Find highest priority task
     const priorityOrder = ['High', 'Medium', 'Low'];
     tasks.sort((a, b) => {
@@ -494,7 +501,7 @@ export async function handleNextTaskCommand(
       const bPriority = b.document.frontmatter.priority || 'Medium';
       return priorityOrder.indexOf(aPriority) - priorityOrder.indexOf(bPriority);
     });
-    
+
     const nextTask = tasks[0];
     const format = (options.format || 'default') as OutputFormat;
     console.log('Next task to work on:');
@@ -514,24 +521,24 @@ export async function handleCurrentTaskCommand(options: {
   try {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getProjectRoot();
-    
+
     // List tasks in progress
     const result = await v2.listTasks(projectRoot, {
-      status: 'In Progress'
+      status: 'In Progress',
     });
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     const tasks = result.data || [];
-    
+
     if (tasks.length === 0) {
       console.log('No tasks currently in progress.');
       return;
     }
-    
+
     // Format and display
     const format = (options.format || 'table') as OutputFormat;
     console.log('Tasks in progress:');
@@ -554,16 +561,16 @@ export async function handleMarkCompleteNextCommand(
   try {
     // Mark as complete
     await handleUpdateCommand(id, { status: 'Done' });
-    
+
     // Move to archive if in current
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getProjectRoot();
-    
+
     const task = await v2.getTask(projectRoot, id);
     if (task.success && task.data && task.data.metadata.location.workflowState === 'current') {
       await handleTaskMoveCommand(id, { toArchive: true });
     }
-    
+
     // Show next task
     await handleNextTaskCommand(undefined, options);
   } catch (error) {
@@ -579,23 +586,23 @@ export async function handleListTemplatesCommand(): Promise<void> {
   try {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getProjectRoot();
-    
+
     // List templates
     const result = await v2.listTemplates(projectRoot);
-    
+
     if (!result.success) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    
+
     const templates = result.data || [];
-    
+
     if (templates.length === 0) {
       console.log('No templates found.');
       console.log('\nTemplates should be placed in .tasks/.templates/');
       return;
     }
-    
+
     // Format and display
     console.log(formatTemplatesList(templates));
   } catch (error) {

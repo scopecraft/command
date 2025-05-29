@@ -1,4 +1,4 @@
-# Test feedback task
+# Handle customer feedback
 
 ---
 type: bug
@@ -9,7 +9,7 @@ priority: ▶️ Medium
 
 
 ## Instruction
-## Test feedback task
+## Handle customer feedback
 
 Task description goes here.
 

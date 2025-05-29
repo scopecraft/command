@@ -2,13 +2,13 @@
 
 ---
 type: chore
-status: To Do
+status: Done
 area: cli
 priority: ▶️ Medium
 ---
 
-## Instruction
 
+## Instruction
 Currently, subtask commands require the full path including workflow state to work:
 ```bash
 # This doesn't work:
@@ -46,7 +46,6 @@ However, the core's `resolveTaskId` function doesn't search inside parent task f
    - CLI can pass workflow state hints to core functions
 
 ## Tasks
-
 - [ ] Analyze how other commands handle subtask resolution
 - [ ] Decide on best approach (CLI-only, core change, or hybrid)
 - [ ] Implement subtask search in chosen location
@@ -55,7 +54,6 @@ However, the core's `resolveTaskId` function doesn't search inside parent task f
 - [ ] Test with nested parent tasks and ambiguous IDs
 
 ## Deliverable
-
 Users should be able to use simple subtask IDs for common operations:
 ```bash
 # These should all work:
@@ -71,5 +69,4 @@ sc task complete current/parent/02-cli-update
 ```
 
 ## Log
-
 - 2025-05-28: Created after discovering subtask resolution issues during CLI testing

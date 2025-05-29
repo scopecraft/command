@@ -57,7 +57,11 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .option('--current', 'Show only current tasks (default)')
     .option('--archive', 'Show only archived tasks')
     .option('--all', 'Show all workflow locations')
-    .option('-f, --format <format>', 'Output format: tree (default), table, json, minimal, workflow', 'tree')
+    .option(
+      '-f, --format <format>',
+      'Output format: tree (default), table, json, minimal, workflow',
+      'tree'
+    )
     .action(handleListCommand);
 
   // task get command
@@ -71,9 +75,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
   // task create command
   taskCommand
     .command('create')
-    .description(
-      'Create a new task (Example: sc task create --title "New feature" --type feature)'
-    )
+    .description('Create a new task (Example: sc task create --title "New feature" --type feature)')
     .option(
       '--id <id>',
       'Task ID (generated if not provided, use "_overview" for parent task overview files)'
@@ -326,7 +328,7 @@ You can use the global --root-dir option to specify an alternative tasks directo
     .option('--tags <tags...>', 'Tags for the area')
     .action(async (options) => {
       const subdirectory = `AREA_${options.name.replace(/\s+/g, '')}`;
-      
+
       try {
         await handleCreateCommand({
           id: '_overview',
@@ -342,7 +344,7 @@ You can use the global --root-dir option to specify an alternative tasks directo
             ? `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1`
             : `# ${options.title}\n\nOverview of this area.\n\n## Tasks\n\n- [ ] Task 1`,
         });
-        
+
         console.log(`Area '${options.name}' created successfully.`);
       } catch (_error) {
         // Error handled by handleCreateCommand
@@ -425,7 +427,7 @@ export function setupWorkflowCommands(program: Command): void {
     .action(async (id, options) => {
       await handleTaskMoveCommand(id, {
         toCurrent: true,
-        updateStatus: options.updateStatus
+        updateStatus: options.updateStatus,
       });
     });
 
@@ -437,7 +439,7 @@ export function setupWorkflowCommands(program: Command): void {
     .action(async (id, options) => {
       await handleTaskMoveCommand(id, {
         toArchive: true,
-        archiveDate: options.date
+        archiveDate: options.date,
       });
     });
 

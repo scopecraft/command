@@ -73,7 +73,6 @@ export interface TaskDocument {
 export interface TaskLocation {
   workflowState: WorkflowState;
   archiveDate?: string; // YYYY-MM format for archive organization
-  parentId?: string;    // parent task ID for subtasks
 }
 
 /**
