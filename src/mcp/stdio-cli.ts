@@ -90,6 +90,7 @@ program
 program.parse(process.argv);
 
 // Direct execution
-if (false) { // import.meta.main is not supported in all environments
+if (false) {
+  // import.meta.main is not supported in all environments
   // Directly executed
 }

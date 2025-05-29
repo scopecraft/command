@@ -322,77 +322,212 @@ Tasks:    📁 Parent Task (Complex)    📄 Simple Task
 
 ---
 
-## Implementation Strategy
+## Implementation Strategy (UI-First Exploration)
 
-### Phase 0: Storybook Groundwork (Foundational)
-**Timeline:** 1-2 days
-**Purpose:** Set up component-level development and review environment
+### Phase 0: Foundation & Mock Provider Setup ✅ COMPLETED
+**Timeline:** 1-2 days  
+**Status:** ✅ Complete - Storybook configured, basic V2 components built
 
-**Setup Tasks:**
-- Add Storybook to tasks-ui project (`npx storybook@latest init`)
-- Configure Storybook with existing Tailwind styles
-- Add essential addons (essentials, a11y, viewport)
-- Create stories for existing pure components (filter-panel, TaskContent, TaskMetadata)
-
-**Component Development Pattern:**
-```
-1. Build V2 component in isolation
-2. Create Storybook story with realistic props  
-3. Review visual design and edge cases
-4. Iterate quickly without full app context
-5. Integrate into real application when satisfied
-```
-
-**Benefits:**
-- Independent V2 component development (no MCP dependency)
-- Fast visual iteration and design review
-- Component isolation forces better architecture
-- Easy testing of edge cases (long titles, many subtasks, empty states)
-- Responsive and accessibility testing built-in
-
-### Phase 1: Foundation (High Priority)
+### Phase 1: Core Components & Layout Exploration ✅ COMPLETED  
 **Timeline:** Sprint 1
-- ✅ Update type definitions (COMPLETED)
-- 🔄 Document API changes needed (IN PROGRESS)
-- **Create V2 components with Storybook stories:**
-  - ParentTaskCard component with story variations
-  - SubtaskList component with sequence/parallel story examples
-  - WorkflowStateBadge component
-- Update core API client for v2 endpoints
-- Create new context providers (Workflow, ParentTask)
-- Implement basic routing structure
+**Status:** ✅ Complete - Core V2 components with Storybook stories
 
-### Phase 2: Navigation & Core Views (High Priority)  
-**Timeline:** Sprint 2
-- **Build core V2 pages with Storybook review:**
-  - ParentTaskDetailPage component (review in Storybook first)
-  - WorkflowDetailPage component (review in Storybook first)
-- Update routing structure
-- Replace Sidebar navigation
-- Update URL patterns with redirects
-- **Storybook stories for page layouts and responsive behavior**
+- ✅ TaskTypeIcon, WorkflowStateBadge, StatusBadge, PriorityIndicator
+- ✅ ParentTaskCard with multiple variants
+- ✅ SubtaskList with CLI-inspired tree view
+- ✅ Comprehensive Storybook stories and showcases
 
-### Phase 3: Task Management UI (Medium Priority)
-**Timeline:** Sprint 3
-- **V2 component development with Storybook:**
-  - TaskListV2 with parent task icons (📁 vs 📄)
-  - Task move/filter components updated for V2
-  - Basic subtask sequencing UI components
-  - Task conversion UI components
-- **Story-driven edge case testing:**
-  - Long task titles, many subtasks, empty states
-  - Mobile responsive behavior testing
-  - Priority inheritance and override patterns
+### Current Phase: Layout & UX Exploration 🔄 IN PROGRESS
+**Focus:** Explore parent task detail layout and interaction patterns
 
-### Phase 4: Advanced Features (Low Priority)
-**Timeline:** Sprint 4
-- **Advanced interaction components:**
-  - Drag-and-drop subtask reordering (with Storybook interaction testing)
-  - Parallel task management UI
-  - Workflow transition automation
-- Enhanced filtering and search
-- Integration testing and polish
-- **Storybook documentation for V2 design system**
+**Current Exploration:**
+- **Problem:** ParentTaskDetailPage doesn't show _overview.md content (the main content!)
+- **Solution:** Fix layout to prioritize overview content, make subtasks navigational
+
+**Layout Goals:**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 📁 Parent Task Header + Actions [+ Add] [↕] [⚹] [🔄]           │
+└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────┬───────────────────────────────┐
+│ 📖 Overview (MAIN CONTENT)      │ 🔗 Subtasks (NAVIGATION)     │
+│                                 │                               │
+│ # Full _overview.md markdown    │ 01 ✓ Database schema    [→]  │
+│ - Requirements                  │ 02 ☐ Password hashing   [→]  │
+│ - Implementation notes          │ 03 ☐ JWT validation     [→]  │
+│ - Security considerations       │ ├─ 04a ☐ Login endpoint [→]  │
+│ - Long detailed content...      │ └─ 04b ☐ Logout endpoint[→]  │
+│                                 │ 05 ⊗ Session management [→]  │
+│ (This is the important stuff!)  │ 06 ☐ Password reset     [→]  │
+│                                 │                               │
+│                                 │ Progress: ████░░░░ 14%        │
+└─────────────────────────────────┴───────────────────────────────┘
+```
+
+**Reasonable Assumptions Made:**
+- Overview content is primary - gets 2/3 of space
+- Subtasks are navigational - clicking goes to regular task detail page
+- Actions move to top header for easy access
+- Remove sidebar fluff (quick stats, related tasks)
+- Keep existing components, just improve layout
+- Mobile: Stack vertically (overview → subtasks)
+
+**Implementation Tasks:**
+- [ ] Add overview content display to ParentTaskCard
+- [ ] Move actions to header/toolbar
+- [ ] Update ParentTaskDetailPage showcase story layout
+- [ ] Make subtasks clickable (navigation to task detail)
+- [ ] Add realistic _overview.md content to mock data
+- [ ] Remove unnecessary sidebar components
+
+**Future Exploration:** Contextual subtask panel (opening subtasks in right sidebar while keeping parent context) - but not for this phase.
+
+### Future Phases: TBD Based on Current Exploration
+**Phase 2:** Navigation & Routing Implementation
+**Phase 3:** API Integration & Real Data  
+**Phase 4:** Advanced Features & Polish
+
+**Current Status:** Exploring layout patterns in Storybook before committing to full page implementations.
+
+---
+
+## UI-First Development Approach
+
+### Why Mock Providers Instead of MSW
+
+**The Problem with API-First:**
+- MSW requires API signatures before building UI
+- Forces backend decisions too early
+- Creates unnecessary coupling
+- Goes against UI-first development
+
+**Mock Provider Solution:**
+- Design components first, figure out data needs later
+- No API definitions required
+- Simple state management for Storybook
+- Flexible data structure iteration
+
+### Development Flow
+
+```typescript
+// 1. Build UI with mock provider
+export const MockTaskProvider = ({ children, mockData }) => {
+  const [tasks, setTasks] = useState(mockData.tasks);
+  
+  const value = {
+    tasks,
+    loading: false,
+    updateTask: async (task) => {
+      // Just update local state for Storybook
+      setTasks(prev => prev.map(t => t.id === task.id ? task : t));
+      return { success: true };
+    }
+  };
+  
+  return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
+};
+
+// 2. Use in Storybook
+export const Default: Story = {
+  decorators: [
+    (Story) => (
+      <MockTaskProvider mockData={{ tasks: mockParentTasks }}>
+        <Story />
+      </MockTaskProvider>
+    ),
+  ],
+};
+
+// 3. Later: Define API based on what UI actually needs
+// 4. Even later: Consider React Query for optimization
+```
+
+### Benefits of This Approach
+
+1. **True UI-First** - Design drives data, not vice versa
+2. **Flexible Iteration** - Change data shape easily
+3. **No Premature Decisions** - API defined after UI stabilizes
+4. **Simple Testing** - Just JavaScript, no HTTP mocking
+5. **Progressive Enhancement** - Add React Query later if needed
+
+## React Query as Future Enhancement (Optional)
+
+### When to Consider React Query
+
+After Phase 3, when we have:
+- Stable UI components
+- Defined API contracts
+- Real backend integration
+- Performance or caching needs
+
+### Benefits When Added Later
+
+- **Better caching** - Reduce unnecessary API calls
+- **Background updates** - Keep data fresh
+- **Optimistic updates** - Instant UI feedback
+- **Request deduplication** - Automatic
+- **Offline support** - If needed
+
+### Migration Path
+
+```typescript
+// Phase 3: Simple context with fetch
+export function V2TaskProvider({ children }) {
+  const [tasks, setTasks] = useState([]);
+  
+  const fetchTasks = async () => {
+    const response = await fetch('/api/v2/tasks');
+    const data = await response.json();
+    setTasks(data);
+  };
+  
+  // Simple but works
+}
+
+// Future: Same interface with React Query
+export function V2TaskProvider({ children }) {
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['v2-tasks'],
+    queryFn: fetchV2Tasks,
+  });
+  
+  // Enhanced with caching, refetching, etc.
+}
+```
+
+---
+
+## Component Migration Strategy
+
+### Component Renaming Strategy
+
+Instead of creating "V2" versions everywhere, rename old components with `.old` suffix:
+
+**Components to Rename:**
+- `TaskListView` → `TaskListView.old.tsx` (then create new `TaskListView`)
+- `FeatureDetailPage` → `FeatureDetailPage.old.tsx` (create `ParentTaskPage`)
+- `PhaseDetailPage` → `PhaseDetailPage.old.tsx` (create `WorkflowPage`)
+- `TaskContext` → `TaskContext.old.tsx` (create new `TaskContext`)
+- `FeatureContext` → `FeatureContext.old.tsx` (remove, not needed)
+- `PhaseContext` → `PhaseContext.old.tsx` (remove, not needed)
+
+**Components to Keep (Already Pure):**
+- ✅ `FilterPanel` - Already pure
+- ✅ `Breadcrumb` - Already pure
+- ✅ `Button`, `Dialog`, etc. - UI primitives
+
+**New Components to Build:**
+- `ParentTaskCard` - Main card for parent tasks
+- `SubtaskList` - Sequenced subtask display
+- `WorkflowStateBadge` - State indicators
+- `TaskTypeIcon` - Visual task type indicators
+- `SubtaskSequencer` - Drag-drop sequencing UI
+
+**Benefits of .old Pattern:**
+- See what's broken immediately (imports fail)
+- Clear what needs updating
+- No "V2" naming confusion
+- Easy to find and remove old code later
 
 ---
 

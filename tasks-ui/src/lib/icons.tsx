@@ -27,6 +27,10 @@ import {
   Inbox,
   Play,
   FolderArchive,
+  
+  // Widget section icons
+  GitBranch,
+  Files,
 } from 'lucide-react';
 
 import type { TaskStatus, TaskType, WorkflowState } from './types';
@@ -187,4 +191,27 @@ export function createWorkflowFilterOptions() {
     { value: 'current', label: 'Current', icon: <WorkflowStateIcon workflow="current" /> },
     { value: 'archive', label: 'Archive', icon: <WorkflowStateIcon workflow="archive" /> },
   ];
+}
+
+// Widget section icon components
+export function SubtasksIcon({ 
+  size = 'sm', 
+  className = '' 
+}: IconProps) {
+  return (
+    <GitBranch 
+      className={`${iconSizes[size]} ${className}`}
+    />
+  );
+}
+
+export function DocumentsIcon({ 
+  size = 'sm', 
+  className = '' 
+}: IconProps) {
+  return (
+    <Files 
+      className={`${iconSizes[size]} ${className}`}
+    />
+  );
 }

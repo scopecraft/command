@@ -25,5 +25,4 @@ export async function startStdioServer(
 
   // Connect the transport to the server
   await server.connect(transport);
-
 }

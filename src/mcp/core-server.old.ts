@@ -135,24 +135,12 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       : ['feature', 'bug', 'chore', 'documentation', 'test', 'spike'];
 
   // Common enums used across multiple tools
-  const taskStatusEnum = z.enum([
-    'To Do',
-    'In Progress',
-    'Done',
-    'Archived',
-    'Blocked',
-  ]);
+  const taskStatusEnum = z.enum(['To Do', 'In Progress', 'Done', 'Archived', 'Blocked']);
   const taskPriorityEnum = z.enum(['High', 'Medium', 'Low']);
   const taskTypeEnum = z.enum(availableTaskTypes as [string, ...string[]]);
 
   // Phase status enum
-  const phaseStatusEnum = z.enum([
-    'Pending',
-    'In Progress',
-    'Completed',
-    'Blocked',
-    'Archived',
-  ]);
+  const phaseStatusEnum = z.enum(['Pending', 'In Progress', 'Completed', 'Blocked', 'Archived']);
 
   // Task list tool
   const taskListRawShape = {

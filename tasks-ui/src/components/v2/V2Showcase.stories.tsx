@@ -4,6 +4,8 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import { mockV2ParentTasks, mockV2SimpleTasks, mockV2Subtasks } from '../../lib/api/mock-data-v2';
+import { SubtasksIcon, DocumentsIcon } from '../../lib/icons';
+import { Button } from '../ui/button';
 import { ParentTaskCard } from './ParentTaskCard';
 import { SubtaskList } from './SubtaskList';
 import { TaskTypeIcon } from './TaskTypeIcon';
@@ -23,6 +25,417 @@ const meta: Meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+export const SimpleTaskDetailPage: Story = {
+  render: () => {
+    const task = mockV2SimpleTasks[0]; // Login timeout bug
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [content, setContent] = React.useState(`## Instruction
+Users are experiencing random timeouts when logging in. The issue occurs sporadically and affects approximately 30% of login attempts during peak hours.
+
+## Tasks
+- [x] Reproduce the timeout issue locally
+- [x] Add logging to authentication flow
+- [ ] Identify bottleneck in login process
+- [ ] Implement timeout handling
+- [ ] Add retry mechanism
+- [ ] Write tests for edge cases
+
+## Deliverable
+### Investigation Results
+
+#### Root Cause
+Found that the auth service is making synchronous calls to the user profile service, which times out under heavy load.
+
+#### Proposed Solution
+1. Make profile service calls asynchronous
+2. Add circuit breaker pattern
+3. Implement proper timeout handling with retries
+
+## Log
+- 2025-05-28: Bug reported by multiple users
+- 2025-05-29: Reproduced locally with load testing
+- 2025-05-29: Added debug logging to auth flow
+- 2025-05-29: Identified synchronous call as bottleneck`);
+
+    const handleEdit = () => {
+      setIsEditing(true);
+    };
+
+    const handleCancel = () => {
+      setContent(content); // Reset to saved version
+      setIsEditing(false);
+    };
+
+    const handleSave = () => {
+      console.log('Save task content:', content);
+      setIsEditing(false);
+      // In real app, would update the task
+    };
+
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="bg-card border-b">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <TaskTypeIcon task={task} />
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl font-bold text-foreground">{task.title}</h1>
+                  <div className="flex items-center flex-wrap gap-2 mt-2">
+                    <StatusBadge status={task.status} />
+                    <PriorityIndicator priority={task.priority} />
+                    <WorkflowStateBadge workflow={task.workflow_state} />
+                    {task.area && (
+                      <>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-sm text-muted-foreground">Area: {task.area}</span>
+                      </>
+                    )}
+                    {task.assignee && (
+                      <>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-sm text-muted-foreground">@{task.assignee}</span>
+                      </>
+                    )}
+                  </div>
+                  {task.tags && task.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {task.tags.map((tag) => (
+                        <span key={tag} className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <Button variant="ghost" size="sm">
+                  Convert to Parent
+                </Button>
+                <Button variant="atlas">
+                  🤖 Start Agent
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Main Content */}
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Task Content (2/3) - Single editable area like parent */}
+            <div className="lg:col-span-2">
+              {isEditing ? (
+                /* Edit Mode */
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-foreground">Edit Task</h2>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        onClick={handleCancel}
+                        variant="ghost"
+                        size="sm"
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleSave}
+                        variant="atlas"
+                        size="sm"
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg">
+                    <textarea
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      className="w-full h-96 bg-background text-foreground p-4 font-mono text-sm resize-none focus:outline-none rounded-lg"
+                      placeholder="Enter task content using Markdown..."
+                    />
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Supports Markdown formatting. Use ## for section headers.
+                  </div>
+                </div>
+              ) : (
+                /* View Mode */
+                <div className="group relative">
+                  <Button
+                    onClick={handleEdit}
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                  >
+                    Edit
+                  </Button>
+                  <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={handleEdit}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar (1/3) */}
+            <div className="space-y-6">
+              {/* Related Tasks Widget */}
+              <div className="bg-card border rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-3">Related Tasks</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer">
+                    <TaskTypeIcon task={{ ...task, type: 'feature' }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">Implement session management</div>
+                      <div className="text-xs text-muted-foreground">AUTH-002 • In Progress</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer">
+                    <TaskTypeIcon task={{ ...task, type: 'bug' }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">Profile service performance</div>
+                      <div className="text-xs text-muted-foreground">PERF-045 • To Do</div>
+                    </div>
+                  </div>
+                </div>
+                <Button className="w-full mt-3" variant="outline" size="sm">
+                  Link Task
+                </Button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  },
+};
+
+export const SubtaskDetailPage: Story = {
+  render: () => {
+    const subtask = mockV2Subtasks[0]; // API endpoint design
+    const parentTask = mockV2ParentTasks[0]; // User Authentication System
+    const siblingSubtasks = mockV2Subtasks.filter(t => t.parent_task === subtask.parent_task);
+    const currentIndex = siblingSubtasks.findIndex(t => t.id === subtask.id);
+    
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [content, setContent] = React.useState(`## Instruction
+Design RESTful API endpoints for user authentication including login, logout, registration, and password reset. Follow OAuth2 standards where applicable.
+
+## Tasks
+- [x] Research OAuth2 best practices
+- [x] Define endpoint structure
+- [ ] Document request/response formats
+- [ ] Define error codes and messages
+- [ ] Create OpenAPI specification
+
+## Deliverable
+### API Endpoint Design
+
+#### POST /auth/login
+Request:
+\`\`\`json
+{
+  "email": "user@example.com",
+  "password": "********"
+}
+\`\`\`
+
+Response:
+\`\`\`json
+{
+  "access_token": "eyJ0eXAiOiJKV1Q...",
+  "refresh_token": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4=",
+  "expires_in": 3600
+}
+\`\`\`
+
+#### POST /auth/register
+[Design in progress...]
+
+## Log
+- 2025-05-29: Started API design based on requirements
+- 2025-05-29: Researched OAuth2 and JWT best practices
+- 2025-05-29: Completed login endpoint design`);
+
+    const handleEdit = () => {
+      setIsEditing(true);
+    };
+
+    const handleCancel = () => {
+      setContent(content); // Reset to saved version
+      setIsEditing(false);
+    };
+
+    const handleSave = () => {
+      console.log('Save subtask content:', content);
+      setIsEditing(false);
+      // In real app, would update the subtask
+    };
+
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Header with Parent Context */}
+        <div className="bg-card border-b">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            {/* Parent Task Context */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <TaskTypeIcon task={parentTask} />
+              <button className="hover:text-foreground hover:underline">
+                {parentTask.title}
+              </button>
+              <span>/</span>
+              <span className="font-mono">{subtask.sequence_number}</span>
+            </div>
+            
+            {/* Subtask Header */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <TaskTypeIcon task={subtask} />
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl font-bold text-foreground">{subtask.title}</h1>
+                  <div className="flex items-center flex-wrap gap-2 mt-2">
+                    <StatusBadge status={subtask.status} />
+                    <PriorityIndicator priority={subtask.priority} />
+                    <span className="font-mono text-sm bg-muted px-2 py-0.5 rounded">
+                      {subtask.sequence_number}
+                    </span>
+                    {subtask.area && (
+                      <>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-sm text-muted-foreground">Area: {subtask.area}</span>
+                      </>
+                    )}
+                    {subtask.assignee && (
+                      <>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-sm text-muted-foreground">@{subtask.assignee}</span>
+                      </>
+                    )}
+                  </div>
+                  {subtask.tags && subtask.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {subtask.tags.map((tag) => (
+                        <span key={tag} className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <Button variant="ghost" size="sm">
+                  Extract to Task
+                </Button>
+                <Button variant="atlas">
+                  🤖 Start Agent
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Main Content */}
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Task Content (2/3) - Single editable area like parent */}
+            <div className="lg:col-span-2">
+              {isEditing ? (
+                /* Edit Mode */
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-foreground">Edit Subtask</h2>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        onClick={handleCancel}
+                        variant="ghost"
+                        size="sm"
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleSave}
+                        variant="atlas"
+                        size="sm"
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg">
+                    <textarea
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      className="w-full h-96 bg-background text-foreground p-4 font-mono text-sm resize-none focus:outline-none rounded-lg"
+                      placeholder="Enter subtask content using Markdown..."
+                    />
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Supports Markdown formatting. Use ## for section headers.
+                  </div>
+                </div>
+              ) : (
+                /* View Mode */
+                <div className="group relative">
+                  <Button
+                    onClick={handleEdit}
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                  >
+                    Edit
+                  </Button>
+                  <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={handleEdit}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar (1/3) */}
+            <div className="space-y-6">
+              {/* Sibling Subtasks */}
+              <div className="bg-card border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <SubtasksIcon size="md" className="text-muted-foreground" />
+                    <h3 className="font-semibold text-foreground">Sibling Subtasks</h3>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {siblingSubtasks.filter(t => t.status === 'done').length}/{siblingSubtasks.length}
+                  </div>
+                </div>
+                <SubtaskList
+                  subtasks={siblingSubtasks}
+                  variant="compact"
+                  highlightTaskId={subtask.id}
+                  onTaskClick={(task) => console.log('Navigate to subtask:', task.title)}
+                />
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  },
+};
 
 export const ParentTaskDetailPage: Story = {
   render: () => {
@@ -51,43 +464,33 @@ export const ParentTaskDetailPage: Story = {
         {/* Header */}
         <div className="bg-card border-b">
           <div className="max-w-6xl mx-auto px-6 py-4">
-            <div className="flex items-start gap-3">
-              <TaskTypeIcon task={parentTask} />
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-foreground">{parentTask.title}</h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <StatusBadge status={parentTask.status} />
-                  <PriorityIndicator priority={parentTask.priority} />
-                  <WorkflowStateBadge workflow={parentTask.workflow_state} />
-                </div>
-                {parentTask.tags && parentTask.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {parentTask.tags.map((tag) => (
-                      <span key={tag} className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                        #{tag}
-                      </span>
-                    ))}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <TaskTypeIcon task={parentTask} />
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl font-bold text-foreground">{parentTask.title}</h1>
+                  <div className="flex items-center flex-wrap gap-2 mt-2">
+                    <StatusBadge status={parentTask.status} />
+                    <PriorityIndicator priority={parentTask.priority} />
+                    <WorkflowStateBadge workflow={parentTask.workflow_state} />
+                    {parentTask.tags && parentTask.tags.length > 0 && (
+                      <>
+                        <span className="text-muted-foreground">•</span>
+                        {parentTask.tags.map((tag) => (
+                          <span key={tag} className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                            #{tag}
+                          </span>
+                        ))}
+                      </>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions Header */}
-        <div className="max-w-6xl mx-auto px-6 py-4 border-b bg-card">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Main CTAs - Parent task level actions */}
-              <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 font-medium">
-                🤖 Start Agent
-              </button>
-              <button className="px-3 py-1.5 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
-                🔄 Convert to Simple
-              </button>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <Button variant="atlas">
+                  🤖 Start Agent
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -103,18 +506,20 @@ export const ParentTaskDetailPage: Story = {
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-foreground">Edit Overview</h2>
                     <div className="flex items-center gap-2">
-                      <button 
+                      <Button 
                         onClick={handleCancel}
-                        className="px-3 py-1.5 text-sm bg-muted text-foreground rounded hover:bg-muted/90"
+                        variant="ghost"
+                        size="sm"
                       >
                         Cancel
-                      </button>
-                      <button 
+                      </Button>
+                      <Button 
                         onClick={handleSave}
-                        className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"
+                        variant="atlas"
+                        size="sm"
                       >
                         Save
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   <div className="border rounded-lg">
@@ -132,12 +537,14 @@ export const ParentTaskDetailPage: Story = {
               ) : (
                 /* View Mode */
                 <div className="group relative">
-                  <button
+                  <Button
                     onClick={handleEdit}
-                    className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 text-xs bg-muted text-foreground rounded hover:bg-muted/90"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                   >
                     Edit
-                  </button>
+                  </Button>
                   <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={handleEdit}>
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
@@ -150,11 +557,15 @@ export const ParentTaskDetailPage: Story = {
               )}
             </div>
 
-            {/* Subtasks Navigation Sidebar (1/3) */}
-            <div>
+            {/* Right Sidebar (1/3) */}
+            <div className="space-y-6">
+              {/* Subtasks Widget */}
               <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-foreground">🔗 Subtasks</h3>
+                  <div className="flex items-center gap-2">
+                    <SubtasksIcon size="md" className="text-muted-foreground" />
+                    <h3 className="font-semibold text-foreground">Subtasks</h3>
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {subtasks.filter((t) => t.status === 'done').length}/{subtasks.length}
                   </div>
@@ -184,18 +595,404 @@ export const ParentTaskDetailPage: Story = {
 
                 {/* Subtask Actions */}
                 <div className="mt-4 pt-3 border-t space-y-2">
-                  <button className="w-full text-left px-3 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90">
+                  <Button className="w-full text-left" variant="atlas">
                     + Add Subtask
-                  </button>
+                  </Button>
                   <div className="flex gap-2">
-                    <button className="flex-1 text-center px-2 py-1.5 text-xs bg-muted text-foreground rounded hover:bg-muted/90">
+                    <Button className="flex-1" variant="secondary" size="sm">
                       ↕ Reorder
-                    </button>
-                    <button className="flex-1 text-center px-2 py-1.5 text-xs bg-muted text-foreground rounded hover:bg-muted/90">
+                    </Button>
+                    <Button className="flex-1" variant="secondary" size="sm">
                       ⚹ Make Parallel
-                    </button>
+                    </Button>
                   </div>
                 </div>
+              </div>
+
+              {/* Documents Widget */}
+              <div className="bg-card border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <DocumentsIcon size="md" className="text-muted-foreground" />
+                    <h3 className="font-semibold text-foreground">Documents</h3>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    3
+                  </div>
+                </div>
+
+                {/* Document List */}
+                <div className="space-y-2">
+                  <div 
+                    className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
+                    onClick={() => console.log('Open PRD document')}
+                  >
+                    <span className="text-sm">📄</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        Product Requirements
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        PRD • Updated 2 days ago
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-xs px-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Edit PRD');
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </div>
+
+                  <div 
+                    className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
+                    onClick={() => console.log('Open Technical Spec')}
+                  >
+                    <span className="text-sm">📝</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        Technical Specification
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Specification • Updated 1 week ago
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-xs px-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Edit Technical Spec');
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </div>
+
+                  <div 
+                    className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
+                    onClick={() => console.log('Open Research Notes')}
+                  >
+                    <span className="text-sm">📊</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        User Research Findings
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Research • Updated 3 days ago
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-xs px-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Edit Research Notes');
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Document Actions */}
+                <div className="mt-4 pt-3 border-t space-y-2">
+                  <Button className="w-full text-left" variant="atlas">
+                    + Add Document
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button className="flex-1" variant="secondary" size="sm">
+                      📋 Plan
+                    </Button>
+                    <Button className="flex-1" variant="secondary" size="sm">
+                      📄 PRD
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  },
+};
+
+export const DocumentDetailPage: Story = {
+  render: () => {
+    const parentTask = mockV2ParentTasks[0]; // User Authentication System
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [content, setContent] = React.useState(`# Product Requirements Document
+
+## Overview
+This document outlines the requirements for implementing a comprehensive user authentication system that supports OAuth2, JWT tokens, and traditional session-based authentication.
+
+## Goals
+- Provide secure, scalable authentication
+- Support multiple authentication methods
+- Enable single sign-on (SSO) capabilities
+- Maintain backwards compatibility
+
+## User Stories
+
+### As a new user
+I want to register with email and password
+So that I can create an account and access the platform
+
+### As an existing user
+I want to log in with my credentials
+So that I can access my account securely
+
+### As a user
+I want to reset my password
+So that I can regain access if I forget my credentials
+
+## Technical Requirements
+
+### Security
+- Passwords must be hashed using bcrypt with cost factor 12
+- JWT tokens expire after 1 hour
+- Refresh tokens expire after 30 days
+- All authentication endpoints use HTTPS
+
+### Performance
+- Login response time < 200ms
+- Token validation < 50ms
+- Support 10,000 concurrent authentications
+
+## API Endpoints
+
+### POST /auth/register
+- Accepts: email, password, name
+- Returns: user object, access token
+- Validates email uniqueness
+
+### POST /auth/login
+- Accepts: email, password
+- Returns: access token, refresh token
+- Rate limited to 5 attempts per minute
+
+## Next Steps
+1. Review with security team
+2. Create technical specification
+3. Estimate implementation effort`);
+
+    const handleEdit = () => {
+      setIsEditing(true);
+    };
+
+    const handleCancel = () => {
+      setContent(content); // Reset to saved version
+      setIsEditing(false);
+    };
+
+    const handleSave = () => {
+      console.log('Save document content:', content);
+      setIsEditing(false);
+      // In real app, would update the document
+    };
+
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="bg-card border-b">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            {/* Parent Task Context */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <TaskTypeIcon task={parentTask} />
+              <button className="hover:text-foreground hover:underline">
+                {parentTask.title}
+              </button>
+              <span>/</span>
+              <DocumentsIcon size="sm" className="text-muted-foreground" />
+              <span>Documents</span>
+            </div>
+            
+            {/* Document Header */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <span className="text-2xl">📄</span>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl font-bold text-foreground">Product Requirements</h1>
+                  <div className="flex items-center flex-wrap gap-2 mt-2">
+                    <span className="text-sm bg-muted px-2 py-1 rounded">PRD</span>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-sm text-muted-foreground">Created: May 15, 2025</span>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-sm text-muted-foreground">Updated: 2 days ago</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <Button variant="atlas">
+                  🤖 Start Agent
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Document Content (2/3) - Single editable area like parent */}
+            <div className="lg:col-span-2">
+              {isEditing ? (
+                /* Edit Mode */
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-foreground">Edit Document</h2>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        onClick={handleCancel}
+                        variant="ghost"
+                        size="sm"
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleSave}
+                        variant="atlas"
+                        size="sm"
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg">
+                    <textarea
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      className="w-full h-96 bg-background text-foreground p-4 font-mono text-sm resize-none focus:outline-none rounded-lg"
+                      placeholder="Enter document content using Markdown..."
+                    />
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Supports Markdown formatting. Perfect for PRDs, specs, and planning documents.
+                  </div>
+                </div>
+              ) : (
+                /* View Mode */
+                <div className="group relative">
+                  <Button
+                    onClick={handleEdit}
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                  >
+                    Edit
+                  </Button>
+                  <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={handleEdit}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar (1/3) */}
+            <div className="space-y-6">
+              {/* Other Documents */}
+              <div className="bg-card border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <DocumentsIcon size="md" className="text-muted-foreground" />
+                    <h3 className="font-semibold text-foreground">Other Documents</h3>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    3
+                  </div>
+                </div>
+
+                {/* Document List */}
+                <div className="space-y-2">
+                  <div 
+                    className="flex items-center gap-2 p-2 rounded bg-muted/50 cursor-pointer group"
+                  >
+                    <span className="text-sm">📄</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        Product Requirements
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        PRD • Current
+                      </div>
+                    </div>
+                  </div>
+
+                  <div 
+                    className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
+                    onClick={() => console.log('Open Technical Spec')}
+                  >
+                    <span className="text-sm">📝</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        Technical Specification
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Specification • Updated 1 week ago
+                      </div>
+                    </div>
+                  </div>
+
+                  <div 
+                    className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
+                    onClick={() => console.log('Open Research Notes')}
+                  >
+                    <span className="text-sm">📊</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        User Research Findings
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Research • Updated 3 days ago
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Document Actions */}
+                <div className="mt-4 pt-3 border-t space-y-2">
+                  <Button className="w-full text-left" variant="atlas">
+                    + New Document
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button className="flex-1" variant="secondary" size="sm">
+                      📋 Template
+                    </Button>
+                    <Button className="flex-1" variant="secondary" size="sm">
+                      📄 Import
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parent Task */}
+              <div className="bg-card border rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-3">Parent Task</h3>
+                <div className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer">
+                  <TaskTypeIcon task={parentTask} />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{parentTask.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      <StatusBadge status={parentTask.status} size="sm" />
+                    </div>
+                  </div>
+                </div>
+                <Button className="w-full mt-3" variant="outline" size="sm">
+                  View Task
+                </Button>
               </div>
             </div>
           </div>
@@ -373,6 +1170,7 @@ export const MixedTaskList: Story = {
     );
   },
 };
+
 
 export const ComponentShowcase: Story = {
   render: () => (

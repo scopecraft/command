@@ -161,11 +161,26 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     // V2 native filters
     location: z
       .union([workflowStateEnum, z.array(workflowStateEnum)])
-      .describe('Filter by workflow location(s): "backlog", "current", or "archive". Use array for multiple locations.')
+      .describe(
+        'Filter by workflow location(s): "backlog", "current", or "archive". Use array for multiple locations.'
+      )
       .optional(),
-    type: taskTypeEnum.describe('Filter by task type: "feature", "bug", "chore", "documentation", "test", "spike", or "idea" (varies by templates)').optional(),
-    task_type: taskStructureEnum.describe('Filter by task structure: "simple" (standalone tasks), "parent" (overview tasks), "subtask" (tasks within parents), "top-level" (simple + parent, no subtasks), or "all" (everything)').default('top-level').optional(),
-    status: taskStatusEnum.describe('Filter by exact task status: "To Do", "In Progress", "Done", "Blocked", or "Archived"').optional(),
+    type: taskTypeEnum
+      .describe(
+        'Filter by task type: "feature", "bug", "chore", "documentation", "test", "spike", or "idea" (varies by templates)'
+      )
+      .optional(),
+    task_type: taskStructureEnum
+      .describe(
+        'Filter by task structure: "simple" (standalone tasks), "parent" (overview tasks), "subtask" (tasks within parents), "top-level" (simple + parent, no subtasks), or "all" (everything)'
+      )
+      .default('top-level')
+      .optional(),
+    status: taskStatusEnum
+      .describe(
+        'Filter by exact task status: "To Do", "In Progress", "Done", "Blocked", or "Archived"'
+      )
+      .optional(),
     area: z
       .string()
       .describe('Filter by functional area/component (e.g., "cli", "mcp", "ui", "core", "docs")')
@@ -206,7 +221,9 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .optional(),
 
     // Advanced frontmatter filters
-    priority: taskPriorityEnum.describe('Filter by priority level: "Highest", "High", "Medium", or "Low"').optional(),
+    priority: taskPriorityEnum
+      .describe('Filter by priority level: "Highest", "High", "Medium", or "Low"')
+      .optional(),
     assignee: z
       .string()
       .describe('Filter by assigned username/person responsible for the task')
@@ -311,7 +328,9 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
     // Optional metadata
     status: taskStatusEnum
-      .describe('Initial task status: "To Do" (default), "In Progress", "Done", "Blocked", or "Archived"')
+      .describe(
+        'Initial task status: "To Do" (default), "In Progress", "Done", "Blocked", or "Archived"'
+      )
       .default('To Do')
       .optional(),
     priority: taskPriorityEnum
@@ -380,8 +399,12 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .object({
         // Metadata updates
         title: z.string().describe('New task title (Note: does not change task ID)').optional(),
-        status: taskStatusEnum.describe('New task status: "To Do", "In Progress", "Done", "Blocked", or "Archived"').optional(),
-        priority: taskPriorityEnum.describe('New priority level: "Highest", "High", "Medium", or "Low"').optional(),
+        status: taskStatusEnum
+          .describe('New task status: "To Do", "In Progress", "Done", "Blocked", or "Archived"')
+          .optional(),
+        priority: taskPriorityEnum
+          .describe('New priority level: "Highest", "High", "Medium", or "Low"')
+          .optional(),
         area: z.string().describe('New area').optional(),
         assignee: z.string().describe('New assignee').optional(),
         tags: z.array(z.string()).describe('New tags (replaces existing)').optional(),
@@ -441,7 +464,9 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   const taskMoveRawShape = {
     id: z.string().describe('Task ID to move'),
     parent_id: z.string().describe('Parent task ID for subtask resolution').optional(),
-    target_state: workflowStateEnum.describe('Target workflow location: "backlog", "current", or "archive"'),
+    target_state: workflowStateEnum.describe(
+      'Target workflow location: "backlog", "current", or "archive"'
+    ),
     archive_date: z
       .string()
       .regex(/^\d{4}-\d{2}$/)
@@ -735,7 +760,9 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   const parentListRawShape = {
     location: z
       .union([workflowStateEnum, z.array(workflowStateEnum)])
-      .describe('Filter by workflow location(s): "backlog", "current", or "archive". Use array for multiple locations.')
+      .describe(
+        'Filter by workflow location(s): "backlog", "current", or "archive". Use array for multiple locations.'
+      )
       .optional(),
     area: z.string().describe('Filter by area').optional(),
     include_progress: z
@@ -781,11 +808,24 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .describe('Parent task title. Will create folder with _overview.md')
       .min(3)
       .max(200),
-    type: taskTypeEnum.describe('Task type for the parent overview: "feature", "bug", "chore", "documentation", "test", "spike", or "idea"'),
+    type: taskTypeEnum.describe(
+      'Task type for the parent overview: "feature", "bug", "chore", "documentation", "test", "spike", or "idea"'
+    ),
     area: z.string().describe('Task area').default('general').optional(),
-    status: taskStatusEnum.describe('Initial status: "To Do" (default), "In Progress", "Done", "Blocked", or "Archived"').default('To Do').optional(),
-    priority: taskPriorityEnum.describe('Priority level: "Highest", "High", "Medium" (default), or "Low"').default('Medium').optional(),
-    location: workflowStateEnum.describe('Workflow location: "backlog" (default), "current", or "archive"').default('backlog').optional(),
+    status: taskStatusEnum
+      .describe(
+        'Initial status: "To Do" (default), "In Progress", "Done", "Blocked", or "Archived"'
+      )
+      .default('To Do')
+      .optional(),
+    priority: taskPriorityEnum
+      .describe('Priority level: "Highest", "High", "Medium" (default), or "Low"')
+      .default('Medium')
+      .optional(),
+    location: workflowStateEnum
+      .describe('Workflow location: "backlog" (default), "current", or "archive"')
+      .default('backlog')
+      .optional(),
     overview_content: z
       .string()
       .describe('Initial content for _overview.md instruction section')
@@ -840,7 +880,9 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     parent_id: z.string().describe('Parent task ID to operate on'),
     operation: z
       .enum(['resequence', 'parallelize', 'add_subtask'])
-      .describe('Operation to perform on parent\'s subtasks: "resequence", "parallelize", or "add_subtask"'),
+      .describe(
+        'Operation to perform on parent\'s subtasks: "resequence", "parallelize", or "add_subtask"'
+      ),
     sequence_map: z
       .array(
         z.object({
@@ -866,7 +908,11 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     subtask: z
       .object({
         title: z.string().describe('New subtask title'),
-        type: taskTypeEnum.describe('Subtask type: "feature", "bug", "chore", "documentation", "test", "spike", or "idea"').optional(),
+        type: taskTypeEnum
+          .describe(
+            'Subtask type: "feature", "bug", "chore", "documentation", "test", "spike", or "idea"'
+          )
+          .optional(),
         after: z
           .string()
           .describe('Insert after this subtask ID (e.g., "02_design-api")')

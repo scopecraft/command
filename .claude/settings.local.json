@@ -159,7 +159,12 @@
       "Bash(/opt/homebrew/Cellar/ripgrep/14.1.1/bin/rg -A 20 -B 5 \"interface V2Config\" src/core/v2/types.ts)",
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "Bash(npx storybook@latest init:*)"
+      "Bash(npx storybook@latest init:*)",
+      "mcp__scopecraft__task_delete",
+      "Bash(npm run typecheck:*)",
+      "mcp__scopecraft__parent_list",
+      "mcp__scopecraft__parent_create",
+      "mcp__scopecraft__task_transform"
     ],
     "deny": []
   },

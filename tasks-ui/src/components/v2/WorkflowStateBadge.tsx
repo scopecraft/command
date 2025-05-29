@@ -46,7 +46,7 @@ export function WorkflowStateBadge({
         variant="outline"
         size={size}
         onClick={onClick}
-        className={cn('h-auto uppercase font-mono gap-1', className)}
+        className={cn('h-auto uppercase font-mono gap-1 whitespace-nowrap', className)}
       >
         {content}
       </Button>
@@ -56,7 +56,7 @@ export function WorkflowStateBadge({
   return (
     <span 
       className={cn(
-        'inline-flex items-center gap-1 font-mono uppercase rounded-md border bg-background px-2 py-1 text-xs',
+        'inline-flex items-center gap-1 font-mono uppercase rounded-md border bg-background px-2 py-1 text-xs whitespace-nowrap',
         className
       )}
     >
@@ -94,7 +94,7 @@ export function StatusBadge({
         variant="outline"
         size={size}
         onClick={onClick}
-        className={cn('h-auto gap-1 uppercase font-mono', className)}
+        className={cn('h-auto gap-1 uppercase font-mono whitespace-nowrap', className)}
       >
         {content}
       </Button>
@@ -104,7 +104,7 @@ export function StatusBadge({
   return (
     <span 
       className={cn(
-        'inline-flex items-center gap-1 font-mono uppercase rounded-md border bg-background px-2 py-1 text-xs',
+        'inline-flex items-center gap-1 font-mono uppercase rounded-md border bg-background px-2 py-1 text-xs whitespace-nowrap',
         className
       )}
       title={label}
@@ -167,7 +167,7 @@ export function PriorityIndicator({
         variant="outline"
         size={size}
         onClick={onClick}
-        className={cn('h-auto gap-1 uppercase font-mono', className)}
+        className={cn('h-auto gap-1 uppercase font-mono whitespace-nowrap', className)}
       >
         {content}
       </Button>

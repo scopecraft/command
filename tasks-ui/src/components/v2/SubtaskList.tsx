@@ -9,6 +9,7 @@ interface SubtaskListProps {
   subtasks: Task[];
   variant?: 'tree' | 'compact';
   onTaskClick?: (task: Task) => void;
+  highlightTaskId?: string;
   className?: string;
 }
 
@@ -22,6 +23,7 @@ export function SubtaskList({
   subtasks,
   variant = 'tree',
   onTaskClick,
+  highlightTaskId,
   className = '',
 }: SubtaskListProps) {
   // Group subtasks by sequence number
@@ -78,7 +80,12 @@ export function SubtaskList({
                   return (
                     <div
                       key={task.id}
-                      className="flex items-center gap-2 hover:bg-accent/50 cursor-pointer py-1 px-2 rounded"
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer py-1 px-2 rounded",
+                        highlightTaskId === task.id 
+                          ? "bg-primary/10 border border-primary" 
+                          : "hover:bg-accent/50"
+                      )}
                       onClick={() => onTaskClick?.(task)}
                     >
                       <span className="text-muted-foreground w-6">
@@ -98,7 +105,12 @@ export function SubtaskList({
             return (
               <div
                 key={task.id}
-                className="flex items-center gap-2 hover:bg-accent/50 cursor-pointer py-1 px-2 rounded"
+                className={cn(
+                  "flex items-center gap-2 cursor-pointer py-1 px-2 rounded",
+                  highlightTaskId === task.id 
+                    ? "bg-primary/10 border border-primary" 
+                    : "hover:bg-accent/50"
+                )}
                 onClick={() => onTaskClick?.(task)}
               >
                 <span className="text-muted-foreground">
@@ -157,7 +169,12 @@ export function SubtaskList({
                   return (
                     <div
                       key={task.id}
-                      className="flex items-center gap-3 p-3 border rounded-lg bg-card hover:bg-accent/50 cursor-pointer transition-colors"
+                      className={cn(
+                        "flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors",
+                        highlightTaskId === task.id 
+                          ? "bg-primary/10 border-primary" 
+                          : "bg-card hover:bg-accent/50"
+                      )}
                       onClick={() => onTaskClick?.(task)}
                     >
                       <div className="flex items-center gap-2">
@@ -190,7 +207,12 @@ export function SubtaskList({
           return (
             <div
               key={task.id}
-              className="flex items-center gap-3 p-3 border rounded-lg bg-card hover:bg-accent/50 cursor-pointer transition-colors"
+              className={cn(
+                "flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors",
+                highlightTaskId === task.id 
+                  ? "bg-primary/10 border-primary" 
+                  : "bg-card hover:bg-accent/50"
+              )}
               onClick={() => onTaskClick?.(task)}
             >
               <div className="flex items-center gap-2">
