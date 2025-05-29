@@ -10,23 +10,24 @@ parent: implement-v2-structure
 
 
 ## Instruction
-Update the Task UI to work with the new workflow-based structure. This includes updating components, API calls, and navigation to match the new system.
+Build a new V2 Task UI using a UI-first approach with mock providers. Replace the old phase/feature structure with the new workflow-based system. Create fresh V2 components rather than fixing existing ones.
 
-**IMPORTANT**: This plan is not complete. Start by reviewing the entire tasks-ui codebase to understand all the places that need updating. Look for phase/feature references, navigation patterns, and API calls. Don't hesitate to ask questions about design decisions.
+**UPDATED APPROACH**: After analysis, we're using mock providers for Storybook to enable true UI-first development. This allows us to design components and iterate on data structures without defining APIs upfront. React Query can be added later as an optimization.
 
-### Initial Scope (to be expanded)
-1. Update task list to show both simple and complex tasks
-2. Repurpose feature view as complex task view
-3. Simplify sidebar to show current work only
-4. Remove phase-related components
-5. Update API client for new MCP structure
+### Implementation Strategy
+1. Create mock V2 providers for Storybook development
+2. Build new V2 components using mock providers (UI-first)
+3. Design data structures based on UI needs
+4. Define API contracts only after UI stabilizes
+5. Replace mock with real implementation in Phase 3
+6. Consider React Query later if needed for performance
 
-### Key Areas to Review
-- React components using phase/feature
-- API client code
-- Routing and navigation
-- Context providers
-- Type definitions
+### Key Principles
+- **UI-first development** - Design drives data, not vice versa
+- **Mock providers for Storybook** - No API definitions needed upfront
+- **Don't fix old components** - Build V2 fresh
+- **Type-safe with V2 types** - Use imported core types throughout
+- **Progressive migration** - Old and new can coexist
 
 ## Tasks
 
@@ -34,8 +35,8 @@ Update the Task UI to work with the new workflow-based structure. This includes 
 - [x] Set up Storybook in tasks-ui project
 - [x] Configure Storybook with Tailwind styles and essential addons
 - [x] Create story for filter-panel (pure component)
-- [ ] Create stories for other pure components (TaskContent, TaskMetadata)
-- [ ] Establish component development pattern (story-first)
+- [x] Create stories for other pure components (TaskContent, TaskMetadata, Breadcrumb, Toast)
+- [x] Establish component development pattern (story-first)
 
 ### Completed Analysis & Planning
 - [x] Review entire tasks-ui codebase for impact analysis
@@ -44,29 +45,34 @@ Update the Task UI to work with the new workflow-based structure. This includes 
 - [x] Update TypeScript types to match new structure
 - [x] Create comprehensive migration analysis document
 - [x] Update implementation plan with Storybook-first approach
-### Phase 1: Foundation & Core V2 Components
-- [ ] Create ParentTaskCard component with Storybook stories
-- [ ] Create SubtaskList component with sequence/parallel examples
-- [ ] Create WorkflowStateBadge component
-- [ ] Update API client for new MCP endpoints
-- [ ] Create new context providers (Workflow, ParentTask)
-- [ ] Implement basic routing structure
+### Phase 1: Core Components (Rename Old, Build New)
+- [x] Rename TaskContext.tsx → TaskContext.old.tsx
+- [x] Create new TaskContext with MockTaskProvider for Storybook
+- [ ] Build ParentTaskCard component with Storybook stories
+- [ ] Build SubtaskList component with sequence/parallel examples
+- [ ] Build WorkflowStateBadge component
+- [ ] Build TaskTypeIcon component (📁 vs 📄)
+- [ ] Design data structures through UI development
+- [ ] Fix broken imports as you go
 
-### Phase 2: Navigation & Core Views  
-- [ ] Build ParentTaskDetailPage component (review in Storybook first)
-- [ ] Build WorkflowDetailPage component (review in Storybook first)
-- [ ] Update routing structure (remove /phase/feature pattern)
-- [ ] Replace Sidebar navigation
-- [ ] Update URL patterns with redirects
+### Phase 2: Pages & Navigation (Replace Entire Sections)
+- [ ] Rename old pages to .old.tsx (PhaseDetailPage, FeatureDetailPage, etc.)
+- [ ] Build WorkflowPage (shows tasks by workflow state)
+- [ ] Build ParentTaskPage (shows parent task with subtasks)
+- [ ] Rename TaskListView.tsx → TaskListView.old.tsx
+- [ ] Build new TaskListView with workflow/parent filtering
+- [ ] Rename Sidebar.tsx → Sidebar.old.tsx
+- [ ] Build new Sidebar with workflow/parent navigation
+- [ ] Update routing to use new components
 
-### Phase 3: Task Management UI
-- [ ] Create TaskListV2 with parent task icons (📁 vs 📄)
-- [ ] Update task move/filter components for V2
-- [ ] Remove phase selector component
-- [ ] Add workflow state filters to task list
-- [ ] Update task creation UI for backlog default
-- [ ] Implement basic subtask sequencing UI
-- [ ] Add task conversion UI (simple ↔ parent)
+### Phase 3: API Integration & Real Implementation
+- [ ] Define API contracts based on UI needs from Phase 1-2
+- [ ] Create real TaskContext implementation (replace mock)
+- [ ] Update MCP endpoints to match UI requirements
+- [ ] Add error handling and loading states
+- [ ] Test integration between UI and backend
+- [ ] Remove all .old.tsx files once migration complete
+- [ ] Consider adding React Query if caching/optimization needed
 ### Phase 4: Advanced Features & Polish
 - [ ] Add drag-and-drop subtask reordering (with Storybook interaction testing)
 - [ ] Implement parallel task management UI:
@@ -84,7 +90,17 @@ Update the Task UI to work with the new workflow-based structure. This includes 
 - [ ] Storybook documentation for V2 design system
 
 ## Deliverable
-[To be updated as implementation progresses]
+
+### Completed
+- ✅ Storybook development environment configured and running
+- ✅ FilterPanel story created as example of pure component development
+- ✅ TypeScript types updated to use core types (no v2 prefix)
+- ✅ Comprehensive UI migration analysis document with mockups
+- ✅ Established .old.tsx renaming pattern for cleaner migration
+
+### In Progress
+- 🔄 Phase 1: Ready to start building core components
+- 🔄 Using mock providers for UI-first development
 
 ## Log
 - 2025-05-27: Task created as part of V2 implementation
@@ -101,3 +117,20 @@ Update the Task UI to work with the new workflow-based structure. This includes 
   - Created first story for FilterPanel component (pure component)
   - Demonstrated various filter states and interactive behavior
   - Established foundation for component-first development
+  - Added root-level scripts for easy Storybook access
+  - Cleaned up example stories and assets
+- 2025-05-29: Revised implementation strategy for UI-first development
+  - Identified that current components are tightly coupled to context
+  - Initially considered React Query but realized it forces API-first approach
+  - Decided on mock providers for true UI-first development
+  - Build V2 components with mock data, define APIs after UI stabilizes
+  - React Query becomes optional future enhancement
+  - Focus on designing UI without backend constraints
+- 2025-05-29: Completed Phase 1 foundation - Context setup with mock providers
+  - Successfully renamed TaskContext.tsx → TaskContext.old.tsx  
+  - Created new V2-compatible TaskContext with comprehensive interface
+  - Built MockTaskProvider for Storybook development with realistic V2 data
+  - Added mock-data-v2.ts with parent tasks, subtasks, and workflow examples
+  - Created interactive Storybook story demonstrating context operations
+  - All TypeScript checks pass - no breaking changes detected
+  - Ready to build first V2 components (ParentTaskCard, SubtaskList, etc.)
