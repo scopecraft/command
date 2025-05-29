@@ -148,7 +148,15 @@
       "Bash(./dist/cli/cli.js parent show test-v2-parent --tree)",
       "Bash(./dist/cli/cli.js parent list)",
       "Bash(./dist/cli/cli.js parent show implement-v2-structure --tree)",
-      "Bash(./dist/cli/cli.js task create --title \"Test promotion task\" --type feature)"
+      "Bash(./dist/cli/cli.js task create --title \"Test promotion task\" --type feature)",
+      "Bash(channelcoder:*)",
+      "Bash(/opt/homebrew/Cellar/ripgrep/14.1.1/bin/rg -A 20 -B 5 \"updateTaskStatus|setTaskStatus\" src/core/v2/task-crud.ts)",
+      "Bash(/opt/homebrew/Cellar/ripgrep/14.1.1/bin/rg -A 10 -B 2 \"status.*=\" src/core/v2/task-crud.ts)",
+      "Bash(/opt/homebrew/Cellar/ripgrep/14.1.1/bin/rg -A 30 -B 5 \"export.*function updateTask\" src/core/v2/task-crud.ts)",
+      "Bash(/opt/homebrew/Cellar/ripgrep/14.1.1/bin/rg -A 15 -B 5 \"\\.command\\('start'\\)|\\.command\\('complete'\\)|\\.command\\('block'\\)\" src/cli/entity-commands-v2.ts)",
+      "Bash(/opt/homebrew/Cellar/ripgrep/14.1.1/bin/rg -A 15 -B 5 \"start.*action|complete.*action|block.*action\" src/cli/entity-commands-v2.ts)",
+      "Bash(/opt/homebrew/Cellar/ripgrep/14.1.1/bin/rg -A 10 -B 3 \"'start'|'complete'|'block'\" src/cli/entity-commands-v2.ts)",
+      "Bash(/opt/homebrew/Cellar/ripgrep/14.1.1/bin/rg -A 20 -B 5 \"interface V2Config\" src/core/v2/types.ts)"
     ],
     "deny": []
   },

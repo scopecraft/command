@@ -1,13 +1,13 @@
 #!/usr/bin/env bun
 /**
  * Tests for V2 Tags Support
- * 
+ *
  * Tests tag functionality including creation, filtering, and display
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { rm } from 'node:fs/promises';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import * as v2 from '../src/core/v2/index.js';
 
@@ -36,7 +36,7 @@ describe('V2 Tags Support', () => {
         title: 'Implement OAuth Login',
         type: 'feature',
         area: 'auth',
-        tags: ['backend', 'security', 'api']
+        tags: ['backend', 'security', 'api'],
       });
 
       expect(result.success).toBe(true);
@@ -48,7 +48,7 @@ describe('V2 Tags Support', () => {
       const result = await v2.createTask(TEST_PROJECT, {
         title: 'Update Documentation',
         type: 'documentation',
-        area: 'docs'
+        area: 'docs',
       });
 
       expect(result.success).toBe(true);
@@ -61,7 +61,7 @@ describe('V2 Tags Support', () => {
         title: 'Fix Bug',
         type: 'bug',
         area: 'core',
-        tags: []
+        tags: [],
       });
 
       expect(result.success).toBe(true);
@@ -78,59 +78,59 @@ describe('V2 Tags Support', () => {
         title: 'Backend API',
         type: 'feature',
         area: 'backend',
-        tags: ['api', 'backend', 'rest']
+        tags: ['api', 'backend', 'rest'],
       });
 
       await v2.createTask(TEST_PROJECT, {
         title: 'Frontend Dashboard',
         type: 'feature',
         area: 'frontend',
-        tags: ['ui', 'react', 'dashboard']
+        tags: ['ui', 'react', 'dashboard'],
       });
 
       await v2.createTask(TEST_PROJECT, {
         title: 'Security Update',
         type: 'bug',
         area: 'auth',
-        tags: ['security', 'backend', 'urgent']
+        tags: ['security', 'backend', 'urgent'],
       });
 
       await v2.createTask(TEST_PROJECT, {
         title: 'No Tags Task',
         type: 'chore',
-        area: 'devops'
+        area: 'devops',
       });
     });
 
     test('should filter tasks by single tag', async () => {
       const result = await v2.listTasks(TEST_PROJECT, {
-        tags: ['backend']
+        tags: ['backend'],
       });
 
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
       expect(result.data!.length).toBe(2); // Backend API and Security Update
 
-      const titles = result.data!.map(t => t.document.title).sort();
+      const titles = result.data!.map((t) => t.document.title).sort();
       expect(titles).toEqual(['Backend API', 'Security Update']);
     });
 
     test('should filter tasks by multiple tags (OR logic)', async () => {
       const result = await v2.listTasks(TEST_PROJECT, {
-        tags: ['react', 'urgent']
+        tags: ['react', 'urgent'],
       });
 
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
       expect(result.data!.length).toBe(2); // Frontend Dashboard and Security Update
 
-      const titles = result.data!.map(t => t.document.title).sort();
+      const titles = result.data!.map((t) => t.document.title).sort();
       expect(titles).toEqual(['Frontend Dashboard', 'Security Update']);
     });
 
     test('should return empty list when no tasks match tags', async () => {
       const result = await v2.listTasks(TEST_PROJECT, {
-        tags: ['nonexistent']
+        tags: ['nonexistent'],
       });
 
       expect(result.success).toBe(true);
@@ -140,21 +140,21 @@ describe('V2 Tags Support', () => {
 
     test('should ignore tasks without tags when filtering', async () => {
       const result = await v2.listTasks(TEST_PROJECT, {
-        tags: ['backend', 'ui', 'security']
+        tags: ['backend', 'ui', 'security'],
       });
 
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
       expect(result.data!.length).toBe(3); // All tasks except "No Tags Task"
 
-      const titles = result.data!.map(t => t.document.title);
+      const titles = result.data!.map((t) => t.document.title);
       expect(titles).not.toContain('No Tags Task');
     });
 
     test('should combine tag filter with other filters', async () => {
       const result = await v2.listTasks(TEST_PROJECT, {
         tags: ['backend'],
-        type: 'feature'
+        type: 'feature',
       });
 
       expect(result.success).toBe(true);
@@ -172,7 +172,7 @@ describe('V2 Tags Support', () => {
         title: 'Update Task',
         type: 'feature',
         area: 'core',
-        tags: ['initial', 'test']
+        tags: ['initial', 'test'],
       });
 
       expect(createResult.success).toBe(true);
@@ -181,8 +181,8 @@ describe('V2 Tags Support', () => {
       // Update tags
       const updateResult = await v2.updateTask(TEST_PROJECT, taskId, {
         frontmatter: {
-          tags: ['updated', 'modified', 'test']
-        }
+          tags: ['updated', 'modified', 'test'],
+        },
       });
 
       expect(updateResult.success).toBe(true);
@@ -195,7 +195,7 @@ describe('V2 Tags Support', () => {
         title: 'Remove Tags Task',
         type: 'chore',
         area: 'core',
-        tags: ['temporary', 'remove-me']
+        tags: ['temporary', 'remove-me'],
       });
 
       expect(createResult.success).toBe(true);
@@ -204,8 +204,8 @@ describe('V2 Tags Support', () => {
       // Remove tags by setting to empty array
       const updateResult = await v2.updateTask(TEST_PROJECT, taskId, {
         frontmatter: {
-          tags: []
-        }
+          tags: [],
+        },
       });
 
       expect(updateResult.success).toBe(true);
@@ -222,7 +222,7 @@ describe('V2 Tags Support', () => {
         title: 'Moveable Task',
         type: 'feature',
         area: 'core',
-        tags: ['persistent', 'workflow-test']
+        tags: ['persistent', 'workflow-test'],
       });
 
       expect(createResult.success).toBe(true);
@@ -230,7 +230,7 @@ describe('V2 Tags Support', () => {
 
       // Move to current
       const moveResult = await v2.moveTask(TEST_PROJECT, taskId, {
-        targetState: 'current'
+        targetState: 'current',
       });
 
       expect(moveResult.success).toBe(true);
@@ -251,7 +251,7 @@ describe('V2 Tags Support', () => {
         type: 'feature',
         status: 'To Do',
         area: 'test',
-        tags: ['string1', 'string2'] // Should compile
+        tags: ['string1', 'string2'], // Should compile
       };
 
       expect(frontmatter.tags).toBeDefined();
@@ -262,7 +262,7 @@ describe('V2 Tags Support', () => {
       const frontmatter: v2.TaskFrontmatter = {
         type: 'feature',
         status: 'To Do',
-        area: 'test'
+        area: 'test',
         // tags is optional
       };
 

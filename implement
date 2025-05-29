@@ -6,7 +6,7 @@
 
 MODE=${1:-typescript}
 TASK_ID=$2
-ADDITIONAL_INSTRUCTIONS="${@:3}"
+ADDITIONAL_INSTRUCTIONS="${*:3}"
 
 if [ -z "$TASK_ID" ]; then
     echo "Usage: $0 <mode> <taskId> [additional instructions]"

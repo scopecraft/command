@@ -1,6 +1,6 @@
 /**
  * Scopecraft V2 Core Exports
- * 
+ *
  * Main entry point for v2 task system functionality
  */
 
@@ -26,7 +26,7 @@ export {
   isValidTaskFilename,
   getExistingWorkflowStates,
   resolveTaskId,
-  taskIdExists
+  taskIdExists,
 } from './directory-utils.js';
 
 // Task parser
@@ -40,7 +40,7 @@ export {
   formatLogTimestamp,
   parseTasksSection,
   formatTasksSection,
-  addLogEntry
+  addLogEntry,
 } from './task-parser.js';
 
 // ID generator
@@ -53,14 +53,14 @@ export {
   formatTaskReference,
   generateUniqueTaskId,
   listTaskIds,
-  getAllTaskIds
+  getAllTaskIds,
 } from './id-generator.js';
 
 // Name abbreviation
 export {
   abbreviateTaskName,
   isReasonableAbbreviation,
-  getAbbreviationExamples
+  getAbbreviationExamples,
 } from './name-abbreviator.js';
 
 // Task CRUD operations
@@ -71,14 +71,14 @@ export {
   deleteTask,
   moveTask,
   listTasks,
-  updateSection as updateTaskSection
+  updateSection as updateTaskSection,
 } from './task-crud.js';
 
 // Project initialization
 export {
   initializeV2ProjectStructure,
   needsV2Init,
-  getInitStatus
+  getInitStatus,
 } from './project-init.js';
 
 // Parent task operations
@@ -89,7 +89,7 @@ export {
   moveParentTask,
   deleteParentTask,
   listSubtasks,
-  canConvertToParent
+  canConvertToParent,
 } from './parent-tasks.js';
 
 // Subtask sequencing operations
@@ -99,7 +99,7 @@ export {
   insertTaskAfter,
   getNextSequenceNumber,
   isValidSequence,
-  listSubtasksWithSequence
+  listSubtasksWithSequence,
 } from './subtask-sequencing.js';
 
 // High-level task operations
@@ -110,7 +110,7 @@ export {
   promoteToParent,
   extractSubtask,
   adoptTask,
-  addSubtask
+  addSubtask,
 } from './task-operations.js';
 
 // Template management
@@ -118,7 +118,7 @@ export {
   listTemplates,
   getTemplate,
   applyTemplate,
-  initializeV2Templates
+  initializeV2Templates,
 } from './template-manager.js';
 export type { TemplateInfo } from './template-manager.js';
 
@@ -141,5 +141,5 @@ export type {
   V2Config,
   OperationResult,
   ValidationError,
-  StructureVersion
+  StructureVersion,
 } from './types.js';

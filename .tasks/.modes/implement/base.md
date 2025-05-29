@@ -13,7 +13,7 @@ You are implementing a development task. You will adopt the appropriate technica
 Mode: {mode}
 Task ID: {taskId}
 
-Load task using appropriate tools based on the task ID.
+Load task using: bun run dev:cli task get {taskId}
 </context_loading>
 
 <mode_detection>
@@ -30,7 +30,7 @@ Load task using appropriate tools based on the task ID.
 Before writing any code:
 
 1. **Load task context**
-   - Use appropriate tools to load the task
+   - Run: bun run dev:cli task get {taskId}
    - Review task description, requirements, and acceptance criteria
    - Check task status and dependencies
 
@@ -161,5 +161,5 @@ Include this section in task updates to flag items for later review.
 <additional_instructions>
 ## Additional Instructions
 
-{additionalInstructions | "The user hasn't provided any additional instructions for this implementation. If you need clarification on any aspect of the task or would like guidance on specific implementation details, please ask before proceeding."}
+{additionalInstructions ? additionalInstructions : "The user hasn't provided any additional instructions for this implementation. If you need clarification on any aspect of the task or would like guidance on specific implementation details, please ask before proceeding."}
 </additional_instructions>

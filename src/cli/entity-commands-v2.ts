@@ -3,8 +3,8 @@
  * Organizes commands into entity groups (task, parent, area, workflow)
  */
 import { Command } from 'commander';
-import * as v2 from '../core/v2/index.js';
 import { ConfigurationManager } from '../core/config/index.js';
+import * as v2 from '../core/v2/index.js';
 import {
   handleAreaDeleteCommand,
   handleAreaGetCommand,
@@ -291,22 +291,17 @@ You can use the global --root-dir option to specify an alternative tasks directo
       try {
         const configManager = ConfigurationManager.getInstance();
         const projectRoot = configManager.getProjectRoot();
-        
-        const result = await v2.addSubtask(
-          projectRoot,
-          parentId,
-          options.title,
-          {
-            type: options.type,
-            assignee: options.assignee
-          }
-        );
-        
+
+        const result = await v2.addSubtask(projectRoot, parentId, options.title, {
+          type: options.type,
+          assignee: options.assignee,
+        });
+
         if (!result.success) {
           console.error(`Error: ${result.error}`);
           process.exit(1);
         }
-        
+
         console.log(`✓ Added subtask: ${result.data!.metadata.id}`);
         console.log(`  Parent: ${parentId}`);
         console.log(`  Path: ${result.data!.metadata.path}`);

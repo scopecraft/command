@@ -118,7 +118,6 @@ export function isValidTaskId(taskId: string): boolean {
   return true;
 }
 
-
 /**
  * Parse a task reference (@task:{id}#{section})
  */
@@ -148,7 +147,6 @@ export function formatTaskReference(ref: TaskReference): string {
   const path = ref.explicitPath || ref.id;
   return ref.section ? `@task:${path}#${ref.section}` : `@task:${path}`;
 }
-
 
 /**
  * Generate a unique task ID
