@@ -23,6 +23,15 @@ check_tmux() {
     fi
 }
 
+# Check if channelcoder is installed
+check_channelcoder() {
+    if ! command -v channelcoder &> /dev/null; then
+        gum style --foreground 196 "Error: channelcoder is not installed"
+        gum style --foreground 245 "Install with: npm install -g channelcoder"
+        exit 1
+    fi
+}
+
 # Create or get the main tmux session
 create_or_get_session() {
     if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
@@ -43,21 +52,9 @@ create_window() {
     local task_id=$2
     local window_name="${task_id}-${mode}"
     
-    # Determine if this is a task or feature ID
-    # Ways to detect:
-    # 1. Tasks are ALL CAPS with dashes and contain digits (typically 4)
-    # 2. Features use mixed case with dashes (e.g., "worktree-dashboard") 
-    # 3. Features might use FEATURE_ prefix (but never FEAT- which is for tasks)
-    # 4. Any ID with lowercase letters is considered a feature
-    if [[ "$task_id" =~ ^FEATURE_ || ! "$task_id" =~ [0-9] || "$task_id" =~ [a-z] ]]; then
-        # Use tw-feat-start for feature IDs
-        gum style --foreground 245 "Setting up feature worktree for $task_id..."
-        local worktree_output=$(bun run tw-feat-start "$task_id" 2>/dev/null | tail -n 1)
-    else
-        # Use tw-start for task IDs
-        gum style --foreground 245 "Setting up task worktree for $task_id..."
-        local worktree_output=$(bun run tw-start "$task_id" 2>/dev/null | tail -n 1)
-    fi
+    # Always use tw-start for any ID (removed feature detection)
+    gum style --foreground 245 "Setting up task worktree for $task_id..."
+    local worktree_output=$(bun run tw-start "$task_id" 2>/dev/null | tail -n 1)
     
     # Check if the output contains a valid path
     if [[ -d "$worktree_output" ]]; then
@@ -82,16 +79,16 @@ create_window() {
     else
         gum spin --spinner dot --title "Creating window: $window_name" -- sleep 1
         
-        # Create window with command using /project format or none
+        # Create window with channelcoder command
         local user_prompt="${@:3}"
-        local claude_command
         
         # Disable automatic renaming for the window
         if [ "$mode" = "none" ]; then
             tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" "claude"
         else
+            # Use channelcoder with the mode prompt
             tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
-                "claude '/project:$mode $task_id $user_prompt'"
+                "channelcoder .tasks/.modes/$mode/base.md -d mode=\"$mode\" -d taskId=\"$task_id\" -d additionalInstructions=\"$user_prompt\""
         fi
         
         # Disable automatic window renaming
@@ -152,47 +149,29 @@ list_active() {
 
 # Interactive mode selection
 select_mode() {
-    # Find the .claude/commands directory - could be in current dir or parent dirs
-    local commands_dir=""
-    local current_dir="$PWD"
+    # Find the .tasks/.modes directory - use relative path
+    local modes_dir=".tasks/.modes"
     
-    # Search up the directory tree for .claude/commands
-    while [ "$current_dir" != "/" ]; do
-        if [ -d "$current_dir/.claude/commands" ]; then
-            commands_dir="$current_dir/.claude/commands"
-            break
-        fi
-        current_dir=$(dirname "$current_dir")
-    done
-    
-    # If not found, try the main repo directory
-    if [ -z "$commands_dir" ]; then
-        local main_repo="${HOME}/Projects/roo-task-cli"
-        if [ -d "$main_repo/.claude/commands" ]; then
-            commands_dir="$main_repo/.claude/commands"
-        fi
-    fi
-    
-    if [ -z "$commands_dir" ] || [ ! -d "$commands_dir" ]; then
-        gum style --foreground 196 "Error: Commands directory not found"
+    if [ ! -d "$modes_dir" ]; then
+        gum style --foreground 196 "Error: Modes directory not found at $modes_dir"
         return 1
     fi
     
-    # Get all .md files and strip the extension
-    local modes=$(ls -1 "$commands_dir"/*.md 2>/dev/null | xargs -n1 basename | sed 's/\.md$//')
+    # Get all directories in .modes
+    local modes=$(find "$modes_dir" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
     
     if [ -z "$modes" ]; then
-        gum style --foreground 196 "No command files found in $commands_dir"
+        gum style --foreground 196 "No mode directories found in $modes_dir"
         return 1
     fi
     
-    # Add "none" as first option, then list all command files
-    echo -e "none\n$modes" | gum choose --header "Select command mode (or 'none' for basic Claude):"
+    # Add "none" as first option, then list all mode directories
+    echo -e "none\n$modes" | gum choose --header "Select mode (or 'none' for basic Claude):"
 }
 
 # Interactive task ID input
 get_task_id() {
-    gum input --placeholder "Enter task/feature ID (e.g., TASK-123, FEAT-456, FEATURE_name)" \
+    gum input --placeholder "Enter task ID (e.g., TASK-123, AUTH-001)" \
         --prompt "ID: " \
         --width 40
 }
@@ -206,9 +185,9 @@ get_user_prompt() {
         return
     fi
     
-    gum style --foreground 245 "Optional: Add custom prompt for $mode command"
-    gum input --placeholder "Press Enter to skip or type custom prompt" \
-        --prompt "Prompt: " \
+    gum style --foreground 245 "Optional: Add additional instructions for $mode mode"
+    gum input --placeholder "Press Enter to skip or type additional instructions" \
+        --prompt "Instructions: " \
         --width 80
 }
 
@@ -223,7 +202,7 @@ interactive_dispatch() {
     local task_id=$(get_task_id)
     [ -z "$task_id" ] && exit 0
     
-    # Validate ID format - very permissive to allow feature names like "worktree-dashboard"
+    # Validate ID format - very permissive to allow various formats
     if [[ ! $task_id =~ ^[A-Za-z][A-Za-z0-9_-]+ ]]; then
         gum style --foreground 196 "Invalid ID format"
         exit 1
@@ -234,7 +213,7 @@ interactive_dispatch() {
     
     # Show summary
     gum style --border normal --padding 1 \
-        "$(echo -e "Mode: $mode\nTask: $task_id\nPrompt: ${user_prompt:-[none]}")"
+        "$(echo -e "Mode: $mode\nTask: $task_id\nInstructions: ${user_prompt:-[none]}")"
     
     if gum confirm "Proceed with dispatch?"; then
         create_or_get_session
@@ -328,7 +307,7 @@ start_from_worktree() {
         return 1
     fi
     
-    # List directories in worktrees folder - include both task IDs and feature names
+    # List directories in worktrees folder
     local worktrees=$(ls -1 "$worktrees_dir" 2>/dev/null)
     
     if [ -z "$worktrees" ]; then
@@ -366,19 +345,17 @@ start_from_worktree() {
         fi
     else
         gum style --border normal --padding 1 \
-            "$(echo -e "Task: $selected_task\nMode: $mode\nPath: $worktree_path\nPrompt: ${user_prompt:-[none]}")"
+            "$(echo -e "Task: $selected_task\nMode: $mode\nPath: $worktree_path\nInstructions: ${user_prompt:-[none]}")"
         
         if gum confirm "Create session?"; then
             create_or_get_session
             
-            # Create window with command using /project format or none
-            local claude_command
-            
+            # Create window with channelcoder command
             if [ "$mode" = "none" ]; then
                 tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" "claude"
             else
                 tmux new-window -t "$SESSION_NAME" -n "$window_name" -c "$worktree_path" \
-                    "claude '/project:$mode $selected_task $user_prompt'"
+                    "channelcoder .tasks/.modes/$mode/base.md -d mode=\"$mode\" -d taskId=\"$selected_task\" -d additionalInstructions=\"$user_prompt\""
             fi
             
             # Disable automatic window renaming
@@ -398,6 +375,7 @@ start_from_worktree() {
 main() {
     check_gum
     check_tmux
+    check_channelcoder
     
     # If no arguments, show interactive menu
     if [ $# -eq 0 ]; then
@@ -413,7 +391,7 @@ main() {
                 ;;
             "help"|"-h"|"--help")
                 gum style --border normal --padding 1 \
-                    "$(echo -e "Usage:\n  $0                    # Interactive menu\n  $0 list              # List sessions\n  $0 worktree          # Start session from existing worktree\n  $0 <mode> <id>       # Direct dispatch (supports TASK-xxx, FEAT-xxx, FEATURE_xxx)")"
+                    "$(echo -e "Usage:\n  $0                    # Interactive menu\n  $0 list              # List sessions\n  $0 worktree          # Start session from existing worktree\n  $0 <mode> <id>       # Direct dispatch")"
                 ;;
             *)
                 # Direct dispatch with command line args

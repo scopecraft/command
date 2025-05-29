@@ -45,7 +45,8 @@ import {
 import {
   generateTaskId,
   generateSubtaskId,
-  parseTaskId
+  parseTaskId,
+  resolveTaskIdWithContext
 } from './id-generator.js';
 import {
   parseTaskDocument,
@@ -682,16 +683,40 @@ export async function addSubtask(
       }
     }
     
-    // Return the created subtask
-    const subtaskResult = await getTask(projectRoot, subtaskId, config);
-    if (!subtaskResult.success || !subtaskResult.data) {
+    // Return the created subtask by reading it directly from the known path
+    try {
+      const subtaskContent = readFileSync(subtaskPath, 'utf-8');
+      const subtaskDocument = parseTaskDocument(subtaskContent);
+      
+      // Determine parent metadata
+      const parentMeta = {
+        id: parentId,
+        title: parentTask.document.title
+      };
+      
+      const subtask: Task = {
+        metadata: {
+          id: subtaskId,
+          filename: basename(subtaskPath),
+          path: subtaskPath,
+          location: parentTask.metadata.location,
+          isParentTask: false,
+          parent: parentMeta,
+          sequenceNumber: sequence
+        },
+        document: subtaskDocument
+      };
+      
+      return {
+        success: true,
+        data: subtask
+      };
+    } catch (error) {
       return {
         success: false,
-        error: 'Failed to get created subtask'
+        error: 'Failed to read created subtask'
       };
     }
-    
-    return subtaskResult;
   } catch (error) {
     return {
       success: false,
