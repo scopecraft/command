@@ -27,18 +27,18 @@ export const ParentTaskDetailPage: Story = {
     const subtasks = mockV2Subtasks.filter(task => task.parent_task === 'parent-001');
 
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="bg-white border-b">
+        <div className="bg-card border-b">
           <div className="max-w-6xl mx-auto px-6 py-4">
-            <div className="flex items-center gap-3 text-sm text-gray-600 mb-2">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
               <span>Projects</span>
               <span>›</span>
               <WorkflowStateBadge workflow={parentTask.workflow_state} size="sm" />
               <span>›</span>
               <span className="font-medium">Parent Tasks</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Parent Task Details</h1>
+            <h1 className="text-2xl font-bold text-foreground">Parent Task Details</h1>
           </div>
         </div>
 
@@ -57,11 +57,11 @@ export const ParentTaskDetailPage: Story = {
               />
 
               {/* Subtasks Section */}
-              <div className="bg-white border rounded-lg">
+              <div className="bg-card border rounded-lg">
                 <div className="p-4 border-b">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-gray-900">🔗 Subtasks</h2>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <h2 className="text-lg font-semibold text-foreground">🔗 Subtasks</h2>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span>{subtasks.filter(t => t.status === 'done').length} completed</span>
                       <span>•</span>
                       <span>{subtasks.length} total</span>
@@ -84,27 +84,27 @@ export const ParentTaskDetailPage: Story = {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Quick Stats */}
-              <div className="bg-white border rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Quick Stats</h3>
+              <div className="bg-card border rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-3">Quick Stats</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Total Subtasks</span>
+                    <span className="text-muted-foreground">Total Subtasks</span>
                     <span className="font-medium">{subtasks.length}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Completed</span>
+                    <span className="text-muted-foreground">Completed</span>
                     <span className="font-medium text-green-600">
                       {subtasks.filter(t => t.status === 'done').length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">In Progress</span>
+                    <span className="text-muted-foreground">In Progress</span>
                     <span className="font-medium text-blue-600">
                       {subtasks.filter(t => t.status === 'in_progress').length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Blocked</span>
+                    <span className="text-muted-foreground">Blocked</span>
                     <span className="font-medium text-red-600">
                       {subtasks.filter(t => t.status === 'blocked').length}
                     </span>
@@ -113,11 +113,11 @@ export const ParentTaskDetailPage: Story = {
               </div>
 
               {/* Related Tasks */}
-              <div className="bg-white border rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Related Simple Tasks</h3>
+              <div className="bg-card border rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-3">Related Simple Tasks</h3>
                 <div className="space-y-2">
                   {mockV2SimpleTasks.slice(0, 2).map((task) => (
-                    <div key={task.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <div key={task.id} className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer">
                       <TaskTypeIcon task={task} size="sm" />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium truncate">{task.title}</div>
@@ -131,19 +131,19 @@ export const ParentTaskDetailPage: Story = {
               </div>
 
               {/* Actions */}
-              <div className="bg-white border rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Quick Actions</h3>
+              <div className="bg-card border rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-3">Quick Actions</h3>
                 <div className="space-y-2">
-                  <button className="w-full text-left px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded hover:bg-blue-100">
+                  <button className="w-full text-left px-3 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90">
                     + Add Subtask
                   </button>
-                  <button className="w-full text-left px-3 py-2 text-sm bg-gray-50 text-gray-700 rounded hover:bg-gray-100">
+                  <button className="w-full text-left px-3 py-2 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
                     ↕ Reorder Subtasks
                   </button>
-                  <button className="w-full text-left px-3 py-2 text-sm bg-gray-50 text-gray-700 rounded hover:bg-gray-100">
+                  <button className="w-full text-left px-3 py-2 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
                     ⚹ Make Parallel
                   </button>
-                  <button className="w-full text-left px-3 py-2 text-sm bg-gray-50 text-gray-700 rounded hover:bg-gray-100">
+                  <button className="w-full text-left px-3 py-2 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
                     🔄 Convert to Simple Task
                   </button>
                 </div>
@@ -158,12 +158,12 @@ export const ParentTaskDetailPage: Story = {
 
 export const WorkflowDashboard: Story = {
   render: () => (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-card border-b">
         <div className="max-w-6xl mx-auto px-6 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Workflow Dashboard</h1>
-          <p className="text-gray-600 mt-1">Organize your work by workflow states</p>
+          <h1 className="text-2xl font-bold text-foreground">Workflow Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Organize your work by workflow states</p>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ export const WorkflowDashboard: Story = {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <WorkflowStateBadge workflow="backlog" />
-              <span className="text-gray-600">({mockV2ParentTasks.filter(t => t.workflow_state === 'backlog').length})</span>
+              <span className="text-muted-foreground">({mockV2ParentTasks.filter(t => t.workflow_state === 'backlog').length})</span>
             </div>
             <div className="space-y-3">
               {mockV2ParentTasks
@@ -194,7 +194,7 @@ export const WorkflowDashboard: Story = {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <WorkflowStateBadge workflow="current" />
-              <span className="text-gray-600">({mockV2ParentTasks.filter(t => t.workflow_state === 'current').length})</span>
+              <span className="text-muted-foreground">({mockV2ParentTasks.filter(t => t.workflow_state === 'current').length})</span>
             </div>
             <div className="space-y-3">
               {mockV2ParentTasks
@@ -214,7 +214,7 @@ export const WorkflowDashboard: Story = {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <WorkflowStateBadge workflow="archive" />
-              <span className="text-gray-600">({mockV2ParentTasks.filter(t => t.workflow_state === 'archive').length})</span>
+              <span className="text-muted-foreground">({mockV2ParentTasks.filter(t => t.workflow_state === 'archive').length})</span>
             </div>
             <div className="space-y-3">
               {mockV2ParentTasks
@@ -240,18 +240,18 @@ export const MixedTaskList: Story = {
     const allTasks = [...mockV2SimpleTasks, ...mockV2ParentTasks];
 
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="bg-white border-b">
+        <div className="bg-card border-b">
           <div className="max-w-4xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">All Tasks</h1>
-                <p className="text-gray-600 mt-1">Mixed view of parent tasks and simple tasks</p>
+                <h1 className="text-2xl font-bold text-foreground">All Tasks</h1>
+                <p className="text-muted-foreground mt-1">Mixed view of parent tasks and simple tasks</p>
               </div>
               <div className="flex items-center gap-2">
                 <WorkflowStateBadge workflow="current" size="sm" />
-                <span className="text-gray-600">{allTasks.filter(t => t.workflow_state === 'current').length} tasks</span>
+                <span className="text-muted-foreground">{allTasks.filter(t => t.workflow_state === 'current').length} tasks</span>
               </div>
             </div>
           </div>
@@ -278,13 +278,13 @@ export const MixedTaskList: Story = {
                   return (
                     <div 
                       key={task.id}
-                      className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => console.log('Navigate to task:', task.title)}
                     >
                       <div className="flex items-start gap-3">
                         <TaskTypeIcon task={task} />
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900">{task.title}</h3>
+                          <h3 className="font-medium text-foreground">{task.title}</h3>
                           <div className="flex items-center gap-2 mt-1">
                             <StatusBadge status={task.status} size="sm" />
                             <PriorityIndicator priority={task.priority} size="sm" />
@@ -293,7 +293,7 @@ export const MixedTaskList: Story = {
                           {task.tags && task.tags.length > 0 && (
                             <div className="flex gap-1 mt-2">
                               {task.tags.slice(0, 3).map((tag) => (
-                                <span key={tag} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                                <span key={tag} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
                                   #{tag}
                                 </span>
                               ))}
@@ -316,12 +316,12 @@ export const ComponentShowcase: Story = {
   render: () => (
     <div className="max-w-4xl mx-auto p-8 space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">V2 Component Library</h1>
-        <p className="text-gray-600">Clean, modern UI components for workflow-based task management</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">V2 Component Library</h1>
+        <p className="text-muted-foreground">Clean, modern UI components for workflow-based task management</p>
       </div>
 
       {/* Icons */}
-      <div className="bg-white border rounded-lg p-6">
+      <div className="bg-card border rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">Task Type Icons</h2>
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
@@ -348,7 +348,7 @@ export const ComponentShowcase: Story = {
       </div>
 
       {/* Badges */}
-      <div className="bg-white border rounded-lg p-6">
+      <div className="bg-card border rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">Status & Priority Badges</h2>
         <div className="space-y-4">
           <div>
@@ -380,7 +380,7 @@ export const ComponentShowcase: Story = {
       </div>
 
       {/* Sample Parent Task */}
-      <div className="bg-white border rounded-lg p-6">
+      <div className="bg-card border rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">Parent Task Card</h2>
         <ParentTaskCard 
           parentTask={mockV2ParentTasks[0]}
@@ -389,7 +389,7 @@ export const ComponentShowcase: Story = {
       </div>
 
       {/* Sample Subtask List */}
-      <div className="bg-white border rounded-lg p-6">
+      <div className="bg-card border rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">Subtask Tree View</h2>
         <SubtaskList 
           subtasks={mockV2Subtasks.filter(t => t.parent_task === 'parent-001').slice(0, 5)}
