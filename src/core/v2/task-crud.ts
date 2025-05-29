@@ -16,8 +16,9 @@ import {
   getWorkflowDirectory,
   isParentTaskFolder,
   parseTaskLocation,
+  resolveTaskId,
 } from './directory-utils.js';
-import { generateUniqueTaskId, parseTaskId, resolveTaskId } from './id-generator.js';
+import { generateUniqueTaskId, parseTaskId } from './id-generator.js';
 import {
   addLogEntry,
   ensureRequiredSections,
@@ -135,11 +136,12 @@ export async function createTask(
 export async function getTask(
   projectRoot: string,
   taskId: string,
-  config?: V2Config
+  config?: V2Config,
+  parentId?: string
 ): Promise<OperationResult<Task>> {
   try {
-    // Resolve task path
-    const taskPath = resolveTaskId(taskId, projectRoot, config);
+    // Resolve task path with optional parent context
+    const taskPath = resolveTaskId(taskId, projectRoot, config, parentId);
     if (!taskPath) {
       return {
         success: false,

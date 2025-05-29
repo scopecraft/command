@@ -45,8 +45,7 @@ import {
 import {
   generateTaskId,
   generateSubtaskId,
-  parseTaskId,
-  resolveTaskIdWithContext
+  parseTaskId
 } from './id-generator.js';
 import {
   parseTaskDocument,
@@ -546,8 +545,8 @@ export async function adoptTask(
       }
     }
     
-    // Return the adopted task
-    const adoptedResult = await getTask(projectRoot, subtaskId, config);
+    // Return the adopted task with parent context for efficient lookup
+    const adoptedResult = await getTask(projectRoot, subtaskId, config, parentId);
     if (!adoptedResult.success || !adoptedResult.data) {
       return {
         success: false,
@@ -662,7 +661,14 @@ export async function addSubtask(
     }
     
     // Move to correct location with proper name
-    renameSync(createResult.data.metadata.path, subtaskPath);
+    try {
+      renameSync(createResult.data.metadata.path, subtaskPath);
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to move subtask from ${createResult.data.metadata.path} to ${subtaskPath}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
     
     // If we inserted in the middle, resequence
     if (options.after || options.before) {
@@ -683,40 +689,16 @@ export async function addSubtask(
       }
     }
     
-    // Return the created subtask by reading it directly from the known path
-    try {
-      const subtaskContent = readFileSync(subtaskPath, 'utf-8');
-      const subtaskDocument = parseTaskDocument(subtaskContent);
-      
-      // Determine parent metadata
-      const parentMeta = {
-        id: parentId,
-        title: parentTask.document.title
-      };
-      
-      const subtask: Task = {
-        metadata: {
-          id: subtaskId,
-          filename: basename(subtaskPath),
-          path: subtaskPath,
-          location: parentTask.metadata.location,
-          isParentTask: false,
-          parent: parentMeta,
-          sequenceNumber: sequence
-        },
-        document: subtaskDocument
-      };
-      
-      return {
-        success: true,
-        data: subtask
-      };
-    } catch (error) {
+    // Return the created subtask using getTask with parent context
+    const subtaskResult = await getTask(projectRoot, subtaskId, config, parentId);
+    if (!subtaskResult.success || !subtaskResult.data) {
       return {
         success: false,
-        error: 'Failed to read created subtask'
+        error: subtaskResult.error || 'Failed to read created subtask'
       };
     }
+    
+    return subtaskResult;
   } catch (error) {
     return {
       success: false,

@@ -5,7 +5,7 @@
  */
 
 import { existsSync, mkdirSync, readdirSync, rmSync, statSync, readFileSync } from 'node:fs';
-import { join, basename } from 'node:path';
+import { join, basename, dirname } from 'node:path';
 import type {
   ParentTask,
   Task,
@@ -127,7 +127,7 @@ export async function addSubtask(
     }
     
     const parentTask = parentResult.data;
-    const taskFolder = join(dirname(parentTask.metadata.path));
+    const taskFolder = dirname(parentTask.metadata.path);
     
     // Determine next sequence number
     const nextSequence = getNextSequenceNumber(taskFolder);
@@ -442,9 +442,3 @@ export async function canConvertToParent(
          result.data.metadata.location.workflowState !== 'archive';
 }
 
-// Helper to get dirname function
-function dirname(path: string): string {
-  const parts = path.split('/');
-  parts.pop();
-  return parts.join('/');
-}

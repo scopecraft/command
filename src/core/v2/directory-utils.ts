@@ -345,3 +345,174 @@ export function getExistingWorkflowStates(
   
   return states;
 }
+
+/**
+ * Resolve a task ID to its full path
+ * Search order: current → backlog → archive
+ * With optional parent context for efficient subtask resolution
+ */
+export function resolveTaskId(
+  taskId: string,
+  projectRoot: string,
+  config?: V2Config,
+  parentId?: string
+): string | null {
+  // Handle explicit paths (e.g., "current/implement-oauth-0127-AB")
+  if (taskId.includes('/')) {
+    const fullPath = join(getTasksDirectory(projectRoot), taskId);
+
+    // Add .task.md if not present
+    const pathsToCheck = [
+      fullPath,
+      `${fullPath}.task.md`,
+      join(fullPath, '_overview.md'), // Complex task
+    ];
+
+    for (const path of pathsToCheck) {
+      if (existsSync(path)) {
+        return path;
+      }
+    }
+
+    return null;
+  }
+
+  // If parent context is provided, search within parent first
+  if (parentId) {
+    const parentPath = resolveTaskId(parentId, projectRoot, config);
+    if (parentPath && parentPath.endsWith('_overview.md')) {
+      const parentDir = dirname(parentPath);
+      const subtaskPath = join(parentDir, `${taskId}.task.md`);
+      if (existsSync(subtaskPath)) {
+        return subtaskPath;
+      }
+    }
+    // If not found in parent, fall through to standard search
+  }
+
+  // Standard search order
+  const searchOrder: WorkflowState[] = ['current', 'backlog', 'archive'];
+
+  for (const state of searchOrder) {
+    const found = findTaskInWorkflow(taskId, projectRoot, state, config);
+    if (found) {
+      return found;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Find a task in a specific workflow state
+ */
+function findTaskInWorkflow(
+  taskId: string,
+  projectRoot: string,
+  state: WorkflowState,
+  config?: V2Config
+): string | null {
+  const workflowDir = getWorkflowDirectory(projectRoot, state, config);
+  if (!existsSync(workflowDir)) {
+    return null;
+  }
+
+  // Direct file check (standalone task)
+  const directPath = join(workflowDir, `${taskId}.task.md`);
+  if (existsSync(directPath)) {
+    return directPath;
+  }
+
+  // Check for complex task folder (parent task)
+  const complexPath = join(workflowDir, taskId);
+  if (isParentTaskFolder(complexPath)) {
+    return join(complexPath, '_overview.md');
+  }
+
+  // Search inside parent task folders for subtasks
+  const subtaskPath = searchForSubtask(taskId, workflowDir);
+  if (subtaskPath) {
+    return subtaskPath;
+  }
+
+  // For archive, search subdirectories (YYYY-MM)
+  if (state === 'archive') {
+    return searchArchive(taskId, workflowDir);
+  }
+
+  return null;
+}
+
+/**
+ * Search for a subtask inside parent task folders
+ */
+function searchForSubtask(taskId: string, workflowDir: string): string | null {
+  if (!existsSync(workflowDir)) {
+    return null;
+  }
+
+  const entries = readdirSync(workflowDir);
+
+  for (const entry of entries) {
+    const entryPath = join(workflowDir, entry);
+    const stat = statSync(entryPath);
+
+    if (stat.isDirectory() && isParentTaskFolder(entryPath)) {
+      // Search inside parent task folder for the subtask
+      const subtaskPath = join(entryPath, `${taskId}.task.md`);
+      if (existsSync(subtaskPath)) {
+        return subtaskPath;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Search archive subdirectories for a task
+ */
+function searchArchive(taskId: string, archiveDir: string): string | null {
+  if (!existsSync(archiveDir)) {
+    return null;
+  }
+
+  const entries = readdirSync(archiveDir);
+
+  // Sort by date descending (newest first)
+  const dateDirs = entries
+    .filter((entry) => /^\d{4}-\d{2}$/.test(entry))
+    .sort()
+    .reverse();
+
+  for (const dateDir of dateDirs) {
+    const dirPath = join(archiveDir, dateDir);
+
+    // Check direct file
+    const filePath = join(dirPath, `${taskId}.task.md`);
+    if (existsSync(filePath)) {
+      return filePath;
+    }
+
+    // Check complex task
+    const complexPath = join(dirPath, taskId);
+    if (isParentTaskFolder(complexPath)) {
+      return join(complexPath, '_overview.md');
+    }
+
+    // Search for subtasks within parent folders
+    const subtaskPath = searchForSubtask(taskId, dirPath);
+    if (subtaskPath) {
+      return subtaskPath;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Check if a task ID already exists
+ */
+export function taskIdExists(taskId: string, projectRoot: string, config?: V2Config): boolean {
+  return resolveTaskId(taskId, projectRoot, config) !== null;
+}

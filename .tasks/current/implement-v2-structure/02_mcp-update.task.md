@@ -2,13 +2,13 @@
 
 ---
 type: chore
-status: To Do
+status: Progress
 area: mcp
-assignee:
+assignee: null
 ---
 
-## Instruction
 
+## Instruction
 Update the MCP server handlers to work with the new workflow-based structure. Remove phase operations and update all handlers for the new system.
 
 **IMPORTANT**: This plan is not complete. Start by reviewing all MCP handlers and tool definitions. Consider:
@@ -19,12 +19,16 @@ Update the MCP server handlers to work with the new workflow-based structure. Re
 - What about tool descriptions and documentation?
 - Don't hesitate to ask questions about API design decisions.
 
-### Initial Scope (to be expanded)
-1. Remove phase-related MCP tools
-2. Update feature tools to work with parent tasks (not "complex tasks")
-3. Update task tools for new structure
-4. Add workflow state support
-5. Update filtering capabilities
+### API Design
+
+The final MCP V2 API design is documented in @task:implement-v2-structure/mcp-v2-api-design
+
+Key design decisions:
+1. Minimal API surface - ~10 core tools instead of 30+
+2. REST-like design with flexible parameters
+3. Consistent `parent_id` parameter for subtask context
+4. Extensible filtering using v2's `[key: string]: unknown`
+5. Section updates fully supported via task_update
 
 ### Key Files to Modify
 - `src/mcp/handlers.ts`
@@ -45,7 +49,6 @@ Update the MCP server handlers to work with the new workflow-based structure. Re
 4. **Function Naming**: Don't use "v2" in function names - only in temporary filenames
 
 ## Tasks
-
 - [ ] Remove all phase_* tool handlers
 - [ ] Update feature_* tools to work with parent task folders
 - [ ] Update task_list to search workflow folders
@@ -82,6 +85,15 @@ Update the MCP server handlers to work with the new workflow-based structure. Re
   - [ ] Provide helpful errors when subtask resolution fails
 
 ## Deliverable
+
+### MCP V2 Implementation
+
+The implementation follows the API design in @task:implement-v2-structure/mcp-v2-api-design with these core tools:
+
+1. **Task CRUD**: `task_list`, `task_get`, `task_create`, `task_update`, `task_move`, `task_delete`
+2. **Parent Tasks**: `parent_list`, `parent_create`, `parent_operations`
+3. **Transformations**: `task_transform` (promote/extract/adopt)
+4. **Legacy Support**: Feature tools mapped to parent operations
 
 ### Expected MCP Tool Structure
 
@@ -139,6 +151,7 @@ Please use a more specific ID or provide parent_id
 ```
 
 ## Log
-
 - 2025-05-27: Task created as part of V2 implementation
 - 2025-05-28: Updated with lessons learned from CLI implementation
+- 2025-05-28: Created comprehensive API design document (@task:implement-v2-structure/mcp-v2-api-design)
+- 2025-05-28: Identified need for tags in core v2 types (@task:add-tags-supp-to-core-v2-typs-05A)

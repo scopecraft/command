@@ -3,6 +3,8 @@
  * Organizes commands into entity groups (task, parent, area, workflow)
  */
 import { Command } from 'commander';
+import * as v2 from '../core/v2/index.js';
+import { ConfigurationManager } from '../core/config/index.js';
 import {
   handleAreaDeleteCommand,
   handleAreaGetCommand,
@@ -286,8 +288,32 @@ You can use the global --root-dir option to specify an alternative tasks directo
     .option('--type <type>', 'Subtask type')
     .option('--assignee <assignee>', 'Assigned to')
     .action(async (parentId, options) => {
-      // Will be implemented with v2 addSubtask
-      console.log('Adding subtask to parent:', parentId, options);
+      try {
+        const configManager = ConfigurationManager.getInstance();
+        const projectRoot = configManager.getProjectRoot();
+        
+        const result = await v2.addSubtask(
+          projectRoot,
+          parentId,
+          options.title,
+          {
+            type: options.type,
+            assignee: options.assignee
+          }
+        );
+        
+        if (!result.success) {
+          console.error(`Error: ${result.error}`);
+          process.exit(1);
+        }
+        
+        console.log(`✓ Added subtask: ${result.data!.metadata.id}`);
+        console.log(`  Parent: ${parentId}`);
+        console.log(`  Path: ${result.data!.metadata.path}`);
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        process.exit(1);
+      }
     });
 
   // Add parent group to root program

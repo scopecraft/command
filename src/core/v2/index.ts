@@ -24,7 +24,9 @@ export {
   getSubtaskSequence,
   createArchiveDate,
   isValidTaskFilename,
-  getExistingWorkflowStates
+  getExistingWorkflowStates,
+  resolveTaskId,
+  taskIdExists
 } from './directory-utils.js';
 
 // Task parser
@@ -47,10 +49,8 @@ export {
   generateSubtaskId,
   parseTaskId,
   isValidTaskId,
-  resolveTaskId,
   parseTaskReference,
   formatTaskReference,
-  taskIdExists,
   generateUniqueTaskId,
   listTaskIds,
   getAllTaskIds

@@ -2,14 +2,16 @@
 
 ---
 type: bug
-status: To Do
+status: Done
 area: core
 priority: Medium
 ---
 
-## Instruction
 
+## Instruction
 The `task adopt` command fails with "Failed to get adopted task" error when trying to adopt a floating task into a parent task. This happens after the adoption operation appears to complete but fails when trying to retrieve the newly adopted task.
+
+**RESOLVED**: Fixed by adding parent context support to `getTask` and `resolveTaskId`. The issue was that after creating the subtask, `getTask` had to search through all parent folders instead of looking directly in the known parent folder.
 
 ### Bug Details
 
@@ -75,17 +77,15 @@ Key functions to investigate:
 - The issue was discovered during CLI v2 integration testing on 2025-05-28
 
 ## Tasks
-
-- [ ] Set up test environment with parent and floating tasks
-- [ ] Add debug logging to trace the exact IDs being used
-- [ ] Investigate if addSubtask returns the correct subtask information
-- [ ] Check if getTask can properly resolve subtask IDs within parent folders
-- [ ] Verify the file is actually created in the expected location
-- [ ] Test the fix with various adoption scenarios
+- [x] Set up test environment with parent and floating tasks
+- [x] Add debug logging to trace the exact IDs being used
+- [x] Investigate if addSubtask returns the correct subtask information
+- [x] Check if getTask can properly resolve subtask IDs within parent folders
+- [x] Verify the file is actually created in the expected location
+- [x] Test the fix with various adoption scenarios
 - [ ] Add unit tests to prevent regression
 
 ## Deliverable
-
 A working `task adopt` command that successfully:
 1. Moves a floating task into a parent task as a subtask
 2. Assigns the correct sequence number
@@ -93,6 +93,6 @@ A working `task adopt` command that successfully:
 4. Properly handles all ID transformations
 
 ## Log
-
 - 2025-05-28: Bug discovered during CLI v2 integration testing
 - 2025-05-28: Created detailed bug report with technical analysis
+- 2025-05-28: Fixed by adding parent context support to resolveTaskId and getTask functions. The root cause was that getTask was searching all parent folders instead of using the known parent context. Also refactored resolveTaskId to directory-utils.ts where it belongs.
