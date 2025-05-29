@@ -77,25 +77,16 @@ export const ParentTaskDetailPage: Story = {
         {/* Actions Header */}
         <div className="max-w-6xl mx-auto px-6 py-4 border-b bg-card">
           <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
+            </div>
             <div className="flex items-center gap-3">
-              {/* Primary CTAs */}
+              {/* Main CTAs - Parent task level actions */}
               <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 font-medium">
                 🤖 Start Agent
               </button>
-              <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 font-medium">
-                + Add Subtask
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Secondary actions */}
               <button className="px-3 py-1.5 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
-                ↕ Reorder
-              </button>
-              <button className="px-3 py-1.5 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
-                ⚹ Make Parallel
-              </button>
-              <button className="px-3 py-1.5 text-sm bg-muted text-foreground rounded hover:bg-muted/90">
-                🔄 Convert
+                🔄 Convert to Simple
               </button>
             </div>
           </div>
@@ -190,6 +181,21 @@ export const ParentTaskDetailPage: Story = {
                   variant="compact"
                   onTaskClick={(task) => console.log('Navigate to task detail:', task.id)}
                 />
+
+                {/* Subtask Actions */}
+                <div className="mt-4 pt-3 border-t space-y-2">
+                  <button className="w-full text-left px-3 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90">
+                    + Add Subtask
+                  </button>
+                  <div className="flex gap-2">
+                    <button className="flex-1 text-center px-2 py-1.5 text-xs bg-muted text-foreground rounded hover:bg-muted/90">
+                      ↕ Reorder
+                    </button>
+                    <button className="flex-1 text-center px-2 py-1.5 text-xs bg-muted text-foreground rounded hover:bg-muted/90">
+                      ⚹ Make Parallel
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
