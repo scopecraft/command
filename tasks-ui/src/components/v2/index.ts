@@ -7,6 +7,8 @@ export { ParentTaskCard } from './ParentTaskCard';
 export { SubtaskList } from './SubtaskList';
 export { TaskTable, type TableTask } from './TaskTable';
 export { TaskManagementView } from './TaskManagementView';
+export { ClaudeAgentButton } from './ClaudeAgentButton';
+export { Sidebar } from './Sidebar';
 
 // Re-export types for convenience
 export type { Task, ParentTask, WorkflowState, TaskStatus, TaskType } from '../../lib/types';

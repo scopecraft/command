@@ -44,25 +44,30 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
 - [x] Update TypeScript types to match new structure
 - [x] Create comprehensive migration analysis document
 - [x] Update implementation plan with Storybook-first approach
-### Phase 1: Core Components (Rename Old, Build New)
+### Phase 1: Core Components (Rename Old, Build New) ✅ COMPLETED
 - [x] Rename TaskContext.tsx → TaskContext.old.tsx
 - [x] Create new TaskContext with MockTaskProvider for Storybook
-- [x] Build ParentTaskCard component with Storybook stories
+- [x] Build ParentTaskCard component with Storybook stories (3 variants)
 - [x] Build SubtaskList component with sequence/parallel examples
-- [x] Build WorkflowStateBadge component
-- [x] Build TaskTypeIcon component (📁 vs 📄)
+- [x] Build WorkflowStateBadge component (StatusBadge, PriorityIndicator included)
+- [x] Build TaskTypeIcon component (Lucide icons, no emojis)
 - [x] Build TaskTable component with search and filtering
 - [x] Build SearchInput component
 - [x] Build TaskManagementView (complete table + search + filter experience)
-- [x] Build SimpleTaskDetailView showcase (validate all needed components)
-- [x] Build SubtaskDetailView showcase (validate subtask-specific needs)
-- [ ] Design data structures through UI development
-- [ ] Fix broken imports as you go
+- [x] Build ParentTaskDetailPage showcase
+- [x] Build SimpleTaskDetailPage showcase (unified editing)
+- [x] Build SubtaskDetailPage showcase (with parent context)
+- [x] Build DocumentDetailPage showcase (tags, minimal header)
+- [x] Build WorkflowDashboard showcase
+- [x] Build MixedTaskList showcase
+- [x] Build ComponentShowcase (overview of all components)
+- [x] Export all components in v2/index.ts
 
 ### Phase 2: Pages & Navigation (Replace Entire Sections)
 - [ ] Rename old pages to .old.tsx (PhaseDetailPage, FeatureDetailPage, etc.)
-- [ ] Build WorkflowPage (shows tasks by workflow state)
 - [ ] Build ParentTaskPage (shows parent task with subtasks)
+- [ ] Build TaskDetailPage (shows simple task or subtask details)
+- [ ] Build DocumentPage (shows document with editing)
 - [ ] Rename TaskListView.tsx → TaskListView.old.tsx
 - [ ] Build new TaskListView with workflow/parent filtering
 - [ ] Rename Sidebar.tsx → Sidebar.old.tsx
@@ -102,8 +107,28 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
 - ✅ Established .old.tsx renaming pattern for cleaner migration
 
 ### In Progress
-- 🔄 Phase 1: Ready to start building core components
-- 🔄 Using mock providers for UI-first development
+- ✅ Phase 1: COMPLETED - All core V2 components built
+- 🔄 Phase 2: Ready to implement pages and navigation
+
+### Available V2 Components
+Components exported from `v2/index.ts`:
+- **TaskTypeIcon** - Icons for all task types (parent, bug, feature, etc.)
+- **WorkflowStateBadge** - Shows backlog/current/archive states
+- **StatusBadge** - Task status with CLI symbols (✓, →, ○, ⊗)
+- **PriorityIndicator** - Priority levels (Highest, High, Medium, Low)
+- **ParentTaskCard** - 3 variants (compact, default, detailed)
+- **SubtaskList** - Tree and compact views with highlighting
+- **TaskTable** - Full table with sorting, selection, actions
+- **TaskManagementView** - Complete list view with search/filter
+
+Showcase Views (in V2Showcase.stories.tsx):
+- **ParentTaskDetailPage** - Parent task with overview editing
+- **SimpleTaskDetailPage** - Simple task with unified content
+- **SubtaskDetailPage** - Subtask with parent context
+- **DocumentDetailPage** - Document view with tags
+- **WorkflowDashboard** - Kanban-style workflow view
+- **MixedTaskList** - Mixed parent/simple tasks
+- **ComponentShowcase** - Component library overview
 
 ## Log
 - 2025-05-27: Task created as part of V2 implementation
@@ -191,3 +216,22 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
     - Enables current subtask indication in detail views
   - All showcases demonstrate realistic V2 workflow with proper data structures
   - Components ready for Phase 2 integration into actual pages
+- 2025-05-29: Simplified task detail views for consistency
+  - Unified all task detail pages to follow parent task pattern:
+    - Single editable content area instead of 4 separate sections
+    - Consistent header structure across all types
+    - Same editing experience (textarea with markdown)
+  - Removed unnecessary one-off widgets:
+    - Activity Feed (was only in simple tasks)
+    - Quick Stats (was only in simple tasks)  
+    - Parent Task Overview (was only in subtasks)
+    - Dependencies (was only in subtasks)
+  - Visual consistency improvements:
+    - Updated sibling subtasks widget to use SubtasksIcon
+    - Removed extra navigation bars for cleaner appearance
+    - Normalized badge and metadata display
+  - Added DocumentDetailPage showcase:
+    - Follows same layout pattern as tasks
+    - Shows document navigation in sidebar
+    - Links back to parent task context
+  - Result: Cleaner, more predictable UI that's easier to understand

@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { mockV2ParentTasks, mockV2SimpleTasks, mockV2Subtasks } from '../../lib/api/mock-data-v2';
 import { SubtasksIcon, DocumentsIcon } from '../../lib/icons';
 import { Button } from '../ui/button';
+import { ClaudeAgentButton } from './ClaudeAgentButton';
 import { ParentTaskCard } from './ParentTaskCard';
 import { SubtaskList } from './SubtaskList';
 import { TaskTypeIcon } from './TaskTypeIcon';
@@ -115,9 +116,7 @@ Found that the auth service is making synchronous calls to the user profile serv
                 <Button variant="ghost" size="sm">
                   Convert to Parent
                 </Button>
-                <Button variant="atlas">
-                  🤖 Start Agent
-                </Button>
+                <ClaudeAgentButton taskId={task.id} />
               </div>
             </div>
           </div>
@@ -337,9 +336,7 @@ Response:
                 <Button variant="ghost" size="sm">
                   Extract to Task
                 </Button>
-                <Button variant="atlas">
-                  🤖 Start Agent
-                </Button>
+                <ClaudeAgentButton taskId={subtask.id} />
               </div>
             </div>
           </div>
@@ -487,9 +484,7 @@ export const ParentTaskDetailPage: Story = {
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
-                <Button variant="atlas">
-                  🤖 Start Agent
-                </Button>
+                <ClaudeAgentButton taskId={parentTask.id} />
               </div>
             </div>
           </div>
@@ -627,7 +622,6 @@ export const ParentTaskDetailPage: Story = {
                     className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
                     onClick={() => console.log('Open PRD document')}
                   >
-                    <span className="text-sm">📄</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate">
                         Product Requirements
@@ -653,7 +647,6 @@ export const ParentTaskDetailPage: Story = {
                     className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
                     onClick={() => console.log('Open Technical Spec')}
                   >
-                    <span className="text-sm">📝</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate">
                         Technical Specification
@@ -679,7 +672,6 @@ export const ParentTaskDetailPage: Story = {
                     className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
                     onClick={() => console.log('Open Research Notes')}
                   >
-                    <span className="text-sm">📊</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate">
                         User Research Findings
@@ -709,10 +701,10 @@ export const ParentTaskDetailPage: Story = {
                   </Button>
                   <div className="flex gap-2">
                     <Button className="flex-1" variant="secondary" size="sm">
-                      📋 Plan
+                      Plan
                     </Button>
                     <Button className="flex-1" variant="secondary" size="sm">
-                      📄 PRD
+                      PRD
                     </Button>
                   </div>
                 </div>
@@ -804,36 +796,28 @@ So that I can regain access if I forget my credentials
         {/* Header */}
         <div className="bg-card border-b">
           <div className="max-w-6xl mx-auto px-6 py-4">
-            {/* Parent Task Context */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <TaskTypeIcon task={parentTask} />
-              <button className="hover:text-foreground hover:underline">
-                {parentTask.title}
-              </button>
-              <span>/</span>
-              <DocumentsIcon size="sm" className="text-muted-foreground" />
-              <span>Documents</span>
-            </div>
-            
-            {/* Document Header */}
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 flex-1 min-w-0">
-                <span className="text-2xl">📄</span>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl font-bold text-foreground">Product Requirements</h1>
-                  <div className="flex items-center flex-wrap gap-2 mt-2">
-                    <span className="text-sm bg-muted px-2 py-1 rounded">PRD</span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-sm text-muted-foreground">Created: May 15, 2025</span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-sm text-muted-foreground">Updated: 2 days ago</span>
+                  <div className="flex items-baseline gap-3">
+                    <h1 className="text-2xl font-bold text-foreground">Product Requirements</h1>
+                    <span className="text-sm text-muted-foreground">Last modified: 2 days ago</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                      #authentication
+                    </span>
+                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                      #oauth2
+                    </span>
+                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                      #security
+                    </span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
-                <Button variant="atlas">
-                  🤖 Start Agent
-                </Button>
+                <ClaudeAgentButton taskId={`doc-${parentTask.id}`} />
               </div>
             </div>
           </div>
@@ -920,7 +904,6 @@ So that I can regain access if I forget my credentials
                   <div 
                     className="flex items-center gap-2 p-2 rounded bg-muted/50 cursor-pointer group"
                   >
-                    <span className="text-sm">📄</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate">
                         Product Requirements
@@ -935,7 +918,6 @@ So that I can regain access if I forget my credentials
                     className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
                     onClick={() => console.log('Open Technical Spec')}
                   >
-                    <span className="text-sm">📝</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate">
                         Technical Specification
@@ -950,7 +932,6 @@ So that I can regain access if I forget my credentials
                     className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
                     onClick={() => console.log('Open Research Notes')}
                   >
-                    <span className="text-sm">📊</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate">
                         User Research Findings
@@ -969,10 +950,10 @@ So that I can regain access if I forget my credentials
                   </Button>
                   <div className="flex gap-2">
                     <Button className="flex-1" variant="secondary" size="sm">
-                      📋 Template
+                      Template
                     </Button>
                     <Button className="flex-1" variant="secondary" size="sm">
-                      📄 Import
+                      Import
                     </Button>
                   </div>
                 </div>
