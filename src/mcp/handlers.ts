@@ -12,6 +12,7 @@ import {
   type DebugCodePathParams,
   McpMethod,
   type McpMethodRegistry,
+  type McpTaskUpdateFields,
   type TaskCreateParams,
   type TaskDeleteParams,
   type TaskGetParams,
@@ -136,7 +137,7 @@ export async function handleTaskList(params: TaskListParams) {
 /**
  * Handler for task_get method
  */
-export async function handleTaskGet(params: TaskGetParams | any) {
+export async function handleTaskGet(params: TaskGetParams) {
   const configManager = ConfigurationManager.getInstance();
   const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
@@ -251,7 +252,7 @@ async function handleLogEntry(
 /**
  * Build frontmatter updates from MCP parameters
  */
-function buildFrontmatterUpdates(updates: any): Partial<v2.TaskFrontmatter> {
+function buildFrontmatterUpdates(updates: McpTaskUpdateFields): Partial<v2.TaskFrontmatter> {
   const frontmatter: Partial<v2.TaskFrontmatter> = {};
 
   if (updates.status) frontmatter.status = updates.status;
@@ -266,7 +267,7 @@ function buildFrontmatterUpdates(updates: any): Partial<v2.TaskFrontmatter> {
 /**
  * Build section updates from MCP parameters
  */
-function buildSectionUpdates(updates: any): Partial<v2.TaskSections> {
+function buildSectionUpdates(updates: McpTaskUpdateFields): Partial<v2.TaskSections> {
   const sections: Partial<v2.TaskSections> = {};
 
   if (updates.instruction) sections.instruction = updates.instruction;

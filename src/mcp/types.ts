@@ -87,21 +87,21 @@ export interface TaskListParams {
   task_type?: 'simple' | 'parent' | 'subtask' | 'top-level' | 'all';
   status?: TaskStatus;
   area?: string;
-  
+
   // Include options
   include_archived?: boolean;
   include_parent_tasks?: boolean;
   include_content?: boolean;
   include_completed?: boolean;
-  
+
   // Subtask filtering
   parent_id?: string;
-  
+
   // Custom frontmatter filters
   priority?: TaskPriority;
   assignee?: string;
   tags?: string[];
-  
+
   format?: string;
   root_dir?: string; // Override for tasks directory location
 }
@@ -120,27 +120,49 @@ export interface TaskCreateParams {
   title: string;
   type: TaskType;
   area?: string;
-  
+
   // Optional metadata
   status?: TaskStatus;
   priority?: TaskPriority;
   location?: WorkflowState;
-  
+
   // Parent/subtask relationship
   parent_id?: string;
-  
+
   // Custom frontmatter
   assignee?: string;
   tags?: string[];
-  
+
   root_dir?: string; // Override for tasks directory location
+}
+
+// MCP task update fields (flattened for convenience)
+export interface McpTaskUpdateFields {
+  // Title update
+  title?: string;
+  
+  // Frontmatter fields (flattened)
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  area?: string;
+  assignee?: string;
+  tags?: string[];
+  
+  // Section fields (flattened)
+  instruction?: string;
+  tasks?: string;
+  deliverable?: string;
+  log?: string;
+  
+  // Special convenience field
+  add_log_entry?: string;
 }
 
 // Task update request params
 export interface TaskUpdateParams {
   id: string;
   parent_id?: string;
-  updates: V2TaskUpdateOptions;
+  updates: McpTaskUpdateFields;
   root_dir?: string; // Override for tasks directory location
 }
 
@@ -259,5 +281,5 @@ export type McpMethodHandler<T = unknown, R = unknown> = (params: T) => Promise<
 
 // Registry of method handlers
 export interface McpMethodRegistry {
-  [key: string]: McpMethodHandler<any, any>;
+  [key: string]: McpMethodHandler<unknown, unknown>;
 }

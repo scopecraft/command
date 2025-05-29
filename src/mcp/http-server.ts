@@ -22,7 +22,7 @@ export async function startHttpServer(
   options: {
     verbose?: boolean;
   } = {}
-): Promise<any> {
+): Promise<never> {
   // Create the server instance
   const server = createServerInstance(options);
 
