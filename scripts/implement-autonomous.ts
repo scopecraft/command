@@ -118,6 +118,10 @@ async function executeTask(taskId: string, parentId?: string, logDir?: string) {
     'Bash(git diff:*)',
     'Bash(git log:*)',
     
+    // CLI commands for task management
+    'Bash(bun run dev:cli:*)',
+    'Bash(./dist/cli/cli.js:*)',
+    
     // Testing and validation
     'Bash(test:*)',
     'Bash(./test:*)',

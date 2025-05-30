@@ -169,9 +169,31 @@ The inconsistency originates from:
 3. Type field storing display value (with emoji) instead of enum value
 4. No standardized response transformation layer
 
+## Design Considerations
+
+### Dual-Purpose API
+The MCP layer serves two distinct audiences:
+1. **Task UI** - Web interface for human users
+2. **AI Agents** - Through the Model Context Protocol (MCP)
+
+Both audiences should use the same API rather than creating separate endpoints. A well-designed, clean API should work effectively for both use cases.
+
+### Design Priorities
+1. **Consistency** over flat structure - Same patterns across all endpoints
+2. **Clear naming** - Unambiguous field names (e.g., workflow_state not location)
+3. **Clean data** - Enum values without display formatting (no emoji prefixes)
+4. **Logical structure** - Intuitive organization that makes sense for both humans and AI
+5. **Single source of truth** - One clear way to determine task properties
+
+### UI Adaptation
+It's acceptable for the UI to perform data transformation or "massaging" as needed, as long as the underlying API structure is consistent and well-designed. The goal is not to optimize solely for UI preferences (like flat structure) but to create a clean API that both audiences can work with effectively.
+
 ## Next Steps
 
 1. Design consistent normalized response schema (subtask 02)
+   - Focus on consistency and clarity over flat structure
+   - Consider both UI and AI agent use cases
+   - Maintain logical grouping where it makes sense
 2. Implement response normalization layer in MCP handlers (subtask 03)
 3. Consider if core types need adjustment (subtask 04)
 4. Ensure comprehensive testing (subtask 05)
