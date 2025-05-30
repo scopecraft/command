@@ -2,7 +2,7 @@
 
 ---
 type: "\U0001F9F9 Chore"
-status: To Do
+status: Done
 area: mcp
 tags:
   - cleanup
@@ -64,3 +64,5 @@ Complete the full API normalization cleanup and create comprehensive documentati
 - Ready for UI team integration
 
 ## Log
+
+- 2025-05-30: Completed API cleanup and documentation. Removed all orphaned handler functions, consolidated architecture with single entry point (methodRegistry), created comprehensive consumer guide, removed deprecated workflow methods that duplicated task_list functionality, and verified all tests pass.

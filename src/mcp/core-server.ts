@@ -13,24 +13,27 @@ import {
   handleGetCurrentRoot,
   handleInitRoot,
   handleListProjects,
-  handleParentCreate,
-  handleParentOperations,
-  handleTaskCreate,
-  handleTaskDelete,
-  handleTaskMove,
-  handleTaskTransform,
-  handleTaskUpdate,
   handleTemplateList,
-  handleWorkflowCurrent,
 } from './handlers.js';
 
-// Import normalized handlers
+// Import normalized handlers for read operations
 import {
   handleParentGetNormalized,
   handleParentListNormalized,
   handleTaskGetNormalized,
   handleTaskListNormalized,
 } from './normalized-handlers.js';
+
+// Import normalized handlers for write operations
+import {
+  handleTaskCreateNormalized,
+  handleTaskUpdateNormalized,
+  handleTaskDeleteNormalized,
+  handleTaskMoveNormalized,
+  handleTaskTransformNormalized,
+  handleParentCreateNormalized,
+  handleParentOperationsNormalized,
+} from './normalized-write-handlers.js';
 
 /**
  * Format a successful response
@@ -376,7 +379,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskCreateSchema>) => {
       try {
-        const result = await handleTaskCreate(params);
+        const result = await handleTaskCreateNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -447,7 +450,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskUpdateSchema>) => {
       try {
-        const result = await handleTaskUpdate(params);
+        const result = await handleTaskUpdateNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -492,7 +495,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskMoveSchema>) => {
       try {
-        const result = await handleTaskMove(params);
+        const result = await handleTaskMoveNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -527,36 +530,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskDeleteSchema>) => {
       try {
-        const result = await handleTaskDelete(params);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Workflow current tool
-  const workflowCurrentRawShape = {
-    format: z.string().describe('Output format (reserved for future use)').optional(),
-  };
-
-  const workflowCurrentSchema = z.object(workflowCurrentRawShape);
-  server.registerTool(
-    'workflow_current',
-    {
-      description:
-        'Lists all in-progress tasks in the current workflow state. V2: Searches current/ folder for tasks with "In Progress" status.',
-      inputSchema: workflowCurrentRawShape,
-      annotations: {
-        title: 'Get Current Workflow',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof workflowCurrentSchema>) => {
-      try {
-        const result = await handleWorkflowCurrent(params);
+        const result = await handleTaskDeleteNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -836,7 +810,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof parentCreateSchema>) => {
       try {
-        const result = await handleParentCreate(params);
+        const result = await handleParentCreateNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -913,7 +887,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof parentOperationsSchema>) => {
       try {
-        const result = await handleParentOperations(params);
+        const result = await handleParentOperationsNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -970,7 +944,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskTransformSchema>) => {
       try {
-        const result = await handleTaskTransform(params);
+        const result = await handleTaskTransformNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
