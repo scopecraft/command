@@ -1,0 +1,301 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@layer base {
+  :root {
+    /* Atlas-inspired color scheme */
+    --terminal-black: #121212;
+    --terminal-dark: #1A1A1A;
+    --registry-blue: #1A5F7A;
+    --document-slate: #2C3333;
+    --connection-teal: #2E8A99;
+    --cream: #F2EFE1;
+    --atlas-navy: #0A2647;
+    --atlas-light: #3A8BD1;
+    --bridge-orange: #E57C23;
+    --forge-rust: #8B4513;
+    --lens-violet: #5B4B8A;
+    --grid-color: rgba(255, 255, 255, 0.05);
+    --section-gradient: linear-gradient(90deg, rgba(10, 38, 71, 0.3) 0%, rgba(26, 95, 122, 0.1) 100%);
+
+    /* Theme variables mapped to Atlas colors (for light mode) */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 204 82% 33%; /* atlas-navy with light mode adjustment */
+    --primary-foreground: 42 43% 92%; /* cream */
+    --secondary: 200 39% 45%; /* registry-blue with light mode adjustment */
+    --secondary-foreground: 42 43% 92%; /* cream */
+    --muted: 200 15% 95%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 209 63% 53%; /* atlas-light */
+    --accent-foreground: 0 0% 9%;
+    --destructive: 24 75% 52%; /* bridge-orange */
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 204 82% 33%; /* atlas-navy */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Theme variables mapped to Atlas colors (for dark mode) */
+    --background: 0 0% 7%; /* terminal-black */
+    --foreground: 42 43% 92%; /* cream */
+    --card: 0 0% 10%; /* terminal-dark */
+    --card-foreground: 42 43% 92%; /* cream */
+    --popover: 0 0% 7%; /* terminal-black */
+    --popover-foreground: 42 43% 92%; /* cream */
+    --primary: 42 43% 92%; /* cream */
+    --primary-foreground: 204 82% 14%; /* atlas-navy */
+    --secondary: 204 82% 16%; /* atlas-navy */
+    --secondary-foreground: 42 43% 92%; /* cream */
+    --muted: 204 82% 10%; /* darker atlas-navy */
+    --muted-foreground: 42 43% 70%; /* slightly dimmed cream */
+    --accent: 209 63% 53%; /* atlas-light */
+    --accent-foreground: 42 43% 92%; /* cream */
+    --destructive: 24 75% 40%; /* darker bridge-orange */
+    --destructive-foreground: 42 43% 92%; /* cream */
+    --border: 204 20% 18%; /* slightly visible border based on atlas-navy */
+    --input: 204 20% 18%; /* slightly visible input based on atlas-navy */
+    --ring: 209 63% 53%; /* atlas-light */
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+    position: relative;
+    overflow-x: hidden;
+  }
+  
+  /* Atlas-inspired dot grid background pattern */
+  body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(circle at 50% 50%, var(--grid-color) 1px, transparent 1px);
+    background-size: 16px 16px;
+    z-index: -1;
+    pointer-events: none;
+  }
+  
+  /* Section gradient styles that can be applied to cards */
+  .atlas-card {
+    background: var(--section-gradient);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+  }
+  
+  /* Ensure all prose elements use the custom properties */
+  .prose :where(h1, h2, h3, h4, h5, h6) {
+    color: var(--tw-prose-headings);
+  }
+  
+  .prose :where(p) {
+    color: var(--tw-prose-body);
+  }
+  
+  .prose :where(strong) {
+    color: var(--tw-prose-bold);
+  }
+  
+  .prose :where(a) {
+    color: var(--tw-prose-links);
+  }
+  
+  .prose :where(code) {
+    color: var(--tw-prose-code);
+    background-color: var(--tw-prose-pre-bg);
+  }
+  
+  .prose :where(pre) {
+    color: var(--tw-prose-pre-code);
+    background-color: var(--tw-prose-pre-bg);
+  }
+  
+  .prose :where(blockquote) {
+    color: var(--tw-prose-quotes);
+    border-left-color: var(--tw-prose-quote-borders);
+  }
+  
+  .prose :where(ul > li)::marker {
+    color: var(--tw-prose-bullets);
+  }
+  
+  .prose :where(ol > li)::marker {
+    color: var(--tw-prose-counters);
+  }
+  
+  /* Dark mode */
+  .dark .prose {
+    color: hsl(var(--foreground));
+  }
+  
+  /* Spacing overrides */
+  .prose :where(h1) {
+    margin-top: 1.5em;
+    margin-bottom: 0.8em;
+    font-size: 1.875em;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  
+  .prose :where(h2) {
+    margin-top: 1.3em;
+    margin-bottom: 0.7em;
+    font-size: 1.5em;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  
+  .prose :where(h3) {
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+    font-size: 1.25em;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  
+  .prose :where(p) {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+  }
+  
+  .prose :where(ul, ol) {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    padding-left: 1.625em;
+  }
+  
+  .prose :where(li) {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+}
+
+/* Override Typography plugin defaults to use our theme colors */
+@layer utilities {
+  .prose {
+    --tw-prose-body: hsl(var(--foreground)) !important;
+    --tw-prose-headings: hsl(var(--foreground)) !important;
+    --tw-prose-lead: hsl(var(--foreground)) !important;
+    --tw-prose-links: hsl(var(--primary)) !important;
+    --tw-prose-bold: hsl(var(--foreground)) !important;
+    --tw-prose-counters: hsl(var(--muted-foreground)) !important;
+    --tw-prose-bullets: hsl(var(--muted-foreground)) !important;
+    --tw-prose-hr: hsl(var(--border)) !important;
+    --tw-prose-quotes: hsl(var(--foreground)) !important;
+    --tw-prose-quote-borders: hsl(var(--border)) !important;
+    --tw-prose-captions: hsl(var(--muted-foreground)) !important;
+    --tw-prose-code: hsl(var(--foreground)) !important;
+    --tw-prose-pre-code: hsl(var(--foreground)) !important;
+    --tw-prose-pre-bg: hsl(var(--muted)) !important;
+    --tw-prose-th-borders: hsl(var(--border)) !important;
+    --tw-prose-td-borders: hsl(var(--border)) !important;
+    
+    /* Dark mode defaults */
+    --tw-prose-invert-body: hsl(var(--foreground)) !important;
+    --tw-prose-invert-headings: hsl(var(--foreground)) !important;
+    --tw-prose-invert-lead: hsl(var(--foreground)) !important;
+    --tw-prose-invert-links: hsl(var(--primary)) !important;
+    --tw-prose-invert-bold: hsl(var(--foreground)) !important;
+    --tw-prose-invert-counters: hsl(var(--muted-foreground)) !important;
+    --tw-prose-invert-bullets: hsl(var(--muted-foreground)) !important;
+    --tw-prose-invert-hr: hsl(var(--border)) !important;
+    --tw-prose-invert-quotes: hsl(var(--foreground)) !important;
+    --tw-prose-invert-quote-borders: hsl(var(--border)) !important;
+    --tw-prose-invert-captions: hsl(var(--muted-foreground)) !important;
+    --tw-prose-invert-code: hsl(var(--foreground)) !important;
+    --tw-prose-invert-pre-code: hsl(var(--foreground)) !important;
+    --tw-prose-invert-pre-bg: hsl(var(--muted)) !important;
+    --tw-prose-invert-th-borders: hsl(var(--border)) !important;
+    --tw-prose-invert-td-borders: hsl(var(--border)) !important;
+  }
+}
+
+/* Mermaid diagram styling */
+.mermaid-container {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: calc(var(--radius) - 2px);
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+}
+
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure Mermaid text is readable in both themes */
+.dark .mermaid-container .nodeLabel {
+  fill: currentColor;
+  color: hsl(var(--foreground));
+}
+
+.dark .mermaid-container .edgeLabel {
+  fill: currentColor;
+  color: hsl(var(--foreground));
+}
+
+/* Dialog content for Mermaid diagrams */
+.mermaid-container.modal {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mermaid-container.modal svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+/* Ensure SVG is visible in modal */
+[data-state="open"] svg {
+  display: block !important;
+  opacity: 1 !important;
+}
+
+/* Modal Mermaid container styling */
+.mermaid-modal-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.mermaid-modal-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.mermaid-modal-content svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+}

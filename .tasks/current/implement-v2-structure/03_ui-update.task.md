@@ -75,12 +75,14 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
 - [ ] Document any gaps where MCP team changes might be needed
 
 ### Phase 3: Pages & Navigation (Now with real data!)
+**IMPORTANT**: Use the showcase views in V2Showcase.stories.tsx as templates for these pages!
 - [ ] Rename old pages to .old.tsx (PhaseDetailPage, FeatureDetailPage, etc.)
-- [ ] Build ParentTaskPage (shows parent task with subtasks)
-- [ ] Build TaskDetailPage (shows simple task or subtask details)
-- [ ] Build DocumentPage (shows document with editing)
-- [ ] Rename TaskListView.tsx → TaskListView.old.tsx
-- [ ] Build new TaskListView with workflow/parent filtering
+- [ ] Build ParentTaskPage using ParentTaskDetailPage showcase as template
+- [ ] Build TaskDetailPage using SimpleTaskDetailPage showcase as template
+- [ ] Build SubtaskDetailPage using SubtaskDetailPage showcase as template
+- [ ] Build DocumentPage using DocumentDetailPage showcase as template
+- [ ] Build TaskListView using MixedTaskList/TaskManagementView showcases as template
+- [ ] Integrate V2 Sidebar component (already built in Phase 1)
 - [ ] Update routing to use new components
 - [ ] Remove all .old.tsx files once migration complete
 ### Phase 4: Advanced Features & Polish
@@ -109,9 +111,9 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
 
 ### In Progress
 - ✅ Phase 1: COMPLETED - All core V2 components built
-- 🔄 Phase 2: Ready to implement pages and navigation
+- 🔄 Phase 2: Ready to implement API integration
 
-### Available V2 Components
+### Available V2 Components (Check Storybook for examples!)
 Components exported from `v2/index.ts`:
 - **TaskTypeIcon** - Icons for all task types (parent, bug, feature, etc.)
 - **WorkflowStateBadge** - Shows backlog/current/archive states
