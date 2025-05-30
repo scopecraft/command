@@ -162,7 +162,6 @@ export function useMarkCompleteNext() {
 // Convenience hooks for common use cases
 export function useTopLevelTasks() {
   return useTaskList({
-    task_type: 'top-level',
     include_content: false,
   });
 }

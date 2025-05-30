@@ -63,16 +63,21 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
 - [x] Build ComponentShowcase (overview of all components)
 - [x] Export all components in v2/index.ts
 
-### Phase 2: API Integration & Real Implementation (Moved up - do this first!)
-- [ ] Review completed MCP API endpoints and adapt UI to match
-- [ ] Build API client layer that connects to existing MCP server
-- [ ] Create real TaskContext implementation (replace mock)
-- [ ] Map UI operations to available MCP functions
-- [ ] Add error handling and loading states
-- [ ] Test integration between UI and MCP backend
-- [ ] Update showcase stories to use real data (verify components work)
-- [ ] Consider adding React Query if caching/optimization needed
-- [ ] Document any gaps where MCP team changes might be needed
+### Phase 2: API Integration & Real Implementation ✅ COMPLETED
+- [x] Review completed MCP API endpoints and adapt UI to match
+- [x] Build API client layer that connects to existing MCP server
+- [x] Create real TaskContext implementation (replace mock)
+- [x] Map UI operations to available MCP functions
+- [x] Add error handling and loading states
+- [x] Test integration between UI and MCP backend
+- [x] Update showcase stories to use real data (verify components work)
+- [x] Consider adding React Query if caching/optimization needed
+- [x] Document any gaps where MCP team changes might be needed
+- [x] Set up development environment with ui2:dev scripts
+- [x] Configure Vite proxy for seamless API calls
+- [x] Integrate React Query with URL-based filters
+- [x] Add 30-second auto-refresh when window is visible
+- [x] Fix filter data mapping for live API responses
 
 ### Phase 3: Pages & Navigation (Now with real data!)
 **IMPORTANT**: Use the showcase views in V2Showcase.stories.tsx as templates for these pages!
@@ -109,9 +114,20 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
 - ✅ Comprehensive UI migration analysis document with mockups
 - ✅ Established .old.tsx renaming pattern for cleaner migration
 
-### In Progress
-- ✅ Phase 1: COMPLETED - All core V2 components built
-- 🔄 Phase 2: Ready to implement API integration
+### Phase Status
+- ✅ Phase 1: COMPLETED - All core V2 components built with CLI-inspired design
+- ✅ Phase 2: COMPLETED - React Query integration with URL-based filters and live API data
+- 🔄 Phase 3: Ready to start - Pages & Navigation using showcase templates
+
+### Phase 2 Achievements
+- **API Client**: Comprehensive client with all V2 MCP endpoints
+- **React Query Integration**: Hooks for tasks, parents, workflow operations with 30-second auto-refresh
+- **URL-based Filters**: TanStack Router search params for persistence and sharing
+- **Data Mapping**: Fixed normalization for live API responses
+- **Loading States**: Proper loading and error handling throughout
+- **Development Setup**: Complete ui2:dev scripts and Vite proxy configuration
+- **Documentation**: Comprehensive README with architecture diagram and file links
+- **Bug Report**: Identified and documented MCP handler issue (task: mcp-hnd-not-rtr-par-tas-wit-05A)
 
 ### Available V2 Components (Check Storybook for examples!)
 Components exported from `v2/index.ts`:
@@ -124,7 +140,7 @@ Components exported from `v2/index.ts`:
 - **TaskTable** - Full table with sorting, selection, actions
 - **TaskManagementView** - Complete list view with search/filter
 
-Showcase Views (in V2Showcase.stories.tsx):
+### Showcase Views Ready as Page Templates
 - **ParentTaskDetailPage** - Parent task with overview editing
 - **SimpleTaskDetailPage** - Simple task with unified content
 - **SubtaskDetailPage** - Subtask with parent context
@@ -132,6 +148,14 @@ Showcase Views (in V2Showcase.stories.tsx):
 - **WorkflowDashboard** - Kanban-style workflow view
 - **MixedTaskList** - Mixed parent/simple tasks
 - **ComponentShowcase** - Component library overview
+
+### Architecture Documentation
+- **README.md**: Complete architecture overview with Mermaid diagram
+- **Technology Stack**: TanStack Router, React Query, Bun Server, MCP integration
+- **Data Flow**: Detailed explanation of component → API → MCP → filesystem flow
+- **File Structure**: Links to all important files and components
+- **Development Workflow**: Setup instructions and URL structure
+- **Known Issues**: Documented MCP handler bug with workaround plan
 
 ## Log
 - 2025-05-27: Task created as part of V2 implementation
@@ -255,3 +279,4 @@ Showcase Views (in V2Showcase.stories.tsx):
   - Created Storybook stories demonstrating functionality
   - Removed redundant theme/responsive stories (Storybook handles these)
   - Phase 1 is now FULLY COMPLETED with all core components ready
+- 2025-05-30: Phase 2 API Integration completed - Built comprehensive React Query integration with URL-based filters. Created API client with all V2 MCP endpoints, added hooks for tasks/parents/workflow operations, configured 30-second auto-refresh when window visible, integrated filters with TanStack Router search params for URL persistence, fixed filter data mapping for live API responses, and added proper loading/error states. Task management page now shows real-time data with working filters that persist in URL.

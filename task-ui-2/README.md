@@ -1,290 +1,194 @@
-Welcome to your new TanStack app! 
+# Task UI 2.0 - V2 Architecture
 
-# Getting Started
+A modern React application for managing Scopecraft V2 tasks with real-time data, URL-based filters, and beautiful V2 components.
 
-To run this application:
+## High-Level Architecture
 
+```mermaid
+graph TB
+    subgraph "Browser"
+        Router[TanStack Router]
+        Pages[Pages/Routes]
+        Components[V2 Components]
+        RQ[React Query]
+    end
+    
+    subgraph "Development Server"
+        Vite[Vite Dev Server :3000]
+        Proxy[API Proxy]
+    end
+    
+    subgraph "API Server"
+        Server[Bun Server :8899]
+        API[API Endpoints]
+        WS[WebSocket Handler]
+    end
+    
+    subgraph "Core Backend"
+        MCP[MCP Handlers]
+        V2Core[V2 Core Logic]
+        Files[.tasks/ Files]
+    end
+    
+    Router --> Pages
+    Pages --> Components
+    Components --> RQ
+    RQ --> Vite
+    Vite --> Proxy
+    Proxy --> Server
+    Server --> API
+    API --> MCP
+    MCP --> V2Core
+    V2Core --> Files
+    
+    Server --> WS
+    WS -.-> Router
+    
+    style Router fill:#e1f5fe
+    style RQ fill:#f3e5f5
+    style Server fill:#e8f5e8
+    style MCP fill:#fff3e0
+```
+
+## Technology Stack
+
+### Frontend
+- **TanStack Router** - File-based routing with type safety
+- **React Query** - Server state management with caching and auto-refresh
+- **Tailwind CSS** - Utility-first styling
+- **Storybook** - Component development and documentation
+- **Zod** - Runtime type validation for search params
+
+### Backend
+- **Bun Server** - High-performance API server
+- **MCP Handlers** - Model Context Protocol integration
+- **V2 Core** - Scopecraft V2 task management logic
+- **WebSocket** - Real-time Claude integration support
+
+## Key Features
+
+- 🔄 **Auto-refresh**: 30-second refresh when window is visible
+- 🔗 **URL Persistence**: Filters stored in URL search params
+- ⚡ **Real-time Data**: Live integration with V2 MCP API
+- 🎨 **Beautiful Components**: CLI-inspired design with proper icons
+- 📊 **Type Safety**: End-to-end TypeScript with Zod validation
+- 🛠️ **DevTools**: React Query devtools for debugging
+
+## Project Structure
+
+### Important Files
+
+#### Frontend Core
+- [`src/main.tsx`](src/main.tsx) - App entry point with React Query setup
+- [`src/routes/tasks/index.tsx`](src/routes/tasks/index.tsx) - Main tasks page with search params
+- [`src/lib/api/client.ts`](src/lib/api/client.ts) - Comprehensive API client
+- [`src/lib/api/hooks.ts`](src/lib/api/hooks.ts) - React Query hooks for all endpoints
+
+#### V2 Components
+- [`src/components/v2/`](src/components/v2/) - All V2 components
+- [`src/components/v2/TaskManagementView.tsx`](src/components/v2/TaskManagementView.tsx) - Main task list with filters
+- [`src/components/v2/V2Showcase.stories.tsx`](src/components/v2/V2Showcase.stories.tsx) - Page templates
+- [`src/components/v2/index.ts`](src/components/v2/index.ts) - Component exports
+
+#### Backend
+- [`server.ts`](server.ts) - Main API server with endpoint routing
+- [`vite.config.js`](vite.config.js) - Vite configuration with proxy setup
+- [`package.json`](package.json) - Dependencies and scripts
+
+#### Configuration
+- [`tailwind.config.js`](tailwind.config.js) - Tailwind styling configuration
+- [`.storybook/`](.storybook/) - Storybook configuration
+
+## API Architecture
+
+### Endpoints
+- `GET /api/tasks` - List all tasks (simple + parent) with filtering
+- `GET /api/parents` - List parent tasks with progress info
+- `GET /api/workflow/*` - Workflow operations
+- `WebSocket /ws/claude` - Claude integration (preserved for future)
+
+### Data Flow
+1. **User Interaction** → Component state change
+2. **Component** → React Query hook call
+3. **React Query** → API client request
+4. **API Client** → Fetch to `/api/*` endpoint
+5. **Vite Proxy** → Forward to server :8899
+6. **Server Router** → MCP handler call
+7. **MCP Handler** → V2 core operations
+8. **V2 Core** → File system operations
+
+## Development Workflow
+
+### Setup
 ```bash
-npm install
-npm run start  
+# Start both API server and UI dev server
+bun run ui2:dev
+
+# Or separately:
+bun run ui2:dev:api   # API server on :8899
+bun run ui2:dev:ui    # Vite dev server on :3000
+
+# Storybook for component development
+bun run storybook
 ```
 
-# Building For Production
-
-To build this application for production:
-
-```bash
-npm run build
-```
-
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
-
-```bash
-npm run test
-```
-
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-
-
-
-## Routing
-This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add another a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you use the `<Outlet />` component.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-
-import { Link } from "@tanstack/react-router";
-
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <header>
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/about">About</Link>
-        </nav>
-      </header>
-      <Outlet />
-      <TanStackRouterDevtools />
-    </>
-  ),
-})
-```
-
-The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-const peopleRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/people",
-  loader: async () => {
-    const response = await fetch("https://swapi.dev/api/people");
-    return response.json() as Promise<{
-      results: {
-        name: string;
-      }[];
-    }>;
-  },
-  component: () => {
-    const data = peopleRoute.useLoaderData();
-    return (
-      <ul>
-        {data.results.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    );
-  },
-});
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-### React-Query
-
-React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
-
-First add your dependencies:
-
-```bash
-npm install @tanstack/react-query @tanstack/react-query-devtools
-```
-
-Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
-
-```tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// ...
-
-const queryClient = new QueryClient();
-
-// ...
-
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-
-  root.render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
-}
-```
-
-You can also add TanStack Query Devtools to the root route (optional).
-
-```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
-      <TanStackRouterDevtools />
-    </>
-  ),
-});
-```
-
-Now you can use `useQuery` to fetch your data.
-
-```tsx
-import { useQuery } from "@tanstack/react-query";
-
-import "./App.css";
-
-function App() {
-  const { data } = useQuery({
-    queryKey: ["people"],
-    queryFn: () =>
-      fetch("https://swapi.dev/api/people")
-        .then((res) => res.json())
-        .then((data) => data.results as { name: string }[]),
-    initialData: [],
-  });
-
-  return (
-    <div>
-      <ul>
-        {data.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export default App;
-```
-
-You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
-
-## State Management
-
-Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
-
-First you need to add TanStack Store as a dependency:
-
-```bash
-npm install @tanstack/store
-```
-
-Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-function App() {
-  const count = useStore(countStore);
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-    </div>
-  );
-}
-
-export default App;
-```
-
-One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
-
-Let's check this out by doubling the count using derived state.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store, Derived } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-const doubledStore = new Derived({
-  fn: () => countStore.state * 2,
-  deps: [countStore],
-});
-doubledStore.mount();
-
-function App() {
-  const count = useStore(countStore);
-  const doubledCount = useStore(doubledStore);
-
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-      <div>Doubled - {doubledCount}</div>
-    </div>
-  );
-}
-
-export default App;
-```
-
-We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
-
-Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
-
-You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+### URL Structure
+- `/tasks` - Main task list with filters
+- `/tasks?status=in_progress&workflow=current` - Filtered view
+- `/parents` - Parent task management (future)
+
+### Filter Persistence
+All filters are stored in URL search params and are shareable:
+- `search` - Text search query
+- `status[]` - Task status filters
+- `type[]` - Task type filters  
+- `workflow[]` - Workflow state filters
+- `area[]` - Area filters
+
+## Current Status
+
+### ✅ Completed (Phase 1 & 2)
+- **Storybook Setup** - Component development environment
+- **V2 Components** - Complete component library with CLI-inspired design
+- **API Integration** - React Query with auto-refresh
+- **URL Filters** - TanStack Router search params integration
+- **Server Setup** - API server with MCP handler integration
+
+### 🔄 In Progress (Phase 3)
+- **Pages & Navigation** - Convert showcase views to actual pages
+- **MCP Bug Fix** - `handleTaskList` not returning parent tasks (see bug report)
+
+### 🔮 Future (Phase 4)
+- **Drag & Drop** - Subtask reordering
+- **Advanced Features** - Parallel task management, task conversion UI
+- **Claude Integration** - WebSocket-based AI assistance
+
+## Known Issues
+
+1. **MCP Handler Bug**: `handleTaskList` with `task_type='top-level'` only returns simple tasks, not parent tasks. Bug report created: `mcp-hnd-not-rtr-par-tas-wit-05A`
+
+## Architecture Decisions
+
+### Why TanStack Router?
+- File-based routing with excellent TypeScript support
+- Built-in search params validation with Zod
+- Loader pattern for data fetching (though we use React Query instead)
+
+### Why React Query?
+- Automatic caching and background refetching
+- Optimistic updates for mutations
+- Built-in loading and error states
+- Perfect for real-time task management
+
+### Why Bun Server?
+- High-performance JavaScript runtime
+- Seamless integration with existing MCP handlers
+- WebSocket support for future Claude features
+- Simple proxy setup for development
+
+## Related Documentation
+
+- [Storybook Components](http://localhost:6006) - Component library and showcase views
+- [React Query DevTools](http://localhost:3000) - Available in development mode
+- [V2 Task System Specification](../docs/specs/task-system-v2-specification.md)
+- [MCP Handler Documentation](../src/mcp/README.md)
