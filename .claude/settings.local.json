@@ -171,7 +171,8 @@
       "Bash(curl:*)",
       "mcp__scopecraft__parent_operations",
       "Bash(diff:*)",
-      "mcp__scopecraft__parent_get"
+      "mcp__scopecraft__parent_get",
+      "Bash(pkill:*)"
     ],
     "deny": []
   },
