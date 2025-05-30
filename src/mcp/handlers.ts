@@ -29,6 +29,14 @@ import {
 // Keep area imports from v1 for now
 import { createArea, deleteArea, getArea, listAreas, updateArea } from '../core/index.js';
 
+// Import normalized handlers
+import {
+  handleParentGetNormalized,
+  handleParentListNormalized,
+  handleTaskGetNormalized,
+  handleTaskListNormalized,
+} from './normalized-handlers.js';
+
 /**
  * Format v2 operation result for MCP response
  */
@@ -700,7 +708,7 @@ export async function handleParentGet(params: ParentGetParams) {
         path: parentTask.metadata.path,
       },
       overview: parentTask.overview,
-      subtasks: parentTask.subtasks.map(subtask => ({
+      subtasks: parentTask.subtasks.map((subtask) => ({
         metadata: {
           id: subtask.metadata.id,
           title: subtask.document.title,
@@ -979,18 +987,22 @@ export async function handleDebugCodePath(_params: DebugCodePathParams) {
 
 /**
  * Registry of all MCP method handlers
+ * Updated to use normalized handlers for core task endpoints
  */
 export const methodRegistry: McpMethodRegistry = {
-  [McpMethod.TASK_LIST]: handleTaskList,
-  [McpMethod.TASK_GET]: handleTaskGet,
+  // Normalized handlers with Zod schemas and consistent response format
+  [McpMethod.TASK_LIST]: handleTaskListNormalized,
+  [McpMethod.TASK_GET]: handleTaskGetNormalized,
+  [McpMethod.PARENT_LIST]: handleParentListNormalized,
+  [McpMethod.PARENT_GET]: handleParentGetNormalized,
+
+  // Legacy handlers (still using old format)
   [McpMethod.TASK_CREATE]: handleTaskCreate,
   [McpMethod.TASK_UPDATE]: handleTaskUpdate,
   [McpMethod.TASK_DELETE]: handleTaskDelete,
   [McpMethod.TASK_NEXT]: handleTaskNext,
   [McpMethod.TASK_MOVE]: handleTaskMove,
   [McpMethod.TASK_TRANSFORM]: handleTaskTransform,
-  [McpMethod.PARENT_LIST]: handleParentList,
-  [McpMethod.PARENT_GET]: handleParentGet,
   [McpMethod.PARENT_CREATE]: handleParentCreate,
   [McpMethod.PARENT_OPERATIONS]: handleParentOperations,
   [McpMethod.AREA_LIST]: handleAreaList,

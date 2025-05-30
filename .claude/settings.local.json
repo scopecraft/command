@@ -172,7 +172,9 @@
       "mcp__scopecraft__parent_operations",
       "Bash(diff:*)",
       "mcp__scopecraft__parent_get",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(./implement-auto add-atnmus-excton-docs-to-read-05A)",
+      "mcp__scopecraft__parent_get"
     ],
     "deny": []
   },

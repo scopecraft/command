@@ -117,7 +117,8 @@
     "gray-matter": "^4.0.3",
     "inquirer": "^9.2.12",
     "simple-git": "^3.27.0",
-    "zod": "^3.25.10"
+    "zod": "^3.25.10",
+    "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

@@ -2,7 +2,7 @@
 
 ---
 type: "\U0001F41E Bug"
-status: To Do
+status: Done
 area: mcp
 tags:
   - design
@@ -23,23 +23,46 @@ Design a consistent API response schema for all MCP endpoints that serves both t
 6. Works well for both human developers and AI consumers
 
 ## Tasks
-- [ ] Define standard response envelope structure
-- [ ] Decide on consistent field naming conventions
-- [ ] Document logical grouping vs flat structure trade-offs
-- [ ] Create TypeScript interfaces for response types
-- [ ] Consider both UI and AI agent use cases
-- [ ] Define how to handle task type detection clearly
-- [ ] Ensure progress information is consistently available
-- [ ] Consider versioning strategy for breaking changes
+- [x] Define standard response envelope structure
+- [x] Decide on consistent field naming conventions
+- [x] Document logical grouping vs flat structure trade-offs
+- [x] Create TypeScript interfaces for response types
+- [x] Consider both UI and AI agent use cases
+- [x] Define how to handle task type detection clearly
+- [x] Ensure progress information is consistently available
+- [x] Consider versioning strategy for breaking changes
 
 ## Deliverable
-Design document with:
-1. Normalized task response schema (consider logical grouping vs pure flatness)
-2. Response envelope structure for consistency
-3. Field naming conventions and rationale
-4. TypeScript interface definitions
-5. Examples for different task types (simple, parent, subtask)
-6. Migration strategy from current format
-7. Considerations for both UI and AI agent consumers
+Created comprehensive API schema design document: `api-schema-design.md`
+
+Key design decisions:
+1. **Discriminated unions** using `taskStructure` field for clear task type detection
+2. **Logical grouping** maintained (e.g., progress object) while keeping primary fields accessible
+3. **Clean enums** without emoji prefixes
+4. **Consistent naming** (workflowState not location, camelCase throughout)
+5. **Response envelope** for all endpoints with metadata
+6. **Progressive enhancement** - optional content/subtasks based on parameters
+7. **Migration strategy** with transformation layer first, core changes optional
 
 ## Log
+- 2025-05-30: Designed comprehensive API response schema
+  - Created discriminated union types for clear task differentiation
+  - Defined consistent response envelope structure
+  - Established field naming conventions (camelCase, clear names)
+  - Balanced UI flat structure preference with logical grouping
+  - Included file system info useful for both UI and AI
+  - Provided complete TypeScript interfaces
+  - Documented migration strategy and benefits for each audience
+- 2025-05-30: Major revision based on feedback (api-schema-design-v2.md)
+  - Switched to Zod schemas for single source of truth
+  - Added comprehensive endpoint analysis (keep all 4 for token efficiency)
+  - Documented input schemas for each endpoint
+  - Added token cost considerations throughout
+  - Removed deprecation concerns (V2 branch)
+  - Showed MCP outputSchema integration
+  - Considered future MCP resource migration
+- 2025-05-30: Added advanced filtering schema and updated subsequent subtasks
+  - Moved tags/assignee to top-level filters
+  - Added advancedFilter object for future metadata (with TODO implementation)
+  - Updated all subsequent subtasks to align with Zod approach
+  - Marked subtask 06 as skip (no backward compatibility needed)

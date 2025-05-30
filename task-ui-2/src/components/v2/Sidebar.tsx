@@ -321,13 +321,20 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
       </div>
 
       {/* Bottom Actions */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border space-y-2">
         <Button
           variant="atlas"
           className="w-full"
           onClick={() => onNavigate?.('/task/new')}
         >
           + New Task
+        </Button>
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => handleItemClick('assistant', '/assistant')}
+        >
+          🤖 Claude Assistant
         </Button>
       </div>
     </aside>

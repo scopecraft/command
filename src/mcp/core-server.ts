@@ -14,19 +14,23 @@ import {
   handleInitRoot,
   handleListProjects,
   handleParentCreate,
-  handleParentGet,
-  handleParentList,
   handleParentOperations,
   handleTaskCreate,
   handleTaskDelete,
-  handleTaskGet,
-  handleTaskList,
   handleTaskMove,
   handleTaskTransform,
   handleTaskUpdate,
   handleTemplateList,
   handleWorkflowCurrent,
 } from './handlers.js';
+
+// Import normalized handlers
+import {
+  handleParentGetNormalized,
+  handleParentListNormalized,
+  handleTaskGetNormalized,
+  handleTaskListNormalized,
+} from './normalized-handlers.js';
 
 /**
  * Format a successful response
@@ -243,7 +247,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskListSchema>) => {
       try {
-        const result = await handleTaskList(params);
+        const result = await handleTaskListNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -288,7 +292,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskGetSchema>) => {
       try {
-        const result = await handleTaskGet(params);
+        const result = await handleTaskGetNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -726,7 +730,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof parentListSchema>) => {
       try {
-        const result = await handleParentList(params);
+        const result = await handleParentListNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -758,7 +762,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof parentGetSchema>) => {
       try {
-        const result = await handleParentGet(params);
+        const result = await handleParentGetNormalized(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);

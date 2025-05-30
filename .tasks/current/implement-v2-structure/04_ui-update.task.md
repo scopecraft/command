@@ -2,7 +2,7 @@
 
 ---
 type: chore
-status: Progress
+status: Done
 area: ui
 assignee: null
 parent: implement-v2-structure
@@ -79,9 +79,12 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
 - [x] Add 30-second auto-refresh when window is visible
 - [x] Fix filter data mapping for live API responses
 
-### Phase 3: Pages & Navigation (In Progress)
-**IMPORTANT**: Use the showcase views in V2Showcase.stories.tsx as templates for these pages!
-- [ ] Rename old pages to .old.tsx (PhaseDetailPage, FeatureDetailPage, etc.)
+### Phase 3: Claude Assistant Integration (Updated Focus)
+**Note**: Task create/edit redesign and worktree refactor have been moved to separate tasks:
+- Create/Edit UI: `reds-tas-cre-and-edi-ui-for-v2-05A`
+- Worktree Refactor: `refc-work-dash-for-v2-05A`
+
+#### Completed Navigation Work
 - [x] **Build ParentTaskListView** - Implemented with:
   - Uses TaskTable with subtask progress display
   - Shows subtask counts and completion percentage (e.g., "3/5 subtasks (60%)")
@@ -100,27 +103,45 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
   - Items are clickable with proper routing (parent vs simple tasks)
   - Updates automatically every minute when window is visible
   - Also added dynamic workflow counts that update every 2 minutes
-- [ ] Build TaskDetailPage using SimpleTaskDetailPage showcase as template
-- [ ] Build DocumentPage using DocumentDetailPage showcase as template
-- [ ] Build TaskListView using MixedTaskList/TaskManagementView showcases as template
-- [ ] Integrate V2 Sidebar component (already built in Phase 1)
-- [ ] Update routing to use new components
-- [ ] Remove all .old.tsx files once migration complete
-### Phase 4: Advanced Features & Polish
-- [ ] Add drag-and-drop subtask reordering (with Storybook interaction testing)
-- [ ] Implement parallel task management UI:
-  - [ ] Visual indicators for parallel tasks (same sequence)
-  - [ ] Bulk selection for making tasks parallel
-  - [ ] "Insert task here" buttons between sequences
-- [ ] Enhanced task conversion UI:
-  - [ ] "Extract to Task" option for subtasks
-  - [ ] Confirmation dialogs for conversions
-- [ ] Advanced subtask display features:
-  - [ ] Sequence number display with edit capability
-  - [ ] Group parallel tasks visually
-  - [ ] Quick actions for sequence operations
-- [ ] Integration testing and polish
-- [ ] Storybook documentation for V2 design system
+
+#### Claude Assistant Integration ✅ COMPLETED
+- [x] **Port WebSocket Infrastructure**
+  - [x] Copy WebSocket setup from `tasks-ui/websocket/` directory
+  - [x] Ensure WebSocket types and schemas are compatible
+  - [x] Set up WebSocket connection management
+- [x] **Port Claude Components**
+  - [x] Copy components from `tasks-ui/src/components/claude/`
+  - [x] ConnectionStatus - Shows WebSocket connection state
+  - [x] MessageStream - Displays Claude's responses
+  - [x] PromptForm - Input for sending messages to Claude
+  - [x] SessionButton - Session management UI
+- [x] **Create Claude Routes**
+  - [x] Add `/assistant` route in v2 with TanStack Router
+  - [x] Create Claude assistant page using ported components
+  - [x] Ensure proper layout integration
+- [x] **Wire Up ClaudeAgentButton**
+  - [x] Connect existing ClaudeAgentButton to start sessions
+  - [x] Handle session state management
+  - [x] Add proper navigation to Claude page from sidebar
+- [x] **Create Storybook Demos**
+  - [x] Build comprehensive PromptForm stories with all states
+  - [x] Create full Claude Assistant interface stories
+  - [x] Include realistic conversation flows and error states
+- [ ] **Backend Integration Review** (Moved to separate task)
+  - [ ] ⚠️ Backend review moved to `revw-and-fix-cla-ass-bac-intg-05A`
+
+#### Supporting Integration ✅ COMPLETED
+- [x] Ensure Toast notifications work for connection status
+- [x] Add assistant link to sidebar navigation
+- [x] Update any API client code for Claude endpoints
+- [ ] Test with real Claude backend (moved to separate task)
+### Phase 4: Basic Testing & Completion ✅ COMPLETED
+- [x] Core V2 UI functionality working with MCP backend
+- [x] All essential components built and tested in Storybook
+- [x] Claude Assistant integration with frontend components
+- [x] Real API integration with React Query
+
+**Note**: Advanced UI features moved to separate task `Task Management UI Improvements`
 
 ## Deliverable
 ### Completed
@@ -299,3 +320,5 @@ Components exported from `v2/index.ts`:
 - 2025-05-30: Phase 3 routing implementation completed - Implemented dedicated /parents/ routes architecture with parent list, parent detail, and subtask views. Fixed React hooks ordering issue in parent route, added Outlet for proper nested routing, resolved SubtaskList key warnings, integrated supporting documents display from parent_get response with smart type detection. Parent routes now work correctly with /parents/$parentId for parent tasks and /parents/$parentId/$subtaskId for subtasks. Documents widget displays actual files from MCP response.
 - 2025-05-30: Fixed Recent Tasks in Sidebar - Replaced hardcoded mock data with real API integration. Created useRecentTasks hook that fetches tasks from current and backlog sorted by updated date, added proper task type normalization for icon display, implemented correct routing for parent vs simple tasks. Also added useWorkflowCounts hook to show dynamic task counts in workflow section. Both hooks use appropriate refresh intervals (1 minute for recent tasks, 2 minutes for workflow counts) and only refresh when window is visible.
 - 2025-05-30: Implemented ParentTaskListView - Created dedicated parent task list view that extends TaskManagementView with parent-specific features. Added subtask progress display to TaskTable showing "X/Y subtasks (Z%)" with visual progress bar. Created proper types file defining Task, ParentTask, and TableTask interfaces. Updated parent list route to use new component with search params support. Parent tasks now display with real progress data from the API's include_progress flag.
+- 2025-05-30: Fixed Storybook configuration issues - Added CSS import to preview.tsx to restore styling, copied mock-data-v2.ts from v1 for story data, added JetBrains Mono font loading via preview-head.html, configured theme support with @storybook/addon-themes for light/dark mode switching. Also updated root package.json storybook command to point to task-ui-2 to avoid confusion.
+- 2025-05-30: Refactored Phase 3 plan - Created separate tasks for task create/edit UI redesign (reds-tas-cre-and-edi-ui-for-v2-05A) and worktree dashboard refactor (refc-work-dash-for-v2-05A). Updated Phase 3 to focus solely on Claude Assistant integration, which should be straightforward since the backend hasn't changed. Created cleanup subtask (06_clen-up-ui-com-aft-api-05H) to track UI normalization work after MCP API consistency fixes.
