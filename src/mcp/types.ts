@@ -140,20 +140,20 @@ export interface TaskCreateParams {
 export interface McpTaskUpdateFields {
   // Title update
   title?: string;
-  
+
   // Frontmatter fields (flattened)
   status?: TaskStatus;
   priority?: TaskPriority;
   area?: string;
   assignee?: string;
   tags?: string[];
-  
+
   // Section fields (flattened)
   instruction?: string;
   tasks?: string;
   deliverable?: string;
   log?: string;
-  
+
   // Special convenience field
   add_log_entry?: string;
 }

@@ -1,6 +1,6 @@
 /**
  * Basic MCP V2 Functionality Tests
- * 
+ *
  * These tests verify the core V2 functionality that's currently working.
  * This is a smaller, focused test suite that validates what's implemented.
  */
@@ -36,7 +36,7 @@ describe('MCP V2 Basic Functionality Tests', () => {
 
     fs.mkdirSync(testDir, { recursive: true });
     fs.mkdirSync(testProjectDir, { recursive: true });
-    
+
     // Create V2 workflow directories
     fs.mkdirSync(path.join(testProjectDir, '.tasks', 'backlog'), { recursive: true });
     fs.mkdirSync(path.join(testProjectDir, '.tasks', 'current'), { recursive: true });
@@ -90,15 +90,15 @@ describe('MCP V2 Basic Functionality Tests', () => {
       // Verify file was created
       const backlogPath = path.join(testProjectDir, '.tasks', 'backlog');
       const files = fs.readdirSync(backlogPath);
-      expect(files.some(f => f.includes('basic-test-task'))).toBe(true);
+      expect(files.some((f) => f.includes('basic-test-task'))).toBe(true);
     });
 
     it('should create tasks in current workflow', async () => {
       const result = await handleTaskCreate({
         title: 'Current Test Task',
         type: 'feature',
-        subdirectory: 'test',
-        phase: 'current', // Legacy parameter
+        area: 'test',
+        location: 'current',
       });
 
       expect(result.success).toBe(true);
@@ -107,7 +107,7 @@ describe('MCP V2 Basic Functionality Tests', () => {
       // Verify file was created in current
       const currentPath = path.join(testProjectDir, '.tasks', 'current');
       const files = fs.readdirSync(currentPath);
-      expect(files.some(f => f.includes('current-test-task'))).toBe(true);
+      expect(files.some((f) => f.includes('current-test-task'))).toBe(true);
     });
 
     it('should get existing tasks', async () => {
@@ -115,7 +115,7 @@ describe('MCP V2 Basic Functionality Tests', () => {
       const createResult = await handleTaskCreate({
         title: 'Task to Get',
         type: 'chore',
-        subdirectory: 'test',
+        area: 'test',
       });
 
       expect(createResult.success).toBe(true);
@@ -137,14 +137,14 @@ describe('MCP V2 Basic Functionality Tests', () => {
       await handleTaskCreate({
         title: 'Backlog Task',
         type: 'bug',
-        subdirectory: 'test',
+        area: 'test',
       });
 
       await handleTaskCreate({
         title: 'Current Task',
         type: 'feature',
-        subdirectory: 'test',
-        phase: 'current',
+        area: 'test',
+        location: 'current',
       });
 
       // List all tasks
@@ -154,14 +154,14 @@ describe('MCP V2 Basic Functionality Tests', () => {
 
       // List backlog tasks
       const backlogResult = await handleTaskList({
-        phase: 'backlog',
+        location: 'backlog',
       });
       expect(backlogResult.success).toBe(true);
       expect(backlogResult.data?.length).toBeGreaterThan(0);
 
       // List current tasks
       const currentResult = await handleTaskList({
-        phase: 'current',
+        location: 'current',
       });
       expect(currentResult.success).toBe(true);
       expect(currentResult.data?.length).toBeGreaterThan(0);
@@ -200,10 +200,7 @@ describe('MCP V2 Basic Functionality Tests', () => {
         title: 'Parent with Subtasks',
         type: 'feature',
         area: 'test',
-        subtasks: [
-          { title: 'First Subtask' },
-          { title: 'Second Subtask' },
-        ],
+        subtasks: [{ title: 'First Subtask' }, { title: 'Second Subtask' }],
       });
 
       expect(result.success).toBe(true);
@@ -211,13 +208,13 @@ describe('MCP V2 Basic Functionality Tests', () => {
       // Verify subtasks were created
       const parentId = result.data?.id;
       const parentFolderPath = path.join(testProjectDir, '.tasks', 'backlog', parentId);
-      
+
       const files = fs.readdirSync(parentFolderPath);
-      const subtaskFiles = files.filter(f => f.endsWith('.task.md') && f !== '_overview.md');
-      
+      const subtaskFiles = files.filter((f) => f.endsWith('.task.md') && f !== '_overview.md');
+
       expect(subtaskFiles).toHaveLength(2);
-      expect(subtaskFiles.some(f => f.includes('first-subtask'))).toBe(true);
-      expect(subtaskFiles.some(f => f.includes('second-subtask'))).toBe(true);
+      expect(subtaskFiles.some((f) => f.includes('first-subtask'))).toBe(true);
+      expect(subtaskFiles.some((f) => f.includes('second-subtask'))).toBe(true);
     });
 
     it('should list parent tasks', async () => {
@@ -249,10 +246,7 @@ describe('MCP V2 Basic Functionality Tests', () => {
         title: 'Parent for Progress',
         type: 'feature',
         area: 'test',
-        subtasks: [
-          { title: 'Subtask One' },
-          { title: 'Subtask Two' },
-        ],
+        subtasks: [{ title: 'Subtask One' }, { title: 'Subtask Two' }],
       });
 
       expect(parentResult.success).toBe(true);
@@ -264,7 +258,7 @@ describe('MCP V2 Basic Functionality Tests', () => {
 
       expect(listResult.success).toBe(true);
       expect(listResult.data).toHaveLength(1);
-      
+
       const parent = listResult.data?.[0];
       expect(parent?.subtask_count).toBe(2);
       expect(parent?.completed_count).toBe(0);
@@ -292,56 +286,23 @@ describe('MCP V2 Basic Functionality Tests', () => {
     });
   });
 
-  describe('Legacy Parameter Support', () => {
-    it('should support phase parameter mapping', async () => {
-      const result = await handleTaskCreate({
-        title: 'Legacy Phase Task',
-        type: 'bug',
-        phase: 'current', // Legacy parameter
-        subdirectory: 'legacy', // Legacy parameter
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.data?.path).toContain('current');
-    });
-
-    it('should list tasks using legacy phase filter', async () => {
-      // Create task in current
-      await handleTaskCreate({
-        title: 'Current Task for Filter',
-        type: 'bug',
-        phase: 'current',
-        subdirectory: 'test',
-      });
-
-      // Filter using legacy phase parameter
-      const result = await handleTaskList({
-        phase: 'current',
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.data?.length).toBeGreaterThan(0);
-      expect(result.data?.[0].metadata.phase).toBe('current');
-    });
-  });
-
   describe('Integration Tests', () => {
     it('should handle concurrent task creation', async () => {
       const promises = Array.from({ length: 3 }, (_, i) =>
         handleTaskCreate({
           title: `Concurrent Task ${i}`,
           type: 'test',
-          subdirectory: 'concurrent',
+          area: 'concurrent',
         })
       );
 
       const results = await Promise.all(promises);
 
       // All should succeed
-      expect(results.every(r => r.success)).toBe(true);
+      expect(results.every((r) => r.success)).toBe(true);
 
       // All should have unique IDs
-      const ids = results.map(r => r.data?.id).filter(Boolean);
+      const ids = results.map((r) => r.data?.id).filter(Boolean);
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(3);
     });
@@ -351,14 +312,14 @@ describe('MCP V2 Basic Functionality Tests', () => {
       await handleTaskCreate({
         title: 'Bug Task',
         type: 'bug',
-        subdirectory: 'mixed',
+        area: 'mixed',
       });
 
       await handleTaskCreate({
         title: 'Feature Task',
         type: 'feature',
-        subdirectory: 'mixed',
-        phase: 'current',
+        area: 'mixed',
+        location: 'current',
       });
 
       await handleParentCreate({
@@ -368,15 +329,13 @@ describe('MCP V2 Basic Functionality Tests', () => {
       });
 
       // List all tasks
-      const allResult = await handleTaskList({
-        include_parent_tasks: true,
-      });
+      const allResult = await handleTaskList({});
 
       expect(allResult.success).toBe(true);
       expect(allResult.data?.length).toBe(3);
 
       // Check task types
-      const types = allResult.data?.map(t => t.metadata.type) || [];
+      const types = allResult.data?.map((t) => t.metadata.type) || [];
       expect(types).toContain('bug');
       expect(types).toContain('feature');
     });

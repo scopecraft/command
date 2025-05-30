@@ -68,9 +68,9 @@ function filterTasksByType(tasks: v2.Task[], taskType: string): v2.Task[] {
 }
 
 /**
- * Transform V2 tasks to V1 format for MCP compatibility
+ * Format V2 tasks for MCP response
  */
-function transformTasksToV1Format(tasks: v2.Task[], includeContent: boolean): unknown[] {
+function formatTasksForMcp(tasks: v2.Task[], includeContent: boolean): unknown[] {
   return tasks.map((task) => ({
     metadata: {
       id: task.metadata.id,
@@ -78,13 +78,18 @@ function transformTasksToV1Format(tasks: v2.Task[], includeContent: boolean): un
       type: task.document.frontmatter.type,
       status: task.document.frontmatter.status,
       priority: task.document.frontmatter.priority || 'Medium',
-      created_date: '', // Not available in v2
-      updated_date: '', // Not available in v2
-      assigned_to: (task.document.frontmatter.assignee as string) || '',
       location: task.metadata.location.workflowState,
       area: task.document.frontmatter.area,
       tags: (task.document.frontmatter.tags as string[]) || [],
+      assignee: (task.document.frontmatter.assignee as string) || '',
+      // V2 metadata
+      isParentTask: task.metadata.isParentTask,
+      parentTask: task.metadata.parentTask,
+      sequenceNumber: task.metadata.sequenceNumber,
+      filename: task.metadata.filename,
+      path: task.metadata.path,
     },
+    document: includeContent ? task.document : undefined,
     content: includeContent ? v2.serializeTaskDocument(task.document) : undefined,
   }));
 }
@@ -125,17 +130,28 @@ export async function handleTaskList(params: TaskListParams) {
   if (params.assignee) listOptions.assignee = params.assignee;
   if (params.tags) listOptions.tags = params.tags;
 
+  // Handle parent task inclusion
+  // For top-level (default), parent, and all task types, we need to include parent tasks
+  const taskType = params.task_type || 'top-level';
+  if (
+    taskType === 'top-level' ||
+    taskType === 'parent' ||
+    taskType === 'all' ||
+    params.include_parent_tasks
+  ) {
+    listOptions.includeParentTasks = true;
+  }
+
   const result = await v2.listTasks(projectRoot, listOptions);
 
   if (result.success && result.data) {
-    const taskType = params.task_type || 'top-level';
     const filteredTasks = filterTasksByType(result.data, taskType);
-    const v1Tasks = transformTasksToV1Format(filteredTasks, params.include_content || false);
+    const formattedTasks = formatTasksForMcp(filteredTasks, params.include_content || false);
 
     return {
       success: true,
-      data: v1Tasks,
-      message: `Found ${v1Tasks.length} tasks`,
+      data: formattedTasks,
+      message: `Found ${formattedTasks.length} tasks`,
     };
   }
 
@@ -884,6 +900,7 @@ export async function handleDebugCodePath(_params: DebugCodePathParams) {
       timestamp: new Date().toISOString(),
       implemented_features: {
         task_system: true,
+        v2_task_system: true,
         workflow_states: true,
         parent_tasks: true,
         task_transformations: true,
