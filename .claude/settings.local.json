@@ -180,7 +180,8 @@
       "mcp__playwright__browser_network_requests",
       "mcp__playwright__browser_take_screenshot",
       "mcp__playwright__browser_press_key",
-      "Bash(npx @biomejs/biome check:*)"
+      "Bash(npx @biomejs/biome check:*)",
+      "mcp__scopecraft__task_move"
     ],
     "deny": []
   },

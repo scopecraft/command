@@ -524,28 +524,43 @@ export async function handleParentCreateNormalized(rawParams: unknown): Promise<
       // Handle parallel tasks if specified
       const parallelTasks = params.subtasks.filter(st => st.parallelWith);
       if (parallelTasks.length > 0) {
-        // Group by parallelWith
+        // Group tasks by what they should be parallel with
         const parallelGroups: Record<string, string[]> = {};
+        
         for (const task of parallelTasks) {
           if (task.parallelWith) {
-            if (!parallelGroups[task.parallelWith]) {
-              parallelGroups[task.parallelWith] = [];
-            }
-            const subtask = createdSubtasks.find(st => st.title === task.title);
-            if (subtask) {
-              parallelGroups[task.parallelWith].push(subtask.id);
+            // Find the current task that was just created
+            const currentSubtask = createdSubtasks.find(st => st.title === task.title);
+            if (!currentSubtask) continue;
+            
+            // Find the target task to be parallel with
+            // It could be specified by title (for tasks in same batch) or ID
+            const targetSubtask = createdSubtasks.find(st => 
+              st.title === task.parallelWith || 
+              st.id === task.parallelWith ||
+              st.id.endsWith(task.parallelWith) // Handle partial ID match like "01_test-sub-one"
+            );
+            
+            if (targetSubtask) {
+              // Group tasks that should share the same sequence number
+              const groupKey = targetSubtask.id;
+              if (!parallelGroups[groupKey]) {
+                parallelGroups[groupKey] = [targetSubtask.id];
+              }
+              parallelGroups[groupKey].push(currentSubtask.id);
             }
           }
         }
         
         // Parallelize each group
-        for (const [baseTitle, ids] of Object.entries(parallelGroups)) {
-          const baseTask = createdSubtasks.find(st => st.title === baseTitle);
-          if (baseTask) {
+        for (const [baseTaskId, allIds] of Object.entries(parallelGroups)) {
+          // Remove duplicates and parallelize
+          const uniqueIds = [...new Set(allIds)];
+          if (uniqueIds.length > 1) {
             await core.parallelizeSubtasks(
               projectRoot,
               result.data.metadata.id,
-              [baseTask.id, ...ids]
+              uniqueIds
             );
           }
         }
