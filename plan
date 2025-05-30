@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Usage: ./plan <feature description> [area] [context]
+# Example: ./plan "Add dark mode toggle"
+# Example: ./plan "Add OAuth login" auth
+# Example: ./plan "Build real-time collaboration" ui "Similar to Figma multiplayer"
+
+FEATURE_DESCRIPTION=$1
+AREA=${2:-general}
+CONTEXT="${*:3}"
+
+if [ -z "$FEATURE_DESCRIPTION" ]; then
+    echo "Usage: $0 <feature description> [area] [context]"
+    echo "Example: $0 \"Add dark mode toggle\""
+    echo "Example: $0 \"Add OAuth login\" auth"
+    echo "Example: $0 \"Build real-time collaboration\" ui \"Similar to Figma\""
+    exit 1
+fi
+
+# Run channelcoder with the planning prompt
+channelcoder .tasks/.modes/planning/base.md \
+    -d feature_description="$FEATURE_DESCRIPTION" \
+    -d area="$AREA" \
+    -d context="$CONTEXT"
