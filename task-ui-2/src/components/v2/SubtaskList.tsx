@@ -80,7 +80,7 @@ export function SubtaskList({
                   const statusSymbol = getStatusSymbol(task.metadata?.status || task.status);
                   return (
                     <div
-                      key={task.id}
+                      key={task.metadata?.id || task.id || `parallel-${groupIndex}-${taskIndex}`}
                       className={cn(
                         "flex items-center gap-2 cursor-pointer py-1 px-2 rounded",
                         highlightTaskId === task.id 
@@ -105,7 +105,7 @@ export function SubtaskList({
             const statusSymbol = getStatusSymbol(task.metadata?.status || task.status);
             return (
               <div
-                key={task.id}
+                key={task.metadata?.id || task.id || `single-${groupIndex}`}
                 className={cn(
                   "flex items-center gap-2 cursor-pointer py-1 px-2 rounded",
                   highlightTaskId === task.id 
@@ -169,7 +169,7 @@ export function SubtaskList({
                   const isLastTask = taskIndex === tasks.length - 1;
                   return (
                     <div
-                      key={task.id}
+                      key={task.metadata?.id || task.id || `parallel-${groupIndex}-${taskIndex}`}
                       className={cn(
                         "flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors",
                         highlightTaskId === task.id 
@@ -207,7 +207,7 @@ export function SubtaskList({
           const task = tasks[0];
           return (
             <div
-              key={task.id}
+              key={task.metadata?.id || task.id || `single-${groupIndex}`}
               className={cn(
                 "flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors",
                 highlightTaskId === task.id 

@@ -14,6 +14,7 @@ import { getTaskUrl } from '../../lib/task-routing'
 interface ParentTaskViewProps {
   task: any
   subtasks: any[]
+  documents?: any[]
   content: string
   isEditing: boolean
   onEdit: () => void
@@ -26,6 +27,7 @@ interface ParentTaskViewProps {
 export function ParentTaskView({ 
   task, 
   subtasks,
+  documents = [],
   content, 
   isEditing, 
   onEdit, 
@@ -200,14 +202,43 @@ export function ParentTaskView({
                   <h3 className="font-semibold text-foreground">Documents</h3>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  0
+                  {documents.length}
                 </div>
               </div>
 
-              {/* No Documents State */}
-              <div className="text-center py-4 text-muted-foreground text-sm">
-                No documents yet
-              </div>
+              {/* Documents List */}
+              {documents.length > 0 ? (
+                <div className="space-y-2">
+                  {documents.map((doc) => {
+                    // Extract document type from filename (e.g., "plan", "architecture", "design")
+                    const docType = doc.toLowerCase().includes('plan') ? 'plan' :
+                                  doc.toLowerCase().includes('architecture') ? 'architecture' :
+                                  doc.toLowerCase().includes('design') ? 'design' :
+                                  doc.toLowerCase().includes('analysis') ? 'analysis' :
+                                  'document';
+                    
+                    return (
+                      <button
+                        key={doc}
+                        className="w-full flex items-center gap-2 p-2 rounded hover:bg-accent/50 text-left transition-colors"
+                        onClick={() => {
+                          // Navigate to document or open in modal
+                          console.log('Open document:', doc);
+                        }}
+                      >
+                        <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                          {docType}
+                        </span>
+                        <span className="text-sm truncate flex-1">{doc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  No documents yet
+                </div>
+              )}
 
               {/* Document Actions */}
               <div className="mt-4 pt-3 border-t space-y-2">

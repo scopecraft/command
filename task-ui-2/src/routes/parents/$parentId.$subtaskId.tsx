@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import React from 'react'
-import { useTask, useSubtasks, useUpdateTask } from '../../../lib/api/hooks'
-import { SimpleTaskView } from '../../../components/v2/SimpleTaskView'
+import { useTask, useSubtasks, useUpdateTask } from '../../lib/api/hooks'
+import { SimpleTaskView } from '../../components/v2/SimpleTaskView'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Button } from '../../../components/ui/button'
+import { Button } from '../../components/ui/button'
 
 // Helper function to extract content without frontmatter
 function extractContentWithoutFrontmatter(content: string): string {

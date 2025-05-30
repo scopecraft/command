@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 import React from 'react'
 import { useParent, useUpdateTask } from '../../lib/api/hooks'
 import { ParentTaskView } from '../../components/v2/ParentTaskView'
@@ -8,9 +8,9 @@ export const Route = createFileRoute('/parents/$parentId')({
 })
 
 function ParentDetailPage() {
-  const { parentId } = Route.useParams()
+  const { parentId, subtaskId } = Route.useParams() as { parentId: string; subtaskId?: string }
   
-  // Get parent data with subtasks included
+  // All hooks must be called before any conditional returns
   const { data: parentData, isLoading, error } = useParent(parentId)
   const updateTask = useUpdateTask()
   
@@ -25,6 +25,11 @@ function ParentDetailPage() {
       setContent(overviewContent)
     }
   }, [parentData])
+  
+  // If we have a subtaskId, just render the outlet for the child route
+  if (subtaskId) {
+    return <Outlet />
+  }
   
   // Loading state
   if (isLoading) {
@@ -80,11 +85,13 @@ function ParentDetailPage() {
     ...parentData.data.overview
   }
   const subtasks = parentData.data.subtasks || []
+  const supportingFiles = parentData.data.supportingFiles || []
 
   return (
     <ParentTaskView
       task={parentTask}
       subtasks={subtasks}
+      documents={supportingFiles}
       content={content}
       isEditing={isEditing}
       onEdit={handleEdit}

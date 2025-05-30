@@ -22,6 +22,7 @@ import {
   handleAreaDelete,
   handleTaskMove,
   handleParentList,
+  handleParentGet,
   handleParentCreate,
   handleParentOperations
 } from '../src/mcp/handlers.js';
@@ -282,6 +283,15 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
     
     if (path.match(/^\/parents\/[^\/]+$/)) {
       const parent_id = path.split('/').pop() || '';
+      
+      if (req.method === 'GET') {
+        // Get parent task with subtasks
+        const result = await handleParentGet({ id: parent_id });
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 404,
+          headers: corsHeaders
+        });
+      }
       
       if (req.method === 'POST') {
         // Parent operations (resequence, parallelize, add_subtask)
