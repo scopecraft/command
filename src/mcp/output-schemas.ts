@@ -1,19 +1,19 @@
 /**
  * MCP Output Schema Generation
- * 
+ *
  * Generates JSON Schema for MCP outputSchema from Zod schemas
  */
 
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
-  TaskListOutputSchema,
-  TaskGetOutputSchema,
-  ParentListOutputSchema,
+  ParentGetInputSchema,
   ParentGetOutputSchema,
-  TaskListInputSchema,
-  TaskGetInputSchema,
   ParentListInputSchema,
-  ParentGetInputSchema
+  ParentListOutputSchema,
+  TaskGetInputSchema,
+  TaskGetOutputSchema,
+  TaskListInputSchema,
+  TaskListOutputSchema,
 } from './schemas.js';
 
 // =============================================================================
@@ -22,22 +22,22 @@ import {
 
 export const taskListInputJsonSchema = zodToJsonSchema(TaskListInputSchema, {
   name: 'TaskListInput',
-  description: 'Input parameters for task_list method'
+  description: 'Input parameters for task_list method',
 });
 
 export const taskGetInputJsonSchema = zodToJsonSchema(TaskGetInputSchema, {
-  name: 'TaskGetInput', 
-  description: 'Input parameters for task_get method'
+  name: 'TaskGetInput',
+  description: 'Input parameters for task_get method',
 });
 
 export const parentListInputJsonSchema = zodToJsonSchema(ParentListInputSchema, {
   name: 'ParentListInput',
-  description: 'Input parameters for parent_list method'
+  description: 'Input parameters for parent_list method',
 });
 
 export const parentGetInputJsonSchema = zodToJsonSchema(ParentGetInputSchema, {
   name: 'ParentGetInput',
-  description: 'Input parameters for parent_get method'
+  description: 'Input parameters for parent_get method',
 });
 
 // =============================================================================
@@ -46,22 +46,22 @@ export const parentGetInputJsonSchema = zodToJsonSchema(ParentGetInputSchema, {
 
 export const taskListOutputJsonSchema = zodToJsonSchema(TaskListOutputSchema, {
   name: 'TaskListOutput',
-  description: 'Response format for task_list method'
+  description: 'Response format for task_list method',
 });
 
 export const taskGetOutputJsonSchema = zodToJsonSchema(TaskGetOutputSchema, {
   name: 'TaskGetOutput',
-  description: 'Response format for task_get method'
+  description: 'Response format for task_get method',
 });
 
 export const parentListOutputJsonSchema = zodToJsonSchema(ParentListOutputSchema, {
-  name: 'ParentListOutput', 
-  description: 'Response format for parent_list method'
+  name: 'ParentListOutput',
+  description: 'Response format for parent_list method',
 });
 
 export const parentGetOutputJsonSchema = zodToJsonSchema(ParentGetOutputSchema, {
   name: 'ParentGetOutput',
-  description: 'Response format for parent_get method'
+  description: 'Response format for parent_get method',
 });
 
 // =============================================================================
@@ -71,29 +71,33 @@ export const parentGetOutputJsonSchema = zodToJsonSchema(ParentGetOutputSchema, 
 export const mcpToolDefinitions = {
   task_list: {
     name: 'task_list',
-    description: 'List tasks with filters and token-efficient options. Returns metadata for browsing.',
+    description:
+      'List tasks with filters and token-efficient options. Returns metadata for browsing.',
     inputSchema: taskListInputJsonSchema,
-    outputSchema: taskListOutputJsonSchema
+    outputSchema: taskListOutputJsonSchema,
   },
-  
+
   task_get: {
-    name: 'task_get', 
-    description: 'Get single task details. For parent tasks, use parent_get for full context with subtasks.',
+    name: 'task_get',
+    description:
+      'Get single task details. For parent tasks, use parent_get for full context with subtasks.',
     inputSchema: taskGetInputJsonSchema,
-    outputSchema: taskGetOutputJsonSchema
+    outputSchema: taskGetOutputJsonSchema,
   },
-  
+
   parent_list: {
     name: 'parent_list',
-    description: 'List parent tasks with progress information. Optimized for browsing parent tasks.',
+    description:
+      'List parent tasks with progress information. Optimized for browsing parent tasks.',
     inputSchema: parentListInputJsonSchema,
-    outputSchema: parentListOutputJsonSchema
+    outputSchema: parentListOutputJsonSchema,
   },
-  
+
   parent_get: {
     name: 'parent_get',
-    description: 'Get complete parent task context including all subtasks. High token cost but comprehensive.',
+    description:
+      'Get complete parent task context including all subtasks. High token cost but comprehensive.',
     inputSchema: parentGetInputJsonSchema,
-    outputSchema: parentGetOutputJsonSchema
-  }
+    outputSchema: parentGetOutputJsonSchema,
+  },
 } as const;

@@ -6,26 +6,9 @@ import { createClaudeWebSocketHandler } from './websocket/claude-handler.js';
 import { ProcessManager } from './websocket/process-manager.js';
 import { logger } from './src/observability/logger.js';
 import { handleWorktreeRequest } from '../src/tasks-ui/server/worktree-api.js';
-import {
-  handleTaskList,
-  handleTaskGet,
-  handleTaskCreate,
-  handleTaskUpdate,
-  handleTaskDelete,
-  handleTaskNext,
-  handleWorkflowCurrent,
-  handleWorkflowMarkCompleteNext,
-  handleAreaList,
-  handleAreaGet,
-  handleAreaCreate,
-  handleAreaUpdate,
-  handleAreaDelete,
-  handleTaskMove,
-  handleParentList,
-  handleParentGet,
-  handleParentCreate,
-  handleParentOperations
-} from '../src/mcp/handlers.js';
+// Import method registry - the correct way to access MCP handlers
+import { methodRegistry } from '../src/mcp/handlers.js';
+import { McpMethod } from '../src/mcp/types.js';
 import {
   handleSessionCheck,
   handleSessionStart
@@ -179,7 +162,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
           params.include_completed = params.include_completed === 'true';
         }
         
-        const result = await handleTaskList(params);
+        const result = await methodRegistry[McpMethod.TASK_LIST](params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
           headers: corsHeaders
@@ -199,7 +182,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       const id = path.split('/').pop() || '';
       
       if (req.method === 'GET') {
-        const result = await handleTaskGet({ id, ...params });
+        const result = await methodRegistry[McpMethod.TASK_GET]({ id, ...params });
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 404,
           headers: corsHeaders
@@ -265,7 +248,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
           params.include_subtasks = params.include_subtasks === 'true';
         }
         
-        const result = await handleParentList(params);
+        const result = await methodRegistry[McpMethod.PARENT_LIST](params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
           headers: corsHeaders
@@ -286,7 +269,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       
       if (req.method === 'GET') {
         // Get parent task with subtasks
-        const result = await handleParentGet({ id: parent_id });
+        const result = await methodRegistry[McpMethod.PARENT_GET]({ id: parent_id });
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 404,
           headers: corsHeaders

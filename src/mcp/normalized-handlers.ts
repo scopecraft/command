@@ -1,35 +1,35 @@
 /**
  * Normalized MCP Handlers using Zod schemas and transformations
- * 
+ *
  * These handlers implement the new consistent API schema design
  */
 
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
 import * as v2 from '../core/v2/index.js';
 import {
-  type TaskListInput,
-  type TaskGetInput,
-  type ParentListInput,
   type ParentGetInput,
-  type Task,
+  ParentGetInputSchema,
+  ParentGetOutputSchema,
+  type ParentListInput,
+  ParentListInputSchema,
+  ParentListOutputSchema,
   type ParentTask,
   type ParentTaskDetail,
-  TaskListInputSchema,
+  type Task,
+  type TaskGetInput,
   TaskGetInputSchema,
-  ParentListInputSchema,
-  ParentGetInputSchema,
-  TaskListOutputSchema,
   TaskGetOutputSchema,
-  ParentListOutputSchema,
-  ParentGetOutputSchema,
-  isParentTask
+  type TaskListInput,
+  TaskListInputSchema,
+  TaskListOutputSchema,
+  isParentTask,
 } from './schemas.js';
 import {
-  transformV2Task,
+  createErrorResponse,
+  createResponse,
   transformParentTask,
   transformParentTaskDetail,
-  createResponse,
-  createErrorResponse
+  transformV2Task,
 } from './transformers.js';
 import type { McpResponse } from './types.js';
 
@@ -81,12 +81,12 @@ function buildV2ListOptions(params: TaskListInput | ParentListInput): v2.TaskLis
     // Convert clean enum back to core format (with emoji)
     // TODO: This is temporary - core should store clean enums
     const typeMap: Record<string, string> = {
-      'feature': '🌟 Feature',
-      'bug': '🐞 Bug', 
-      'chore': '🧹 Chore',
-      'documentation': '📖 Documentation',
-      'test': '🧪 Test',
-      'spike': '💡 Spike/Research'
+      feature: '🌟 Feature',
+      bug: '🐞 Bug',
+      chore: '🧹 Chore',
+      documentation: '📖 Documentation',
+      test: '🧪 Test',
+      spike: '💡 Spike/Research',
     };
     listOptions.type = typeMap[params.type] as v2.TaskType;
   }
@@ -94,11 +94,11 @@ function buildV2ListOptions(params: TaskListInput | ParentListInput): v2.TaskLis
   if ('status' in params && params.status) {
     // Convert clean enum back to core format
     const statusMap: Record<string, string> = {
-      'todo': 'To Do',
-      'in_progress': 'In Progress',
-      'done': 'Done',
-      'blocked': 'Blocked', 
-      'archived': 'Archived'
+      todo: 'To Do',
+      in_progress: 'In Progress',
+      done: 'Done',
+      blocked: 'Blocked',
+      archived: 'Archived',
     };
     listOptions.status = statusMap[params.status] as v2.TaskStatus;
   }
@@ -121,7 +121,7 @@ export async function handleTaskListNormalized(rawParams: unknown): Promise<McpR
   try {
     // Validate input with Zod schema
     const params = TaskListInputSchema.parse(rawParams);
-    
+
     // Check for advanced filter usage
     if (params.advancedFilter) {
       console.warn('advancedFilter not yet implemented - ignoring');
@@ -184,15 +184,14 @@ export async function handleTaskListNormalized(rawParams: unknown): Promise<McpR
     return {
       success: true,
       data: transformedTasks,
-      message: `Found ${transformedTasks.length} tasks`
+      message: `Found ${transformedTasks.length} tasks`,
     };
-
   } catch (error) {
     console.error('Error in handleTaskListNormalized:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      message: 'Failed to list tasks'
+      message: 'Failed to list tasks',
     };
   }
 }
@@ -233,15 +232,14 @@ export async function handleTaskGetNormalized(rawParams: unknown): Promise<McpRe
     return {
       success: true,
       data: normalizedTask,
-      message: `Retrieved task ${params.id}`
+      message: `Retrieved task ${params.id}`,
     };
-
   } catch (error) {
     console.error('Error in handleTaskGetNormalized:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      message: 'Failed to get task'
+      message: 'Failed to get task',
     };
   }
 }
@@ -249,11 +247,13 @@ export async function handleTaskGetNormalized(rawParams: unknown): Promise<McpRe
 /**
  * Handler for parent_list method
  */
-export async function handleParentListNormalized(rawParams: unknown): Promise<McpResponse<ParentTask[]>> {
+export async function handleParentListNormalized(
+  rawParams: unknown
+): Promise<McpResponse<ParentTask[]>> {
   try {
     // Validate input with Zod schema
     const params = ParentListInputSchema.parse(rawParams);
-    
+
     // Check for advanced filter usage
     if (params.advancedFilter) {
       console.warn('advancedFilter not yet implemented - ignoring');
@@ -296,15 +296,14 @@ export async function handleParentListNormalized(rawParams: unknown): Promise<Mc
     return {
       success: true,
       data: transformedParents,
-      message: `Found ${transformedParents.length} parent tasks`
+      message: `Found ${transformedParents.length} parent tasks`,
     };
-
   } catch (error) {
     console.error('Error in handleParentListNormalized:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      message: 'Failed to list parent tasks'
+      message: 'Failed to list parent tasks',
     };
   }
 }
@@ -312,7 +311,9 @@ export async function handleParentListNormalized(rawParams: unknown): Promise<Mc
 /**
  * Handler for parent_get method
  */
-export async function handleParentGetNormalized(rawParams: unknown): Promise<McpResponse<ParentTaskDetail>> {
+export async function handleParentGetNormalized(
+  rawParams: unknown
+): Promise<McpResponse<ParentTaskDetail>> {
   try {
     // Validate input with Zod schema
     const params = ParentGetInputSchema.parse(rawParams);
@@ -331,15 +332,14 @@ export async function handleParentGetNormalized(rawParams: unknown): Promise<Mcp
     return {
       success: true,
       data: parentDetail,
-      message: `Retrieved parent task ${params.id} with ${parentDetail.subtasks.length} subtasks`
+      message: `Retrieved parent task ${params.id} with ${parentDetail.subtasks.length} subtasks`,
     };
-
   } catch (error) {
     console.error('Error in handleParentGetNormalized:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      message: 'Failed to get parent task'
+      message: 'Failed to get parent task',
     };
   }
 }

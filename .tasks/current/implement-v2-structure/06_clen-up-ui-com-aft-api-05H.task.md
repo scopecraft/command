@@ -2,7 +2,7 @@
 
 ---
 type: chore
-status: To Do
+status: Done
 area: ui
 assignee: null
 tags:
@@ -10,6 +10,7 @@ tags:
   - cleanup
   - v2
 priority: High
+parent: implement-v2-structure
 ---
 
 
@@ -19,240 +20,6 @@ priority: High
 **Status: ✅ READY FOR UI INTEGRATION**
 
 The MCP API response consistency issues have been fully resolved. All 4 core endpoints now return normalized, consistent responses with clean schemas. The UI can now consume a predictable API structure across all task operations.
-
-## Key Benefits for Task UI
-
-### 🎯 **Consistent Data Structure**
-- **Single format** across all endpoints (no more nested vs flat inconsistencies)
-- **Discriminated unions** with `taskStructure` field for reliable task type detection
-- **Predictable response envelope** with consistent metadata
-
-### 🔧 **Ready-to-Use Zod Schemas**
-- **No need to reimplement typing** - use our Zod schemas directly
-- **Runtime validation** included
-- **TypeScript types** auto-generated from schemas
-
-### 🧹 **Clean Data**
-- **No emoji prefixes** in API responses (`"feature"` not `"🌟 Feature"`)
-- **Consistent field names** (`workflowState` not `location`, `assignee` not `assigned_to`)
-- **Normalized enums** across all endpoints
-
-## API Changes Summary
-
-### Before vs After
-
-**OLD (Inconsistent):**
-```typescript
-// task_list returned nested structure
-{
-  metadata: { id: "...", isParentTask: true },
-  document: { frontmatter: { type: "🌟 Feature", status: "To Do" } }
-}
-
-// parent_list returned flat structure  
-{
-  id: "...", 
-  type: "parent_task",
-  progress: { done: 2, total: 5 }  // Only in parent_list!
-}
-```
-
-**NEW (Consistent):**
-```typescript
-// All endpoints return normalized structure
-{
-  id: "task-id",
-  title: "Task Title", 
-  taskStructure: "parent" | "simple" | "subtask",  // Single source of truth!
-  type: "feature",          // Clean enum, no emojis
-  status: "todo",           // Normalized
-  workflowState: "current", // Consistent naming
-  assignee: "username",     // Consistent naming
-  progress: {               // Available for all parent tasks
-    total: 5,
-    completed: 2, 
-    percentage: 40
-  }
-}
-```
-
-## 📁 Zod Schemas for UI Integration
-
-### **Location: `src/mcp/schemas.ts`**
-
-**Import the schemas directly in your UI:**
-
-```typescript
-import { 
-  TaskSchema,           // Union of all task types
-  SimpleTaskSchema,     // Standalone tasks
-  SubTaskSchema,        // Tasks within parents  
-  ParentTaskSchema,     // Parent tasks with subtasks
-  ParentTaskDetailSchema, // Full parent with all subtasks
-  // Input schemas for API calls
-  TaskListInputSchema,
-  TaskGetInputSchema,
-  ParentListInputSchema,
-  ParentGetInputSchema
-} from '../../../src/mcp/schemas.js';
-
-// TypeScript types auto-generated
-type Task = z.infer<typeof TaskSchema>;
-type SimpleTask = z.infer<typeof SimpleTaskSchema>;
-type ParentTask = z.infer<typeof ParentTaskSchema>;
-```
-
-### **Key Schema Features:**
-
-**1. Discriminated Union for Task Detection:**
-```typescript
-// No more checking 5 different properties!
-if (task.taskStructure === 'parent') {
-  // It's a parent task, has progress and subtaskIds
-  console.log(`Progress: ${task.progress.completed}/${task.progress.total}`);
-} else if (task.taskStructure === 'subtask') {
-  // It's a subtask, has parentId and sequenceNumber
-  console.log(`Parent: ${task.parentId}, Sequence: ${task.sequenceNumber}`);
-} else {
-  // It's a simple standalone task
-  console.log('Standalone task');
-}
-```
-
-**2. Clean Enum Values:**
-```typescript
-// Before: "🌟 Feature" 
-// After: "feature"
-const cleanType = task.type; // "feature" | "bug" | "chore" | "documentation" | "test" | "spike"
-
-// Before: "To Do"
-// After: "todo" 
-const cleanStatus = task.status; // "todo" | "in_progress" | "done" | "blocked" | "archived"
-```
-
-**3. Consistent Field Names:**
-```typescript
-// Before: task.metadata.location.workflowState vs task.location
-// After: Always task.workflowState
-const location = task.workflowState; // "backlog" | "current" | "archive"
-
-// Before: task.assigned_to vs task.assignee
-// After: Always task.assignee  
-const assignee = task.assignee; // string | undefined
-```
-
-## API Endpoint Changes
-
-### **All endpoints now return consistent structure:**
-
-**`task_list`** - List tasks with filtering
-```typescript
-// Input validation with Zod
-const params = TaskListInputSchema.parse({
-  location: ["current", "backlog"], 
-  task_type: "top-level",
-  include_content: false
-});
-
-// Response: Task[] with consistent structure
-```
-
-**`task_get`** - Get single task details  
-```typescript
-const params = TaskGetInputSchema.parse({
-  id: "task-id",
-  parent_id: "parent-id", // For subtasks
-  format: "full"
-});
-
-// Response: Task with full content
-```
-
-**`parent_list`** - List parent tasks
-```typescript  
-const params = ParentListInputSchema.parse({
-  location: "current",
-  include_progress: true,
-  include_subtasks: false
-});
-
-// Response: ParentTask[] with progress data
-```
-
-**`parent_get`** - Get parent with all subtasks
-```typescript
-const params = ParentGetInputSchema.parse({
-  id: "parent-task-id"
-});
-
-// Response: ParentTaskDetail with all subtasks included
-```
-
-## Integration Guide for UI Team
-
-### 1. **Replace Mock Data**
-Your mock data in `task-ui-2/src/lib/api/mock-data-v2.ts` can now match the real API structure exactly.
-
-### 2. **Update API Client** 
-```typescript
-// Use Zod schemas for validation
-import { TaskSchema } from '../../../src/mcp/schemas.js';
-
-const response = await fetch('/api/task_list', { 
-  method: 'POST',
-  body: JSON.stringify({ location: "current" })
-});
-
-const data = await response.json();
-// Validate with Zod
-const tasks = data.data.map(task => TaskSchema.parse(task));
-```
-
-### 3. **Simplify Component Logic**
-```typescript
-// Before: Complex parent detection
-const isParent = task.metadata?.isParentTask || 
-                task.type === 'parent_task' || 
-                task.subtasks?.length > 0 || 
-                task.task_type === 'parent';
-
-// After: Simple discriminated union
-const isParent = task.taskStructure === 'parent';
-```
-
-### 4. **Progress Display**
-```typescript
-// Before: Progress only available in parent_list
-// After: Always available for parent tasks
-{task.taskStructure === 'parent' && (
-  <div>Progress: {task.progress.completed}/{task.progress.total}</div>
-)}
-```
-
-## Files Changed in MCP Implementation
-
-**New Files Created:**
-- `src/mcp/schemas.ts` - **Zod schemas for UI to import**
-- `src/mcp/transformers.ts` - Transformation utilities
-- `src/mcp/normalized-handlers.ts` - New consistent handlers
-- `src/mcp/output-schemas.ts` - JSON Schema generation
-
-**Updated Files:**
-- `src/mcp/handlers.ts` - Method registry updated
-- `src/mcp/core-server.ts` - Using normalized handlers
-
-## Validation & Testing Status
-
-✅ **Tested in MCP Inspector** - Both `parent_list` and `parent_get` working  
-✅ **Zod validation** - Runtime schema validation working  
-✅ **Null handling** - Fixed assignee null/undefined issue  
-✅ **Integration** - Core server properly using normalized handlers  
-
----
-
-# UI Cleanup Tasks (Updated)
-
-Now that the API normalization is complete, here's what needs to be updated in the UI components:
 
 ## Tasks
 ### Phase 1: Update Type Definitions
@@ -333,3 +100,230 @@ Now that the API normalization is complete, here's what needs to be updated in t
 ## Log
 - 2025-05-30: Task created to track UI cleanup work after API normalization is complete. Detailed cleanup plan documented based on current implementation analysis.
 - 2025-05-30: 2025-05-30: 🎉 MCP API NORMALIZATION COMPLETE! Added comprehensive integration guide with Zod schemas location, API changes, and specific examples for UI team integration.
+
+## Key benefits for task ui
+### 🎯 **Consistent Data Structure**
+- **Single format** across all endpoints (no more nested vs flat inconsistencies)
+- **Discriminated unions** with `taskStructure` field for reliable task type detection
+- **Predictable response envelope** with consistent metadata
+
+### 🔧 **Ready-to-Use Zod Schemas**
+- **No need to reimplement typing** - use our Zod schemas directly
+- **Runtime validation** included
+- **TypeScript types** auto-generated from schemas
+
+### 🧹 **Clean Data**
+- **No emoji prefixes** in API responses (`"feature"` not `"🌟 Feature"`)
+- **Consistent field names** (`workflowState` not `location`, `assignee` not `assigned_to`)
+- **Normalized enums** across all endpoints
+
+## Api changes summary
+### Before vs After
+
+**OLD (Inconsistent):**
+```typescript
+// task_list returned nested structure
+{
+  metadata: { id: "...", isParentTask: true },
+  document: { frontmatter: { type: "🌟 Feature", status: "To Do" } }
+}
+
+// parent_list returned flat structure  
+{
+  id: "...", 
+  type: "parent_task",
+  progress: { done: 2, total: 5 }  // Only in parent_list!
+}
+```
+
+**NEW (Consistent):**
+```typescript
+// All endpoints return normalized structure
+{
+  id: "task-id",
+  title: "Task Title", 
+  taskStructure: "parent" | "simple" | "subtask",  // Single source of truth!
+  type: "feature",          // Clean enum, no emojis
+  status: "todo",           // Normalized
+  workflowState: "current", // Consistent naming
+  assignee: "username",     // Consistent naming
+  progress: {               // Available for all parent tasks
+    total: 5,
+    completed: 2, 
+    percentage: 40
+  }
+}
+```
+
+## 📁 zod schemas for ui integration
+### **Location: `src/mcp/schemas.ts`**
+
+**Import the schemas directly in your UI:**
+
+```typescript
+import { 
+  TaskSchema,           // Union of all task types
+  SimpleTaskSchema,     // Standalone tasks
+  SubTaskSchema,        // Tasks within parents  
+  ParentTaskSchema,     // Parent tasks with subtasks
+  ParentTaskDetailSchema, // Full parent with all subtasks
+  // Input schemas for API calls
+  TaskListInputSchema,
+  TaskGetInputSchema,
+  ParentListInputSchema,
+  ParentGetInputSchema
+} from '../../../src/mcp/schemas.js';
+
+// TypeScript types auto-generated
+type Task = z.infer<typeof TaskSchema>;
+type SimpleTask = z.infer<typeof SimpleTaskSchema>;
+type ParentTask = z.infer<typeof ParentTaskSchema>;
+```
+
+### **Key Schema Features:**
+
+**1. Discriminated Union for Task Detection:**
+```typescript
+// No more checking 5 different properties!
+if (task.taskStructure === 'parent') {
+  // It's a parent task, has progress and subtaskIds
+  console.log(`Progress: ${task.progress.completed}/${task.progress.total}`);
+} else if (task.taskStructure === 'subtask') {
+  // It's a subtask, has parentId and sequenceNumber
+  console.log(`Parent: ${task.parentId}, Sequence: ${task.sequenceNumber}`);
+} else {
+  // It's a simple standalone task
+  console.log('Standalone task');
+}
+```
+
+**2. Clean Enum Values:**
+```typescript
+// Before: "🌟 Feature" 
+// After: "feature"
+const cleanType = task.type; // "feature" | "bug" | "chore" | "documentation" | "test" | "spike"
+
+// Before: "To Do"
+// After: "todo" 
+const cleanStatus = task.status; // "todo" | "in_progress" | "done" | "blocked" | "archived"
+```
+
+**3. Consistent Field Names:**
+```typescript
+// Before: task.metadata.location.workflowState vs task.location
+// After: Always task.workflowState
+const location = task.workflowState; // "backlog" | "current" | "archive"
+
+// Before: task.assigned_to vs task.assignee
+// After: Always task.assignee  
+const assignee = task.assignee; // string | undefined
+```
+
+## Api endpoint changes
+### **All endpoints now return consistent structure:**
+
+**`task_list`** - List tasks with filtering
+```typescript
+// Input validation with Zod
+const params = TaskListInputSchema.parse({
+  location: ["current", "backlog"], 
+  task_type: "top-level",
+  include_content: false
+});
+
+// Response: Task[] with consistent structure
+```
+
+**`task_get`** - Get single task details  
+```typescript
+const params = TaskGetInputSchema.parse({
+  id: "task-id",
+  parent_id: "parent-id", // For subtasks
+  format: "full"
+});
+
+// Response: Task with full content
+```
+
+**`parent_list`** - List parent tasks
+```typescript  
+const params = ParentListInputSchema.parse({
+  location: "current",
+  include_progress: true,
+  include_subtasks: false
+});
+
+// Response: ParentTask[] with progress data
+```
+
+**`parent_get`** - Get parent with all subtasks
+```typescript
+const params = ParentGetInputSchema.parse({
+  id: "parent-task-id"
+});
+
+// Response: ParentTaskDetail with all subtasks included
+```
+
+## Integration guide for ui team
+### 1. **Replace Mock Data**
+Your mock data in `task-ui-2/src/lib/api/mock-data-v2.ts` can now match the real API structure exactly.
+
+### 2. **Update API Client** 
+```typescript
+// Use Zod schemas for validation
+import { TaskSchema } from '../../../src/mcp/schemas.js';
+
+const response = await fetch('/api/task_list', { 
+  method: 'POST',
+  body: JSON.stringify({ location: "current" })
+});
+
+const data = await response.json();
+// Validate with Zod
+const tasks = data.data.map(task => TaskSchema.parse(task));
+```
+
+### 3. **Simplify Component Logic**
+```typescript
+// Before: Complex parent detection
+const isParent = task.metadata?.isParentTask || 
+                task.type === 'parent_task' || 
+                task.subtasks?.length > 0 || 
+                task.task_type === 'parent';
+
+// After: Simple discriminated union
+const isParent = task.taskStructure === 'parent';
+```
+
+### 4. **Progress Display**
+```typescript
+// Before: Progress only available in parent_list
+// After: Always available for parent tasks
+{task.taskStructure === 'parent' && (
+  <div>Progress: {task.progress.completed}/{task.progress.total}</div>
+)}
+```
+
+## Files changed in mcp implementation
+**New Files Created:**
+- `src/mcp/schemas.ts` - **Zod schemas for UI to import**
+- `src/mcp/transformers.ts` - Transformation utilities
+- `src/mcp/normalized-handlers.ts` - New consistent handlers
+- `src/mcp/output-schemas.ts` - JSON Schema generation
+
+**Updated Files:**
+- `src/mcp/handlers.ts` - Method registry updated
+- `src/mcp/core-server.ts` - Using normalized handlers
+
+## Validation & testing status
+✅ **Tested in MCP Inspector** - Both `parent_list` and `parent_get` working  
+✅ **Zod validation** - Runtime schema validation working  
+✅ **Null handling** - Fixed assignee null/undefined issue  
+✅ **Integration** - Core server properly using normalized handlers  
+
+---
+
+# UI Cleanup Tasks (Updated)
+
+Now that the API normalization is complete, here's what needs to be updated in the UI components:

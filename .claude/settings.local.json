@@ -174,7 +174,13 @@
       "mcp__scopecraft__parent_get",
       "Bash(pkill:*)",
       "Bash(./implement-auto add-atnmus-excton-docs-to-read-05A)",
-      "mcp__scopecraft__parent_get"
+      "mcp__scopecraft__parent_get",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_network_requests",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_press_key",
+      "Bash(npx @biomejs/biome check:*)"
     ],
     "deny": []
   },
