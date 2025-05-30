@@ -1,8 +1,10 @@
 import React from 'react';
+import { Link } from '@tanstack/react-router';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { TaskTypeIcon } from './TaskTypeIcon';
 import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
+import { getTaskUrl } from '../../lib/task-routing';
 import type { ParentTask, Task } from '../../lib/types';
 
 // Union type for table rows (can be parent or simple tasks)
@@ -139,7 +141,13 @@ export function TaskTable({
 
                 {/* Title Column */}
                 <td className="p-3">
-                  <div className="font-medium text-sm">{task.title}</div>
+                  <Link
+                    href={getTaskUrl(task)}
+                    className="font-medium text-sm text-foreground hover:text-blue-600 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {task.title}
+                  </Link>
                   <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
                     {task.task_type === 'parent' && 'subtasks' in task && (
                       <span>

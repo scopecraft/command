@@ -2,7 +2,7 @@
  * React Query hooks for V2 API endpoints
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
 
 // Query keys
@@ -14,19 +14,21 @@ export const queryKeys = {
 };
 
 // Task hooks
-export function useTaskList(params: {
-  task_type?: string;
-  location?: string | string[];
-  status?: string;
-  priority?: string;
-  area?: string;
-  assignee?: string;
-  tags?: string[];
-  include_content?: boolean;
-  include_completed?: boolean;
-  include_parent_tasks?: boolean;
-  parent_id?: string;
-} = {}) {
+export function useTaskList(
+  params: {
+    task_type?: string;
+    location?: string | string[];
+    status?: string;
+    priority?: string;
+    area?: string;
+    assignee?: string;
+    tags?: string[];
+    include_content?: boolean;
+    include_completed?: boolean;
+    include_parent_tasks?: boolean;
+    parent_id?: string;
+  } = {}
+) {
   return useQuery({
     queryKey: queryKeys.tasks(params),
     queryFn: () => apiClient.getTasks(params),
@@ -47,7 +49,7 @@ export function useTask(id: string, parentId?: string) {
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: apiClient.createTask,
     onSuccess: () => {
@@ -60,10 +62,10 @@ export function useCreateTask() {
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: any }) => 
-      apiClient.updateTask(id, updates),
+    mutationFn: ({ id, updates, parent_id }: { id: string; updates: any; parent_id?: string }) =>
+      apiClient.updateTask(id, updates, parent_id),
     onSuccess: (data, variables) => {
       // Invalidate specific task and lists
       queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
@@ -75,9 +77,9 @@ export function useUpdateTask() {
 
 export function useDeleteTask() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ id, cascade }: { id: string; cascade?: boolean }) => 
+    mutationFn: ({ id, cascade }: { id: string; cascade?: boolean }) =>
       apiClient.deleteTask(id, cascade),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -88,7 +90,7 @@ export function useDeleteTask() {
 
 export function useMoveTask() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: apiClient.moveTask,
     onSuccess: () => {
@@ -100,12 +102,14 @@ export function useMoveTask() {
 }
 
 // Parent task hooks
-export function useParentList(params: {
-  location?: string | string[];
-  area?: string;
-  include_progress?: boolean;
-  include_subtasks?: boolean;
-} = {}) {
+export function useParentList(
+  params: {
+    location?: string | string[];
+    area?: string;
+    include_progress?: boolean;
+    include_subtasks?: boolean;
+  } = {}
+) {
   return useQuery({
     queryKey: queryKeys.parents(params),
     queryFn: () => apiClient.getParents(params),
@@ -115,7 +119,7 @@ export function useParentList(params: {
 
 export function useCreateParent() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: apiClient.createParent,
     onSuccess: () => {
@@ -127,9 +131,9 @@ export function useCreateParent() {
 
 export function useParentOperation() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ parentId, operation }: { parentId: string; operation: any }) => 
+    mutationFn: ({ parentId, operation }: { parentId: string; operation: any }) =>
       apiClient.performParentOperation(parentId, operation),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parents'] });
@@ -149,7 +153,7 @@ export function useCurrentWorkflow() {
 
 export function useMarkCompleteNext() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id }: { id: string }) => apiClient.markCompleteNext({ id }),
     onSuccess: () => {
@@ -184,5 +188,25 @@ export function useParentsWithProgress() {
   return useParentList({
     include_progress: true,
     include_subtasks: false,
+  });
+}
+
+// Individual parent task hook
+export function useParentTask(id: string) {
+  return useQuery({
+    queryKey: ['parent', id],
+    queryFn: () => apiClient.getTask(id), // Parent tasks use same endpoint as regular tasks
+    enabled: !!id,
+    staleTime: 1000 * 30, // 30 seconds
+  });
+}
+
+// Subtasks for a parent hook  
+export function useSubtasks(params: { parent_id: string }, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['subtasks', params.parent_id],
+    queryFn: () => apiClient.getTasks({ parent_id: params.parent_id }),
+    enabled: (options?.enabled ?? true) && !!params.parent_id,
+    staleTime: 1000 * 30, // 30 seconds
   });
 }

@@ -14,7 +14,7 @@ class ApiClient {
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
@@ -36,25 +36,27 @@ class ApiClient {
   }
 
   // Task endpoints
-  async getTasks(params: {
-    task_type?: string;
-    location?: string | string[];
-    status?: string;
-    priority?: string;
-    area?: string;
-    assignee?: string;
-    tags?: string[];
-    include_content?: boolean;
-    include_completed?: boolean;
-    include_parent_tasks?: boolean;
-    parent_id?: string;
-  } = {}) {
+  async getTasks(
+    params: {
+      task_type?: string;
+      location?: string | string[];
+      status?: string;
+      priority?: string;
+      area?: string;
+      assignee?: string;
+      tags?: string[];
+      include_content?: boolean;
+      include_completed?: boolean;
+      include_parent_tasks?: boolean;
+      parent_id?: string;
+    } = {}
+  ) {
     const searchParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
         if (Array.isArray(value)) {
-          value.forEach(v => searchParams.append(key, v));
+          value.forEach((v) => searchParams.append(key, v));
         } else {
           searchParams.append(key, String(value));
         }
@@ -67,7 +69,8 @@ class ApiClient {
   async getTask(id: string, parentId?: string) {
     const params = new URLSearchParams();
     if (parentId) params.append('parent_id', parentId);
-    
+    params.append('format', 'full'); // Always get full content for task details
+
     return this.request(`/tasks/${id}?${params}`);
   }
 
@@ -88,19 +91,27 @@ class ApiClient {
     });
   }
 
-  async updateTask(id: string, updates: {
-    title?: string;
-    status?: string;
-    priority?: string;
-    area?: string;
-    assignee?: string;
-    tags?: string[];
-    instruction?: string;
-    tasks?: string;
-    deliverable?: string;
-    add_log_entry?: string;
-  }) {
-    return this.request(`/tasks/${id}`, {
+  async updateTask(
+    id: string,
+    updates: {
+      title?: string;
+      status?: string;
+      priority?: string;
+      area?: string;
+      assignee?: string;
+      tags?: string[];
+      instruction?: string;
+      tasks?: string;
+      deliverable?: string;
+      add_log_entry?: string;
+      content?: string; // Full markdown content
+    },
+    parentId?: string
+  ) {
+    const params = new URLSearchParams();
+    if (parentId) params.append('parent_id', parentId);
+
+    return this.request(`/tasks/${id}?${params}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
@@ -109,7 +120,7 @@ class ApiClient {
   async deleteTask(id: string, cascade = false) {
     const params = new URLSearchParams();
     if (cascade) params.append('cascade', 'true');
-    
+
     return this.request(`/tasks/${id}?${params}`, {
       method: 'DELETE',
     });
@@ -129,18 +140,20 @@ class ApiClient {
   }
 
   // Parent task endpoints
-  async getParents(params: {
-    location?: string | string[];
-    area?: string;
-    include_progress?: boolean;
-    include_subtasks?: boolean;
-  } = {}) {
+  async getParents(
+    params: {
+      location?: string | string[];
+      area?: string;
+      include_progress?: boolean;
+      include_subtasks?: boolean;
+    } = {}
+  ) {
     const searchParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
         if (Array.isArray(value)) {
-          value.forEach(v => searchParams.append(key, v));
+          value.forEach((v) => searchParams.append(key, v));
         } else {
           searchParams.append(key, String(value));
         }
@@ -172,18 +185,21 @@ class ApiClient {
     });
   }
 
-  async performParentOperation(parentId: string, operation: {
-    operation: 'resequence' | 'parallelize' | 'add_subtask';
-    sequence_map?: Array<{ id: string; sequence: string }>;
-    subtask_ids?: string[];
-    target_sequence?: string;
-    subtask?: {
-      title: string;
-      after?: string;
-      sequence?: string;
-      type?: string;
-    };
-  }) {
+  async performParentOperation(
+    parentId: string,
+    operation: {
+      operation: 'resequence' | 'parallelize' | 'add_subtask';
+      sequence_map?: Array<{ id: string; sequence: string }>;
+      subtask_ids?: string[];
+      target_sequence?: string;
+      subtask?: {
+        title: string;
+        after?: string;
+        sequence?: string;
+        type?: string;
+      };
+    }
+  ) {
     return this.request(`/parents/${parentId}`, {
       method: 'POST',
       body: JSON.stringify(operation),

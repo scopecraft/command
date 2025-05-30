@@ -14,7 +14,8 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
 import { Route as WorkflowIndexImport } from './routes/workflow/index'
 import { Route as TasksIndexImport } from './routes/tasks/index'
-import { Route as ParentsIndexImport } from './routes/parents/index'
+import { Route as TasksTaskIdImport } from './routes/tasks/$taskId'
+import { Route as TasksParentIdSubtaskIdImport } from './routes/tasks/$parentId/$subtaskId'
 
 // Create/Update Routes
 
@@ -36,9 +37,15 @@ const TasksIndexRoute = TasksIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const ParentsIndexRoute = ParentsIndexImport.update({
-  id: '/parents/',
-  path: '/parents/',
+const TasksTaskIdRoute = TasksTaskIdImport.update({
+  id: '/tasks/$taskId',
+  path: '/tasks/$taskId',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const TasksParentIdSubtaskIdRoute = TasksParentIdSubtaskIdImport.update({
+  id: '/tasks/$parentId/$subtaskId',
+  path: '/tasks/$parentId/$subtaskId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -53,11 +60,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/parents/': {
-      id: '/parents/'
-      path: '/parents'
-      fullPath: '/parents'
-      preLoaderRoute: typeof ParentsIndexImport
+    '/tasks/$taskId': {
+      id: '/tasks/$taskId'
+      path: '/tasks/$taskId'
+      fullPath: '/tasks/$taskId'
+      preLoaderRoute: typeof TasksTaskIdImport
       parentRoute: typeof rootRoute
     }
     '/tasks/': {
@@ -74,6 +81,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowIndexImport
       parentRoute: typeof rootRoute
     }
+    '/tasks/$parentId/$subtaskId': {
+      id: '/tasks/$parentId/$subtaskId'
+      path: '/tasks/$parentId/$subtaskId'
+      fullPath: '/tasks/$parentId/$subtaskId'
+      preLoaderRoute: typeof TasksParentIdSubtaskIdImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -81,47 +95,68 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/parents': typeof ParentsIndexRoute
+  '/tasks/$taskId': typeof TasksTaskIdRoute
   '/tasks': typeof TasksIndexRoute
   '/workflow': typeof WorkflowIndexRoute
+  '/tasks/$parentId/$subtaskId': typeof TasksParentIdSubtaskIdRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/parents': typeof ParentsIndexRoute
+  '/tasks/$taskId': typeof TasksTaskIdRoute
   '/tasks': typeof TasksIndexRoute
   '/workflow': typeof WorkflowIndexRoute
+  '/tasks/$parentId/$subtaskId': typeof TasksParentIdSubtaskIdRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/parents/': typeof ParentsIndexRoute
+  '/tasks/$taskId': typeof TasksTaskIdRoute
   '/tasks/': typeof TasksIndexRoute
   '/workflow/': typeof WorkflowIndexRoute
+  '/tasks/$parentId/$subtaskId': typeof TasksParentIdSubtaskIdRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/parents' | '/tasks' | '/workflow'
+  fullPaths:
+    | '/'
+    | '/tasks/$taskId'
+    | '/tasks'
+    | '/workflow'
+    | '/tasks/$parentId/$subtaskId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/parents' | '/tasks' | '/workflow'
-  id: '__root__' | '/' | '/parents/' | '/tasks/' | '/workflow/'
+  to:
+    | '/'
+    | '/tasks/$taskId'
+    | '/tasks'
+    | '/workflow'
+    | '/tasks/$parentId/$subtaskId'
+  id:
+    | '__root__'
+    | '/'
+    | '/tasks/$taskId'
+    | '/tasks/'
+    | '/workflow/'
+    | '/tasks/$parentId/$subtaskId'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ParentsIndexRoute: typeof ParentsIndexRoute
+  TasksTaskIdRoute: typeof TasksTaskIdRoute
   TasksIndexRoute: typeof TasksIndexRoute
   WorkflowIndexRoute: typeof WorkflowIndexRoute
+  TasksParentIdSubtaskIdRoute: typeof TasksParentIdSubtaskIdRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ParentsIndexRoute: ParentsIndexRoute,
+  TasksTaskIdRoute: TasksTaskIdRoute,
   TasksIndexRoute: TasksIndexRoute,
   WorkflowIndexRoute: WorkflowIndexRoute,
+  TasksParentIdSubtaskIdRoute: TasksParentIdSubtaskIdRoute,
 }
 
 export const routeTree = rootRoute
@@ -135,22 +170,26 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/parents/",
+        "/tasks/$taskId",
         "/tasks/",
-        "/workflow/"
+        "/workflow/",
+        "/tasks/$parentId/$subtaskId"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
-    "/parents/": {
-      "filePath": "parents/index.tsx"
+    "/tasks/$taskId": {
+      "filePath": "tasks/$taskId.tsx"
     },
     "/tasks/": {
       "filePath": "tasks/index.tsx"
     },
     "/workflow/": {
       "filePath": "workflow/index.tsx"
+    },
+    "/tasks/$parentId/$subtaskId": {
+      "filePath": "tasks/$parentId/$subtaskId.tsx"
     }
   }
 }
