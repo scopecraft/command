@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { detached } from 'channelcoder';
+import { stream } from 'channelcoder';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parseArgs } from 'util';
@@ -47,7 +47,7 @@ if (values.help || positionals.length === 0) {
   console.log('  bun run scripts/implement-autonomous.ts 01_investigate-api-05A fix-mcp-api-res-cnsstncy-05A');
   console.log('\n  # Execute a standalone task');
   console.log('  bun run scripts/implement-autonomous.ts fix-typo-bug-05B');
-  console.log('\n  # Execute multiple tasks in parallel');
+  console.log('\n  # Execute multiple tasks (sequentially with streaming)');
   console.log('  bun run scripts/implement-autonomous.ts task1 task2 task3 --parallel');
   console.log('\nOptions:');
   console.log('  --log-dir <path>  Directory for execution logs (default: .autonomous-tasks/logs)');
@@ -156,27 +156,50 @@ async function executeTask(taskId: string, parentId?: string, logDir?: string) {
   ];
   
   try {
-    const result = await detached('.tasks/.modes/implement/autonomous.md', {
+    console.log(`${colors.green}✅ Starting autonomous execution...${colors.reset}`);
+    console.log(`${colors.yellow}Streaming output:${colors.reset}\n`);
+    console.log(`${colors.dim}${'─'.repeat(80)}${colors.reset}`);
+    
+    let logContent = '';
+    const startTime = Date.now();
+    
+    // Stream the execution
+    for await (const chunk of stream('.tasks/.modes/implement/autonomous.md', {
       data: {
         taskId,
         ...(parentId && { parentId }),
       },
       allowedTools,
-      ...(logFile && { logFile }),
-    });
-    
-    if (result.data?.pid) {
-      console.log(`${colors.green}✅ Task started successfully${colors.reset}`);
-      console.log(`  PID: ${colors.bright}${result.data.pid}${colors.reset}`);
-      console.log(`  Mode: ${colors.yellow}Fully autonomous - no interaction possible${colors.reset}`);
-      console.log(`  Output: All updates will be written to the task file itself`);
-      
-      return { success: true, pid: result.data.pid, taskId, parentId, logFile };
-    } else {
-      throw new Error('Failed to start task - no PID returned');
+    })) {
+      if (chunk.type === 'content') {
+        // Write to console
+        process.stdout.write(chunk.content);
+        
+        // Accumulate for log file
+        logContent += chunk.content;
+      } else if (chunk.type === 'error') {
+        console.error(`\n${colors.red}Error: ${chunk.error}${colors.reset}`);
+        if (logFile) {
+          await fs.writeFile(logFile, logContent + `\nError: ${chunk.error}\n`);
+        }
+        throw new Error(chunk.error);
+      }
     }
+    
+    const duration = Math.round((Date.now() - startTime) / 1000);
+    console.log(`\n${colors.dim}${'─'.repeat(80)}${colors.reset}`);
+    console.log(`${colors.green}✅ Task completed successfully${colors.reset}`);
+    console.log(`  Duration: ${colors.bright}${duration}s${colors.reset}`);
+    
+    // Save log if requested
+    if (logFile) {
+      await fs.writeFile(logFile, logContent);
+      console.log(`  Log saved: ${colors.dim}${logFile}${colors.reset}`);
+    }
+    
+    return { success: true, taskId, parentId, logFile, duration };
   } catch (error) {
-    console.error(`${colors.red}❌ Failed to start task:${colors.reset}`, error);
+    console.error(`\n${colors.red}❌ Task execution failed:${colors.reset}`, error);
     return { success: false, taskId, parentId, error };
   }
 }
@@ -222,9 +245,9 @@ async function main() {
     const failed = results.filter(r => !r.success);
     
     if (successful.length > 0) {
-      console.log(`${colors.green}✅ Started: ${successful.length} tasks${colors.reset}`);
+      console.log(`${colors.green}✅ Completed: ${successful.length} tasks${colors.reset}`);
       successful.forEach(r => {
-        console.log(`   - ${r.taskId} (PID: ${r.pid})`);
+        console.log(`   - ${r.taskId} (${r.duration}s)`);
       });
     }
     
@@ -240,8 +263,9 @@ async function main() {
     await executeTask(taskId, parentId, logDir);
   }
   
-  console.log(`\n${colors.dim}Monitor task progress by checking the task files directly${colors.reset}`);
-  console.log(`${colors.dim}Use 'bun run dev:cli task get <taskId>' to view task status${colors.reset}`);
+  if (!isParallel) {
+    console.log(`\n${colors.dim}Task execution complete. Check the task file for all updates.${colors.reset}`);
+  }
 }
 
 // Run
