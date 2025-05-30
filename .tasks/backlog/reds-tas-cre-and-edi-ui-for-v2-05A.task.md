@@ -14,7 +14,6 @@ tags:
 
 
 ## Instruction
-
 Design and implement new create and edit UI patterns for tasks in the V2 UI. The current V1 implementation uses separate form pages, but we need a more modern approach that fits with the V2 design language.
 
 ### Background
@@ -32,7 +31,6 @@ Design and implement new create and edit UI patterns for tasks in the V2 UI. The
 - Auto-save vs explicit save
 
 ## Tasks
-
 - [ ] Research and propose UI patterns for create/edit
   - [ ] Analyze modern task management UIs (Linear, Notion, Jira, etc.)
   - [ ] Consider inline editing for simple fields
@@ -63,7 +61,6 @@ Design and implement new create and edit UI patterns for tasks in the V2 UI. The
   - [ ] Loading states
 
 ## Deliverable
-
 - New create/edit UI components that fit V2 design system
 - Seamless integration with existing TaskTable and detail views
 - Improved UX over V1 form-based approach
@@ -72,3 +69,4 @@ Design and implement new create and edit UI patterns for tasks in the V2 UI. The
 
 ## Log
 - 2025-05-30: Task created to track V2 create/edit UI redesign work
+- 2025-05-30: MCP API has been normalized! See docs/mcp-api-consumer-guide.md for complete API reference. All write operations (task_create, task_update) now use consistent field names (workflowState, parentId, etc) and clean enum values. The API guide includes examples for all operations and Zod schema integration.
