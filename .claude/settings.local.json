@@ -164,7 +164,11 @@
       "Bash(npm run typecheck:*)",
       "mcp__scopecraft__parent_list",
       "mcp__scopecraft__parent_create",
-      "mcp__scopecraft__task_transform"
+      "mcp__scopecraft__task_transform",
+      "Bash(npm view:*)",
+      "Bash(npx create-tsrouter-app:*)",
+      "Bash(tree:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   },

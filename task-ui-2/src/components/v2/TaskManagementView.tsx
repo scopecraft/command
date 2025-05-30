@@ -1,6 +1,7 @@
 import React from 'react';
-import { mockV2ParentTasks, mockV2SimpleTasks } from '../../lib/api/mock-data-v2';
+import { useNavigate } from '@tanstack/react-router';
 import type { TaskStatus, TaskType, WorkflowState } from '../../lib/types';
+import type { ApiResponse } from '../../lib/api/client';
 import { Button } from '../ui/button';
 import { FilterCategory, FilterPanel } from '../ui/filter-panel';
 import { SearchInput } from '../ui/search-input';
@@ -14,27 +15,107 @@ interface TaskFilters {
   area: string[];
 }
 
-interface TaskManagementViewProps {
-  className?: string;
+interface TaskSearchParams {
+  search?: string;
+  status?: string[];
+  type?: string[];
+  workflow?: string[];
+  area?: string[];
+  assignee?: string;
 }
 
-export function TaskManagementView({ className = '' }: TaskManagementViewProps) {
-  // Combine all tasks
-  const allTasks: TableTask[] = React.useMemo(() => [
-    ...mockV2ParentTasks.map(task => ({ ...task, task_type: 'parent' as const })),
-    ...mockV2SimpleTasks.map(task => ({ ...task, task_type: 'simple' as const })),
-  ], []);
+interface TaskManagementViewProps {
+  className?: string;
+  data?: ApiResponse<any[]>;
+  searchParams?: TaskSearchParams;
+}
 
-  // State management
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [showFilters, setShowFilters] = React.useState(false);
+export function TaskManagementView({ className = '', data, searchParams = {} }: TaskManagementViewProps) {
+  const navigate = useNavigate();
+
+  // Convert API data to table format
+  const allTasks: TableTask[] = React.useMemo(() => {
+    if (!data?.success || !data.data) return [];
+    
+    return data.data.map(task => {
+      const metadata = task.metadata || task;
+      
+      return {
+        ...task,
+        task_type: metadata.isParentTask ? 'parent' as const : 'simple' as const,
+        id: metadata.id,
+        title: metadata.title,
+        status: normalizeStatus(metadata.status),
+        priority: metadata.priority || 'Medium',
+        workflow: normalizeWorkflow(metadata.location),
+        area: metadata.area || 'general',
+        assignee: metadata.assigned_to || metadata.assignee || '',
+        tags: metadata.tags || [],
+        created_date: metadata.created_date || '',
+        updated_date: metadata.updated_date || '',
+        type: normalizeType(metadata.type),
+      };
+    });
+  }, [data]);
+
+  // Helper functions to normalize data from API
+  function normalizeStatus(status: string): TaskStatus {
+    switch (status?.toLowerCase()) {
+      case 'to do': return 'todo';
+      case 'in progress': case 'progress': return 'in_progress';
+      case 'done': return 'done';
+      case 'blocked': return 'blocked';
+      default: return 'todo';
+    }
+  }
+
+  function normalizeWorkflow(location: any): WorkflowState {
+    if (typeof location === 'string') return location as WorkflowState;
+    if (location?.workflowState) return location.workflowState;
+    return 'backlog';
+  }
+
+  function normalizeType(type: string): TaskType {
+    if (type?.includes('Feature') || type === 'feature') return 'feature';
+    if (type?.includes('Bug') || type === 'bug') return 'bug';
+    if (type?.includes('Chore') || type === 'chore') return 'chore';
+    if (type?.includes('Documentation') || type === 'documentation') return 'documentation';
+    if (type?.includes('Test') || type === 'test') return 'test';
+    if (type?.includes('Spike') || type === 'spike') return 'spike';
+    return 'feature';
+  }
+
+  // State management from URL search params
   const [selectedRows, setSelectedRows] = React.useState<Record<string, boolean>>({});
-  const [filters, setFilters] = React.useState<TaskFilters>({
-    status: [],
-    type: [],
-    workflow: [],
-    area: [],
-  });
+  const [showFilters, setShowFilters] = React.useState(false);
+  
+  const searchQuery = searchParams.search || '';
+  const filters: TaskFilters = React.useMemo(() => ({
+    status: (searchParams.status || []) as TaskStatus[],
+    type: (searchParams.type || []) as TaskType[],
+    workflow: (searchParams.workflow || []) as WorkflowState[],
+    area: searchParams.area || [],
+  }), [searchParams]);
+
+  // Update search params via navigation
+  const updateSearchParams = React.useCallback((updates: Partial<TaskSearchParams>) => {
+    navigate({
+      search: (prev) => ({ ...prev, ...updates }),
+    });
+  }, [navigate]);
+
+  const setSearchQuery = React.useCallback((query: string) => {
+    updateSearchParams({ search: query || undefined });
+  }, [updateSearchParams]);
+
+  const setFilters = React.useCallback((newFilters: TaskFilters) => {
+    updateSearchParams({
+      status: newFilters.status.length ? newFilters.status : undefined,
+      type: newFilters.type.length ? newFilters.type : undefined,
+      workflow: newFilters.workflow.length ? newFilters.workflow : undefined,
+      area: newFilters.area.length ? newFilters.area : undefined,
+    });
+  }, [updateSearchParams]);
 
   // Filter options
   const filterOptions = React.useMemo(() => {
@@ -92,7 +173,7 @@ export function TaskManagementView({ className = '' }: TaskManagementViewProps) 
 
     // Apply workflow filter
     if (filters.workflow.length > 0) {
-      result = result.filter(task => filters.workflow.includes(task.workflow_state));
+      result = result.filter(task => filters.workflow.includes(task.workflow));
     }
 
     // Apply area filter
@@ -105,22 +186,25 @@ export function TaskManagementView({ className = '' }: TaskManagementViewProps) 
 
   // Filter handlers
   const handleFilterChange = (category: keyof TaskFilters, value: any) => {
-    setFilters(prev => ({
-      ...prev,
-      [category]: prev[category].includes(value)
-        ? prev[category].filter(item => item !== value)
-        : [...prev[category], value]
-    }));
+    const currentValues = filters[category];
+    const newValues = currentValues.includes(value)
+      ? currentValues.filter(item => item !== value)
+      : [...currentValues, value];
+    
+    setFilters({
+      ...filters,
+      [category]: newValues
+    });
   };
 
   const clearAllFilters = () => {
-    setFilters({
-      status: [],
-      type: [],
-      workflow: [],
-      area: [],
+    updateSearchParams({
+      search: undefined,
+      status: undefined,
+      type: undefined,
+      workflow: undefined,
+      area: undefined,
     });
-    setSearchQuery('');
   };
 
   // Calculate active filter count

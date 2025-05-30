@@ -1,0 +1,189 @@
+/**
+ * React Query hooks for V2 API endpoints
+ */
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from './client';
+
+// Query keys
+export const queryKeys = {
+  tasks: (params?: any) => ['tasks', params] as const,
+  task: (id: string, parentId?: string) => ['task', id, parentId] as const,
+  parents: (params?: any) => ['parents', params] as const,
+  workflow: () => ['workflow'] as const,
+};
+
+// Task hooks
+export function useTaskList(params: {
+  task_type?: string;
+  location?: string | string[];
+  status?: string;
+  priority?: string;
+  area?: string;
+  assignee?: string;
+  tags?: string[];
+  include_content?: boolean;
+  include_completed?: boolean;
+  include_parent_tasks?: boolean;
+  parent_id?: string;
+} = {}) {
+  return useQuery({
+    queryKey: queryKeys.tasks(params),
+    queryFn: () => apiClient.getTasks(params),
+    staleTime: 1000 * 60, // 1 minute
+    refetchInterval: 1000 * 30, // 30 seconds
+    refetchIntervalInBackground: false, // Only when window is visible
+  });
+}
+
+export function useTask(id: string, parentId?: string) {
+  return useQuery({
+    queryKey: queryKeys.task(id, parentId),
+    queryFn: () => apiClient.getTask(id, parentId),
+    enabled: !!id,
+    staleTime: 1000 * 30, // 30 seconds
+  });
+}
+
+export function useCreateTask() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.createTask,
+    onSuccess: () => {
+      // Invalidate all task queries
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['parents'] });
+    },
+  });
+}
+
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: any }) => 
+      apiClient.updateTask(id, updates),
+    onSuccess: (data, variables) => {
+      // Invalidate specific task and lists
+      queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['parents'] });
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, cascade }: { id: string; cascade?: boolean }) => 
+      apiClient.deleteTask(id, cascade),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['parents'] });
+    },
+  });
+}
+
+export function useMoveTask() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.moveTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['parents'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow'] });
+    },
+  });
+}
+
+// Parent task hooks
+export function useParentList(params: {
+  location?: string | string[];
+  area?: string;
+  include_progress?: boolean;
+  include_subtasks?: boolean;
+} = {}) {
+  return useQuery({
+    queryKey: queryKeys.parents(params),
+    queryFn: () => apiClient.getParents(params),
+    staleTime: 1000 * 60, // 1 minute
+  });
+}
+
+export function useCreateParent() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.createParent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['parents'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+}
+
+export function useParentOperation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ parentId, operation }: { parentId: string; operation: any }) => 
+      apiClient.performParentOperation(parentId, operation),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['parents'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+}
+
+// Workflow hooks
+export function useCurrentWorkflow() {
+  return useQuery({
+    queryKey: queryKeys.workflow(),
+    queryFn: () => apiClient.getCurrentWorkflow(),
+    staleTime: 1000 * 30, // 30 seconds
+  });
+}
+
+export function useMarkCompleteNext() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) => apiClient.markCompleteNext({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow'] });
+    },
+  });
+}
+
+// Convenience hooks for common use cases
+export function useTopLevelTasks() {
+  return useTaskList({
+    task_type: 'top-level',
+    include_content: false,
+  });
+}
+
+export function useCurrentTasks() {
+  return useTaskList({
+    location: 'current',
+    include_content: false,
+  });
+}
+
+export function useBacklogTasks() {
+  return useTaskList({
+    location: 'backlog',
+    include_content: false,
+  });
+}
+
+export function useParentsWithProgress() {
+  return useParentList({
+    include_progress: true,
+    include_subtasks: false,
+  });
+}
