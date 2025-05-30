@@ -1,11 +1,16 @@
 # CLI Area Guide
 
+⚠️ **CRITICAL**: Only use CLI files with -v2 suffix. There is NO v1 - it was never released. Never mention "v2" in user-facing output. The v2 suffix is internal only and will be removed soon.
+
 ## Quick Architecture Overview
 The CLI provides a command-line interface for task management using Commander.js. It follows an entity-command pattern where commands are organized by the entity they operate on (task, parent, workflow, etc.).
 
 ## Key Files and Utilities
 
 ### CLI Structure
+
+**IMPORTANT**: Only use files with -v2 suffix. Ignore any legacy CLI files. There is no v1 - v2 is the ONLY implementation.
+
 - `src/cli/cli-v2.ts` - Main entry point, command setup
 - `src/cli/entity-commands-v2.ts` - Entity command registration
 - `src/cli/commands-v2.ts` - Command implementations
@@ -114,6 +119,8 @@ console.log(formatTaskTree(parentTask));
 - ❌ Forget to handle edge cases
 - ❌ Use inconsistent option patterns
 - ❌ Ignore global options
+- ❌ Look at legacy CLI files (without -v2)
+- ❌ Mention "v2" in user-facing messages
 
 ## Testing Approach
 

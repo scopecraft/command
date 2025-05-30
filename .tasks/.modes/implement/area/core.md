@@ -1,11 +1,15 @@
 # Core Area Guide
 
+⚠️ **CRITICAL**: Only work with code in `src/core/v2/`. There is NO v1 - it was never released. Ignore any legacy code outside v2. The v2 suffix is temporary and will be removed soon.
+
 ## Quick Architecture Overview
 The Core area contains all business logic for task management, independent of any interface. It handles file operations, task parsing, workflow management, and provides a clean API for CLI, MCP, and UI layers.
 
 ## Key Files and Utilities
 
-### V2 Core Structure (Current)
+**IMPORTANT**: Only use files in `src/core/v2/`. Ignore any legacy code outside v2 - it's being removed. V2 is the ONLY implementation.
+
+### Core Structure
 - `src/core/v2/index.ts` - Main exports and operations
 - `src/core/v2/task-crud.ts` - Task CRUD operations
 - `src/core/v2/task-parser.ts` - Markdown/frontmatter parsing
@@ -92,7 +96,7 @@ Expected output
 - ✅ Use TypeScript types extensively
 - ✅ Validate data at boundaries
 - ✅ Handle file system errors gracefully
-- ✅ Maintain backward compatibility
+- ✅ Focus on clean, forward-looking design
 - ✅ Write pure functions when possible
 - ✅ Use descriptive error messages
 
@@ -103,6 +107,8 @@ Expected output
 - ❌ Mutate input parameters
 - ❌ Skip validation
 - ❌ Throw generic errors
+- ❌ Look at or use ANY code outside src/core/v2/
+- ❌ Worry about backward compatibility
 
 ## Testing Approach
 

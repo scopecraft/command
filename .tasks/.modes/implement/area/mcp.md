@@ -1,5 +1,7 @@
 # MCP (Model Context Protocol) Area Guide
 
+⚠️ **CRITICAL**: Only import from `../core/v2/`. There is NO v1 - it was never released. Ignore any legacy handlers or patterns. The v2 suffix is temporary and internal only.
+
 ## Quick Architecture Overview
 The MCP area provides an API server that allows AI agents (like Claude) to interact with the task management system. It follows the Model Context Protocol specification and provides both HTTP/SSE and STDIO transports.
 
@@ -56,13 +58,15 @@ catch (error) {
 
 ### Core Integration
 ```typescript
-// Always use the v2 core functions
+// ONLY use core functions from v2 directory
 import { taskOperations } from '../core/v2';
 
 // Transform core responses to MCP format
 const coreTasks = await taskOperations.listTasks(filters);
 return coreTasks.map(transformToMCPFormat);
 ```
+
+**IMPORTANT**: There is no v1. Only import from '../core/v2/'. Ignore any legacy handlers or types.
 
 ## Do's and Don'ts
 
@@ -81,6 +85,8 @@ return coreTasks.map(transformToMCPFormat);
 - ❌ Assume AI knows internal implementation details
 - ❌ Return null/undefined without explanation
 - ❌ Mix transport logic with business logic
+- ❌ Import from anywhere except '../core/v2/'
+- ❌ Look at legacy handler implementations
 
 ## Testing Approach
 
