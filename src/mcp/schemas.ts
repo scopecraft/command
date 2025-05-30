@@ -275,6 +275,273 @@ export type ParentListOutput = z.infer<typeof ParentListOutputSchema>;
 export type ParentGetOutput = z.infer<typeof ParentGetOutputSchema>;
 
 // =============================================================================
+// Write Operation Input Schemas
+// =============================================================================
+
+// Base schema for all write operations
+export const WriteOperationContextSchema = z.object({
+  rootDir: z.string().optional().describe('Project root directory (overrides session default)'),
+});
+
+// task_create input schema
+export const TaskCreateInputSchema = WriteOperationContextSchema.extend({
+  // Required fields
+  title: z.string().min(1).max(200),
+  type: TaskTypeSchema, // Uses existing clean enum
+  
+  // Optional metadata - using normalized field names
+  area: z.string().default('general'),
+  status: TaskStatusSchema.default('todo'),
+  priority: TaskPrioritySchema.default('medium'),
+  workflowState: WorkflowStateSchema.default('backlog'),
+  
+  // Relationships
+  parentId: z.string().optional().describe('Parent task ID for creating subtasks'),
+  
+  // Additional metadata
+  assignee: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  
+  // Initial content sections
+  instruction: z.string().optional(),
+  tasks: z.string().optional().describe('Initial checklist in markdown format'),
+});
+
+// task_create output schema
+export const TaskCreateOutputSchema = createResponseSchema(
+  z.object({
+    id: z.string(),
+    title: z.string(),
+    type: TaskTypeSchema,
+    status: TaskStatusSchema,
+    workflowState: WorkflowStateSchema,
+    area: z.string(),
+    path: z.string(),
+    createdAt: z.string().datetime(),
+  })
+);
+
+// task_update input schema
+export const TaskUpdateInputSchema = WriteOperationContextSchema.extend({
+  id: z.string(),
+  parentId: z.string().optional().describe('Parent ID for subtask resolution'),
+  
+  updates: z.object({
+    // Metadata updates
+    title: z.string().min(1).max(200).optional(),
+    status: TaskStatusSchema.optional(),
+    priority: TaskPrioritySchema.optional(),
+    area: z.string().optional(),
+    assignee: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    
+    // Content section updates
+    instruction: z.string().optional(),
+    tasks: z.string().optional(),
+    deliverable: z.string().optional(),
+    log: z.string().optional(),
+    
+    // Convenience field
+    addLogEntry: z.string().optional().describe('Append timestamped entry to log'),
+  }),
+});
+
+// task_update output schema
+export const TaskUpdateOutputSchema = createResponseSchema(TaskSchema);
+
+// task_delete input schema
+export const TaskDeleteInputSchema = WriteOperationContextSchema.extend({
+  id: z.string(),
+  parentId: z.string().optional(),
+  cascade: z.boolean().default(false).describe('Delete all subtasks for parent tasks'),
+});
+
+// task_delete output schema
+export const TaskDeleteOutputSchema = createResponseSchema(
+  z.object({
+    id: z.string(),
+    deleted: z.boolean(),
+    cascadeCount: z.number().optional().describe('Number of subtasks deleted'),
+  })
+);
+
+// task_move input schema
+export const TaskMoveInputSchema = WriteOperationContextSchema.extend({
+  id: z.string(),
+  parentId: z.string().optional(),
+  targetState: WorkflowStateSchema,
+  archiveDate: z.string().regex(/^\d{4}-\d{2}$/).optional()
+    .describe('Required for archive moves (YYYY-MM format)'),
+  updateStatus: z.boolean().default(true)
+    .describe('Auto-update status based on workflow transition'),
+});
+
+// task_move output schema
+export const TaskMoveOutputSchema = createResponseSchema(
+  z.object({
+    id: z.string(),
+    previousState: WorkflowStateSchema,
+    currentState: WorkflowStateSchema,
+    statusUpdated: z.boolean(),
+    newStatus: TaskStatusSchema.optional(),
+  })
+);
+
+// task_transform input schema
+export const TaskTransformInputSchema = WriteOperationContextSchema.extend({
+  id: z.string(),
+  operation: z.enum(['promote', 'extract', 'adopt']),
+  
+  // Operation-specific fields
+  parentId: z.string().optional().describe('Required for extract operation'),
+  targetParentId: z.string().optional().describe('Required for adopt operation'),
+  initialSubtasks: z.array(z.string()).optional()
+    .describe('For promote: checklist items to convert to subtasks'),
+  sequence: z.string().regex(/^\d{2}$/).optional()
+    .describe('For adopt: sequence number'),
+  after: z.string().optional()
+    .describe('For adopt: insert after this subtask'),
+}).refine(
+  (data) => {
+    if (data.operation === 'extract' && !data.parentId) {
+      return false;
+    }
+    if (data.operation === 'adopt' && !data.targetParentId) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'Missing required fields for operation',
+  }
+);
+
+// task_transform output schema
+export const TaskTransformOutputSchema = createResponseSchema(
+  z.object({
+    operation: z.enum(['promote', 'extract', 'adopt']),
+    transformedTask: TaskSchema,
+    affectedTasks: z.array(z.string()).optional(),
+  })
+);
+
+// parent_create input schema
+export const ParentCreateInputSchema = WriteOperationContextSchema.extend({
+  // Required fields
+  title: z.string().min(1).max(200),
+  type: TaskTypeSchema,
+  
+  // Optional metadata
+  area: z.string().default('general'),
+  status: TaskStatusSchema.default('todo'),
+  priority: TaskPrioritySchema.default('medium'),
+  workflowState: WorkflowStateSchema.default('backlog'),
+  
+  // Parent-specific
+  overviewContent: z.string().optional()
+    .describe('Initial content for overview instruction section'),
+  
+  // Initial subtasks
+  subtasks: z.array(z.object({
+    title: z.string().min(1),
+    type: TaskTypeSchema.optional(),
+    sequence: z.string().regex(/^\d{2}$/).optional(),
+    parallelWith: z.string().optional(),
+  })).optional(),
+  
+  // Additional metadata
+  assignee: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+// parent_create output schema
+export const ParentCreateOutputSchema = createResponseSchema(
+  z.object({
+    id: z.string(),
+    title: z.string(),
+    type: TaskTypeSchema,
+    workflowState: WorkflowStateSchema,
+    path: z.string(),
+    subtaskCount: z.number(),
+    createdSubtasks: z.array(z.object({
+      id: z.string(),
+      title: z.string(),
+      sequence: z.string(),
+    })).optional(),
+  })
+);
+
+// parent_operations input schema
+export const ParentOperationsInputSchema = WriteOperationContextSchema.extend({
+  parentId: z.string(),
+  operation: z.enum(['resequence', 'parallelize', 'add_subtask']),
+  
+  // Operation-specific fields with discriminated union
+  operationData: z.discriminatedUnion('operation', [
+    // Resequence operation
+    z.object({
+      operation: z.literal('resequence'),
+      sequenceMap: z.array(z.object({
+        id: z.string(),
+        sequence: z.string().regex(/^\d{2}$/),
+      })).min(1),
+    }),
+    
+    // Parallelize operation
+    z.object({
+      operation: z.literal('parallelize'),
+      subtaskIds: z.array(z.string()).min(2),
+      targetSequence: z.string().regex(/^\d{2}$/).optional(),
+    }),
+    
+    // Add subtask operation
+    z.object({
+      operation: z.literal('add_subtask'),
+      subtask: z.object({
+        title: z.string().min(1),
+        type: TaskTypeSchema.optional(),
+        after: z.string().optional(),
+        sequence: z.string().regex(/^\d{2}$/).optional(),
+        template: z.string().optional(),
+      }),
+    }),
+  ]),
+});
+
+// parent_operations output schema
+export const ParentOperationsOutputSchema = createResponseSchema(
+  z.object({
+    operation: z.enum(['resequence', 'parallelize', 'add_subtask']),
+    parentId: z.string(),
+    affectedSubtasks: z.array(z.object({
+      id: z.string(),
+      previousSequence: z.string().optional(),
+      currentSequence: z.string(),
+    })),
+    newSubtask: SubTaskSchema.optional(),
+  })
+);
+
+// =============================================================================
+// Write Operation Type Exports
+// =============================================================================
+
+export type TaskCreateInput = z.infer<typeof TaskCreateInputSchema>;
+export type TaskCreateOutput = z.infer<typeof TaskCreateOutputSchema>;
+export type TaskUpdateInput = z.infer<typeof TaskUpdateInputSchema>;
+export type TaskUpdateOutput = z.infer<typeof TaskUpdateOutputSchema>;
+export type TaskDeleteInput = z.infer<typeof TaskDeleteInputSchema>;
+export type TaskDeleteOutput = z.infer<typeof TaskDeleteOutputSchema>;
+export type TaskMoveInput = z.infer<typeof TaskMoveInputSchema>;
+export type TaskMoveOutput = z.infer<typeof TaskMoveOutputSchema>;
+export type TaskTransformInput = z.infer<typeof TaskTransformInputSchema>;
+export type TaskTransformOutput = z.infer<typeof TaskTransformOutputSchema>;
+export type ParentCreateInput = z.infer<typeof ParentCreateInputSchema>;
+export type ParentCreateOutput = z.infer<typeof ParentCreateOutputSchema>;
+export type ParentOperationsInput = z.infer<typeof ParentOperationsInputSchema>;
+export type ParentOperationsOutput = z.infer<typeof ParentOperationsOutputSchema>;
+
+// =============================================================================
 // Utility Functions
 // =============================================================================
 

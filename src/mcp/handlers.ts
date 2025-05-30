@@ -37,6 +37,17 @@ import {
   handleTaskListNormalized,
 } from './normalized-handlers.js';
 
+// Import normalized write handlers
+import {
+  handleTaskCreateNormalized,
+  handleTaskUpdateNormalized,
+  handleTaskDeleteNormalized,
+  handleTaskMoveNormalized,
+  handleTaskTransformNormalized,
+  handleParentCreateNormalized,
+  handleParentOperationsNormalized,
+} from './normalized-write-handlers.js';
+
 /**
  * Format v2 operation result for MCP response
  */
@@ -996,15 +1007,17 @@ export const methodRegistry: McpMethodRegistry = {
   [McpMethod.PARENT_LIST]: handleParentListNormalized,
   [McpMethod.PARENT_GET]: handleParentGetNormalized,
 
+  // Normalized write handlers with Zod schemas
+  [McpMethod.TASK_CREATE]: handleTaskCreateNormalized,
+  [McpMethod.TASK_UPDATE]: handleTaskUpdateNormalized,
+  [McpMethod.TASK_DELETE]: handleTaskDeleteNormalized,
+  [McpMethod.TASK_MOVE]: handleTaskMoveNormalized,
+  [McpMethod.TASK_TRANSFORM]: handleTaskTransformNormalized,
+  [McpMethod.PARENT_CREATE]: handleParentCreateNormalized,
+  [McpMethod.PARENT_OPERATIONS]: handleParentOperationsNormalized,
+
   // Legacy handlers (still using old format)
-  [McpMethod.TASK_CREATE]: handleTaskCreate,
-  [McpMethod.TASK_UPDATE]: handleTaskUpdate,
-  [McpMethod.TASK_DELETE]: handleTaskDelete,
   [McpMethod.TASK_NEXT]: handleTaskNext,
-  [McpMethod.TASK_MOVE]: handleTaskMove,
-  [McpMethod.TASK_TRANSFORM]: handleTaskTransform,
-  [McpMethod.PARENT_CREATE]: handleParentCreate,
-  [McpMethod.PARENT_OPERATIONS]: handleParentOperations,
   [McpMethod.AREA_LIST]: handleAreaList,
   [McpMethod.AREA_GET]: handleAreaGet,
   [McpMethod.AREA_CREATE]: handleAreaCreate,

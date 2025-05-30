@@ -1,8 +1,8 @@
 /**
- * Transformation utilities to convert core V2 types to normalized MCP schema
+ * Transformation utilities to convert core types to normalized MCP schema
  */
 
-import * as v2 from '../core/v2/index.js';
+import * as core from '../core/v2/index.js';
 import {
   type ParentTask,
   type ParentTaskDetail,
@@ -125,36 +125,36 @@ export function normalizeWorkflowState(workflowState: string): WorkflowState {
 // =============================================================================
 
 /**
- * Transform core V2 task metadata to base task fields
+ * Transform core task metadata to base task fields
  */
-function transformBaseTask(v2Task: v2.Task) {
+function transformBaseTask(task: core.Task) {
   return {
-    id: v2Task.metadata.id,
-    title: v2Task.document.title,
-    type: cleanTaskType(v2Task.document.frontmatter.type || 'chore'),
-    status: normalizeStatus(v2Task.document.frontmatter.status || 'todo'),
-    priority: normalizePriority(v2Task.document.frontmatter.priority),
-    workflowState: normalizeWorkflowState(v2Task.metadata.location.workflowState),
-    area: v2Task.document.frontmatter.area || 'general',
-    tags: (v2Task.document.frontmatter.tags as string[]) || [],
-    assignee: v2Task.document.frontmatter.assignee || undefined,
+    id: task.metadata.id,
+    title: task.document.title,
+    type: cleanTaskType(task.document.frontmatter.type || 'chore'),
+    status: normalizeStatus(task.document.frontmatter.status || 'todo'),
+    priority: normalizePriority(task.document.frontmatter.priority),
+    workflowState: normalizeWorkflowState(task.metadata.location.workflowState),
+    area: task.document.frontmatter.area || 'general',
+    tags: (task.document.frontmatter.tags as string[]) || [],
+    assignee: task.document.frontmatter.assignee || undefined,
     createdDate: undefined, // TODO: Extract from file stats if needed
     updatedDate: undefined, // TODO: Extract from file stats if needed
-    archivedDate: v2Task.metadata.location.workflowState === 'archive' ? undefined : undefined, // TODO: Extract archive date
-    path: v2Task.metadata.path,
-    filename: v2Task.metadata.filename,
+    archivedDate: task.metadata.location.workflowState === 'archive' ? undefined : undefined, // TODO: Extract archive date
+    path: task.metadata.path,
+    filename: task.metadata.filename,
   };
 }
 
 /**
- * Transform task sections from core V2 document
+ * Transform task sections from core document
  */
-function transformTaskSections(v2Task: v2.Task) {
+function transformTaskSections(task: core.Task) {
   return {
-    instruction: v2Task.document.sections.instruction,
-    tasks: v2Task.document.sections.tasks,
-    deliverable: v2Task.document.sections.deliverable,
-    log: v2Task.document.sections.log,
+    instruction: task.document.sections.instruction,
+    tasks: task.document.sections.tasks,
+    deliverable: task.document.sections.deliverable,
+    log: task.document.sections.log,
   };
 }
 
@@ -163,16 +163,16 @@ function transformTaskSections(v2Task: v2.Task) {
 // =============================================================================
 
 /**
- * Transform core V2 task to normalized simple task
+ * Transform core task to normalized simple task
  */
-export function transformSimpleTask(v2Task: v2.Task, includeContent = false): SimpleTask {
-  const baseTask = transformBaseTask(v2Task);
+export function transformSimpleTask(task: core.Task, includeContent = false): SimpleTask {
+  const baseTask = transformBaseTask(task);
 
   const simpleTask: SimpleTask = {
     ...baseTask,
     taskStructure: 'simple' as const,
-    content: includeContent ? v2.serializeTaskDocument(v2Task.document) : undefined,
-    sections: includeContent ? transformTaskSections(v2Task) : undefined,
+    content: includeContent ? core.serializeTaskDocument(task.document) : undefined,
+    sections: includeContent ? transformTaskSections(task) : undefined,
   };
 
   // Validate with Zod schema
@@ -180,22 +180,22 @@ export function transformSimpleTask(v2Task: v2.Task, includeContent = false): Si
 }
 
 /**
- * Transform core V2 subtask to normalized subtask
+ * Transform core subtask to normalized subtask
  */
-export function transformSubTask(v2Task: v2.Task, includeContent = false): SubTask {
-  const baseTask = transformBaseTask(v2Task);
+export function transformSubTask(task: core.Task, includeContent = false): SubTask {
+  const baseTask = transformBaseTask(task);
 
-  if (!v2Task.metadata.parentTask || !v2Task.metadata.sequenceNumber) {
-    throw new Error(`Task ${v2Task.metadata.id} is not a valid subtask`);
+  if (!task.metadata.parentTask || !task.metadata.sequenceNumber) {
+    throw new Error(`Task ${task.metadata.id} is not a valid subtask`);
   }
 
   const subTask: SubTask = {
     ...baseTask,
     taskStructure: 'subtask' as const,
-    parentId: v2Task.metadata.parentTask,
-    sequenceNumber: v2Task.metadata.sequenceNumber,
-    content: includeContent ? v2.serializeTaskDocument(v2Task.document) : undefined,
-    sections: includeContent ? transformTaskSections(v2Task) : undefined,
+    parentId: task.metadata.parentTask,
+    sequenceNumber: task.metadata.sequenceNumber,
+    content: includeContent ? core.serializeTaskDocument(task.document) : undefined,
+    sections: includeContent ? transformTaskSections(task) : undefined,
   };
 
   // Validate with Zod schema
@@ -203,24 +203,24 @@ export function transformSubTask(v2Task: v2.Task, includeContent = false): SubTa
 }
 
 /**
- * Transform core V2 parent task to normalized parent task
+ * Transform core parent task to normalized parent task
  */
 export async function transformParentTask(
   projectRoot: string,
-  v2Task: v2.Task,
+  task: core.Task,
   includeSubtasks = false,
   includeContent = false
 ): Promise<ParentTask> {
-  const baseTask = transformBaseTask(v2Task);
+  const baseTask = transformBaseTask(task);
 
-  if (!v2Task.metadata.isParentTask) {
-    throw new Error(`Task ${v2Task.metadata.id} is not a parent task`);
+  if (!task.metadata.isParentTask) {
+    throw new Error(`Task ${task.metadata.id} is not a parent task`);
   }
 
   // Get full parent task data to calculate progress
-  const parentResult = await v2.getParentTask(projectRoot, v2Task.metadata.id);
+  const parentResult = await core.getParentTask(projectRoot, task.metadata.id);
   if (!parentResult.success || !parentResult.data) {
-    throw new Error(`Failed to get parent task data for ${v2Task.metadata.id}`);
+    throw new Error(`Failed to get parent task data for ${task.metadata.id}`);
   }
 
   const parentData = parentResult.data;
@@ -238,8 +238,8 @@ export async function transformParentTask(
       percentage: subtaskCount > 0 ? Math.round((completedCount / subtaskCount) * 100) : 0,
     },
     subtaskIds: parentData.subtasks.map((st) => st.metadata.id),
-    overview: includeContent ? v2.serializeTaskDocument(v2Task.document) : undefined,
-    sections: includeContent ? transformTaskSections(v2Task) : undefined,
+    overview: includeContent ? core.serializeTaskDocument(task.document) : undefined,
+    sections: includeContent ? transformTaskSections(task) : undefined,
     subtasks: includeSubtasks
       ? parentData.subtasks.map((st) => transformSubTask(st, includeContent))
       : undefined,
@@ -250,14 +250,14 @@ export async function transformParentTask(
 }
 
 /**
- * Transform core V2 parent task to detailed parent task (for parent_get)
+ * Transform core parent task to detailed parent task (for parent_get)
  */
 export async function transformParentTaskDetail(
   projectRoot: string,
   parentId: string,
   includeContent = true
 ): Promise<ParentTaskDetail> {
-  const parentResult = await v2.getParentTask(projectRoot, parentId);
+  const parentResult = await core.getParentTask(projectRoot, parentId);
   if (!parentResult.success || !parentResult.data) {
     throw new Error(`Failed to get parent task data for ${parentId}`);
   }
@@ -265,7 +265,7 @@ export async function transformParentTaskDetail(
   const parentData = parentResult.data;
 
   // Transform the overview task - note: overview is TaskDocument, need to create Task structure
-  const overviewTask: v2.Task = {
+  const overviewTask: core.Task = {
     metadata: parentData.metadata,
     document: parentData.overview,
   };
@@ -290,21 +290,24 @@ export async function transformParentTaskDetail(
 // =============================================================================
 
 /**
- * Transform any core V2 task to appropriate normalized task type
+ * Transform any core task to appropriate normalized task type
  */
-export async function transformV2Task(
+export async function transformTask(
   projectRoot: string,
-  v2Task: v2.Task,
+  task: core.Task,
   includeContent = false,
   includeSubtasks = false
 ): Promise<Task> {
-  if (v2Task.metadata.isParentTask) {
-    return await transformParentTask(projectRoot, v2Task, includeSubtasks, includeContent);
-  } else if (v2Task.metadata.parentTask) {
-    return transformSubTask(v2Task, includeContent);
+  if (task.metadata.isParentTask) {
+    return await transformParentTask(projectRoot, task, includeSubtasks, includeContent);
+  } else if (task.metadata.parentTask) {
+    return transformSubTask(task, includeContent);
   }
-  return transformSimpleTask(v2Task, includeContent);
+  return transformSimpleTask(task, includeContent);
 }
+
+// Export with normalized name (without V2)
+export const transformTaskToNormalized = transformTask;
 
 // =============================================================================
 // Response Envelope Utilities

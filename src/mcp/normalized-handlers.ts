@@ -5,7 +5,7 @@
  */
 
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import * as v2 from '../core/v2/index.js';
+import * as core from '../core/v2/index.js';
 import {
   type ParentGetInput,
   ParentGetInputSchema,
@@ -29,7 +29,7 @@ import {
   createResponse,
   transformParentTask,
   transformParentTaskDetail,
-  transformV2Task,
+  transformTask,
 } from './transformers.js';
 import type { McpResponse } from './types.js';
 
@@ -40,7 +40,7 @@ import type { McpResponse } from './types.js';
 /**
  * Apply task structure filtering to V2 tasks
  */
-function filterTasksByStructure(tasks: v2.Task[], taskType: string): v2.Task[] {
+function filterTasksByStructure(tasks: core.Task[], taskType: string): core.Task[] {
   if (taskType === 'all') return tasks;
 
   return tasks.filter((task) => {
@@ -66,8 +66,8 @@ function filterTasksByStructure(tasks: v2.Task[], taskType: string): v2.Task[] {
 /**
  * Apply basic filters to core V2 list options
  */
-function buildV2ListOptions(params: TaskListInput | ParentListInput): v2.TaskListOptions {
-  const listOptions: v2.TaskListOptions = {};
+function buildV2ListOptions(params: TaskListInput | ParentListInput): core.TaskListOptions {
+  const listOptions: core.TaskListOptions = {};
 
   // Map workflowState parameter to workflowStates
   if (params.workflowState) {
@@ -88,7 +88,7 @@ function buildV2ListOptions(params: TaskListInput | ParentListInput): v2.TaskLis
       test: '🧪 Test',
       spike: '💡 Spike/Research',
     };
-    listOptions.type = typeMap[params.type] as v2.TaskType;
+    listOptions.type = typeMap[params.type] as core.TaskType;
   }
 
   if ('status' in params && params.status) {
@@ -100,7 +100,7 @@ function buildV2ListOptions(params: TaskListInput | ParentListInput): v2.TaskLis
       blocked: 'Blocked',
       archived: 'Archived',
     };
-    listOptions.status = statusMap[params.status] as v2.TaskStatus;
+    listOptions.status = statusMap[params.status] as core.TaskStatus;
   }
 
   if (params.area) listOptions.area = params.area;
@@ -154,7 +154,7 @@ export async function handleTaskListNormalized(rawParams: unknown): Promise<McpR
       listOptions.includeParentTasks = true;
     }
 
-    const result = await v2.listTasks(projectRoot, listOptions);
+    const result = await core.listTasks(projectRoot, listOptions);
 
     if (!result.success || !result.data) {
       return createErrorResponse(result.error || 'Failed to list tasks');
@@ -167,7 +167,7 @@ export async function handleTaskListNormalized(rawParams: unknown): Promise<McpR
     const transformedTasks: Task[] = [];
     for (const v2Task of filteredTasks) {
       try {
-        const normalizedTask = await transformV2Task(
+        const normalizedTask = await transformTask(
           projectRoot,
           v2Task,
           params.includeContent || false,
@@ -208,7 +208,7 @@ export async function handleTaskGetNormalized(rawParams: unknown): Promise<McpRe
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
 
     // Use v2 getTask with parent context if available
-    const result = await v2.getTask(
+    const result = await core.getTask(
       projectRoot,
       params.id,
       undefined, // config
@@ -221,7 +221,7 @@ export async function handleTaskGetNormalized(rawParams: unknown): Promise<McpRe
 
     // Transform to normalized schema
     const includeContent = params.format === 'full';
-    const normalizedTask = await transformV2Task(
+    const normalizedTask = await transformTask(
       projectRoot,
       result.data,
       includeContent,
@@ -266,7 +266,7 @@ export async function handleParentListNormalized(
     const listOptions = buildV2ListOptions(params);
     listOptions.includeParentTasks = true;
 
-    const result = await v2.listTasks(projectRoot, listOptions);
+    const result = await core.listTasks(projectRoot, listOptions);
 
     if (!result.success || !result.data) {
       return createErrorResponse(result.error || 'Failed to list parent tasks');
