@@ -14,6 +14,7 @@ import {
   handleInitRoot,
   handleListProjects,
   handleParentCreate,
+  handleParentGet,
   handleParentList,
   handleParentOperations,
   handleTaskCreate,
@@ -21,12 +22,10 @@ import {
   handleTaskGet,
   handleTaskList,
   handleTaskMove,
-  handleTaskNext,
   handleTaskTransform,
   handleTaskUpdate,
   handleTemplateList,
   handleWorkflowCurrent,
-  handleWorkflowMarkCompleteNext,
 } from './handlers.js';
 
 /**
@@ -209,14 +208,6 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .boolean()
       .describe(
         'Include tasks from archive workflow folders. Archive contains completed work organized by month (default: false)'
-      )
-      .optional(),
-
-    // Subtask filtering
-    parent_id: z
-      .string()
-      .describe(
-        'List only subtasks of this parent task ID (e.g., "implement-v2-structure"). Useful for viewing task breakdowns'
       )
       .optional(),
 
@@ -540,35 +531,6 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     }
   );
 
-  // Task next tool (legacy)
-  const taskNextRawShape = {
-    id: z.string().describe('Current task ID (to find next in sequence)').optional(),
-  };
-
-  const taskNextSchema = z.object(taskNextRawShape);
-  server.registerTool(
-    'task_next',
-    {
-      description:
-        'DEPRECATED: Task sequencing not implemented in V2. Returns null. Use parent task subtask ordering instead.',
-      inputSchema: taskNextRawShape,
-      annotations: {
-        title: 'Get Next Task',
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof taskNextSchema>) => {
-      try {
-        const result = await handleTaskNext(params);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
   // Workflow current tool
   const workflowCurrentRawShape = {
     format: z.string().describe('Output format (reserved for future use)').optional(),
@@ -591,35 +553,6 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     async (params: z.infer<typeof workflowCurrentSchema>) => {
       try {
         const result = await handleWorkflowCurrent(params);
-        return formatResponse(result);
-      } catch (error) {
-        return formatError(error);
-      }
-    }
-  );
-
-  // Workflow mark complete next tool
-  const workflowMarkCompleteNextRawShape = {
-    id: z.string().describe('Task ID to mark as complete'),
-  };
-
-  const workflowMarkCompleteNextSchema = z.object(workflowMarkCompleteNextRawShape);
-  server.registerTool(
-    'workflow_mark_complete_next',
-    {
-      description:
-        'Marks a task as Done. V2: Updates status to "Done". Next task functionality not available in V2.',
-      inputSchema: workflowMarkCompleteNextRawShape,
-      annotations: {
-        title: 'Mark Complete & Get Next',
-        readOnlyHint: false,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async (params: z.infer<typeof workflowMarkCompleteNextSchema>) => {
-      try {
-        const result = await handleWorkflowMarkCompleteNext(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -794,6 +727,38 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     async (params: z.infer<typeof parentListSchema>) => {
       try {
         const result = await handleParentList(params);
+        return formatResponse(result);
+      } catch (error) {
+        return formatError(error);
+      }
+    }
+  );
+
+  // Parent get tool
+  const parentGetRawShape = {
+    id: z
+      .string()
+      .describe('Parent task ID to retrieve (e.g., "auth-feature-05A", "implement-v2-structure")')
+      .min(1),
+  };
+
+  const parentGetSchema = z.object(parentGetRawShape);
+  server.registerTool(
+    'parent_get',
+    {
+      description:
+        'Retrieves complete details of a specific parent task including overview, all subtasks, and supporting files. Returns the parent task with all its subtasks in proper sequence order. Use this when you need full information about a parent task and its breakdown.',
+      inputSchema: parentGetRawShape,
+      annotations: {
+        title: 'Get Parent Task Details',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async (params: z.infer<typeof parentGetSchema>) => {
+      try {
+        const result = await handleParentGet(params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
