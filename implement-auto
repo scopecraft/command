@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Usage: ./implement-auto <taskId> [parentId]
+# Example: ./implement-auto 01_invstgte-curr-mcp-res-form-05I fix-mcp-api-res-cnsstncy-05A
+# Example: ./implement-auto simple-bug-fix-task
+
+TASK_ID=$1
+PARENT_ID=$2
+
+if [ -z "$TASK_ID" ]; then
+    echo "Usage: $0 <taskId> [parentId]"
+    echo "Example: $0 01_invstgte-curr-mcp-res-form-05I fix-mcp-api-res-cnsstncy-05A"
+    echo "Example: $0 simple-bug-fix-task"
+    echo ""
+    echo "This runs a task in fully autonomous mode - no user interaction."
+    echo "All output will be written to the task file itself."
+    exit 1
+fi
+
+# Run channelcoder with the autonomous implementation prompt
+if [ -z "$PARENT_ID" ]; then
+    channelcoder .tasks/.modes/implement/autonomous.md \
+        -d taskId="$TASK_ID"
+else
+    channelcoder .tasks/.modes/implement/autonomous.md \
+        -d taskId="$TASK_ID" \
+        -d parentId="$PARENT_ID"
+fi
