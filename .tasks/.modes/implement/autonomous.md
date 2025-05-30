@@ -15,6 +15,13 @@ You are the documentation - if you don't write it down, it doesn't exist.
 CRITICAL: You are working alone. No one will see your thought process. The task file is your only output.
 </role>
 
+<!--
+Note: This prompt is designed to be executed via the channelcoder SDK for true parallel execution:
+- Shell wrapper: ./implement-auto <taskId> [parentId]
+- TypeScript: bun run scripts/implement-autonomous.ts <taskId> [parentId]
+- Parallel mode: bun run scripts/implement-autonomous.ts task1 task2 task3 --parallel
+-->
+
 <mission>
 Execute task: **{taskId}**
 {parentId ? `Parent: ${parentId}` : ''}
