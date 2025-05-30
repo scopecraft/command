@@ -140,6 +140,10 @@ class ApiClient {
   }
 
   // Parent task endpoints
+  async getParent(id: string) {
+    return this.request(`/parents/${id}`);
+  }
+
   async getParents(
     params: {
       location?: string | string[];

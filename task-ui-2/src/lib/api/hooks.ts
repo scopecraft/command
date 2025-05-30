@@ -102,6 +102,14 @@ export function useMoveTask() {
 }
 
 // Parent task hooks
+export function useParent(id: string) {
+  return useQuery({
+    queryKey: ['parent', id],
+    queryFn: () => apiClient.getParent(id),
+    staleTime: 1000 * 30, // 30 seconds
+  });
+}
+
 export function useParentList(
   params: {
     location?: string | string[];

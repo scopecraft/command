@@ -2,12 +2,14 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
 import remarkGfm from 'remark-gfm'
+import { useNavigate } from '@tanstack/react-router'
 import { Button } from '../ui/button'
 import { TaskTypeIcon } from './TaskTypeIcon'
 import { StatusBadge, PriorityIndicator, WorkflowStateBadge } from './WorkflowStateBadge'
 import { ClaudeAgentButton } from './ClaudeAgentButton'
 import { SubtaskList } from './SubtaskList'
 import { SubtasksIcon, DocumentsIcon } from '../../lib/icons'
+import { getTaskUrl } from '../../lib/task-routing'
 
 interface ParentTaskViewProps {
   task: any
@@ -32,7 +34,15 @@ export function ParentTaskView({
   onContentChange,
   isUpdating = false 
 }: ParentTaskViewProps) {
+  const navigate = useNavigate()
   const metadata = task.metadata || task
+  
+  // Ensure subtasks have parent context for proper URL generation
+  const subtasksWithParent = subtasks.map(subtask => ({
+    ...subtask,
+    // Add parent task reference if not already present
+    parent_task: subtask.parent_task || subtask.metadata?.parentTask || (task.id || task.metadata?.id)
+  }))
 
   return (
     <div className="min-h-screen bg-background">
@@ -129,7 +139,7 @@ export function ParentTaskView({
                   <h3 className="font-semibold text-foreground">Subtasks</h3>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {subtasks.filter((t) => t.status === 'Done').length}/{subtasks.length}
+                  {subtasks.filter((t) => (t.metadata?.status || t.status) === 'Done').length}/{subtasks.length}
                 </div>
               </div>
               
@@ -140,12 +150,12 @@ export function ParentTaskView({
                     <div 
                       className="bg-primary h-2 rounded-full transition-all duration-300"
                       style={{ 
-                        width: `${Math.round((subtasks.filter(t => t.status === 'Done').length / subtasks.length) * 100)}%` 
+                        width: `${Math.round((subtasks.filter(t => (t.metadata?.status || t.status) === 'Done').length / subtasks.length) * 100)}%` 
                       }}
                     />
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {Math.round((subtasks.filter(t => t.status === 'Done').length / subtasks.length) * 100)}% complete
+                    {Math.round((subtasks.filter(t => (t.metadata?.status || t.status) === 'Done').length / subtasks.length) * 100)}% complete
                   </div>
                 </div>
               )}
@@ -153,9 +163,12 @@ export function ParentTaskView({
               {/* Condensed Subtask List */}
               {subtasks.length > 0 ? (
                 <SubtaskList
-                  subtasks={subtasks}
+                  subtasks={subtasksWithParent}
                   variant="compact"
-                  onTaskClick={(task) => console.log('Navigate to task detail:', task.id)}
+                  onTaskClick={(task) => {
+                    const url = getTaskUrl(task)
+                    navigate({ to: url })
+                  }}
                 />
               ) : (
                 <div className="text-center py-4 text-muted-foreground text-sm">

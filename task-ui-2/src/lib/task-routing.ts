@@ -3,17 +3,22 @@
  */
 
 /**
- * Generate a URL for a task - handles subtasks vs regular tasks
+ * Generate a URL for a task - handles parent tasks, subtasks, and simple tasks
  */
 export function getTaskUrl(task: any): string {
+  // Check if it's a parent task
+  if (task.metadata?.isParentTask || task.task_type === 'parent') {
+    return `/parents/${task.id || task.metadata?.id}`
+  }
+  
   // Check if it's a subtask (has parent_task or parentTask)
   if (task.metadata?.parentTask || task.parent_task) {
     const parentId = task.metadata?.parentTask || task.parent_task
     const subtaskId = task.id || task.metadata?.id
-    return `/tasks/${parentId}/${subtaskId}`
+    return `/parents/${parentId}/${subtaskId}`
   }
   
-  // Everything else (simple tasks and parent tasks)
+  // Simple tasks
   return `/tasks/${task.id || task.metadata?.id}`
 }
 

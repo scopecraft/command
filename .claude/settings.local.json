@@ -168,7 +168,8 @@
       "Bash(npm view:*)",
       "Bash(npx create-tsrouter-app:*)",
       "Bash(tree:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "mcp__scopecraft__parent_operations"
     ],
     "deny": []
   },

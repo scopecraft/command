@@ -39,6 +39,7 @@ export enum McpMethod {
 
   // Parent task methods
   PARENT_LIST = 'parent_list',
+  PARENT_GET = 'parent_get',
   PARENT_CREATE = 'parent_create',
   PARENT_OPERATIONS = 'parent_operations',
 
@@ -93,9 +94,6 @@ export interface TaskListParams {
   include_parent_tasks?: boolean;
   include_content?: boolean;
   include_completed?: boolean;
-
-  // Subtask filtering
-  parent_id?: string;
 
   // Custom frontmatter filters
   priority?: TaskPriority;
@@ -189,6 +187,12 @@ export interface TaskNextParams {
   root_dir?: string; // Override for tasks directory location
   id?: string;
   format?: string;
+}
+
+// Parent get request params
+export interface ParentGetParams {
+  id: string;
+  root_dir?: string; // Override for tasks directory location
 }
 
 // Area list request params

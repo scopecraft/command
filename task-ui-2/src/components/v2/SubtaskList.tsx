@@ -31,7 +31,8 @@ export function SubtaskList({
     const groups: Record<string, Task[]> = {};
     
     subtasks.forEach((task) => {
-      const sequence = task.sequence || '99';
+      // Handle both API response format (metadata.sequenceNumber) and direct format (sequence)
+      const sequence = task.metadata?.sequenceNumber || task.sequence || '99';
       const baseSequence = sequence.replace(/[a-z]$/, ''); // Remove letter suffix (04a → 04)
       
       if (!groups[baseSequence]) {
@@ -44,7 +45,7 @@ export function SubtaskList({
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([sequence, tasks]): GroupedSubtasks => ({
         sequence,
-        tasks: tasks.sort((a, b) => (a.sequence || '').localeCompare(b.sequence || '')),
+        tasks: tasks.sort((a, b) => ((a.metadata?.sequenceNumber || a.sequence) || '').localeCompare((b.metadata?.sequenceNumber || b.sequence) || '')),
         isParallel: tasks.length > 1,
       }));
   }, [subtasks]);
@@ -76,7 +77,7 @@ export function SubtaskList({
                 </div>
                 {tasks.map((task, taskIndex) => {
                   const isLastTask = taskIndex === tasks.length - 1;
-                  const statusSymbol = getStatusSymbol(task.status);
+                  const statusSymbol = getStatusSymbol(task.metadata?.status || task.status);
                   return (
                     <div
                       key={task.id}
@@ -92,8 +93,8 @@ export function SubtaskList({
                         {isLastGroup ? '  ' : '│ '}{isLastTask ? '└─' : '├─'}
                       </span>
                       <span>{statusSymbol}</span>
-                      <span className="truncate flex-1">{task.title}</span>
-                      <span className="text-muted-foreground">[{task.sequence}]</span>
+                      <span className="truncate flex-1">{task.metadata?.title || task.title}</span>
+                      <span className="text-muted-foreground">[{task.metadata?.sequenceNumber || task.sequence}]</span>
                     </div>
                   );
                 })}
@@ -101,7 +102,7 @@ export function SubtaskList({
             );
           } else {
             const task = tasks[0];
-            const statusSymbol = getStatusSymbol(task.status);
+            const statusSymbol = getStatusSymbol(task.metadata?.status || task.status);
             return (
               <div
                 key={task.id}
@@ -117,8 +118,8 @@ export function SubtaskList({
                   {isLastGroup ? '└──' : '├──'}
                 </span>
                 <span>{statusSymbol}</span>
-                <span className="truncate flex-1">{task.title}</span>
-                <span className="text-muted-foreground">[{task.sequence}]</span>
+                <span className="truncate flex-1">{task.metadata?.title || task.title}</span>
+                <span className="text-muted-foreground">[{task.metadata?.sequenceNumber || task.sequence}]</span>
               </div>
             );
           }
@@ -187,13 +188,13 @@ export function SubtaskList({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                            {task.sequence}
+                            {task.metadata?.sequenceNumber || task.sequence}
                           </span>
-                          <h4 className="font-mono font-medium truncate">{task.title}</h4>
+                          <h4 className="font-mono font-medium truncate">{task.metadata?.title || task.title}</h4>
                         </div>
                         <div className="flex items-center gap-2">
-                          <StatusBadge status={task.status} />
-                          <PriorityIndicator priority={task.priority} inline />
+                          <StatusBadge status={task.metadata?.status || task.status} />
+                          <PriorityIndicator priority={task.metadata?.priority || task.priority} inline />
                         </div>
                       </div>
                     </div>
@@ -225,17 +226,17 @@ export function SubtaskList({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                    {task.sequence}
+                    {task.metadata?.sequenceNumber || task.sequence}
                   </span>
-                  <h4 className="font-mono font-medium truncate">{task.title}</h4>
+                  <h4 className="font-mono font-medium truncate">{task.metadata?.title || task.title}</h4>
                 </div>
                 <div className="flex items-center gap-2">
-                  <StatusBadge status={task.status} />
-                  <PriorityIndicator priority={task.priority} inline />
+                  <StatusBadge status={task.metadata?.status || task.status} />
+                  <PriorityIndicator priority={task.metadata?.priority || task.priority} inline />
                 </div>
-                {task.content && (
+                {(task.metadata?.content || task.content) && (
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                    {task.content.split('\n')[0].replace(/^#+\s*/, '')}
+                    {(task.metadata?.content || task.content).split('\n')[0].replace(/^#+\s*/, '')}
                   </p>
                 )}
               </div>

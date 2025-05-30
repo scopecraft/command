@@ -13,6 +13,7 @@ import {
   McpMethod,
   type McpMethodRegistry,
   type McpTaskUpdateFields,
+  type ParentGetParams,
   type TaskCreateParams,
   type TaskDeleteParams,
   type TaskGetParams,
@@ -665,6 +666,68 @@ export async function handleParentList(params: {
 }
 
 /**
+ * Handler for parent_get method
+ */
+export async function handleParentGet(params: ParentGetParams) {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = params.root_dir || configManager.getRootConfig().path;
+
+  const result = await v2.getParentTask(projectRoot, params.id);
+
+  if (!result.success || !result.data) {
+    return formatV2Response(result);
+  }
+
+  const parentTask = result.data;
+
+  // Format the response with all parent task data
+  return {
+    success: true,
+    data: {
+      metadata: {
+        id: parentTask.metadata.id,
+        title: parentTask.overview.title,
+        type: parentTask.overview.frontmatter.type,
+        status: parentTask.overview.frontmatter.status,
+        priority: parentTask.overview.frontmatter.priority || 'Medium',
+        location: parentTask.metadata.location.workflowState,
+        area: parentTask.overview.frontmatter.area,
+        tags: (parentTask.overview.frontmatter.tags as string[]) || [],
+        assignee: (parentTask.overview.frontmatter.assignee as string) || '',
+        // V2 metadata
+        isParentTask: parentTask.metadata.isParentTask,
+        filename: parentTask.metadata.filename,
+        path: parentTask.metadata.path,
+      },
+      overview: parentTask.overview,
+      subtasks: parentTask.subtasks.map(subtask => ({
+        metadata: {
+          id: subtask.metadata.id,
+          title: subtask.document.title,
+          type: subtask.document.frontmatter.type,
+          status: subtask.document.frontmatter.status,
+          priority: subtask.document.frontmatter.priority || 'Medium',
+          location: subtask.metadata.location.workflowState,
+          area: subtask.document.frontmatter.area,
+          tags: (subtask.document.frontmatter.tags as string[]) || [],
+          assignee: (subtask.document.frontmatter.assignee as string) || '',
+          // V2 metadata
+          isParentTask: subtask.metadata.isParentTask,
+          parentTask: subtask.metadata.parentTask,
+          sequenceNumber: subtask.metadata.sequenceNumber,
+          filename: subtask.metadata.filename,
+          path: subtask.metadata.path,
+        },
+        document: subtask.document,
+        content: v2.serializeTaskDocument(subtask.document),
+      })),
+      supportingFiles: parentTask.supportingFiles,
+    },
+    message: `Retrieved parent task ${params.id} with ${parentTask.subtasks.length} subtasks`,
+  };
+}
+
+/**
  * Handler for parent_create method
  */
 export async function handleParentCreate(params: {
@@ -927,6 +990,7 @@ export const methodRegistry: McpMethodRegistry = {
   [McpMethod.TASK_MOVE]: handleTaskMove,
   [McpMethod.TASK_TRANSFORM]: handleTaskTransform,
   [McpMethod.PARENT_LIST]: handleParentList,
+  [McpMethod.PARENT_GET]: handleParentGet,
   [McpMethod.PARENT_CREATE]: handleParentCreate,
   [McpMethod.PARENT_OPERATIONS]: handleParentOperations,
   [McpMethod.AREA_LIST]: handleAreaList,
