@@ -7,9 +7,9 @@ import { apiClient } from './client';
 
 // Query keys
 export const queryKeys = {
-  tasks: (params?: any) => ['tasks', params] as const,
+  tasks: (params?: Record<string, unknown>) => ['tasks', params] as const,
   task: (id: string, parentId?: string) => ['task', id, parentId] as const,
-  parents: (params?: any) => ['parents', params] as const,
+  parents: (params?: Record<string, unknown>) => ['parents', params] as const,
   workflow: () => ['workflow'] as const,
 };
 
@@ -64,9 +64,13 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, updates, parent_id }: { id: string; updates: any; parent_id?: string }) =>
+    mutationFn: ({
+      id,
+      updates,
+      parent_id,
+    }: { id: string; updates: Record<string, unknown>; parent_id?: string }) =>
       apiClient.updateTask(id, updates, parent_id),
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       // Invalidate specific task and lists
       queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -141,7 +145,10 @@ export function useParentOperation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ parentId, operation }: { parentId: string; operation: any }) =>
+    mutationFn: ({
+      parentId,
+      operation,
+    }: { parentId: string; operation: Record<string, unknown> }) =>
       apiClient.performParentOperation(parentId, operation),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parents'] });
@@ -209,7 +216,7 @@ export function useParentTask(id: string) {
   });
 }
 
-// Subtasks for a parent hook  
+// Subtasks for a parent hook
 export function useSubtasks(params: { parent_id: string }, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['subtasks', params.parent_id],
@@ -220,7 +227,7 @@ export function useSubtasks(params: { parent_id: string }, options?: { enabled?:
 }
 
 // Recent tasks hook - fetches all tasks sorted by updated date
-export function useRecentTasks(limit: number = 5) {
+export function useRecentTasks(limit = 5) {
   return useQuery({
     queryKey: ['tasks', 'recent', limit],
     queryFn: async () => {
@@ -230,16 +237,16 @@ export function useRecentTasks(limit: number = 5) {
         include_content: false,
         include_parent_tasks: true,
       });
-      
+
       if (!response.success || !response.data) {
         return [];
       }
-      
-      // Sort by updated_date (newest first) and take top N
+
+      // API now returns normalized data - simple sorting by updatedDate
       return response.data
         .sort((a, b) => {
-          const aDate = a.metadata?.updated_date || a.updated_date || '';
-          const bDate = b.metadata?.updated_date || b.updated_date || '';
+          const aDate = a.updatedDate || '';
+          const bDate = b.updatedDate || '';
           return bDate.localeCompare(aDate);
         })
         .slice(0, limit);
@@ -261,7 +268,7 @@ export function useWorkflowCounts() {
         apiClient.getTasks({ location: 'current', include_content: false }),
         apiClient.getTasks({ location: 'archive', include_content: false }),
       ]);
-      
+
       return {
         backlog: backlogResponse.success ? backlogResponse.data?.length || 0 : 0,
         current: currentResponse.success ? currentResponse.data?.length || 0 : 0,

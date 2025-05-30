@@ -1,39 +1,26 @@
 import React from 'react';
 import { TaskTypeIcon as SharedTaskTypeIcon } from '../../lib/icons';
-import type { Task, ParentTask } from '../../lib/types';
+import type { Task, TaskType, TaskStructure } from '../../lib/types';
 
 interface TaskTypeIconProps {
-  task?: Task | ParentTask;
-  type?: string;
+  task?: Task;
+  type?: TaskType | 'parent_task'; // Support legacy 'parent_task' for compatibility
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-/**
- * Extracts the task type from various data structures
- * This handles inconsistencies between different API responses
- */
-function extractTaskType(task: any): string {
-  // Check various ways a task might indicate it's a parent
-  if (task.type === 'parent_task' || 
-      'subtasks' in task || 
-      task.task_type === 'parent' ||
-      task.isParentTask ||
-      task.metadata?.isParentTask) {
-    return 'parent_task';
-  }
-  
-  // Return the explicit type or default to feature
-  return task.type || 'feature';
-}
-
 export function TaskTypeIcon({ task, type: propType, size = 'md', className = '' }: TaskTypeIconProps) {
-  // Prefer explicit type prop, then extract from task, then default to feature
-  const type = propType || (task ? extractTaskType(task) : 'feature');
+  // Use explicit prop first, then task.type, defaulting to 'feature'
+  let displayType = propType || task?.type || 'feature';
+  
+  // Convert parent task structure to display type
+  if (task?.taskStructure === 'parent') {
+    displayType = 'parent_task';
+  }
   
   return (
     <SharedTaskTypeIcon 
-      type={type as any}
+      type={displayType as any}
       size={size}
       className={className}
     />

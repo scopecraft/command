@@ -30,61 +30,24 @@ interface ParentTaskListViewProps {
 export function ParentTaskListView({ className = '', data, searchParams = {} }: ParentTaskListViewProps) {
   const navigate = useNavigate();
 
-  // Debug log to see what data structure we're getting
-  React.useEffect(() => {
-    console.log('ParentTaskListView data:', data);
-  }, [data]);
 
-  // Convert API data to table format - specifically for parent tasks
-  const allTasks: TableTask[] = React.useMemo(() => {
+  // API now returns normalized data - no complex mapping needed
+  const allTasks = React.useMemo(() => {
     if (!data?.success || !data.data) return [];
     
-    return data.data.map(task => {
-      const metadata = task.metadata || task;
-      
-      // Extract subtask progress info - the API returns these fields directly
-      const subtaskCount = task.subtask_count || 0;
-      const completedCount = task.completed_count || 0;
-      const progressPercentage = task.progress_percentage || 0;
-      
-      return {
-        ...task,
-        task_type: 'parent' as const,
-        id: metadata.id,
-        title: metadata.title || task.document?.title || '',
-        status: normalizeStatus(metadata.status || task.document?.frontmatter?.status),
-        priority: metadata.priority || task.document?.frontmatter?.priority || 'Medium',
-        workflow: normalizeWorkflow(metadata.location || task.document?.frontmatter?.location),
-        area: metadata.area || task.document?.frontmatter?.area || 'general',
-        assignee: metadata.assigned_to || metadata.assignee || task.document?.frontmatter?.assignee || '',
-        tags: metadata.tags || task.document?.frontmatter?.tags || [],
-        created_date: metadata.created_date || '',
-        updated_date: metadata.updated_date || '',
-        type: 'parent_task',
-        // Add subtask info for display
-        subtask_count: subtaskCount,
-        subtask_completed: completedCount,
-        progress_percentage: progressPercentage,
-      };
-    });
+    // Data is already normalized, just ensure we have required fields for UI
+    return data.data.map(task => ({
+      ...task,
+      // Ensure backwards compatibility fields exist for TaskTable
+      workflow: task.workflowState,
+      created_date: task.createdDate,
+      updated_date: task.updatedDate,
+      // Ensure required fields have defaults
+      tags: task.tags || [],
+      area: task.area || 'general',
+      priority: task.priority || 'medium',
+    }));
   }, [data]);
-
-  // Helper functions to normalize data from API
-  function normalizeStatus(status: string): TaskStatus {
-    switch (status?.toLowerCase()) {
-      case 'to do': return 'todo';
-      case 'in progress': case 'progress': return 'in_progress';
-      case 'done': return 'done';
-      case 'blocked': return 'blocked';
-      default: return 'todo';
-    }
-  }
-
-  function normalizeWorkflow(location: any): WorkflowState {
-    if (typeof location === 'string') return location as WorkflowState;
-    if (location?.workflowState) return location.workflowState;
-    return 'backlog';
-  }
 
   // State management from URL search params
   const [selectedRows, setSelectedRows] = React.useState<Record<string, boolean>>({});

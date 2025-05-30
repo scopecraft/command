@@ -1,4 +1,4 @@
-import type { Task, ParentTask, WorkflowState, TaskStatus, TaskType } from '../types';
+import type { ParentTask, Task, TaskStatus, TaskType, WorkflowState } from '../types';
 
 // V2 Mock Tasks for testing the new workflow-based structure
 export const mockV2SimpleTasks: Task[] = [
@@ -6,12 +6,16 @@ export const mockV2SimpleTasks: Task[] = [
     id: 'simple-001',
     title: 'Fix authentication bug',
     type: 'bug',
+    taskStructure: 'simple',
     status: 'in_progress',
     priority: 'high',
-    workflow_state: 'current',
-    created_date: '2025-05-15',
-    updated_date: '2025-05-28',
+    workflowState: 'current',
+    area: 'security',
+    createdDate: '2025-05-15',
+    updatedDate: '2025-05-28',
     tags: ['auth', 'security', 'urgent'],
+    path: '/current/simple-001.md',
+    filename: 'simple-001.md',
     content: `# Fix Authentication Bug
 
 Users are experiencing login failures when using social auth providers.
@@ -323,7 +327,15 @@ The authentication system follows industry best practices:
 - Password hashing in progress 🔄
 - Remaining tasks depend on infrastructure setup`,
     content: '',
-    subtasks: ['subtask-001', 'subtask-002', 'subtask-003', 'subtask-004a', 'subtask-004b', 'subtask-005', 'subtask-006'],
+    subtasks: [
+      'subtask-001',
+      'subtask-002',
+      'subtask-003',
+      'subtask-004a',
+      'subtask-004b',
+      'subtask-005',
+      'subtask-006',
+    ],
     progress: {
       completed: 1,
       total: 7,
@@ -431,31 +443,30 @@ export const mockV2Data = {
 // Utility functions for mock data manipulation
 export const mockV2Utils = {
   // Get tasks by workflow state
-  getTasksByWorkflow: (workflow: WorkflowState) => 
-    mockV2Data.tasks.filter(task => task.workflow_state === workflow),
-  
+  getTasksByWorkflow: (workflow: WorkflowState) =>
+    mockV2Data.tasks.filter((task) => task.workflow_state === workflow),
+
   // Get subtasks for a parent task
-  getSubtasks: (parentId: string) => 
-    mockV2Data.subtasks.filter(task => task.parent_task === parentId),
-  
+  getSubtasks: (parentId: string) =>
+    mockV2Data.subtasks.filter((task) => task.parent_task === parentId),
+
   // Get parent task by ID
-  getParentTask: (parentId: string) => 
-    mockV2Data.parentTasks.find(parent => parent.id === parentId),
-  
+  getParentTask: (parentId: string) =>
+    mockV2Data.parentTasks.find((parent) => parent.id === parentId),
+
   // Get tasks with specific status
-  getTasksByStatus: (status: TaskStatus) => 
-    mockV2Data.tasks.filter(task => task.status === status),
-  
+  getTasksByStatus: (status: TaskStatus) =>
+    mockV2Data.tasks.filter((task) => task.status === status),
+
   // Get tasks with specific type
-  getTasksByType: (type: TaskType) => 
-    mockV2Data.tasks.filter(task => task.type === type),
-  
+  getTasksByType: (type: TaskType) => mockV2Data.tasks.filter((task) => task.type === type),
+
   // Get parallel tasks (same sequence base, different suffixes)
   getParallelTasks: (parentId: string) => {
     const subtasks = mockV2Utils.getSubtasks(parentId);
     const sequenceGroups: Record<string, Task[]> = {};
-    
-    subtasks.forEach(task => {
+
+    for (const task of subtasks) {
       if (task.sequence) {
         const baseSequence = task.sequence.replace(/[a-z]$/, '');
         if (!sequenceGroups[baseSequence]) {
@@ -463,9 +474,9 @@ export const mockV2Utils = {
         }
         sequenceGroups[baseSequence].push(task);
       }
-    });
-    
-    return Object.values(sequenceGroups).filter(group => group.length > 1);
+    }
+
+    return Object.values(sequenceGroups).filter((group) => group.length > 1);
   },
 };
 

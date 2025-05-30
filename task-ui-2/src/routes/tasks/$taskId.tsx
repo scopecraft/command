@@ -5,48 +5,7 @@ import { useTask, useSubtasks, useUpdateTask } from '../../lib/api/hooks'
 import { SimpleTaskView } from '../../components/v2/SimpleTaskView'
 import { ParentTaskView } from '../../components/v2/ParentTaskView'
 
-// TODO: DELETE THIS HELPER FUNCTION ONCE CORE TEAM FIXES THE API
-// Task created: add-par-to-get-tas-con-wit-05A
-// The MCP API should provide a parameter to get content without frontmatter
-// so UI doesn't need to parse and strip it manually
-// Helper function to extract content without frontmatter
-function extractContentWithoutFrontmatter(content: string): string {
-  if (!content) return ''
-  
-  // Split content into lines
-  const lines = content.split('\n')
-  
-  // Skip title line (starts with #)
-  let startIndex = 0
-  if (lines[0]?.startsWith('# ')) {
-    startIndex = 1
-  }
-  
-  // Skip empty line after title
-  if (lines[startIndex] === '') {
-    startIndex++
-  }
-  
-  // Find the end of frontmatter (look for ending ---)
-  let endOfFrontmatter = startIndex
-  if (lines[startIndex] === '---') {
-    // Find closing ---
-    for (let i = startIndex + 1; i < lines.length; i++) {
-      if (lines[i] === '---') {
-        endOfFrontmatter = i + 1
-        break
-      }
-    }
-  }
-  
-  // Skip empty line after frontmatter
-  if (lines[endOfFrontmatter] === '') {
-    endOfFrontmatter++
-  }
-  
-  // Return everything after frontmatter
-  return lines.slice(endOfFrontmatter).join('\n').trim()
-}
+// Content extraction helper no longer needed - MCP API provides clean content
 
 const taskDetailSearchSchema = z.object({
   parent_id: z.string().optional(),
@@ -64,8 +23,8 @@ function TaskDetailPage() {
   const { data: taskData, isLoading, error } = useTask(taskId, parent_id)
   const updateTask = useUpdateTask()
   
-  // Determine if this is a parent task
-  const isParentTask = taskData?.success && (taskData.data?.metadata?.isParentTask || taskData.data?.task_type === 'parent')
+  // API now provides normalized taskStructure field
+  const isParentTask = taskData?.success && taskData.data?.taskStructure === 'parent'
   
   // Get subtasks if this is a parent task
   const { data: subtasksData } = useSubtasks({ parent_id: taskId }, { enabled: isParentTask })
@@ -73,12 +32,10 @@ function TaskDetailPage() {
   const [isEditing, setIsEditing] = React.useState(false)
   const [content, setContent] = React.useState('')
   
-  // Update content when task data loads
+  // Update content when task data loads - content is now clean from API
   React.useEffect(() => {
     if (taskData?.success && taskData.data) {
-      const fullContent = taskData.data.content || ''
-      const contentWithoutFrontmatter = extractContentWithoutFrontmatter(fullContent)
-      setContent(contentWithoutFrontmatter)
+      setContent(taskData.data.content || '')
     }
   }, [taskData])
   
@@ -113,9 +70,7 @@ function TaskDetailPage() {
   
   const handleCancel = () => {
     if (taskData?.success && taskData.data) {
-      const fullContent = taskData.data.content || ''
-      const contentWithoutFrontmatter = extractContentWithoutFrontmatter(fullContent)
-      setContent(contentWithoutFrontmatter)
+      setContent(taskData.data.content || '')
     }
     setIsEditing(false)
   }

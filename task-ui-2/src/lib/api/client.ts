@@ -53,15 +53,17 @@ class ApiClient {
   ) {
     const searchParams = new URLSearchParams();
 
-    Object.entries(params).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) {
         if (Array.isArray(value)) {
-          value.forEach((v) => searchParams.append(key, v));
+          for (const v of value) {
+            searchParams.append(key, v);
+          }
         } else {
           searchParams.append(key, String(value));
         }
       }
-    });
+    }
 
     return this.request(`/tasks?${searchParams}`);
   }
@@ -154,15 +156,17 @@ class ApiClient {
   ) {
     const searchParams = new URLSearchParams();
 
-    Object.entries(params).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) {
         if (Array.isArray(value)) {
-          value.forEach((v) => searchParams.append(key, v));
+          for (const v of value) {
+            searchParams.append(key, v);
+          }
         } else {
           searchParams.append(key, String(value));
         }
       }
-    });
+    }
 
     return this.request(`/parents?${searchParams}`);
   }
@@ -211,7 +215,7 @@ class ApiClient {
   }
 
   // Workflow endpoints
-  async getCurrentWorkflow(params = {}) {
+  async getCurrentWorkflow(_params = {}) {
     return this.request('/workflow/current', { method: 'GET' });
   }
 

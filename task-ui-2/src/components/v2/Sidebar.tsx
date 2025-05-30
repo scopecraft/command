@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { TaskTypeIcon as SharedTaskIcon } from '../../lib/icons';
 import { useRecentTasks, useWorkflowCounts } from '../../lib/api/hooks';
-import type { TaskType } from '../../lib/types';
+import type { Task, TaskType } from '../../lib/types';
 
 interface SidebarProps {
   className?: string;
@@ -28,20 +28,10 @@ type SectionHeaderProps = {
   actionButton?: React.ReactNode;
 };
 
-// Helper function to normalize task type for icon display
-function normalizeTaskType(type: string, isParentTask: boolean): TaskType {
-  if (isParentTask) return 'parent_task';
-  
-  // Handle emoji-prefixed types
-  if (type?.includes('Feature') || type === 'feature') return 'feature';
-  if (type?.includes('Bug') || type === 'bug') return 'bug';
-  if (type?.includes('Chore') || type === 'chore') return 'chore';
-  if (type?.includes('Documentation') || type === 'documentation') return 'documentation';
-  if (type?.includes('Test') || type === 'test') return 'test';
-  if (type?.includes('Spike') || type === 'spike') return 'spike';
-  
-  // Default to simple task
-  return 'task';
+// Convert task structure to display type for TaskTypeIcon
+function getDisplayType(task: Pick<Task, 'taskStructure' | 'type'>): TaskType | 'parent_task' {
+  if (task.taskStructure === 'parent') return 'parent_task';
+  return task.type || 'feature';
 }
 
 function SectionHeader({
@@ -293,25 +283,22 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
             <li className="text-sm text-muted-foreground p-2">No recent tasks</li>
           ) : (
             recentTasks.map((task) => {
-              const metadata = task.metadata || task;
-              const taskId = metadata.id;
-              const taskTitle = metadata.title;
-              const isParentTask = metadata.isParentTask || metadata.task_type === 'parent';
-              const taskType = normalizeTaskType(metadata.type, isParentTask);
-              const path = isParentTask ? `/parents/${taskId}` : `/tasks/${taskId}`;
+              // Data is normalized from MCP API
+              const taskType = getDisplayType(task);
+              const path = task.taskStructure === 'parent' ? `/parents/${task.id}` : `/tasks/${task.id}`;
               
               return (
-                <li key={taskId}>
+                <li key={`recent-task-${task.id}`}>
                   <Button
-                    variant={activeItem === taskId ? 'secondary' : 'ghost'}
+                    variant={activeItem === task.id ? 'secondary' : 'ghost'}
                     className={cn(
                       'w-full justify-start text-left normal-case',
-                      activeItem === taskId && 'bg-accent'
+                      activeItem === task.id && 'bg-accent'
                     )}
-                    onClick={() => handleItemClick(taskId, path)}
+                    onClick={() => handleItemClick(task.id, path)}
                   >
                     <SharedTaskIcon type={taskType} size="md" className="mr-2 text-muted-foreground" />
-                    <span className="truncate">{taskTitle}</span>
+                    <span className="truncate">{task.title}</span>
                   </Button>
                 </li>
               );

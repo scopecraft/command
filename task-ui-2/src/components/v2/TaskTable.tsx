@@ -133,7 +133,8 @@ export function TaskTable({
                   <div className="flex items-center gap-2">
                     <TaskTypeIcon task={task} />
                     <span className="text-xs text-muted-foreground">
-                      {task.task_type === 'parent' ? 'Parent' : 'Task'}
+                      {task.taskStructure === 'parent' ? 'Parent' : 
+                       task.taskStructure === 'subtask' ? 'Subtask' : 'Task'}
                     </span>
                   </div>
                 </td>
@@ -148,46 +149,38 @@ export function TaskTable({
                     {task.title}
                   </Link>
                   <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
-                    {task.task_type === 'parent' && showSubtaskProgress && (
-                      <>
-                        {task.subtask_count !== undefined && task.subtask_count > 0 ? (
-                          <div className="flex items-center gap-2">
-                            <span>
-                              {task.subtask_completed || 0}/{task.subtask_count} subtasks
-                            </span>
-                            {task.progress_percentage !== undefined && (
-                              <div className="flex items-center gap-1">
-                                <span>({task.progress_percentage}%)</span>
-                                <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-green-500 transition-all duration-300"
-                                    style={{ width: `${task.progress_percentage}%` }}
-                                  />
-                                </div>
-                              </div>
-                            )}
+                    {task.taskStructure === 'parent' && showSubtaskProgress && task.progress && (
+                      <div className="flex items-center gap-2">
+                        <span>
+                          {task.progress.completed}/{task.progress.total} subtasks
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <span>({task.progress.percentage}%)</span>
+                          <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-green-500 transition-all duration-300"
+                              style={{ width: `${task.progress.percentage}%` }}
+                            />
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground">No subtasks</span>
-                        )}
-                      </>
+                        </div>
+                      </div>
                     )}
-                    {task.task_type === 'parent' && !showSubtaskProgress && 'subtasks' in task && (
+                    {task.taskStructure === 'parent' && !showSubtaskProgress && task.subtaskIds && (
                       <span>
-                        {task.subtasks.length} subtask{task.subtasks.length === 1 ? '' : 's'}
+                        {task.subtaskIds.length} subtask{task.subtaskIds.length === 1 ? '' : 's'}
                       </span>
                     )}
-                    {'parent_task' in task && task.parent_task && (
+                    {task.taskStructure === 'subtask' && task.parentId && (
                       <span>
                         Parent:{' '}
                         <button
                           className="text-blue-500 hover:underline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onParentTaskClick?.(task.parent_task!);
+                            onParentTaskClick?.(task.parentId!);
                           }}
                         >
-                          {task.parent_task}
+                          {task.parentId}
                         </button>
                       </span>
                     )}
@@ -206,7 +199,7 @@ export function TaskTable({
 
                 {/* Workflow Column */}
                 <td className="p-3">
-                  <WorkflowStateBadge workflow={task.workflow_state || task.workflow} size="sm" />
+                  <WorkflowStateBadge workflow={task.workflowState} size="sm" />
                 </td>
 
                 {/* Area Column */}
@@ -219,11 +212,11 @@ export function TaskTable({
                 {/* Tags Column */}
                 <td className="p-3">
                   <div className="flex gap-1 flex-wrap">
-                    {task.tags && task.tags.length > 0 ? (
+                    {task.tags && Array.isArray(task.tags) && task.tags.length > 0 ? (
                       <>
-                        {task.tags.slice(0, 2).map((tag) => (
+                        {task.tags.slice(0, 2).map((tag, index) => (
                           <span
-                            key={tag}
+                            key={`${task.id}-tag-${index}-${tag}`}
                             className="text-xs bg-muted px-2 py-1 rounded font-mono"
                           >
                             #{tag}

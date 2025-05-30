@@ -1,37 +1,37 @@
 /**
- * Helper functions for task routing
+ * Helper functions for task routing - simplified for normalized API
  */
 
+import type { Task } from './types';
+
 /**
- * Generate a URL for a task - handles parent tasks, subtasks, and simple tasks
+ * Generate a URL for a task using normalized taskStructure field
  */
-export function getTaskUrl(task: any): string {
-  // Check if it's a parent task
-  if (task.metadata?.isParentTask || task.task_type === 'parent') {
-    return `/parents/${task.id || task.metadata?.id}`
+export function getTaskUrl(
+  task: Pick<Task, 'id' | 'taskStructure'> & { parentId?: string }
+): string {
+  switch (task.taskStructure) {
+    case 'parent':
+      return `/parents/${task.id}`;
+    case 'subtask':
+      return `/parents/${task.parentId}/${task.id}`;
+    default:
+      return `/tasks/${task.id}`;
   }
-  
-  // Check if it's a subtask (has parent_task or parentTask)
-  if (task.metadata?.parentTask || task.parent_task) {
-    const parentId = task.metadata?.parentTask || task.parent_task
-    const subtaskId = task.id || task.metadata?.id
-    return `/parents/${parentId}/${subtaskId}`
-  }
-  
-  // Simple tasks
-  return `/tasks/${task.id || task.metadata?.id}`
 }
 
 /**
  * Check if a task is a subtask
  */
-export function isSubtask(task: any): boolean {
-  return !!(task.metadata?.parentTask || task.parent_task)
+export function isSubtask(task: Pick<Task, 'taskStructure'>): boolean {
+  return task.taskStructure === 'subtask';
 }
 
 /**
  * Get parent task ID from a subtask
  */
-export function getParentTaskId(subtask: any): string | null {
-  return subtask.metadata?.parentTask || subtask.parent_task || null
+export function getParentTaskId(
+  subtask: Pick<Task, 'taskStructure'> & { parentId?: string }
+): string | null {
+  return subtask.taskStructure === 'subtask' ? subtask.parentId || null : null;
 }

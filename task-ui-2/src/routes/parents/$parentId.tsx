@@ -17,12 +17,10 @@ function ParentDetailPage() {
   const [isEditing, setIsEditing] = React.useState(false)
   const [content, setContent] = React.useState('')
   
-  // Update content when parent data loads
+  // Update content when parent data loads - normalized API provides clean overview
   React.useEffect(() => {
     if (parentData?.success && parentData.data) {
-      // Parent overview content is in sections.instruction
-      const overviewContent = parentData.data.overview?.sections?.instruction || ''
-      setContent(overviewContent)
+      setContent(parentData.data.overview || '')
     }
   }, [parentData])
   
@@ -62,8 +60,7 @@ function ParentDetailPage() {
   
   const handleCancel = () => {
     if (parentData?.success && parentData.data) {
-      const overviewContent = parentData.data.overview?.sections?.instruction || ''
-      setContent(overviewContent)
+      setContent(parentData.data.overview || '')
     }
     setIsEditing(false)
   }
@@ -79,11 +76,8 @@ function ParentDetailPage() {
 
   const handleContentChange = (newContent: string) => setContent(newContent)
 
-  // Extract data from parent response
-  const parentTask = {
-    ...parentData.data.metadata,
-    ...parentData.data.overview
-  }
+  // Data is normalized from MCP API - direct usage
+  const parentTask = parentData.data
   const subtasks = parentData.data.subtasks || []
   const supportingFiles = parentData.data.supportingFiles || []
 

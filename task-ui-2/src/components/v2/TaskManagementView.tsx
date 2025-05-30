@@ -33,57 +33,24 @@ interface TaskManagementViewProps {
 export function TaskManagementView({ className = '', data, searchParams = {} }: TaskManagementViewProps) {
   const navigate = useNavigate();
 
-  // Convert API data to table format
+  // API now returns normalized data - minimal mapping needed
   const allTasks: TableTask[] = React.useMemo(() => {
     if (!data?.success || !data.data) return [];
     
-    return data.data.map(task => {
-      const metadata = task.metadata || task;
-      
-      return {
-        ...task,
-        task_type: metadata.isParentTask ? 'parent' as const : 'simple' as const,
-        id: metadata.id,
-        title: metadata.title,
-        status: normalizeStatus(metadata.status),
-        priority: metadata.priority || 'Medium',
-        workflow: normalizeWorkflow(metadata.location),
-        area: metadata.area || 'general',
-        assignee: metadata.assigned_to || metadata.assignee || '',
-        tags: metadata.tags || [],
-        created_date: metadata.created_date || '',
-        updated_date: metadata.updated_date || '',
-        type: normalizeType(metadata.type),
-      };
-    });
+    // Data is already normalized, just ensure compatibility fields and defaults
+    return data.data.map(task => ({
+      ...task,
+      // Legacy field mappings for UI compatibility
+      workflow: task.workflowState,
+      created_date: task.createdDate,
+      updated_date: task.updatedDate,
+      parent_task: task.taskStructure === 'subtask' ? task.parentId : undefined,
+      // Ensure required fields have defaults
+      tags: task.tags || [],
+      area: task.area || 'general',
+      priority: task.priority || 'medium',
+    }));
   }, [data]);
-
-  // Helper functions to normalize data from API
-  function normalizeStatus(status: string): TaskStatus {
-    switch (status?.toLowerCase()) {
-      case 'to do': return 'todo';
-      case 'in progress': case 'progress': return 'in_progress';
-      case 'done': return 'done';
-      case 'blocked': return 'blocked';
-      default: return 'todo';
-    }
-  }
-
-  function normalizeWorkflow(location: any): WorkflowState {
-    if (typeof location === 'string') return location as WorkflowState;
-    if (location?.workflowState) return location.workflowState;
-    return 'backlog';
-  }
-
-  function normalizeType(type: string): TaskType {
-    if (type?.includes('Feature') || type === 'feature') return 'feature';
-    if (type?.includes('Bug') || type === 'bug') return 'bug';
-    if (type?.includes('Chore') || type === 'chore') return 'chore';
-    if (type?.includes('Documentation') || type === 'documentation') return 'documentation';
-    if (type?.includes('Test') || type === 'test') return 'test';
-    if (type?.includes('Spike') || type === 'spike') return 'spike';
-    return 'feature';
-  }
 
   // State management from URL search params
   const [selectedRows, setSelectedRows] = React.useState<Record<string, boolean>>({});
