@@ -35,6 +35,14 @@ import {
   handleParentOperationsNormalized,
 } from './normalized-write-handlers.js';
 
+// Import clean enum schemas
+import {
+  TaskTypeSchema,
+  TaskStatusSchema,
+  TaskPrioritySchema,
+  WorkflowStateSchema,
+} from './schemas.js';
+
 /**
  * Format a successful response
  * @param result The operation result
@@ -145,21 +153,11 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
  * Register all tools with the MCP server
  */
 function registerTools(server: McpServer, verbose = false): McpServer {
-  // Get available task types from templates for dynamic enum
-  const projectRoot = process.cwd(); // Default to cwd, will be overridden by root_dir param
-  const templates = v2.listTemplates(projectRoot);
-  const taskTypes = templates.map((t) => t.name).filter(Boolean);
-  // Fallback to common types if no templates found
-  const availableTaskTypes =
-    taskTypes.length > 0
-      ? taskTypes
-      : ['feature', 'bug', 'chore', 'documentation', 'test', 'spike', 'idea'];
-
-  // Common enums used across multiple tools
-  const taskStatusEnum = z.enum(['To Do', 'In Progress', 'Done', 'Blocked', 'Archived']);
-  const taskPriorityEnum = z.enum(['Highest', 'High', 'Medium', 'Low']);
-  const taskTypeEnum = z.enum(availableTaskTypes as [string, ...string[]]);
-  const workflowStateEnum = z.enum(['backlog', 'current', 'archive']);
+  // Use the clean enums from our schemas
+  const taskTypeEnum = TaskTypeSchema;
+  const taskStatusEnum = TaskStatusSchema;
+  const taskPriorityEnum = TaskPrioritySchema;
+  const workflowStateEnum = WorkflowStateSchema;
   const taskStructureEnum = z.enum(['simple', 'parent', 'subtask', 'top-level', 'all']);
 
   // Task list tool
@@ -327,13 +325,13 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     // Optional metadata
     status: taskStatusEnum
       .describe(
-        'Initial task status: "To Do" (default), "In Progress", "Done", "Blocked", or "Archived"'
+        'Initial task status: "todo" (default), "in_progress", "done", "blocked", or "archived"'
       )
-      .default('To Do')
+      .default('todo')
       .optional(),
     priority: taskPriorityEnum
-      .describe('Task priority level: "Highest", "High", "Medium" (default), or "Low"')
-      .default('Medium')
+      .describe('Task priority level: "highest", "high", "medium" (default), or "low"')
+      .default('medium')
       .optional(),
     location: workflowStateEnum
       .describe('Workflow location: "backlog" (default), "current", or "archive"')
@@ -757,13 +755,13 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     area: z.string().describe('Task area').default('general').optional(),
     status: taskStatusEnum
       .describe(
-        'Initial status: "To Do" (default), "In Progress", "Done", "Blocked", or "Archived"'
+        'Initial status: "todo" (default), "in_progress", "done", "blocked", or "archived"'
       )
-      .default('To Do')
+      .default('todo')
       .optional(),
     priority: taskPriorityEnum
-      .describe('Priority level: "Highest", "High", "Medium" (default), or "Low"')
-      .default('Medium')
+      .describe('Priority level: "highest", "high", "medium" (default), or "low"')
+      .default('medium')
       .optional(),
     location: workflowStateEnum
       .describe('Workflow location: "backlog" (default), "current", or "archive"')
