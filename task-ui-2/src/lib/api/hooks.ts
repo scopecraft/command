@@ -218,3 +218,58 @@ export function useSubtasks(params: { parent_id: string }, options?: { enabled?:
     staleTime: 1000 * 30, // 30 seconds
   });
 }
+
+// Recent tasks hook - fetches all tasks sorted by updated date
+export function useRecentTasks(limit: number = 5) {
+  return useQuery({
+    queryKey: ['tasks', 'recent', limit],
+    queryFn: async () => {
+      // Get all tasks from current and backlog
+      const response = await apiClient.getTasks({
+        location: ['current', 'backlog'],
+        include_content: false,
+        include_parent_tasks: true,
+      });
+      
+      if (!response.success || !response.data) {
+        return [];
+      }
+      
+      // Sort by updated_date (newest first) and take top N
+      return response.data
+        .sort((a, b) => {
+          const aDate = a.metadata?.updated_date || a.updated_date || '';
+          const bDate = b.metadata?.updated_date || b.updated_date || '';
+          return bDate.localeCompare(aDate);
+        })
+        .slice(0, limit);
+    },
+    staleTime: 1000 * 60, // 1 minute
+    refetchInterval: 1000 * 60, // Refresh every minute
+    refetchIntervalInBackground: false,
+  });
+}
+
+// Workflow counts hook - fetches task counts for each workflow state
+export function useWorkflowCounts() {
+  return useQuery({
+    queryKey: ['workflow', 'counts'],
+    queryFn: async () => {
+      // Fetch counts for each workflow state in parallel
+      const [backlogResponse, currentResponse, archiveResponse] = await Promise.all([
+        apiClient.getTasks({ location: 'backlog', include_content: false }),
+        apiClient.getTasks({ location: 'current', include_content: false }),
+        apiClient.getTasks({ location: 'archive', include_content: false }),
+      ]);
+      
+      return {
+        backlog: backlogResponse.success ? backlogResponse.data?.length || 0 : 0,
+        current: currentResponse.success ? currentResponse.data?.length || 0 : 0,
+        archive: archiveResponse.success ? archiveResponse.data?.length || 0 : 0,
+      };
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchInterval: 1000 * 60 * 2, // Refresh every 2 minutes
+    refetchIntervalInBackground: false,
+  });
+}

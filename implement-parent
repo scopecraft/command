@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Usage: ./implement-parent <parentId> [additional instructions]
+# Example: ./implement-parent fix-mcp-api-res-cnsstncy-05A
+# Example: ./implement-parent fix-mcp-api-res-cnsstncy-05A "Focus on backwards compatibility"
+
+PARENT_ID=$1
+ADDITIONAL_INSTRUCTIONS="${*:2}"
+
+if [ -z "$PARENT_ID" ]; then
+    echo "Usage: $0 <parentId> [additional instructions]"
+    echo "Example: $0 fix-mcp-api-res-cnsstncy-05A"
+    echo "Example: $0 fix-mcp-api-res-cnsstncy-05A \"Focus on backwards compatibility\""
+    exit 1
+fi
+
+# Run channelcoder with the parent implementation prompt
+channelcoder .tasks/.modes/implement/parent.md \
+    -d parentId="$PARENT_ID" \
+    -d additionalInstructions="$ADDITIONAL_INSTRUCTIONS"

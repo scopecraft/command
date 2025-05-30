@@ -79,12 +79,28 @@ Build a new V2 Task UI using a UI-first approach with mock providers. Replace th
 - [x] Add 30-second auto-refresh when window is visible
 - [x] Fix filter data mapping for live API responses
 
-### Phase 3: Pages & Navigation (Now with real data!)
+### Phase 3: Pages & Navigation (In Progress)
 **IMPORTANT**: Use the showcase views in V2Showcase.stories.tsx as templates for these pages!
 - [ ] Rename old pages to .old.tsx (PhaseDetailPage, FeatureDetailPage, etc.)
-- [ ] Build ParentTaskPage using ParentTaskDetailPage showcase as template
+- [x] **Build ParentTaskListView** - Implemented with:
+  - Uses TaskTable with subtask progress display
+  - Shows subtask counts and completion percentage (e.g., "3/5 subtasks (60%)")
+  - Includes progress bar visualization
+  - Filter by status, workflow, area
+  - Search functionality
+  - Bulk actions support
+  - Proper routing to parent detail pages
+- [x] Build parent routes infrastructure (/parents/, /parents/$parentId, /parents/$parentId/$subtaskId)
+- [x] Fix parent/subtask routing with proper Outlet handling
+- [x] Add document display from parent_get response
+- [x] Fix sidebar navigation with proper status values
+- [x] **Fix Recent Tasks in Sidebar** - Now shows real data:
+  - Queries for recently updated tasks from current and backlog
+  - Shows actual task icons and titles based on task type
+  - Items are clickable with proper routing (parent vs simple tasks)
+  - Updates automatically every minute when window is visible
+  - Also added dynamic workflow counts that update every 2 minutes
 - [ ] Build TaskDetailPage using SimpleTaskDetailPage showcase as template
-- [ ] Build SubtaskDetailPage using SubtaskDetailPage showcase as template
 - [ ] Build DocumentPage using DocumentDetailPage showcase as template
 - [ ] Build TaskListView using MixedTaskList/TaskManagementView showcases as template
 - [ ] Integrate V2 Sidebar component (already built in Phase 1)
@@ -280,3 +296,6 @@ Components exported from `v2/index.ts`:
   - Removed redundant theme/responsive stories (Storybook handles these)
   - Phase 1 is now FULLY COMPLETED with all core components ready
 - 2025-05-30: Phase 2 API Integration completed - Built comprehensive React Query integration with URL-based filters. Created API client with all V2 MCP endpoints, added hooks for tasks/parents/workflow operations, configured 30-second auto-refresh when window visible, integrated filters with TanStack Router search params for URL persistence, fixed filter data mapping for live API responses, and added proper loading/error states. Task management page now shows real-time data with working filters that persist in URL.
+- 2025-05-30: Phase 3 routing implementation completed - Implemented dedicated /parents/ routes architecture with parent list, parent detail, and subtask views. Fixed React hooks ordering issue in parent route, added Outlet for proper nested routing, resolved SubtaskList key warnings, integrated supporting documents display from parent_get response with smart type detection. Parent routes now work correctly with /parents/$parentId for parent tasks and /parents/$parentId/$subtaskId for subtasks. Documents widget displays actual files from MCP response.
+- 2025-05-30: Fixed Recent Tasks in Sidebar - Replaced hardcoded mock data with real API integration. Created useRecentTasks hook that fetches tasks from current and backlog sorted by updated date, added proper task type normalization for icon display, implemented correct routing for parent vs simple tasks. Also added useWorkflowCounts hook to show dynamic task counts in workflow section. Both hooks use appropriate refresh intervals (1 minute for recent tasks, 2 minutes for workflow counts) and only refresh when window is visible.
+- 2025-05-30: Implemented ParentTaskListView - Created dedicated parent task list view that extends TaskManagementView with parent-specific features. Added subtask progress display to TaskTable showing "X/Y subtasks (Z%)" with visual progress bar. Created proper types file defining Task, ParentTask, and TableTask interfaces. Updated parent list route to use new component with search params support. Parent tasks now display with real progress data from the API's include_progress flag.

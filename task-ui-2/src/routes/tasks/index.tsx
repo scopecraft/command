@@ -5,10 +5,10 @@ import { useTopLevelTasks } from '../../lib/api/hooks'
 
 const taskSearchSchema = z.object({
   search: z.string().optional(),
-  status: z.array(z.string()).optional(),
-  type: z.array(z.string()).optional(),
-  workflow: z.array(z.string()).optional(),
-  area: z.array(z.string()).optional(),
+  status: z.union([z.string(), z.array(z.string())]).optional(),
+  type: z.union([z.string(), z.array(z.string())]).optional(),
+  workflow: z.union([z.string(), z.array(z.string())]).optional(),
+  area: z.union([z.string(), z.array(z.string())]).optional(),
   assignee: z.string().optional(),
 })
 

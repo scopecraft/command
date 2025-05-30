@@ -169,7 +169,9 @@
       "Bash(npx create-tsrouter-app:*)",
       "Bash(tree:*)",
       "Bash(curl:*)",
-      "mcp__scopecraft__parent_operations"
+      "mcp__scopecraft__parent_operations",
+      "Bash(diff:*)",
+      "mcp__scopecraft__parent_get"
     ],
     "deny": []
   },

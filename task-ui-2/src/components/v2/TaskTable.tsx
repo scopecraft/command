@@ -5,12 +5,9 @@ import { Checkbox } from '../ui/checkbox';
 import { TaskTypeIcon } from './TaskTypeIcon';
 import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 import { getTaskUrl } from '../../lib/task-routing';
-import type { ParentTask, Task } from '../../lib/types';
+import type { TableTask } from '../../lib/types';
 
-// Union type for table rows (can be parent or simple tasks)
-type TableTask = (ParentTask | Task) & {
-  task_type: 'parent' | 'simple';
-};
+export type { TableTask };
 
 interface TaskTableProps {
   tasks: TableTask[];
@@ -20,6 +17,7 @@ interface TaskTableProps {
   onRowClick?: (task: TableTask) => void;
   onParentTaskClick?: (parentId: string) => void;
   className?: string;
+  showSubtaskProgress?: boolean;
 }
 
 interface TaskTableColumn {
@@ -47,6 +45,7 @@ export function TaskTable({
   onRowClick,
   onParentTaskClick,
   className = '',
+  showSubtaskProgress = false,
 }: TaskTableProps) {
   const selectedCount = Object.values(selectedRows).filter(Boolean).length;
   const isAllSelected = selectedCount === tasks.length && tasks.length > 0;
@@ -149,7 +148,31 @@ export function TaskTable({
                     {task.title}
                   </Link>
                   <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
-                    {task.task_type === 'parent' && 'subtasks' in task && (
+                    {task.task_type === 'parent' && showSubtaskProgress && (
+                      <>
+                        {task.subtask_count !== undefined && task.subtask_count > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <span>
+                              {task.subtask_completed || 0}/{task.subtask_count} subtasks
+                            </span>
+                            {task.progress_percentage !== undefined && (
+                              <div className="flex items-center gap-1">
+                                <span>({task.progress_percentage}%)</span>
+                                <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-green-500 transition-all duration-300"
+                                    style={{ width: `${task.progress_percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">No subtasks</span>
+                        )}
+                      </>
+                    )}
+                    {task.task_type === 'parent' && !showSubtaskProgress && 'subtasks' in task && (
                       <span>
                         {task.subtasks.length} subtask{task.subtasks.length === 1 ? '' : 's'}
                       </span>
@@ -183,7 +206,7 @@ export function TaskTable({
 
                 {/* Workflow Column */}
                 <td className="p-3">
-                  <WorkflowStateBadge workflow={task.workflow_state} size="sm" />
+                  <WorkflowStateBadge workflow={task.workflow_state || task.workflow} size="sm" />
                 </td>
 
                 {/* Area Column */}

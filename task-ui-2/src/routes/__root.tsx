@@ -96,7 +96,7 @@ function RootComponent() {
                 "fixed md:relative z-50 md:z-auto h-full w-64 border-r border-border bg-background",
                 "md:block"
               )}>
-                <Sidebar />
+                <Sidebar onNavigate={(path) => navigate({ to: path })} />
               </div>
             </>
           )}

@@ -6,16 +6,12 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { TaskTypeIcon as SharedTaskIcon } from '../../lib/icons';
+import { useRecentTasks, useWorkflowCounts } from '../../lib/api/hooks';
+import type { TaskType } from '../../lib/types';
 
 interface SidebarProps {
   className?: string;
   onNavigate?: (path: string) => void;
-}
-
-interface RecentTask {
-  id: string;
-  title: string;
-  type: 'bug' | 'feature' | 'task' | 'parent_task';
 }
 
 interface CollapsedSections {
@@ -24,15 +20,6 @@ interface CollapsedSections {
   recent?: boolean;
 }
 
-// Mock recent tasks
-const mockRecentTasks: RecentTask[] = [
-  { id: 'bug-001', title: 'Fix login timeout bug', type: 'bug' },
-  { id: 'parent-001', title: 'User Authentication System', type: 'parent_task' },
-  { id: 'task-001', title: 'Implement OAuth2 endpoints', type: 'task' },
-  { id: 'feature-001', title: 'Add dark mode toggle', type: 'feature' },
-  { id: 'parent-002', title: 'Payment Integration', type: 'parent_task' },
-];
-
 type SectionHeaderProps = {
   title: string;
   section: keyof CollapsedSections;
@@ -40,6 +27,22 @@ type SectionHeaderProps = {
   onToggle: () => void;
   actionButton?: React.ReactNode;
 };
+
+// Helper function to normalize task type for icon display
+function normalizeTaskType(type: string, isParentTask: boolean): TaskType {
+  if (isParentTask) return 'parent_task';
+  
+  // Handle emoji-prefixed types
+  if (type?.includes('Feature') || type === 'feature') return 'feature';
+  if (type?.includes('Bug') || type === 'bug') return 'bug';
+  if (type?.includes('Chore') || type === 'chore') return 'chore';
+  if (type?.includes('Documentation') || type === 'documentation') return 'documentation';
+  if (type?.includes('Test') || type === 'test') return 'test';
+  if (type?.includes('Spike') || type === 'spike') return 'spike';
+  
+  // Default to simple task
+  return 'task';
+}
 
 function SectionHeader({
   title,
@@ -84,6 +87,12 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
     workflow: false,
     recent: false,
   });
+  
+  // Fetch recent tasks
+  const { data: recentTasks = [] } = useRecentTasks(5);
+  
+  // Fetch workflow counts
+  const { data: workflowCounts } = useWorkflowCounts();
 
   const toggleSection = (section: keyof CollapsedSections) => {
     setCollapsedSections(prev => ({
@@ -227,7 +236,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               onClick={() => handleItemClick('workflow-backlog', '/workflow/backlog')}
             >
               <span className="truncate flex-1">Backlog</span>
-              <span className="text-xs text-muted-foreground">12</span>
+              {workflowCounts && (
+                <span className="text-xs text-muted-foreground">{workflowCounts.backlog}</span>
+              )}
             </Button>
           </li>
           <li>
@@ -240,7 +251,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               onClick={() => handleItemClick('workflow-current', '/workflow/current')}
             >
               <span className="truncate flex-1">Current</span>
-              <span className="text-xs text-muted-foreground">5</span>
+              {workflowCounts && (
+                <span className="text-xs text-muted-foreground">{workflowCounts.current}</span>
+              )}
             </Button>
           </li>
           <li>
@@ -253,7 +266,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               onClick={() => handleItemClick('workflow-archive', '/workflow/archive')}
             >
               <span className="truncate flex-1">Archive</span>
-              <span className="text-xs text-muted-foreground">48</span>
+              {workflowCounts && (
+                <span className="text-xs text-muted-foreground">{workflowCounts.archive}</span>
+              )}
             </Button>
           </li>
         </ul>
@@ -274,23 +289,34 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         )}
       >
         <ul className="space-y-1">
-          {mockRecentTasks.map((task) => {
-            return (
-              <li key={task.id}>
-                <Button
-                  variant={activeItem === task.id ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start text-left normal-case',
-                    activeItem === task.id && 'bg-accent'
-                  )}
-                  onClick={() => handleItemClick(task.id, `/task/${task.id}`)}
-                >
-                  <SharedTaskIcon type={task.type} size="md" className="mr-2 text-muted-foreground" />
-                  <span className="truncate">{task.title}</span>
-                </Button>
-              </li>
-            );
-          })}
+          {recentTasks.length === 0 ? (
+            <li className="text-sm text-muted-foreground p-2">No recent tasks</li>
+          ) : (
+            recentTasks.map((task) => {
+              const metadata = task.metadata || task;
+              const taskId = metadata.id;
+              const taskTitle = metadata.title;
+              const isParentTask = metadata.isParentTask || metadata.task_type === 'parent';
+              const taskType = normalizeTaskType(metadata.type, isParentTask);
+              const path = isParentTask ? `/parents/${taskId}` : `/tasks/${taskId}`;
+              
+              return (
+                <li key={taskId}>
+                  <Button
+                    variant={activeItem === taskId ? 'secondary' : 'ghost'}
+                    className={cn(
+                      'w-full justify-start text-left normal-case',
+                      activeItem === taskId && 'bg-accent'
+                    )}
+                    onClick={() => handleItemClick(taskId, path)}
+                  >
+                    <SharedTaskIcon type={taskType} size="md" className="mr-2 text-muted-foreground" />
+                    <span className="truncate">{taskTitle}</span>
+                  </Button>
+                </li>
+              );
+            })
+          )}
         </ul>
       </div>
 

@@ -7,6 +7,7 @@ export { ParentTaskCard } from './ParentTaskCard';
 export { SubtaskList } from './SubtaskList';
 export { TaskTable, type TableTask } from './TaskTable';
 export { TaskManagementView } from './TaskManagementView';
+export { ParentTaskListView } from './ParentTaskListView';
 export { ClaudeAgentButton } from './ClaudeAgentButton';
 export { Sidebar } from './Sidebar';
 
