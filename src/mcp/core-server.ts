@@ -7,7 +7,7 @@ import path from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import * as v2 from '../core/index.js';
+import * as core from '../core/index.js';
 import {
   handleDebugCodePath,
   handleGetCurrentRoot,
@@ -123,7 +123,7 @@ function formatError(error: unknown) {
  */
 export function createServerInstance(options: { verbose?: boolean } = {}): McpServer {
   // Read package version from package.json
-  let version = '0.3.0'; // V2 version
+  let version = '0.3.0';
   try {
     const packageJson = JSON.parse(
       fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
@@ -162,7 +162,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task list tool
   const taskListRawShape = {
-    // V2 native filters
+    // Native filters
     location: z
       .union([workflowStateEnum, z.array(workflowStateEnum)])
       .describe(
@@ -714,7 +714,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
   const parentGetRawShape = {
     id: z
       .string()
-      .describe('Parent task ID to retrieve (e.g., "auth-feature-05A", "implement-v2-structure")')
+      .describe('Parent task ID to retrieve (e.g., "auth-feature-05A", "implement-structure")')
       .min(1),
   };
 

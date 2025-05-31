@@ -1,7 +1,7 @@
 /**
  * MCP API Response Schemas using Zod
  *
- * This file implements the normalized API schema design from api-schema-design-v2.md
+ * This file implements the normalized API schema design
  * Single source of truth for TypeScript types, runtime validation, and MCP outputSchema
  */
 

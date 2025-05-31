@@ -13,8 +13,8 @@ import type {
   TaskPriority,
   TaskStatus,
   TaskType,
-  Task as V2Task,
-  TaskUpdateOptions as V2TaskUpdateOptions,
+  Task,
+  TaskUpdateOptions,
   WorkflowState,
 } from '../core/types.js';
 
@@ -68,7 +68,7 @@ export interface McpResponse<T = unknown> {
 
 // Task list request params
 export interface TaskListParams {
-  // V2 native filters
+  // Native filters
   location?: WorkflowState | WorkflowState[];
   type?: TaskType;
   task_type?: 'simple' | 'parent' | 'subtask' | 'top-level' | 'all';

@@ -1,5 +1,5 @@
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import * as v2 from '../core/index.js';
+import * as core from '../core/index.js';
 import {
   type ConfigGetCurrentRootParams,
   type ConfigInitRootParams,
@@ -30,9 +30,9 @@ import {
 } from './normalized-write-handlers.js';
 
 /**
- * Format v2 operation result for MCP response
+ * Format operation result for MCP response
  */
-function formatV2Response<T>(result: v2.OperationResult<T>) {
+function formatOperationResponse<T>(result: core.OperationResult<T>) {
   return {
     success: result.success,
     data: result.data,
@@ -53,7 +53,7 @@ export async function handleTemplateList(params: TemplateListParams) {
   const configManager = ConfigurationManager.getInstance();
   const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
-  const templates = await v2.listTemplates(projectRoot);
+  const templates = await core.listTemplates(projectRoot);
 
   return {
     success: true,
@@ -70,18 +70,18 @@ export async function handleInitRoot(params: ConfigInitRootParams) {
   try {
     const configManager = ConfigurationManager.getInstance();
     
-    // For V2, we need to initialize the project structure using v2 functions
+    // Initialize the project structure
     const projectRoot = params.path;
     
-    // Check if V2 init is needed
-    const initNeeded = await v2.needsV2Init(projectRoot);
+    // Check if init is needed
+    const initNeeded = await core.needsV2Init(projectRoot);
     if (initNeeded) {
-      const initResult = await v2.initializeV2ProjectStructure(projectRoot);
+      const initResult = await core.initializeV2ProjectStructure(projectRoot);
       if (!initResult.success) {
         return {
           success: false,
           error: initResult.error,
-          message: 'Failed to initialize V2 project structure',
+          message: 'Failed to initialize project structure',
         };
       }
     }
@@ -153,7 +153,7 @@ export async function handleDebugCodePath(_params: DebugCodePathParams) {
       timestamp: new Date().toISOString(),
       implemented_features: {
         task_system: true,
-        v2_task_system: true,
+        task_system_v2: true,  // Keeping for backwards compatibility
         workflow_states: true,
         parent_tasks: true,
         task_transformations: true,

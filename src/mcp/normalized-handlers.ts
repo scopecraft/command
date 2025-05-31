@@ -38,7 +38,7 @@ import type { McpResponse } from './types.js';
 // =============================================================================
 
 /**
- * Apply task structure filtering to V2 tasks
+ * Apply task structure filtering to tasks
  */
 function filterTasksByStructure(tasks: core.Task[], taskType: string): core.Task[] {
   if (taskType === 'all') return tasks;
@@ -64,9 +64,9 @@ function filterTasksByStructure(tasks: core.Task[], taskType: string): core.Task
 }
 
 /**
- * Apply basic filters to core V2 list options
+ * Apply basic filters to core list options
  */
-function buildV2ListOptions(params: TaskListInput | ParentListInput): core.TaskListOptions {
+function buildCoreListOptions(params: TaskListInput | ParentListInput): core.TaskListOptions {
   const listOptions: core.TaskListOptions = {};
 
   // Map workflowState parameter to workflowStates
@@ -130,8 +130,8 @@ export async function handleTaskListNormalized(rawParams: unknown): Promise<McpR
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
 
-    // Build v2 list options from basic filters
-    const listOptions = buildV2ListOptions(params);
+    // Build core list options from basic filters
+    const listOptions = buildCoreListOptions(params);
 
     // Token efficiency: exclude completed tasks by default
     if (!params.includeCompleted) {
@@ -165,17 +165,17 @@ export async function handleTaskListNormalized(rawParams: unknown): Promise<McpR
 
     // Transform to normalized schema
     const transformedTasks: Task[] = [];
-    for (const v2Task of filteredTasks) {
+    for (const task of filteredTasks) {
       try {
         const normalizedTask = await transformTask(
           projectRoot,
-          v2Task,
+          task,
           params.includeContent || false,
           false // Never include subtasks in task_list for token efficiency
         );
         transformedTasks.push(normalizedTask);
       } catch (error) {
-        console.error(`Failed to transform task ${v2Task.metadata.id}:`, error);
+        console.error(`Failed to transform task ${task.metadata.id}:`, error);
         // Continue with other tasks
       }
     }
@@ -207,7 +207,7 @@ export async function handleTaskGetNormalized(rawParams: unknown): Promise<McpRe
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
 
-    // Use v2 getTask with parent context if available
+    // Use getTask with parent context if available
     const result = await core.getTask(
       projectRoot,
       params.id,
@@ -262,7 +262,7 @@ export async function handleParentListNormalized(
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
 
     // Build list options for parent tasks only
-    const listOptions = buildV2ListOptions(params);
+    const listOptions = buildCoreListOptions(params);
     listOptions.includeParentTasks = true;
 
     const result = await core.listTasks(projectRoot, listOptions);
@@ -276,17 +276,17 @@ export async function handleParentListNormalized(
 
     // Transform to normalized schema
     const transformedParents: ParentTask[] = [];
-    for (const v2Task of parentTasks) {
+    for (const parentTask of parentTasks) {
       try {
         const normalizedParent = await transformParentTask(
           projectRoot,
-          v2Task,
+          parentTask,
           params.includeSubtasks || false,
           false // Don't include content in list view for token efficiency
         );
         transformedParents.push(normalizedParent);
       } catch (error) {
-        console.error(`Failed to transform parent task ${v2Task.metadata.id}:`, error);
+        console.error(`Failed to transform parent task ${parentTask.metadata.id}:`, error);
         // Continue with other tasks
       }
     }

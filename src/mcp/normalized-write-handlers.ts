@@ -627,7 +627,7 @@ export async function handleParentOperationsNormalized(
 
     switch (params.operationData.operation) {
       case 'resequence': {
-        // Note: v2.resequenceSubtasks expects from/to positions
+        // Note: resequenceSubtasks expects from/to positions
         // This is a simplified implementation
         for (const mapping of params.operationData.sequenceMap) {
           affectedSubtasks.push({

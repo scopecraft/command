@@ -40,3 +40,4 @@ Clean MCP module with:
 - Working V2 MCP integration
 
 ## Log
+- 2025-05-30: Cleaned up all V2 naming from MCP code. Changed v2 import alias to core, renamed formatV2Response to formatOperationResponse, renamed buildV2ListOptions to buildCoreListOptions, fixed all v2Task variable names, removed V2 from comments. The only remaining V2 references are in core module exports (needsV2Init, initializeV2ProjectStructure, V2Config) which are outside MCP scope.
