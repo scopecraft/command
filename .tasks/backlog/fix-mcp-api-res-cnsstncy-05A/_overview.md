@@ -2,7 +2,7 @@
 
 ---
 type: "\U0001F41E Bug"
-status: To Do
+status: done
 area: mcp
 priority: High
 tags:
