@@ -4,6 +4,31 @@
 
 This document outlines the implementation plan for moving autonomous session orchestration from the task-ui-2 server to the core module, enabling universal access across CLI, MCP, and UI interfaces while adding advanced features like queuing, resource management, and event-driven workflows.
 
+## Important: Scope Clarification
+
+**This plan includes both MVP features and future architectural considerations.** Not every feature mentioned needs to be implemented as part of this task. The document serves two purposes:
+
+1. **Define the MVP scope** - Core features that will be built (Phases 1-5)
+2. **Ensure extensible architecture** - Design decisions that enable future enhancements without major refactoring (Phase 6+)
+
+### MVP Scope (To Be Built)
+- Unified session management for autonomous and interactive sessions
+- Basic queue management with configurable limits
+- Session persistence using channelcoder adapters
+- Integration across all interfaces (CLI, MCP, UI)
+- Custom prompt support
+- Event system foundation
+- Migration of existing functionality
+
+### Future Considerations (Architecture Support Only)
+- Intelligent prompt selection engine
+- Advanced scheduling and priorities
+- Distributed orchestration
+- AI-powered optimizations
+- Complex workflow orchestration
+
+**Prioritization of features within the MVP scope will be done in collaboration with the human stakeholder.** Implementation should focus on delivering core functionality first, with architectural decisions that don't preclude future enhancements.
+
 ## Current State Analysis
 
 ### Existing Components
