@@ -50,7 +50,7 @@ const PRIORITY_EMOJIS: Record<TaskPriority, string> = {
 /**
  * Format a list of tasks for display
  */
-export function formatTasksList(tasks: v2.Task[], format: OutputFormat): string {
+export function formatTasksList(tasks: Task[], format: OutputFormat): string {
   if (format === 'json') {
     return JSON.stringify(tasks, null, 2);
   }
@@ -80,14 +80,14 @@ export function formatTasksList(tasks: v2.Task[], format: OutputFormat): string 
 /**
  * Format workflow view showing task relationships
  */
-function formatWorkflowView(tasks: v2.Task[]): string {
-  const taskMap = new Map<string, v2.Task>();
+function formatWorkflowView(tasks: Task[]): string {
+  const taskMap = new Map<string, Task>();
   tasks.forEach((task) => taskMap.set(task.metadata.id, task));
 
   let output = '\nTask Workflow:\n';
 
   // Group by workflow state
-  const byState: Record<v2.WorkflowState, v2.Task[]> = {
+  const byState: Record<WorkflowState, Task[]> = {
     backlog: [],
     current: [],
     archive: [],
@@ -98,7 +98,7 @@ function formatWorkflowView(tasks: v2.Task[]): string {
   });
 
   // Show each workflow state
-  (['current', 'backlog', 'archive'] as v2.WorkflowState[]).forEach((state) => {
+  (['current', 'backlog', 'archive'] as WorkflowState[]).forEach((state) => {
     if (byState[state].length > 0) {
       output += `\n${state.toUpperCase()}:\n`;
 
@@ -130,13 +130,13 @@ function formatWorkflowView(tasks: v2.Task[]): string {
 /**
  * Format tasks in a tree view showing parent/subtask hierarchy
  */
-function formatTreeView(tasks: v2.Task[]): string {
+function formatTreeView(tasks: Task[]): string {
   if (tasks.length === 0) {
     return '\nCURRENT:\n  (No tasks in current workflow)\n';
   }
 
   // Group tasks by workflow state
-  const byState: Record<v2.WorkflowState, v2.Task[]> = {
+  const byState: Record<WorkflowState, Task[]> = {
     backlog: [],
     current: [],
     archive: [],
@@ -150,7 +150,7 @@ function formatTreeView(tasks: v2.Task[]): string {
   let hasContent = false;
 
   // Show each workflow state
-  (['current', 'backlog', 'archive'] as v2.WorkflowState[]).forEach((state) => {
+  (['current', 'backlog', 'archive'] as WorkflowState[]).forEach((state) => {
     const stateTasks = byState[state];
     if (stateTasks.length === 0) return;
 
@@ -165,7 +165,7 @@ function formatTreeView(tasks: v2.Task[]): string {
     const subtasks = stateTasks.filter((t) => !t.metadata.isParentTask && t.metadata.parentTask);
 
     // Create a map of parent ID to subtasks
-    const subtasksByParent = new Map<string, v2.Task[]>();
+    const subtasksByParent = new Map<string, Task[]>();
     subtasks.forEach((task) => {
       const parentId = task.metadata.parentTask!;
       if (!subtasksByParent.has(parentId)) {
@@ -219,7 +219,7 @@ function formatTreeView(tasks: v2.Task[]): string {
         });
 
         // Group by sequence for parallel tasks
-        const bySequence = new Map<string, v2.Task[]>();
+        const bySequence = new Map<string, Task[]>();
         sortedSubtasks.forEach((task) => {
           const seq = task.metadata.sequenceNumber || '99';
           if (!bySequence.has(seq)) {
@@ -322,7 +322,7 @@ function formatTreeView(tasks: v2.Task[]): string {
 /**
  * Get status symbol for tree view
  */
-function getStatusSymbol(status: v2.TaskStatus): string {
+function getStatusSymbol(status: TaskStatus): string {
   switch (status) {
     case 'Done':
       return '✓';
@@ -342,7 +342,7 @@ function getStatusSymbol(status: v2.TaskStatus): string {
 /**
  * Format tasks in legacy table view
  */
-function formatTableView(tasks: v2.Task[]): string {
+function formatTableView(tasks: Task[]): string {
   const header =
     'ID                        Title                                              Status          Location      Type';
 
@@ -366,7 +366,7 @@ function formatTableView(tasks: v2.Task[]): string {
 /**
  * Format a single task for detailed display
  */
-export function formatTaskDetail(task: v2.Task, format: OutputFormat): string {
+export function formatTaskDetail(task: Task, format: OutputFormat): string {
   if (format === 'json') {
     return JSON.stringify(task, null, 2);
   }
@@ -435,7 +435,7 @@ export function formatTaskDetail(task: v2.Task, format: OutputFormat): string {
 /**
  * Format task as markdown
  */
-function formatTaskAsMarkdown(task: v2.Task): string {
+function formatTaskAsMarkdown(task: Task): string {
   let output = `# ${task.document.title}\n\n`;
 
   // Frontmatter
@@ -481,7 +481,7 @@ function formatTaskAsMarkdown(task: v2.Task): string {
 /**
  * Format template list
  */
-export function formatTemplatesList(templates: v2.TemplateInfo[]): string {
+export function formatTemplatesList(templates: TemplateInfo[]): string {
   let output = '\nAvailable Templates:\n';
   output += 'ID                  Title                                   Description\n';
   output += '─'.repeat(80) + '\n';

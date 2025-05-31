@@ -1,5 +1,5 @@
 /**
- * V2 Parent Task Support
+ * Parent Task Support
  *
  * Handles folder-based tasks with child tasks (subtasks)
  */

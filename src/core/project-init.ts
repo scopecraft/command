@@ -1,7 +1,7 @@
 /**
- * V2 Project Initialization
+ *  Project Initialization
  * 
- * Handles project structure initialization for v2 workflow-based system
+ * Handles project structure initialization for  workflow-based system
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -10,17 +10,17 @@ import { ensureWorkflowDirectories, detectStructureVersion } from './directory-u
 import type { ProjectConfig } from './types.js';
 
 /**
- * Initialize v2 project structure
+ * Initialize  project structure
  */
-export function initializeV2ProjectStructure(
+export function initializeProjectStructure(
   projectRoot: string,
   config?: ProjectConfig
 ): void {
   // Create workflow directories
   ensureWorkflowDirectories(projectRoot, config);
   
-  // Create v2 QUICKSTART.md
-  createV2Quickstart(projectRoot);
+  // Create  QUICKSTART.md
+  createQuickstart(projectRoot);
 }
 
 /**
@@ -34,9 +34,9 @@ function createQuickstart(projectRoot: string): void {
     return;
   }
   
-  const content = `# 🚀 Scopecraft V2 Quick Start Guide
+  const content = `# 🚀 Scopecraft  Quick Start Guide
 
-Welcome to Scopecraft V2! This guide will help you get started with the new workflow-based task system.
+Welcome to Scopecraft ! This guide will help you get started with the new workflow-based task system.
 
 ## 📋 Workflow States
 
