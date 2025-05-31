@@ -33,6 +33,7 @@ export {
 export {
   parseTaskDocument,
   serializeTaskDocument,
+  serializeTaskContent,
   validateTaskDocument,
   updateSection,
   extractSection,

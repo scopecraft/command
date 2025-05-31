@@ -151,6 +151,49 @@ export function serializeTaskDocument(task: TaskDocument): string {
 }
 
 /**
+ * Serialize task content for display purposes (sections only)
+ * This is used for UI/API responses where metadata should not be included
+ */
+export function serializeTaskContent(task: TaskDocument): string {
+  const lines: string[] = [];
+  
+  // Skip title and frontmatter - only return sections content
+  
+  // Sections - maintain order and proper capitalization
+  const sectionOrder = [
+    { key: 'instruction', name: 'Instruction' },
+    { key: 'tasks', name: 'Tasks' },
+    { key: 'deliverable', name: 'Deliverable' },
+    { key: 'log', name: 'Log' }
+  ];
+  
+  // Add required sections first
+  for (const { key, name } of sectionOrder) {
+    lines.push(`## ${name}`);
+    const content = task.sections[key];
+    if (content && content.trim()) {
+      lines.push(content);
+    }
+    lines.push('');
+  }
+  
+  // Add any custom sections
+  for (const [key, content] of Object.entries(task.sections)) {
+    if (!sectionOrder.some(s => s.key === key)) {
+      // Capitalize first letter of custom section
+      const name = key.charAt(0).toUpperCase() + key.slice(1);
+      lines.push(`## ${name}`);
+      if (content && content.trim()) {
+        lines.push(content);
+      }
+      lines.push('');
+    }
+  }
+  
+  return lines.join('\n').trimEnd() + '\n';
+}
+
+/**
  * Validate a task document
  */
 export function validateTaskDocument(task: TaskDocument): ValidationError[] {
