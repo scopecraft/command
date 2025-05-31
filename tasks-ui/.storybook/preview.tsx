@@ -1,7 +1,7 @@
 import React from 'react'
 import type { Preview, Renderer } from '@storybook/react-vite'
 import { withThemeByClassName } from '@storybook/addon-themes'
-import '../src/index.css' // Import Tailwind CSS
+import '../src/styles.css'
 
 const preview: Preview = {
   parameters: {

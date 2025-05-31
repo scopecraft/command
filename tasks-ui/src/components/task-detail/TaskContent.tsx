@@ -14,7 +14,9 @@ interface TaskContentProps {
 export function TaskContent({ task }: TaskContentProps) {
   const { updateTask } = useTaskContext();
   const [isEditing, setIsEditing] = useState(false);
-  const [content, setContent] = useState(task.content || '');
+  // Use content field - normalized across all task types
+  const taskContent = task.content || '';
+  const [content, setContent] = useState(taskContent);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleEdit = () => {
@@ -22,7 +24,7 @@ export function TaskContent({ task }: TaskContentProps) {
   };
 
   const handleCancel = () => {
-    setContent(task.content || '');
+    setContent(taskContent);
     setIsEditing(false);
   };
 
@@ -44,7 +46,7 @@ export function TaskContent({ task }: TaskContentProps) {
   };
 
   // If there's no content, show a placeholder
-  if (!task.content && !isEditing) {
+  if (!taskContent && !isEditing) {
     return (
       <div className="bg-card p-4 rounded-md border border-border min-h-[200px]">
         <div className="flex justify-between items-center mb-4">

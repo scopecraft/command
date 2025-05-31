@@ -6,16 +6,12 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { TaskTypeIcon as SharedTaskIcon } from '../../lib/icons';
+import { useRecentTasks, useWorkflowCounts } from '../../lib/api/hooks';
+import type { Task, TaskType } from '../../lib/types';
 
 interface SidebarProps {
   className?: string;
   onNavigate?: (path: string) => void;
-}
-
-interface RecentTask {
-  id: string;
-  title: string;
-  type: 'bug' | 'feature' | 'task' | 'parent_task';
 }
 
 interface CollapsedSections {
@@ -24,15 +20,6 @@ interface CollapsedSections {
   recent?: boolean;
 }
 
-// Mock recent tasks
-const mockRecentTasks: RecentTask[] = [
-  { id: 'bug-001', title: 'Fix login timeout bug', type: 'bug' },
-  { id: 'parent-001', title: 'User Authentication System', type: 'parent_task' },
-  { id: 'task-001', title: 'Implement OAuth2 endpoints', type: 'task' },
-  { id: 'feature-001', title: 'Add dark mode toggle', type: 'feature' },
-  { id: 'parent-002', title: 'Payment Integration', type: 'parent_task' },
-];
-
 type SectionHeaderProps = {
   title: string;
   section: keyof CollapsedSections;
@@ -40,6 +27,12 @@ type SectionHeaderProps = {
   onToggle: () => void;
   actionButton?: React.ReactNode;
 };
+
+// Convert task structure to display type for TaskTypeIcon
+function getDisplayType(task: Pick<Task, 'taskStructure' | 'type'>): TaskType | 'parent_task' {
+  if (task.taskStructure === 'parent') return 'parent_task';
+  return task.type || 'feature';
+}
 
 function SectionHeader({
   title,
@@ -84,6 +77,12 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
     workflow: false,
     recent: false,
   });
+  
+  // Fetch recent tasks
+  const { data: recentTasks = [] } = useRecentTasks(5);
+  
+  // Fetch workflow counts
+  const { data: workflowCounts } = useWorkflowCounts();
 
   const toggleSection = (section: keyof CollapsedSections) => {
     setCollapsedSections(prev => ({
@@ -227,7 +226,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               onClick={() => handleItemClick('workflow-backlog', '/workflow/backlog')}
             >
               <span className="truncate flex-1">Backlog</span>
-              <span className="text-xs text-muted-foreground">12</span>
+              {workflowCounts && (
+                <span className="text-xs text-muted-foreground">{workflowCounts.backlog}</span>
+              )}
             </Button>
           </li>
           <li>
@@ -240,7 +241,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               onClick={() => handleItemClick('workflow-current', '/workflow/current')}
             >
               <span className="truncate flex-1">Current</span>
-              <span className="text-xs text-muted-foreground">5</span>
+              {workflowCounts && (
+                <span className="text-xs text-muted-foreground">{workflowCounts.current}</span>
+              )}
             </Button>
           </li>
           <li>
@@ -253,7 +256,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               onClick={() => handleItemClick('workflow-archive', '/workflow/archive')}
             >
               <span className="truncate flex-1">Archive</span>
-              <span className="text-xs text-muted-foreground">48</span>
+              {workflowCounts && (
+                <span className="text-xs text-muted-foreground">{workflowCounts.archive}</span>
+              )}
             </Button>
           </li>
         </ul>
@@ -274,34 +279,56 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         )}
       >
         <ul className="space-y-1">
-          {mockRecentTasks.map((task) => {
-            return (
-              <li key={task.id}>
-                <Button
-                  variant={activeItem === task.id ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start text-left normal-case',
-                    activeItem === task.id && 'bg-accent'
-                  )}
-                  onClick={() => handleItemClick(task.id, `/task/${task.id}`)}
-                >
-                  <SharedTaskIcon type={task.type} size="md" className="mr-2 text-muted-foreground" />
-                  <span className="truncate">{task.title}</span>
-                </Button>
-              </li>
-            );
-          })}
+          {recentTasks.length === 0 ? (
+            <li className="text-sm text-muted-foreground p-2">No recent tasks</li>
+          ) : (
+            recentTasks.map((task) => {
+              // Data is normalized from MCP API
+              const taskType = getDisplayType(task);
+              const path = task.taskStructure === 'parent' ? `/parents/${task.id}` : `/tasks/${task.id}`;
+              
+              return (
+                <li key={`recent-task-${task.id}`}>
+                  <Button
+                    variant={activeItem === task.id ? 'secondary' : 'ghost'}
+                    className={cn(
+                      'w-full justify-start text-left normal-case',
+                      activeItem === task.id && 'bg-accent'
+                    )}
+                    onClick={() => handleItemClick(task.id, path)}
+                  >
+                    <SharedTaskIcon type={taskType} size="md" className="mr-2 text-muted-foreground" />
+                    <span className="truncate">{task.title}</span>
+                  </Button>
+                </li>
+              );
+            })
+          )}
         </ul>
       </div>
 
       {/* Bottom Actions */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border space-y-2">
         <Button
           variant="atlas"
           className="w-full"
           onClick={() => onNavigate?.('/task/new')}
         >
           + New Task
+        </Button>
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => handleItemClick('assistant', '/assistant')}
+        >
+          🤖 Claude Assistant
+        </Button>
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => handleItemClick('autonomous', '/autonomous')}
+        >
+          🚀 Autonomous Monitor
         </Button>
       </div>
     </aside>

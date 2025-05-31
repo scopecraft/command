@@ -6,29 +6,9 @@ import { createClaudeWebSocketHandler } from './websocket/claude-handler.js';
 import { ProcessManager } from './websocket/process-manager.js';
 import { logger } from './src/observability/logger.js';
 import { handleWorktreeRequest } from '../src/tasks-ui/server/worktree-api.js';
-import {
-  handleTaskList,
-  handleTaskGet,
-  handleTaskCreate,
-  handleTaskUpdate,
-  handleTaskDelete,
-  handleTaskNext,
-  handlePhaseList,
-  handlePhaseCreate,
-  handleWorkflowCurrent,
-  handleWorkflowMarkCompleteNext,
-  handleFeatureList,
-  handleFeatureGet,
-  handleFeatureCreate,
-  handleFeatureUpdate,
-  handleFeatureDelete,
-  handleAreaList,
-  handleAreaGet,
-  handleAreaCreate,
-  handleAreaUpdate,
-  handleAreaDelete,
-  handleTaskMove
-} from '../src/mcp/handlers.js';
+// Import method registry - the correct way to access MCP handlers
+import { methodRegistry } from '../src/mcp/handlers.js';
+import { McpMethod } from '../src/mcp/types.js';
 import {
   handleSessionCheck,
   handleSessionStart
@@ -187,7 +167,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
           params.include_completed = params.include_completed === 'true';
         }
         
-        const result = await handleTaskList(params);
+        const result = await methodRegistry[McpMethod.TASK_LIST](params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
           headers: corsHeaders
@@ -207,7 +187,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       const id = path.split('/').pop() || '';
       
       if (req.method === 'GET') {
-        const result = await handleTaskGet({ id, ...params });
+        const result = await methodRegistry[McpMethod.TASK_GET]({ id, ...params });
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 404,
           headers: corsHeaders
@@ -241,23 +221,6 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       }
     }
     
-    if (path === '/phases') {
-      if (req.method === 'GET') {
-        const result = await handlePhaseList(params);
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 200 : 400,
-          headers: corsHeaders
-        });
-      }
-      
-      if (req.method === 'POST') {
-        const result = await handlePhaseCreate(params);
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 201 : 400,
-          headers: corsHeaders
-        });
-      }
-    }
     
     if (path === '/workflow/current') {
       if (req.method === 'GET') {
@@ -279,18 +242,18 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       }
     }
     
-    // Feature endpoints
-    if (path === '/features') {
+    // Parent Task endpoints
+    if (path === '/parents') {
       if (req.method === 'GET') {
         // Convert boolean string parameters to actual booleans
         if (params.include_progress) {
           params.include_progress = params.include_progress === 'true';
         }
-        if (params.include_tasks) {
-          params.include_tasks = params.include_tasks === 'true';
+        if (params.include_subtasks) {
+          params.include_subtasks = params.include_subtasks === 'true';
         }
         
-        const result = await handleFeatureList(params);
+        const result = await methodRegistry[McpMethod.PARENT_LIST](params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
           headers: corsHeaders
@@ -298,7 +261,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       }
       
       if (req.method === 'POST') {
-        const result = await handleFeatureCreate(params);
+        const result = await handleParentCreate(params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 201 : 400,
           headers: corsHeaders
@@ -306,98 +269,28 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       }
     }
     
-    if (path.match(/^\/features\/[^\/]+$/)) {
-      const id = path.split('/').pop() || '';
+    if (path.match(/^\/parents\/[^\/]+$/)) {
+      const parent_id = path.split('/').pop() || '';
       
       if (req.method === 'GET') {
-        const result = await handleFeatureGet({ id, ...params });
+        // Get parent task with subtasks
+        const result = await methodRegistry[McpMethod.PARENT_GET]({ id: parent_id });
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 404,
-          headers: corsHeaders
-        });
-      }
-      
-      if (req.method === 'PUT' || req.method === 'PATCH') {
-        const result = await handleFeatureUpdate({ id, updates: params });
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 200 : 400,
-          headers: corsHeaders
-        });
-      }
-      
-      if (req.method === 'DELETE') {
-        // Convert force parameter to boolean
-        if (params.force) {
-          params.force = params.force === 'true';
-        }
-        
-        const result = await handleFeatureDelete({ id, force: params.force });
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 200 : 400,
-          headers: corsHeaders
-        });
-      }
-    }
-    
-    // Area endpoints
-    if (path === '/areas') {
-      if (req.method === 'GET') {
-        // Convert boolean string parameters to actual booleans
-        if (params.include_progress) {
-          params.include_progress = params.include_progress === 'true';
-        }
-        if (params.include_tasks) {
-          params.include_tasks = params.include_tasks === 'true';
-        }
-        
-        const result = await handleAreaList(params);
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 200 : 400,
           headers: corsHeaders
         });
       }
       
       if (req.method === 'POST') {
-        const result = await handleAreaCreate(params);
+        // Parent operations (resequence, parallelize, add_subtask)
+        const result = await handleParentOperations({ parent_id, ...params });
         return new Response(JSON.stringify(result), { 
-          status: result.success ? 201 : 400,
+          status: result.success ? 200 : 400,
           headers: corsHeaders
         });
       }
     }
     
-    if (path.match(/^\/areas\/[^\/]+$/)) {
-      const id = path.split('/').pop() || '';
-      
-      if (req.method === 'GET') {
-        const result = await handleAreaGet({ id, ...params });
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 200 : 404,
-          headers: corsHeaders
-        });
-      }
-      
-      if (req.method === 'PUT' || req.method === 'PATCH') {
-        const result = await handleAreaUpdate({ id, updates: params });
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 200 : 400,
-          headers: corsHeaders
-        });
-      }
-      
-      if (req.method === 'DELETE') {
-        // Convert force parameter to boolean
-        if (params.force) {
-          params.force = params.force === 'true';
-        }
-        
-        const result = await handleAreaDelete({ id, force: params.force });
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 200 : 400,
-          headers: corsHeaders
-        });
-      }
-    }
     
     // Task Move endpoint
     if (path === '/tasks/move') {
@@ -426,6 +319,40 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
         const result = await handleSessionStart(params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 201 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    // Autonomous Session endpoints
+    if (path === '/autonomous-sessions') {
+      if (req.method === 'GET') {
+        const result = await handleAutonomousList();
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    if (path.match(/^\/autonomous-sessions\/[^\/]+$/)) {
+      const taskId = path.split('/').pop() || '';
+      
+      if (req.method === 'GET') {
+        const result = await handleAutonomousGet(taskId);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 404,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    if (path === '/autonomous-sessions/logs') {
+      if (req.method === 'GET') {
+        const limit = params.limit ? parseInt(params.limit as string) : 50;
+        const result = await handleAutonomousLogs(limit);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
           headers: corsHeaders
         });
       }

@@ -1,5 +1,3 @@
-import { Link } from 'wouter';
-
 interface BreadcrumbProps {
   items: {
     label: string;
@@ -25,9 +23,9 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
                   {item.label}
                 </span>
               ) : (
-                <Link href={item.href} className="text-primary hover:underline">
+                <a href={item.href} className="text-primary hover:underline">
                   {item.label}
-                </Link>
+                </a>
               )}
             </li>
           );

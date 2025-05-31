@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: To Do
+status: Done
 area: core
 ---
 
@@ -14,33 +14,33 @@ Archive the old tasks-ui V1 directory and rename task-ui-2 to tasks-ui to become
 ## Tasks
 
 ### Archive V1 UI
-- [ ] Move `tasks-ui/` to `tasks-ui-v1-archive/` (temporary archive)
-- [ ] Ensure V1 UI is completely disconnected from build/dev scripts
-- [ ] Document what was archived for future reference
+- [x] Move `tasks-ui/` to `.archive-old-ui/` (made it hidden with dot prefix)
+- [x] Ensure V1 UI is completely disconnected from build/dev scripts
+- [x] Document what was archived for future reference (ARCHIVED_README.md)
 
 ### Rename V2 to Primary
-- [ ] Rename `task-ui-2/` to `tasks-ui/`
-- [ ] Update all package.json scripts to point to new location
-- [ ] Update root-level commands (ui:dev, ui:build, storybook, etc.)
-- [ ] Update documentation and README files
+- [x] Rename `task-ui-2/` to `tasks-ui/`
+- [x] Update all package.json scripts to point to new location
+- [x] Update root-level commands (ui:dev, ui:build, storybook, etc.)
+- [x] Update documentation and README files
 
 ### Update References
-- [ ] Update all import paths in other modules that reference UI
-- [ ] Update MCP server API paths if needed
-- [ ] Update development scripts and configurations
-- [ ] Update .gitignore and other config files
+- [x] Update all import paths in other modules that reference UI
+- [x] Update MCP server API paths if needed
+- [x] Update development scripts and configurations
+- [x] Update .gitignore and other config files
 
 ### Clean Documentation
-- [ ] Update README with new UI structure
-- [ ] Remove V1 UI references from documentation
-- [ ] Update development setup instructions
-- [ ] Clean up any V1-specific documentation
+- [x] Update README with new UI structure
+- [x] Remove V1 UI references from documentation
+- [x] Update development setup instructions
+- [x] Clean up any V1-specific documentation
 
 ### Validation
-- [ ] Test that all UI functionality works with new paths
-- [ ] Verify development and build scripts work
-- [ ] Ensure Storybook still works correctly
-- [ ] Test MCP integration with renamed paths
+- [x] Test that all UI functionality works with new paths
+- [x] Verify development and build scripts work
+- [x] Ensure Storybook still works correctly
+- [x] Test MCP integration with renamed paths
 
 ## Deliverable
 
@@ -52,3 +52,4 @@ Clean project structure with:
 - Clean documentation
 
 ## Log
+- 2025-05-31: Archived old tasks-ui to .archive-old-ui (with dot prefix to make it clear it's archived), renamed task-ui-2 to tasks-ui, updated all references in package.json, removed ui2: scripts, fixed imports in server.ts, added ConfigurationManager initialization to fix project root detection. Updated all task-ui-2 references in task files.

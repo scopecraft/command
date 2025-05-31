@@ -8,7 +8,11 @@ import * as path from 'path';
 import { existsSync } from 'fs';
 import { logger } from '../src/observability/logger.js';
 
-const AUTONOMOUS_BASE_DIR = '.tasks/.autonomous-sessions';
+// Handle both running from tasks-ui and from project root
+const PROJECT_ROOT = process.cwd().endsWith('tasks-ui') 
+  ? path.resolve(process.cwd(), '..') 
+  : process.cwd();
+const AUTONOMOUS_BASE_DIR = path.join(PROJECT_ROOT, '.tasks/.autonomous-sessions');
 const LOG_DIR = path.join(AUTONOMOUS_BASE_DIR, 'logs');
 
 interface SessionInfo {
@@ -38,21 +42,88 @@ const activeMonitors = new Map<string, () => void>();
  */
 export async function handleAutonomousList() {
   try {
-    const files = await fs.readdir(AUTONOMOUS_BASE_DIR);
+    const files = await fs.readdir(AUTONOMOUS_BASE_DIR).catch(() => []);
     const infoFiles = files.filter(f => f.endsWith('.info.json'));
     
     const sessions = await Promise.all(
       infoFiles.map(async (file) => {
-        const content = await fs.readFile(path.join(AUTONOMOUS_BASE_DIR, file), 'utf-8');
-        return JSON.parse(content) as SessionInfo;
+        try {
+          const content = await fs.readFile(path.join(AUTONOMOUS_BASE_DIR, file), 'utf-8');
+          const info = JSON.parse(content) as SessionInfo;
+          
+          // Simple status check - if no activity for 2 minutes, mark as completed
+          let currentStatus = info.status;
+          // Handle both absolute and relative paths
+          const logPath = path.isAbsolute(info.logFile) ? info.logFile : path.join(PROJECT_ROOT, info.logFile);
+          if (currentStatus === 'running' && existsSync(logPath)) {
+            const stats = await fs.stat(logPath);
+            const minutesAgo = (Date.now() - stats.mtime.getTime()) / 1000 / 60;
+            if (minutesAgo > 2) {
+              currentStatus = 'completed';
+            }
+          }
+          
+          
+          // Get basic stats from log file
+          let stats = null;
+          const logFilePath = path.isAbsolute(info.logFile) ? info.logFile : path.join(PROJECT_ROOT, info.logFile);
+          if (existsSync(logFilePath)) {
+            try {
+              const parsed = await parseLogFile(logFilePath);
+              const events = parsed.events || [];
+              const toolSet = new Set<string>();
+              let messages = 0;
+              let totalCost = undefined;
+              let lastOutput = '';
+              
+              for (const event of events) {
+                if (streamParser.isAssistantEvent(event)) {
+                  messages++;
+                }
+                if (streamParser.isToolUseEvent(event)) {
+                  toolSet.add(event.tool);
+                }
+                if (streamParser.isResultEvent(event)) {
+                  totalCost = event.total_cost;
+                }
+                const chunk = streamParser.eventToChunk(event);
+                if (chunk?.content && chunk.content.trim().length > 10) {
+                  lastOutput = chunk.content.trim().substring(0, 100);
+                }
+              }
+              
+              stats = {
+                messages,
+                toolsUsed: Array.from(toolSet),
+                totalCost,
+                lastOutput
+              };
+            } catch (err) {
+              logger.warn('Error parsing log file:', { 
+                error: err instanceof Error ? err.message : String(err), 
+                logFile: logFilePath 
+              });
+            }
+          }
+          
+          return {
+            ...info,
+            status: currentStatus,
+            stats
+          };
+        } catch {
+          return null;
+        }
       })
     );
     
     return {
       success: true,
-      data: sessions.sort((a, b) => 
-        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-      )
+      data: sessions
+        .filter(Boolean)
+        .sort((a, b) => 
+          new Date(b!.startTime).getTime() - new Date(a!.startTime).getTime()
+        )
     };
   } catch (error) {
     logger.error('Failed to list autonomous sessions:', error);
@@ -69,7 +140,7 @@ export async function handleAutonomousList() {
 export async function handleAutonomousGet(taskId: string) {
   try {
     // Find session info
-    const files = await fs.readdir(AUTONOMOUS_BASE_DIR);
+    const files = await fs.readdir(AUTONOMOUS_BASE_DIR).catch(() => []);
     const infoFile = files.find(f => f.includes(`task-${taskId}`) && f.endsWith('.info.json'));
     
     if (!infoFile) {
@@ -83,6 +154,7 @@ export async function handleAutonomousGet(taskId: string) {
       await fs.readFile(path.join(AUTONOMOUS_BASE_DIR, infoFile), 'utf-8')
     ) as SessionInfo;
     
+    
     // Parse log file for stats
     const stats: SessionStats = {
       messages: 0,
@@ -90,43 +162,69 @@ export async function handleAutonomousGet(taskId: string) {
       lastUpdate: new Date().toISOString()
     };
     
-    if (existsSync(info.logFile)) {
-      const events = await parseLogFile(info.logFile);
-      const toolSet = new Set<string>();
-      
-      for (const event of events) {
-        if (streamParser.isAssistantEvent(event)) {
-          stats.messages++;
-          if (!stats.model) {
-            stats.model = event.message.model;
+    // Handle both absolute and relative paths
+    const logPath = path.isAbsolute(info.logFile) ? info.logFile : path.join(PROJECT_ROOT, info.logFile);
+    
+    // Get last 3 lines of log file
+    let lastLogLines: string[] = [];
+    
+    if (existsSync(logPath)) {
+      try {
+        const parsed = await parseLogFile(logPath);
+        const events = parsed.events || [];
+        const toolSet = new Set<string>();
+        let lastMessageTime = null;
+        const logLines: string[] = [];
+        
+        for (const event of events) {
+          if (streamParser.isAssistantEvent(event)) {
+            stats.messages++;
+            lastMessageTime = new Date();
+            if (!stats.model) {
+              stats.model = event.message.model;
+            }
+          }
+          
+          if (streamParser.isToolUseEvent(event)) {
+            toolSet.add(event.tool);
+          }
+          
+          if (streamParser.isResultEvent(event)) {
+            stats.totalCost = event.total_cost;
+          }
+          
+          const chunk = streamParser.eventToChunk(event);
+          if (chunk?.content) {
+            const content = chunk.content.trim();
+            if (content.length > 10) {
+              stats.lastOutput = content.substring(0, 200);
+              // Collect log lines for last 3 display
+              logLines.push(content);
+            }
           }
         }
         
-        if (streamParser.isToolUseEvent(event)) {
-          toolSet.add(event.tool);
-        }
+        // Get last 3 log lines
+        lastLogLines = logLines.slice(-3);
         
-        if (streamParser.isResultEvent(event)) {
-          stats.totalCost = event.total_cost;
+        stats.toolsUsed = Array.from(toolSet);
+        if (lastMessageTime) {
+          stats.lastUpdate = lastMessageTime.toISOString();
         }
-        
-        const chunk = streamParser.eventToChunk(event);
-        if (chunk?.content) {
-          const content = chunk.content.trim();
-          if (content.length > 10) {
-            stats.lastOutput = content.substring(0, 100);
-          }
-        }
+      } catch (err) {
+        logger.warn('Error parsing log file:', { 
+          error: err instanceof Error ? err.message : String(err), 
+          logFile: logPath 
+        });
       }
-      
-      stats.toolsUsed = Array.from(toolSet);
     }
     
     return {
       success: true,
       data: {
         ...info,
-        stats
+        stats,
+        lastLogLines
       }
     };
   } catch (error) {
@@ -146,26 +244,62 @@ export async function handleAutonomousLogs(limit = 50) {
     const logEntries: any[] = [];
     
     // Get all log files
-    const logFiles = await fs.readdir(LOG_DIR);
+    const logFiles = await fs.readdir(LOG_DIR).catch(() => {
+      logger.warn(`Log directory not found: ${LOG_DIR}`);
+      return [];
+    });
     
-    // Parse each log file
-    for (const logFile of logFiles.slice(-5)) { // Last 5 sessions
+    // Sort log files by modification time (newest first)
+    const sortedFiles = await Promise.all(
+      logFiles.map(async (file) => {
+        const filePath = path.join(LOG_DIR, file);
+        const stats = await fs.stat(filePath);
+        return { file, mtime: stats.mtime.getTime() };
+      })
+    );
+    sortedFiles.sort((a, b) => b.mtime - a.mtime);
+    
+    // Parse recent log files (up to 10 most recent)
+    for (const { file: logFile } of sortedFiles.slice(0, 10)) {
       const taskId = logFile.match(/task-([^-]+)/)?.[1] || 'unknown';
       const logPath = path.join(LOG_DIR, logFile);
       
       if (existsSync(logPath)) {
-        const events = await parseLogFile(logPath);
-        
-        for (const event of events.slice(-10)) { // Last 10 events per file
-          const chunk = streamParser.eventToChunk(event);
-          if (chunk?.content) {
-            logEntries.push({
-              timestamp: new Date().toISOString(),
-              taskId,
-              content: chunk.content.trim().substring(0, 100),
-              type: streamParser.isErrorEvent(event) ? 'error' : 'output'
-            });
+        try {
+          const parsed = await parseLogFile(logPath);
+        const events = parsed.events || [];
+          
+          // Get more events from each file (last 20 instead of 10)
+          for (const event of events.slice(-20)) {
+            const chunk = streamParser.eventToChunk(event);
+            if (chunk?.content) {
+              const content = chunk.content.trim();
+              if (content.length > 5) {
+                // Use event timestamp if available, otherwise use current time
+                const timestamp = event.timestamp || new Date().toISOString();
+                
+                logEntries.push({
+                  timestamp,
+                  taskId,
+                  content: content.substring(0, 200),
+                  type: streamParser.isErrorEvent(event) ? 'error' : 
+                        streamParser.isToolUseEvent(event) ? 'tool' : 'output'
+                });
+              }
+            }
+            
+            // Also add tool use events explicitly
+            if (streamParser.isToolUseEvent(event)) {
+              logEntries.push({
+                timestamp: event.timestamp || new Date().toISOString(),
+                taskId,
+                content: `🔧 Using tool: ${event.tool}`,
+                type: 'tool'
+              });
+            }
           }
+        } catch (err) {
+          logger.warn(`Error parsing log ${logFile}:`, err);
         }
       }
     }
@@ -199,22 +333,51 @@ export function createAutonomousMonitor(taskId: string, onEvent: (event: any) =>
   // Find log file
   fs.readdir(LOG_DIR).then(files => {
     const logFile = files.find(f => f.includes(`task-${taskId}`));
-    if (!logFile) return;
+    if (!logFile) {
+      onEvent({
+        type: 'error',
+        taskId,
+        message: 'Log file not found'
+      });
+      return;
+    }
     
     const logPath = path.join(LOG_DIR, logFile);
     
     // Start monitoring
     const cleanup = monitorLog(logPath, (event) => {
-      const chunk = streamParser.eventToChunk(event);
-      onEvent({
-        type: 'autonomous-event',
-        taskId,
-        event,
-        chunk
-      });
+      try {
+        const chunk = streamParser.eventToChunk(event);
+        onEvent({
+          type: 'autonomous-event',
+          taskId,
+          event: {
+            type: event.type,
+            tool: streamParser.isToolUseEvent(event) ? event.tool : undefined,
+            content: chunk?.content,
+            error: streamParser.isErrorEvent(event) ? event.error : undefined
+          }
+        });
+      } catch (err) {
+        logger.error('Error processing event:', err);
+      }
+    }, {
+      onError: (error) => {
+        onEvent({
+          type: 'error',
+          taskId,
+          message: error.message
+        });
+      }
     });
     
     activeMonitors.set(taskId, cleanup);
+  }).catch(err => {
+    onEvent({
+      type: 'error',
+      taskId,
+      message: 'Failed to start monitoring'
+    });
   });
   
   // Return cleanup function

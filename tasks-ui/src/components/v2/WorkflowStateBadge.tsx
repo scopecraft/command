@@ -131,8 +131,8 @@ export function PriorityIndicator({
   interactive = false,
   onClick 
 }: PriorityIndicatorProps) {
-  // Don't show medium priority (follows existing pattern)
-  if (priority.toLowerCase() === 'medium') {
+  // Handle undefined priority and don't show medium priority (follows existing pattern)
+  if (!priority || priority.toLowerCase() === 'medium') {
     return null;
   }
 

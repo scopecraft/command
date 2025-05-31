@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
 interface UsePromptSenderProps {
-  addMessage: (type: string, content: any) => void;
+  addMessage: (type: string, content: unknown) => void;
   isConnected: boolean;
   handleConnect: () => void;
   sendPrompt: (prompt: string, contextId?: string) => boolean;

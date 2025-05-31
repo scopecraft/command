@@ -1,14 +1,13 @@
 import React from 'react';
+import { Link } from '@tanstack/react-router';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { TaskTypeIcon } from './TaskTypeIcon';
 import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
-import type { ParentTask, Task } from '../../lib/types';
+import { getTaskUrl } from '../../lib/task-routing';
+import type { TableTask } from '../../lib/types';
 
-// Union type for table rows (can be parent or simple tasks)
-type TableTask = (ParentTask | Task) & {
-  task_type: 'parent' | 'simple';
-};
+export type { TableTask };
 
 interface TaskTableProps {
   tasks: TableTask[];
@@ -18,6 +17,7 @@ interface TaskTableProps {
   onRowClick?: (task: TableTask) => void;
   onParentTaskClick?: (parentId: string) => void;
   className?: string;
+  showSubtaskProgress?: boolean;
 }
 
 interface TaskTableColumn {
@@ -45,6 +45,7 @@ export function TaskTable({
   onRowClick,
   onParentTaskClick,
   className = '',
+  showSubtaskProgress = false,
 }: TaskTableProps) {
   const selectedCount = Object.values(selectedRows).filter(Boolean).length;
   const isAllSelected = selectedCount === tasks.length && tasks.length > 0;
@@ -132,31 +133,54 @@ export function TaskTable({
                   <div className="flex items-center gap-2">
                     <TaskTypeIcon task={task} />
                     <span className="text-xs text-muted-foreground">
-                      {task.task_type === 'parent' ? 'Parent' : 'Task'}
+                      {task.taskStructure === 'parent' ? 'Parent' : 
+                       task.taskStructure === 'subtask' ? 'Subtask' : 'Task'}
                     </span>
                   </div>
                 </td>
 
                 {/* Title Column */}
                 <td className="p-3">
-                  <div className="font-medium text-sm">{task.title}</div>
+                  <Link
+                    href={getTaskUrl(task)}
+                    className="font-medium text-sm text-foreground hover:text-blue-600 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {task.title}
+                  </Link>
                   <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
-                    {task.task_type === 'parent' && 'subtasks' in task && (
+                    {task.taskStructure === 'parent' && showSubtaskProgress && task.progress && (
+                      <div className="flex items-center gap-2">
+                        <span>
+                          {task.progress.completed}/{task.progress.total} subtasks
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <span>({task.progress.percentage}%)</span>
+                          <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-green-500 transition-all duration-300"
+                              style={{ width: `${task.progress.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {task.taskStructure === 'parent' && !showSubtaskProgress && task.subtaskIds && (
                       <span>
-                        {task.subtasks.length} subtask{task.subtasks.length === 1 ? '' : 's'}
+                        {task.subtaskIds.length} subtask{task.subtaskIds.length === 1 ? '' : 's'}
                       </span>
                     )}
-                    {'parent_task' in task && task.parent_task && (
+                    {task.taskStructure === 'subtask' && task.parentId && (
                       <span>
                         Parent:{' '}
                         <button
                           className="text-blue-500 hover:underline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onParentTaskClick?.(task.parent_task!);
+                            onParentTaskClick?.(task.parentId!);
                           }}
                         >
-                          {task.parent_task}
+                          {task.parentId}
                         </button>
                       </span>
                     )}
@@ -175,7 +199,7 @@ export function TaskTable({
 
                 {/* Workflow Column */}
                 <td className="p-3">
-                  <WorkflowStateBadge workflow={task.workflow_state} size="sm" />
+                  <WorkflowStateBadge workflow={task.workflowState} size="sm" />
                 </td>
 
                 {/* Area Column */}
@@ -188,11 +212,11 @@ export function TaskTable({
                 {/* Tags Column */}
                 <td className="p-3">
                   <div className="flex gap-1 flex-wrap">
-                    {task.tags && task.tags.length > 0 ? (
+                    {task.tags && Array.isArray(task.tags) && task.tags.length > 0 ? (
                       <>
-                        {task.tags.slice(0, 2).map((tag) => (
+                        {task.tags.slice(0, 2).map((tag, index) => (
                           <span
-                            key={tag}
+                            key={`${task.id}-tag-${index}-${tag}`}
                             className="text-xs bg-muted px-2 py-1 rounded font-mono"
                           >
                             #{tag}

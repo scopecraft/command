@@ -1,215 +1,194 @@
-# TaskUI - React Task Management Interface
+# Task UI 2.0 - V2 Architecture
 
-A terminal-inspired UI for managing Markdown-Driven Task Management (MDTM) files. This project provides a clean, modern interface for working with tasks stored in the MDTM format.
+A modern React application for managing Scopecraft V2 tasks with real-time data, URL-based filters, and beautiful V2 components.
 
-## Overview
+## High-Level Architecture
 
-TaskUI is a React application that connects to the Scopecraft Command core library via a RESTful API to provide a visual interface for managing tasks. The interface features a terminal-inspired design with dark mode, tabular task views, task relationship visualization, and full task management capabilities.
-
-## Technical Stack
-
-- **Framework**: React 19 with TypeScript
-- **Build Tool**: Vite
-- **CSS**: Tailwind CSS v4
-- **Components**: shadcn/ui with terminal-inspired theme
-- **State Management**: React Context API
-- **Routing**: wouter (lightweight client-side routing)
-- **Server**: Bun HTTP server
-- **API**: RESTful API built on top of MCP core handlers
-- **Form Handling**: Native React forms
-- **Styling**: Tailwind CSS with custom terminal-inspired theme
-
-## Project Structure
-
+```mermaid
+graph TB
+    subgraph "Browser"
+        Router[TanStack Router]
+        Pages[Pages/Routes]
+        Components[V2 Components]
+        RQ[React Query]
+    end
+    
+    subgraph "Development Server"
+        Vite[Vite Dev Server :3000]
+        Proxy[API Proxy]
+    end
+    
+    subgraph "API Server"
+        Server[Bun Server :8899]
+        API[API Endpoints]
+        WS[WebSocket Handler]
+    end
+    
+    subgraph "Core Backend"
+        MCP[MCP Handlers]
+        V2Core[V2 Core Logic]
+        Files[.tasks/ Files]
+    end
+    
+    Router --> Pages
+    Pages --> Components
+    Components --> RQ
+    RQ --> Vite
+    Vite --> Proxy
+    Proxy --> Server
+    Server --> API
+    API --> MCP
+    MCP --> V2Core
+    V2Core --> Files
+    
+    Server --> WS
+    WS -.-> Router
+    
+    style Router fill:#e1f5fe
+    style RQ fill:#f3e5f5
+    style Server fill:#e8f5e8
+    style MCP fill:#fff3e0
 ```
-server.ts                 # Bun HTTP server with API endpoints
-scripts/
-├── import-checker.js     # Validates imports in the codebase
-├── test-api.js           # Tests the API integration
-src/
-├── components/
-│   ├── ui/               # Basic UI components from shadcn/ui
-│   ├── layout/           # Application layout components
-│   │   └── ErrorBoundary.tsx  # Error handling component
-│   ├── task-list/        # Task list and related components
-│   │   └── TaskListFallback.tsx  # Error fallback for task list
-│   ├── task-detail/      # Task detail view components
-│   │   └── TaskDetailFallback.tsx  # Error fallback for task detail
-│   ├── task-form/        # Task creation/editing form components
-│   ├── pages/            # Page-level components
-├── hooks/                # Custom React hooks
-│   └── useToast.ts       # Toast notification hook
-├── context/              # React Context components
-├── lib/
-│   ├── api/              # API integration
-│   │   └── core-client.ts  # Fetch-based client for API
-│   ├── utils/            # Utility functions
-│   ├── types/            # TypeScript type definitions
-│   ├── routes.ts         # Application routes
-├── App.tsx               # Main application component
-├── main.tsx              # Entry point
-└── index.css             # Global CSS
-```
+
+## Technology Stack
+
+### Frontend
+- **TanStack Router** - File-based routing with type safety
+- **React Query** - Server state management with caching and auto-refresh
+- **Tailwind CSS** - Utility-first styling
+- **Storybook** - Component development and documentation
+- **Zod** - Runtime type validation for search params
+
+### Backend
+- **Bun Server** - High-performance API server
+- **MCP Handlers** - Model Context Protocol integration
+- **V2 Core** - Scopecraft V2 task management logic
+- **WebSocket** - Real-time Claude integration support
 
 ## Key Features
 
-- **Terminal-Inspired Theme**: Dark mode with terminal-like aesthetics
-- **Task List View**: Tabular display of tasks with sorting and filtering
-- **Task Form**: Creation and editing of tasks with form validation
-- **Task Detail View**: Display of task metadata and content
-- **Toast Notifications**: User feedback for operations
-- **Error Boundaries**: Graceful error handling
-- **Phase Navigation**: Sidebar navigation for task phases
-- **URL-Based Routing**: Clean URLs with browser history support
-- **Core Library Integration**: Integration via RESTful API
-- **Responsive Design**: Mobile-friendly layout
+- 🔄 **Auto-refresh**: 30-second refresh when window is visible
+- 🔗 **URL Persistence**: Filters stored in URL search params
+- ⚡ **Real-time Data**: Live integration with V2 MCP API
+- 🎨 **Beautiful Components**: CLI-inspired design with proper icons
+- 📊 **Type Safety**: End-to-end TypeScript with Zod validation
+- 🛠️ **DevTools**: React Query devtools for debugging
 
-## Getting Started
+## Project Structure
 
-### Prerequisites
+### Important Files
 
-- Node.js 18+ or Bun 1.0+
-- A project initialized with Scopecraft Command
+#### Frontend Core
+- [`src/main.tsx`](src/main.tsx) - App entry point with React Query setup
+- [`src/routes/tasks/index.tsx`](src/routes/tasks/index.tsx) - Main tasks page with search params
+- [`src/lib/api/client.ts`](src/lib/api/client.ts) - Comprehensive API client
+- [`src/lib/api/hooks.ts`](src/lib/api/hooks.ts) - React Query hooks for all endpoints
 
-### Installation
+#### V2 Components
+- [`src/components/v2/`](src/components/v2/) - All V2 components
+- [`src/components/v2/TaskManagementView.tsx`](src/components/v2/TaskManagementView.tsx) - Main task list with filters
+- [`src/components/v2/V2Showcase.stories.tsx`](src/components/v2/V2Showcase.stories.tsx) - Page templates
+- [`src/components/v2/index.ts`](src/components/v2/index.ts) - Component exports
 
+#### Backend
+- [`server.ts`](server.ts) - Main API server with endpoint routing
+- [`vite.config.js`](vite.config.js) - Vite configuration with proxy setup
+- [`package.json`](package.json) - Dependencies and scripts
+
+#### Configuration
+- [`tailwind.config.js`](tailwind.config.js) - Tailwind styling configuration
+- [`.storybook/`](.storybook/) - Storybook configuration
+
+## API Architecture
+
+### Endpoints
+- `GET /api/tasks` - List all tasks (simple + parent) with filtering
+- `GET /api/parents` - List parent tasks with progress info
+- `GET /api/workflow/*` - Workflow operations
+- `WebSocket /ws/claude` - Claude integration (preserved for future)
+
+### Data Flow
+1. **User Interaction** → Component state change
+2. **Component** → React Query hook call
+3. **React Query** → API client request
+4. **API Client** → Fetch to `/api/*` endpoint
+5. **Vite Proxy** → Forward to server :8899
+6. **Server Router** → MCP handler call
+7. **MCP Handler** → V2 core operations
+8. **V2 Core** → File system operations
+
+## Development Workflow
+
+### Setup
 ```bash
-# Navigate to tasks-ui directory
-cd tasks-ui
+# Start both API server and UI dev server
+bun run ui2:dev
 
-# Install dependencies
-bun install
+# Or separately:
+bun run ui2:dev:api   # API server on :8899
+bun run ui2:dev:ui    # Vite dev server on :3000
+
+# Storybook for component development
+bun run storybook
 ```
 
-### Development
+### URL Structure
+- `/tasks` - Main task list with filters
+- `/tasks?status=in_progress&workflow=current` - Filtered view
+- `/parents` - Parent task management (future)
 
-```bash
-# Start development server
-bun run dev
+### Filter Persistence
+All filters are stored in URL search params and are shareable:
+- `search` - Text search query
+- `status[]` - Task status filters
+- `type[]` - Task type filters  
+- `workflow[]` - Workflow state filters
+- `area[]` - Area filters
 
-# Start with specific port
-bun run dev -- --port 3000
+## Current Status
 
-# Start with network access
-bun run dev -- --host
-```
+### ✅ Completed (Phase 1 & 2)
+- **Storybook Setup** - Component development environment
+- **V2 Components** - Complete component library with CLI-inspired design
+- **API Integration** - React Query with auto-refresh
+- **URL Filters** - TanStack Router search params integration
+- **Server Setup** - API server with MCP handler integration
 
-### Building and Deployment
+### 🔄 In Progress (Phase 3)
+- **Pages & Navigation** - Convert showcase views to actual pages
+- **MCP Bug Fix** - `handleTaskList` not returning parent tasks (see bug report)
 
-```bash
-# Build for production
-bun run build
+### 🔮 Future (Phase 4)
+- **Drag & Drop** - Subtask reordering
+- **Advanced Features** - Parallel task management, task conversion UI
+- **Claude Integration** - WebSocket-based AI assistance
 
-# Start the server (serves both API and UI)
-bun run start
+## Known Issues
 
-# Build and start the server in one command
-bun run deploy
-```
+1. **MCP Handler Bug**: `handleTaskList` with `task_type='top-level'` only returns simple tasks, not parent tasks. Bug report created: `mcp-hnd-not-rtr-par-tas-wit-05A`
 
-## API Integration
+## Architecture Decisions
 
-TaskUI integrates with the Scopecraft Command core library through a RESTful API server. This integration enables browser compatibility by handling Node.js-specific code on the server side.
+### Why TanStack Router?
+- File-based routing with excellent TypeScript support
+- Built-in search params validation with Zod
+- Loader pattern for data fetching (though we use React Query instead)
 
-### API Server
+### Why React Query?
+- Automatic caching and background refetching
+- Optimistic updates for mutations
+- Built-in loading and error states
+- Perfect for real-time task management
 
-The API server is built using Bun's built-in HTTP server capabilities and directly imports handlers from the MCP core library. It provides the following endpoints:
+### Why Bun Server?
+- High-performance JavaScript runtime
+- Seamless integration with existing MCP handlers
+- WebSocket support for future Claude features
+- Simple proxy setup for development
 
-- `GET /api/tasks` - List tasks with optional filtering
-- `GET /api/tasks/:id` - Get a specific task
-- `POST /api/tasks` - Create a new task
-- `PUT /api/tasks/:id` - Update an existing task
-- `DELETE /api/tasks/:id` - Delete a task
-- `GET /api/tasks/next` - Get the next recommended task
-- `GET /api/phases` - List phases
-- `POST /api/phases` - Create a new phase
-- `GET /api/workflow/current` - Get the current workflow state
-- `POST /api/workflow/mark-complete-next` - Mark a task as complete and get the next task
+## Related Documentation
 
-### API Client
-
-The API client is a browser-compatible fetch-based client that provides the same interface as the original core-client but communicates with the API server instead of directly integrating with the core library.
-
-### Testing API Integration
-
-To test the API integration:
-
-```bash
-# Start the server in one terminal
-bun run start
-
-# Run the API tests in another terminal
-bun run test:api
-```
-
-## Routing
-
-TaskUI uses wouter for lightweight client-side routing. The routes are defined in `src/lib/routes.ts`:
-
-- `/` - Home page
-- `/tasks` - Task list view
-- `/tasks/create` - Task creation form
-- `/tasks/:id` - Task detail view
-- `/tasks/:id/edit` - Task edit form
-
-## State Management
-
-State is managed through React Context providers:
-
-- **TaskContext**: Manages task-related state and operations
-- **PhaseContext**: Manages phase-related state and operations  
-- **UIContext**: Manages UI state like sidebar visibility and dark mode
-
-## Error Handling
-
-Error handling is implemented at multiple levels:
-
-- **API Client**: Consistent error handling for all API operations
-- **Context Providers**: Error state management and propagation
-- **Toast Notifications**: User-friendly error messages
-- **Error Boundaries**: Component-level error isolation
-- **Fallback Components**: Graceful UI degradation when errors occur
-
-## Styling
-
-Styling is handled through Tailwind CSS with a custom terminal-inspired theme. The theme is defined in `tailwind.config.js` and uses CSS variables for flexibility.
-
-The main visual characteristics include:
-
-- Dark background with light text
-- Monospace font
-- Terminal-like interface elements
-- Minimal animations
-- High contrast for readability
-- Responsive layout for mobile and desktop
-
-## Project Commands
-
-```bash
-# Install dependencies
-bun install
-
-# Start development server
-bun run dev
-
-# Build for production
-bun run build
-
-# Start the server (API + static files)
-bun run start
-
-# Build and start the server
-bun run deploy
-
-# Run linter
-bun run lint
-
-# Type checking
-bun run typecheck
-
-# Check imports
-bun run check-imports
-
-# Test API integration
-bun run test:api
-```
+- [Storybook Components](http://localhost:6006) - Component library and showcase views
+- [React Query DevTools](http://localhost:3000) - Available in development mode
+- [V2 Task System Specification](../docs/specs/task-system-v2-specification.md)
+- [MCP Handler Documentation](../src/mcp/README.md)

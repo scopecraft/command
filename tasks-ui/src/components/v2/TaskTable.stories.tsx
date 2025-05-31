@@ -92,6 +92,28 @@ export const ParentTasksOnly: Story = {
   },
 };
 
+export const ParentTasksWithProgress: Story = {
+  args: {
+    tasks: mockV2ParentTasks.map(task => ({ 
+      ...task, 
+      task_type: 'parent' as const,
+      subtask_count: Math.floor(Math.random() * 10) + 1,
+      subtask_completed: Math.floor(Math.random() * 5),
+      progress_percentage: Math.floor(Math.random() * 100),
+    })),
+    selectable: true,
+    showSubtaskProgress: true,
+    onRowClick: (task) => console.log('Open parent task detail:', task.title),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Shows parent tasks with subtask progress indicators including count and percentage completion with visual progress bars.',
+      },
+    },
+  },
+};
+
 export const SimpleTasksOnly: Story = {
   args: {
     tasks: mockV2SimpleTasks.map(task => ({ ...task, task_type: 'simple' as const })),
