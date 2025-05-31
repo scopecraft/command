@@ -1,14 +1,14 @@
 /**
- * V2 Template Manager
+ * Template Manager
  *
- * Handles task templates with v2 section structure
+ * Handles task templates with section structure
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { getTemplatesDirectory } from './directory-utils.js';
 import { ensureRequiredSections, parseTaskDocument, serializeTaskDocument } from './task-parser.js';
-import type { TaskCreateOptions, TaskDocument, TaskType, V2Config } from './types.js';
+import type { TaskCreateOptions, TaskDocument, TaskType, ProjectConfig } from './types.js';
 
 /**
  * Template info
@@ -156,9 +156,9 @@ function parseTemplateIntoSections(content: string): Partial<TaskSections> {
 }
 
 /**
- * Initialize v2 templates
+ * Initialize templates
  */
-export function initializeV2Templates(projectRoot: string): void {
+export function initializeTemplates(projectRoot: string): void {
   const templatesDir = getTemplatesDirectory(projectRoot);
 
   // Ensure directory exists
@@ -169,14 +169,14 @@ export function initializeV2Templates(projectRoot: string): void {
   // Create default templates if none exist
   const existingTemplates = listTemplates(projectRoot);
   if (existingTemplates.length === 0) {
-    createDefaultV2Templates(templatesDir);
+    createDefaultTemplates(templatesDir);
   }
 }
 
 /**
- * Create default v2 templates
+ * Create default templates
  */
-function createDefaultV2Templates(templatesDir: string): void {
+function createDefaultTemplates(templatesDir: string): void {
   const templates = [
     {
       filename: '01_feature.md',

@@ -7,14 +7,14 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ensureWorkflowDirectories, detectStructureVersion } from './directory-utils.js';
-import type { V2Config } from './types.js';
+import type { ProjectConfig } from './types.js';
 
 /**
  * Initialize v2 project structure
  */
 export function initializeV2ProjectStructure(
   projectRoot: string,
-  config?: V2Config
+  config?: ProjectConfig
 ): void {
   // Create workflow directories
   ensureWorkflowDirectories(projectRoot, config);
@@ -24,9 +24,9 @@ export function initializeV2ProjectStructure(
 }
 
 /**
- * Create v2 quickstart guide
+ * Create quickstart guide
  */
-function createV2Quickstart(projectRoot: string): void {
+function createQuickstart(projectRoot: string): void {
   const quickstartPath = join(projectRoot, '.tasks', 'QUICKSTART.md');
   
   // Don't overwrite existing quickstart
@@ -140,9 +140,9 @@ For more information, visit the [Scopecraft documentation](https://github.com/ti
 }
 
 /**
- * Check if project needs v2 initialization
+ * Check if project needs initialization
  */
-export function needsV2Init(projectRoot: string): boolean {
+export function needsInit(projectRoot: string): boolean {
   const version = detectStructureVersion(projectRoot);
   
   // Need init if no structure or only v1 structure
@@ -157,13 +157,13 @@ export function getInitStatus(projectRoot: string): string {
   
   switch (version) {
     case 'none':
-      return 'No task structure found. Ready to initialize v2.';
+      return 'No task structure found. Ready to initialize.';
     case 'v1':
-      return 'V1 structure detected. V2 will be added alongside.';
+      return 'V1 structure detected. New structure will be added alongside.';
     case 'v2':
-      return 'V2 structure already initialized.';
+      return 'Structure already initialized.';
     case 'mixed':
-      return 'Mixed v1/v2 structure detected.';
+      return 'Mixed structure detected.';
     default:
       return 'Unknown structure state.';
   }

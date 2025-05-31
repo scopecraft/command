@@ -1,7 +1,15 @@
 /**
- * Formatters for displaying v2 tasks in various formats
+ * Formatters for displaying tasks in various formats
  */
-import type * as v2 from './types.js';
+import type {
+  Task,
+  TaskStatus,
+  TaskType,
+  TaskPriority,
+  WorkflowState,
+  ParentTask,
+  TemplateInfo
+} from './types.js';
 
 export type OutputFormat =
   | 'tree'
@@ -14,7 +22,7 @@ export type OutputFormat =
   | 'full';
 
 // Emoji mappings for presentation layer
-export const STATUS_EMOJIS: Record<v2.TaskStatus, string> = {
+export const STATUS_EMOJIS: Record<TaskStatus, string> = {
   'To Do': '🟡',
   'In Progress': '🔵',
   Done: '🟢',
@@ -22,7 +30,7 @@ export const STATUS_EMOJIS: Record<v2.TaskStatus, string> = {
   Archived: '⚪',
 };
 
-const TYPE_EMOJIS: Record<v2.TaskType, string> = {
+const TYPE_EMOJIS: Record<TaskType, string> = {
   feature: '🌟',
   bug: '🐛',
   chore: '🔧',
@@ -32,7 +40,7 @@ const TYPE_EMOJIS: Record<v2.TaskType, string> = {
   idea: '💡',
 };
 
-const PRIORITY_EMOJIS: Record<v2.TaskPriority, string> = {
+const PRIORITY_EMOJIS: Record<TaskPriority, string> = {
   Highest: '🔥',
   High: '🔼',
   Medium: '▶️',
@@ -40,7 +48,7 @@ const PRIORITY_EMOJIS: Record<v2.TaskPriority, string> = {
 };
 
 /**
- * Format a list of v2 tasks for display
+ * Format a list of tasks for display
  */
 export function formatTasksList(tasks: v2.Task[], format: OutputFormat): string {
   if (format === 'json') {
@@ -356,7 +364,7 @@ function formatTableView(tasks: v2.Task[]): string {
 }
 
 /**
- * Format a single v2 task for detailed display
+ * Format a single task for detailed display
  */
 export function formatTaskDetail(task: v2.Task, format: OutputFormat): string {
   if (format === 'json') {

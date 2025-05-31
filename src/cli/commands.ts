@@ -1,6 +1,6 @@
 /**
- * Command handlers for CLI v2
- * Uses the v2 core with workflow-based task management
+ * Command handlers for CLI
+ * Uses the core with workflow-based task management
  */
 
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
@@ -11,10 +11,10 @@ import {
   formatTasksList,
   formatTemplatesList,
 } from '../core/formatters.js';
-import * as v2 from '../core/index.js';
+import * as core from '../core/index.js';
 
 /**
- * Handle init command with v2 structure
+ * Handle init command with project structure
  */
 export async function handleInitCommand(options: {
   mode?: string;
@@ -36,7 +36,7 @@ export async function handleInitCommand(options: {
     }
 
     // Initialize v2 structure
-    const result = await v2.initializeV2ProjectStructure(projectRoot);
+    const result = await core.initializeProjectStructure(projectRoot);
 
     if (result.success) {
       console.log('✓ Initialized Scopecraft v2 project structure:');

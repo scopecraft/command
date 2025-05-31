@@ -1,30 +1,29 @@
 /**
- * V2-aware initialization command
+ * Initialization command
  */
 import path from 'node:path';
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import * as v2 from '../core/index.js';
+import * as core from '../core/index.js';
 
-export async function handleInitV2Command(options: {
+export async function handleInitCommand(options: {
   mode?: string;
   rootDir?: string;
-  v2?: boolean;
 }): Promise<void> {
   try {
     const initRoot = options.rootDir || process.cwd();
 
-    console.log('DEBUG: handleInitV2Command called with options:', options);
+    console.log('DEBUG: handleInitCommand called with options:', options);
 
     // Check current structure
-    const structureVersion = v2.detectStructureVersion(initRoot);
+    const structureVersion = core.detectStructureVersion(initRoot);
 
     if (structureVersion !== 'none') {
       console.log(`✓ Project already initialized with ${structureVersion} structure`);
 
-      if (structureVersion === 'v1' && options.v2) {
+      if (structureVersion === 'v1') {
         console.log('\n⚠️  This project uses v1 structure (phases).');
-        console.log('Migration from v1 to v2 is not yet implemented.');
-        console.log('\nV2 features:');
+        console.log('Migration from v1 is not yet implemented.');
+        console.log('\nCurrent features:';
         console.log('  - Workflow-based organization (backlog → current → archive)');
         console.log('  - Parent tasks (folder-based tasks with subtasks)');
         console.log('  - Automatic status updates on workflow transitions');
@@ -32,16 +31,12 @@ export async function handleInitV2Command(options: {
       return;
     }
 
-    // Default to v2 for new projects
-    const useV2 = options.v2 !== false;
+    // Initialize project structure
+      core.initializeProjectStructure(initRoot);
 
-    if (useV2) {
-      // Initialize v2 structure
-      v2.initializeV2ProjectStructure(initRoot);
-
-      console.log('\n🚀 Welcome to Scopecraft v2!\n');
+      console.log('\n🚀 Welcome to Scopecraft!\n');
       console.log(`Initialized project in: ${initRoot}`);
-      console.log('✓ Created v2 workflow structure:');
+      console.log('✓ Created workflow structure:');
       console.log('  .tasks/backlog/     📋 Tasks waiting to be worked on');
       console.log('  .tasks/current/     🚀 Tasks actively being worked on');
       console.log('  .tasks/archive/     ✅ Completed tasks (organized by date)');
@@ -68,18 +63,6 @@ export async function handleInitV2Command(options: {
         const configManager = ConfigurationManager.getInstance();
         configManager.setRootFromCLI(options.rootDir);
       }
-    } else {
-      // Fall back to v1 initialization
-      console.log('Initializing v1 structure (phase-based)...');
-      const { projectConfig, initializeTemplates } = await import('../core/index.js');
-      projectConfig.initializeProjectStructure();
-      initializeTemplates();
-
-      console.log('\n🚀 Welcome to Scopecraft Command!\n');
-      console.log('✓ Created v1 structure with phases');
-      console.log('✓ Installed task templates');
-      console.log('\nConsider using v2 for new projects: sc init --v2');
-    }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);

@@ -1,7 +1,7 @@
 /**
- * V2 Task Parser
+ * Task Parser
  *
- * Parses and serializes task documents with the v2 section-based format
+ * Parses and serializes task documents with the section-based format
  */
 
 import matter from 'gray-matter';

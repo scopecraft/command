@@ -1,7 +1,7 @@
 /**
- * V2 Task CRUD Operations
+ * Task CRUD Operations
  *
- * Create, Read, Update, Delete operations for v2 tasks
+ * Create, Read, Update, Delete operations for tasks
  */
 
 import { readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
@@ -39,7 +39,7 @@ import type {
   TaskMoveOptions,
   TaskStatus,
   TaskUpdateOptions,
-  V2Config,
+  ProjectConfig,
   WorkflowState,
 } from './types.js';
 
@@ -49,7 +49,7 @@ import type {
 export async function createTask(
   projectRoot: string,
   options: TaskCreateOptions,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
   try {
     // Generate unique ID
@@ -137,7 +137,7 @@ export async function createTask(
 export async function getTask(
   projectRoot: string,
   taskId: string,
-  config?: V2Config,
+  config?: ProjectConfig,
   parentId?: string
 ): Promise<OperationResult<Task>> {
   try {
@@ -219,7 +219,7 @@ function shouldAutoTransition(
   currentWorkflow: WorkflowState,
   oldStatus: TaskStatus | undefined,
   newStatus: TaskStatus,
-  config?: V2Config
+  config?: ProjectConfig
 ): WorkflowState | null {
   // Only transition if auto-transitions are enabled (default: true)
   const autoTransitionsEnabled = config?.autoWorkflowTransitions !== false;
@@ -253,7 +253,7 @@ export async function updateTask(
   projectRoot: string,
   taskId: string,
   updates: TaskUpdateOptions,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
   try {
     // Get existing task
@@ -360,7 +360,7 @@ export async function updateTask(
 export async function deleteTask(
   projectRoot: string,
   taskId: string,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<void>> {
   try {
     // Resolve task path
@@ -401,7 +401,7 @@ export async function moveTask(
   projectRoot: string,
   taskId: string,
   options: TaskMoveOptions,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
   try {
     // Get existing task
@@ -488,7 +488,7 @@ export async function moveTask(
 export async function listTasks(
   projectRoot: string,
   options: TaskListOptions = {},
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<Task[]>> {
   try {
     const tasks: Task[] = [];
@@ -618,7 +618,7 @@ export async function updateSection(
   taskId: string,
   sectionName: string,
   content: string,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
   try {
     // Get existing task

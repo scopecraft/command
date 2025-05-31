@@ -38,3 +38,4 @@ Clean core module with:
 
 ## Log
 - 2025-05-30: Completed major V1/V2 cleanup. Removed entire V1 task-manager directory, moved V2 contents to standard core location, removed V2 naming convention from all files. Fixed pre-existing getProjectRoot() compilation issue.
+- 2025-05-30: Additional V2 cleanup - renamed V2Config to ProjectConfig, renamed initializeV2ProjectStructure to initializeProjectStructure, needsV2Init to needsInit, initializeV2Templates to initializeTemplates. Fixed many V2 references in comments. Some references remain in project-init.ts that appear to have been reverted.

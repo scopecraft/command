@@ -74,9 +74,9 @@ export async function handleInitRoot(params: ConfigInitRootParams) {
     const projectRoot = params.path;
     
     // Check if init is needed
-    const initNeeded = await core.needsV2Init(projectRoot);
+    const initNeeded = await core.needsInit(projectRoot);
     if (initNeeded) {
-      const initResult = await core.initializeV2ProjectStructure(projectRoot);
+      const initResult = await core.initializeProjectStructure(projectRoot);
       if (!initResult.success) {
         return {
           success: false,

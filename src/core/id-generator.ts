@@ -1,8 +1,8 @@
 /**
- * V2 ID Generation and Resolution
+ * ID Generation and Resolution
  *
- * Handles task ID generation and resolution for the v2 system
- * Now uses abbreviated names and simplified suffix format
+ * Handles task ID generation and resolution for the task system
+ * Uses abbreviated names and simplified suffix format
  */
 
 import { existsSync, readdirSync, statSync } from 'node:fs';
@@ -16,13 +16,13 @@ import {
   taskIdExists,
 } from './directory-utils.js';
 import { abbreviateTaskName } from './name-abbreviator.js';
-import type { TaskIdComponents, TaskReference, V2Config, WorkflowState } from './types.js';
+import type { TaskIdComponents, TaskReference, ProjectConfig, WorkflowState } from './types.js';
 
 // Characters to use for month suffix (A-Z)
 const MONTH_SUFFIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 /**
- * Generate a v2 task ID from a title
+ * Generate a task ID from a title
  * Format: {abbreviated-name}-{MM}{X}
  */
 export function generateTaskId(title: string, date: Date = new Date()): string {
@@ -60,7 +60,7 @@ function generateMonthSuffix(): string {
 }
 
 /**
- * Parse a v2 task ID into components
+ * Parse a task ID into components
  */
 export function parseTaskId(taskId: string): TaskIdComponents | null {
   // Remove .task.md if present
@@ -91,7 +91,7 @@ export function parseTaskId(taskId: string): TaskIdComponents | null {
 }
 
 /**
- * Validate a v2 task ID format
+ * Validate a task ID format
  */
 export function isValidTaskId(taskId: string): boolean {
   const components = parseTaskId(taskId);
@@ -155,7 +155,7 @@ export function formatTaskReference(ref: TaskReference): string {
 export function generateUniqueTaskId(
   title: string,
   projectRoot: string,
-  config?: V2Config,
+  config?: ProjectConfig,
   maxAttempts = 26
 ): string {
   const date = new Date();
@@ -183,7 +183,7 @@ export function generateUniqueTaskId(
 export function listTaskIds(
   projectRoot: string,
   state: WorkflowState,
-  config?: V2Config
+  config?: ProjectConfig
 ): string[] {
   const workflowDir = getWorkflowDirectory(projectRoot, state, config);
   if (!existsSync(workflowDir)) {
@@ -221,7 +221,7 @@ export function listTaskIds(
 /**
  * Get all task IDs across all workflow states
  */
-export function getAllTaskIds(projectRoot: string, config?: V2Config): Map<string, WorkflowState> {
+export function getAllTaskIds(projectRoot: string, config?: ProjectConfig): Map<string, WorkflowState> {
   const idMap = new Map<string, WorkflowState>();
   const states = getExistingWorkflowStates(projectRoot, config);
 

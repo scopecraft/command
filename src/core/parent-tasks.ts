@@ -26,7 +26,7 @@ import type {
   TaskMetadata,
   TaskStatus,
   TaskType,
-  V2Config,
+  ProjectConfig,
   WorkflowState,
 } from './types.js';
 
@@ -36,7 +36,7 @@ import type {
 export async function createParentTask(
   projectRoot: string,
   options: TaskCreateOptions,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<ParentTask>> {
   try {
     // Generate unique ID for the folder
@@ -115,7 +115,7 @@ export async function addSubtask(
   parentTaskId: string,
   subtaskTitle: string,
   options: Partial<TaskCreateOptions> = {},
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
   try {
     // Get parent task
@@ -185,7 +185,7 @@ export async function addSubtask(
 export async function getParentTask(
   projectRoot: string,
   taskId: string,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<ParentTask>> {
   try {
     // Get the overview task
@@ -287,7 +287,7 @@ export async function moveParentTask(
   projectRoot: string,
   taskId: string,
   targetState: WorkflowState,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<ParentTask>> {
   try {
     // Get parent task
@@ -350,7 +350,7 @@ export async function moveParentTask(
 export async function deleteParentTask(
   projectRoot: string,
   taskId: string,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<void>> {
   try {
     // Get parent task to find folder
@@ -431,7 +431,7 @@ function getNextSequenceNumber(taskFolder: string): string {
 export async function canConvertToParent(
   projectRoot: string,
   taskId: string,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<boolean> {
   const result = await getTask(projectRoot, taskId, config);
   if (!result.success || !result.data) {

@@ -1,5 +1,5 @@
 /**
- * V2 Task Operations
+ * Task Operations
  *
  * High-level operations for task management including sequencing,
  * conversions, and workflow transitions
@@ -43,7 +43,7 @@ import type {
   Task,
   TaskCreateOptions,
   TaskMetadata,
-  V2Config,
+  ProjectConfig,
   WorkflowState,
 } from './types.js';
 
@@ -56,7 +56,7 @@ export async function resequenceSubtasks(
   parentId: string,
   fromPositions: number[],
   toPositions: number[],
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<void>> {
   try {
     // Get parent task to find folder
@@ -152,7 +152,7 @@ export async function parallelizeSubtasks(
   parentId: string,
   subtaskIds: string[],
   targetSequence?: string,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<void>> {
   try {
     // Get parent task
@@ -190,7 +190,7 @@ export async function updateSubtaskSequence(
   subtaskId: string,
   newSequence: string,
   options: { force?: boolean } = {},
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<void>> {
   try {
     // Get parent task
@@ -256,7 +256,7 @@ export async function promoteToParent(
     subtasks?: string[];
     keepOriginal?: boolean;
   } = {},
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
   try {
     // Get the task to promote
@@ -367,7 +367,7 @@ export async function extractSubtask(
   parentId: string,
   subtaskId: string,
   targetLocation: WorkflowState,
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
   try {
     // Get parent task
@@ -442,7 +442,7 @@ export async function adoptTask(
     after?: string;
     before?: string;
   } = {},
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
   try {
     // Get the floating task
@@ -572,7 +572,7 @@ export async function addSubtask(
     assignee?: string;
     [key: string]: unknown;
   } = {},
-  config?: V2Config
+  config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
   try {
     // Get parent task

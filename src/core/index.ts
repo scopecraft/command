@@ -1,7 +1,7 @@
 /**
- * Scopecraft V2 Core Exports
+ * Scopecraft Core Exports
  *
- * Main entry point for v2 task system functionality
+ * Main entry point for task system functionality
  */
 
 // Types
@@ -90,8 +90,8 @@ export {
 
 // Project initialization
 export {
-  initializeV2ProjectStructure,
-  needsV2Init,
+  initializeProjectStructure,
+  needsInit,
   getInitStatus,
 } from './project-init.js';
 
@@ -132,7 +132,7 @@ export {
   listTemplates,
   getTemplate,
   applyTemplate,
-  initializeV2Templates,
+  initializeTemplates,
 } from './template-manager.js';
 export type { TemplateInfo } from './template-manager.js';
 
@@ -152,7 +152,7 @@ export type {
   TaskMoveOptions,
   TaskListOptions,
   ParentTask,
-  V2Config,
+  ProjectConfig,
   OperationResult,
   ValidationError,
   StructureVersion,

@@ -1,12 +1,12 @@
 /**
- * V2 Directory Utilities
+ * Directory Utilities
  *
- * Manages workflow-based directory structure for v2 task system
+ * Manages workflow-based directory structure for task system
  */
 
 import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
-import type { StructureVersion, TaskLocation, V2Config, WorkflowState } from './types.js';
+import type { StructureVersion, TaskLocation, ProjectConfig, WorkflowState } from './types.js';
 
 // Default workflow folder names
 const DEFAULT_WORKFLOW_FOLDERS = {
@@ -28,7 +28,7 @@ export function getTasksDirectory(projectRoot: string): string {
 export function getWorkflowDirectory(
   projectRoot: string,
   state: WorkflowState,
-  config?: V2Config
+  config?: ProjectConfig
 ): string {
   const tasksDir = getTasksDirectory(projectRoot);
   const folderName = config?.workflowFolders?.[state] || DEFAULT_WORKFLOW_FOLDERS[state];
@@ -38,7 +38,7 @@ export function getWorkflowDirectory(
 /**
  * Get archive directory with optional date
  */
-export function getArchiveDirectory(projectRoot: string, date?: string, config?: V2Config): string {
+export function getArchiveDirectory(projectRoot: string, date?: string, config?: ProjectConfig): string {
   const archiveDir = getWorkflowDirectory(projectRoot, 'archive', config);
 
   if (date) {
@@ -67,9 +67,9 @@ export function getConfigDirectory(projectRoot: string): string {
 }
 
 /**
- * Ensure all v2 workflow directories exist
+ * Ensure all workflow directories exist
  */
-export function ensureWorkflowDirectories(projectRoot: string, config?: V2Config): void {
+export function ensureWorkflowDirectories(projectRoot: string, config?: ProjectConfig): void {
   const tasksDir = getTasksDirectory(projectRoot);
 
   // Create main .tasks directory
@@ -111,11 +111,11 @@ export function detectStructureVersion(projectRoot: string): StructureVersion {
 
   const entries = readdirSync(tasksDir);
 
-  // Check for v2 structure (workflow folders)
+  // Check for workflow structure (workflow folders)
   const hasBacklog = entries.includes('backlog');
   const hasCurrent = entries.includes('current');
   const hasArchive = entries.includes('archive');
-  const hasV2 = hasBacklog || hasCurrent || hasArchive;
+  const hasWorkflow = hasBacklog || hasCurrent || hasArchive;
 
   // Check for v1 structure (phase folders)
   const hasPhases = entries.some((entry) => {
@@ -125,9 +125,9 @@ export function detectStructureVersion(projectRoot: string): StructureVersion {
     return !['backlog', 'current', 'archive', '.templates', '.config'].includes(entry);
   });
 
-  if (hasV2 && hasPhases) {
+  if (hasWorkflow && hasPhases) {
     return 'mixed';
-  } else if (hasV2) {
+  } else if (hasWorkflow) {
     return 'v2';
   } else if (hasPhases) {
     return 'v1';
@@ -142,7 +142,7 @@ export function detectStructureVersion(projectRoot: string): StructureVersion {
 export function getTaskFilesInWorkflow(
   projectRoot: string,
   state: WorkflowState,
-  config?: V2Config
+  config?: ProjectConfig
 ): string[] {
   const workflowDir = getWorkflowDirectory(projectRoot, state, config);
 
@@ -318,7 +318,7 @@ export function isValidTaskFilename(filename: string): boolean {
 /**
  * Get all workflow directories that exist
  */
-export function getExistingWorkflowStates(projectRoot: string, config?: V2Config): WorkflowState[] {
+export function getExistingWorkflowStates(projectRoot: string, config?: ProjectConfig): WorkflowState[] {
   const states: WorkflowState[] = [];
 
   for (const state of ['backlog', 'current', 'archive'] as const) {
@@ -339,7 +339,7 @@ export function getExistingWorkflowStates(projectRoot: string, config?: V2Config
 export function resolveTaskId(
   taskId: string,
   projectRoot: string,
-  config?: V2Config,
+  config?: ProjectConfig,
   parentId?: string
 ): string | null {
   // Handle explicit paths (e.g., "current/implement-oauth-0127-AB")
@@ -395,7 +395,7 @@ function findTaskInWorkflow(
   taskId: string,
   projectRoot: string,
   state: WorkflowState,
-  config?: V2Config
+  config?: ProjectConfig
 ): string | null {
   const workflowDir = getWorkflowDirectory(projectRoot, state, config);
   if (!existsSync(workflowDir)) {
@@ -498,6 +498,6 @@ function searchArchive(taskId: string, archiveDir: string): string | null {
 /**
  * Check if a task ID already exists
  */
-export function taskIdExists(taskId: string, projectRoot: string, config?: V2Config): boolean {
+export function taskIdExists(taskId: string, projectRoot: string, config?: ProjectConfig): boolean {
   return resolveTaskId(taskId, projectRoot, config) !== null;
 }

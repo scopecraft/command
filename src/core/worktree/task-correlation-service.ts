@@ -1,5 +1,5 @@
 import type { RuntimeConfig } from '../config/types.js';
-// Note: getFeature and related functions were removed in V2 - worktree needs to be updated
+// Note: getFeature was replaced with getParentTask
 import {
   DevelopmentMode,
   type FeatureProgress,

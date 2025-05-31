@@ -1,5 +1,5 @@
 /**
- * Scopecraft Task System V2 Types
+ * Scopecraft Task System Types
  *
  * Core type definitions for the workflow-based task system
  */
@@ -16,7 +16,7 @@ export type TaskStatus = 'To Do' | 'In Progress' | 'Done' | 'Blocked' | 'Archive
 
 export type TaskPriority = 'Highest' | 'High' | 'Medium' | 'Low';
 
-// Required sections in v2 task documents
+// Required sections in task documents
 export const REQUIRED_SECTIONS = ['instruction', 'tasks', 'deliverable', 'log'] as const;
 export type RequiredSection = (typeof REQUIRED_SECTIONS)[number];
 
@@ -25,7 +25,7 @@ export type RequiredSection = (typeof REQUIRED_SECTIONS)[number];
 // ============================================
 
 /**
- * V2 Task frontmatter - minimal required fields + custom
+ * Task frontmatter - minimal required fields + custom
  */
 export interface TaskFrontmatter {
   // Required fields
@@ -125,7 +125,7 @@ export interface SubtaskInfo {
 // ============================================
 
 /**
- * Components of a v2 task ID
+ * Components of a task ID
  */
 export interface TaskIdComponents {
   descriptiveName: string; // intelligently abbreviated name
@@ -256,9 +256,9 @@ export interface TaskSearchResult {
 // ============================================
 
 /**
- * V2-specific configuration options
+ * Project-specific configuration options
  */
-export interface V2Config {
+export interface ProjectConfig {
   workflowFolders?: {
     backlog: string;
     current: string;
