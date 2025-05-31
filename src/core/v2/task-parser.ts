@@ -104,17 +104,7 @@ function parseSections(content: string): TaskSections {
 export function serializeTaskDocument(task: TaskDocument): string {
   const lines: string[] = [];
   
-  // Title
-  lines.push(`# ${task.title}`);
-  lines.push('');
-  
-  // Create content with frontmatter using gray-matter
-  const frontmatterContent = matter.stringify('', task.frontmatter);
-  
-  // Extract just the frontmatter part
-  const frontmatterLines = frontmatterContent.split('\n').slice(0, -1); // Remove empty content line
-  lines.push(...frontmatterLines);
-  lines.push('');
+  // Skip title and frontmatter - only return sections content
   
   // Sections - maintain order and proper capitalization
   const sectionOrder = [
