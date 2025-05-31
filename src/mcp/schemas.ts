@@ -90,7 +90,7 @@ export const TaskSectionsSchema = z.object({
 // Simple standalone task
 export const SimpleTaskSchema = TaskBaseSchema.extend({
   taskStructure: z.literal('simple'),
-  bodyContent: z.string().optional(), // Sections only, no title/frontmatter
+  content: z.string().optional(), // Sections only, no title/frontmatter
   sections: TaskSectionsSchema.optional(),
 });
 
@@ -99,7 +99,7 @@ export const SubTaskSchema = TaskBaseSchema.extend({
   taskStructure: z.literal('subtask'),
   parentId: z.string(),
   sequenceNumber: z.string(), // "01", "02", "03a", etc.
-  bodyContent: z.string().optional(), // Sections only, no title/frontmatter
+  content: z.string().optional(), // Sections only, no title/frontmatter
   sections: TaskSectionsSchema.optional(),
 });
 
@@ -114,7 +114,7 @@ export const ParentTaskSchema = TaskBaseSchema.extend({
   taskStructure: z.literal('parent'),
   progress: ParentTaskProgressSchema,
   subtaskIds: z.array(z.string()),
-  overviewContent: z.string().optional(), // Overview sections only, no title/frontmatter
+  content: z.string().optional(), // Overview sections only, no title/frontmatter
   sections: TaskSectionsSchema.optional(),
   subtasks: z.array(SubTaskSchema).optional(), // Full subtasks when requested
 });
@@ -284,20 +284,20 @@ export const TaskCreateInputSchema = WriteOperationContextSchema.extend({
   // Required fields
   title: z.string().min(1).max(200),
   type: TaskTypeSchema, // Uses existing clean enum
-  
+
   // Optional metadata - using normalized field names
   area: z.string().default('general'),
   status: TaskStatusSchema.default('todo'),
   priority: TaskPrioritySchema.default('medium'),
   workflowState: WorkflowStateSchema.default('backlog'),
-  
+
   // Relationships
   parentId: z.string().optional().describe('Parent task ID for creating subtasks'),
-  
+
   // Additional metadata
   assignee: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  
+
   // Initial content sections
   instruction: z.string().optional(),
   tasks: z.string().optional().describe('Initial checklist in markdown format'),
@@ -321,7 +321,7 @@ export const TaskCreateOutputSchema = createResponseSchema(
 export const TaskUpdateInputSchema = WriteOperationContextSchema.extend({
   id: z.string(),
   parentId: z.string().optional().describe('Parent ID for subtask resolution'),
-  
+
   updates: z.object({
     // Metadata updates
     title: z.string().min(1).max(200).optional(),
@@ -330,13 +330,13 @@ export const TaskUpdateInputSchema = WriteOperationContextSchema.extend({
     area: z.string().optional(),
     assignee: z.string().optional(),
     tags: z.array(z.string()).optional(),
-    
+
     // Content section updates
     instruction: z.string().optional(),
     tasks: z.string().optional(),
     deliverable: z.string().optional(),
     log: z.string().optional(),
-    
+
     // Convenience field
     addLogEntry: z.string().optional().describe('Append timestamped entry to log'),
   }),
@@ -366,9 +366,14 @@ export const TaskMoveInputSchema = WriteOperationContextSchema.extend({
   id: z.string(),
   parentId: z.string().optional(),
   targetState: WorkflowStateSchema,
-  archiveDate: z.string().regex(/^\d{4}-\d{2}$/).optional()
+  archiveDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional()
     .describe('Required for archive moves (YYYY-MM format)'),
-  updateStatus: z.boolean().default(true)
+  updateStatus: z
+    .boolean()
+    .default(true)
     .describe('Auto-update status based on workflow transition'),
 });
 
@@ -387,16 +392,20 @@ export const TaskMoveOutputSchema = createResponseSchema(
 export const TaskTransformInputSchema = WriteOperationContextSchema.extend({
   id: z.string(),
   operation: z.enum(['promote', 'extract', 'adopt']),
-  
+
   // Operation-specific fields
   parentId: z.string().optional().describe('Required for extract operation'),
   targetParentId: z.string().optional().describe('Required for adopt operation'),
-  initialSubtasks: z.array(z.string()).optional()
+  initialSubtasks: z
+    .array(z.string())
+    .optional()
     .describe('For promote: checklist items to convert to subtasks'),
-  sequence: z.string().regex(/^\d{2}$/).optional()
+  sequence: z
+    .string()
+    .regex(/^\d{2}$/)
+    .optional()
     .describe('For adopt: sequence number'),
-  after: z.string().optional()
-    .describe('For adopt: insert after this subtask'),
+  after: z.string().optional().describe('For adopt: insert after this subtask'),
 }).refine(
   (data) => {
     if (data.operation === 'extract' && !data.parentId) {
@@ -426,25 +435,34 @@ export const ParentCreateInputSchema = WriteOperationContextSchema.extend({
   // Required fields
   title: z.string().min(1).max(200),
   type: TaskTypeSchema,
-  
+
   // Optional metadata
   area: z.string().default('general'),
   status: TaskStatusSchema.default('todo'),
   priority: TaskPrioritySchema.default('medium'),
   workflowState: WorkflowStateSchema.default('backlog'),
-  
+
   // Parent-specific
-  overviewContent: z.string().optional()
+  overviewContent: z
+    .string()
+    .optional()
     .describe('Initial content for overview instruction section'),
-  
+
   // Initial subtasks
-  subtasks: z.array(z.object({
-    title: z.string().min(1),
-    type: TaskTypeSchema.optional(),
-    sequence: z.string().regex(/^\d{2}$/).optional(),
-    parallelWith: z.string().optional(),
-  })).optional(),
-  
+  subtasks: z
+    .array(
+      z.object({
+        title: z.string().min(1),
+        type: TaskTypeSchema.optional(),
+        sequence: z
+          .string()
+          .regex(/^\d{2}$/)
+          .optional(),
+        parallelWith: z.string().optional(),
+      })
+    )
+    .optional(),
+
   // Additional metadata
   assignee: z.string().optional(),
   tags: z.array(z.string()).optional(),
@@ -459,11 +477,15 @@ export const ParentCreateOutputSchema = createResponseSchema(
     workflowState: WorkflowStateSchema,
     path: z.string(),
     subtaskCount: z.number(),
-    createdSubtasks: z.array(z.object({
-      id: z.string(),
-      title: z.string(),
-      sequence: z.string(),
-    })).optional(),
+    createdSubtasks: z
+      .array(
+        z.object({
+          id: z.string(),
+          title: z.string(),
+          sequence: z.string(),
+        })
+      )
+      .optional(),
   })
 );
 
@@ -471,25 +493,32 @@ export const ParentCreateOutputSchema = createResponseSchema(
 export const ParentOperationsInputSchema = WriteOperationContextSchema.extend({
   parentId: z.string(),
   operation: z.enum(['resequence', 'parallelize', 'add_subtask']),
-  
+
   // Operation-specific fields with discriminated union
   operationData: z.discriminatedUnion('operation', [
     // Resequence operation
     z.object({
       operation: z.literal('resequence'),
-      sequenceMap: z.array(z.object({
-        id: z.string(),
-        sequence: z.string().regex(/^\d{2}$/),
-      })).min(1),
+      sequenceMap: z
+        .array(
+          z.object({
+            id: z.string(),
+            sequence: z.string().regex(/^\d{2}$/),
+          })
+        )
+        .min(1),
     }),
-    
+
     // Parallelize operation
     z.object({
       operation: z.literal('parallelize'),
       subtaskIds: z.array(z.string()).min(2),
-      targetSequence: z.string().regex(/^\d{2}$/).optional(),
+      targetSequence: z
+        .string()
+        .regex(/^\d{2}$/)
+        .optional(),
     }),
-    
+
     // Add subtask operation
     z.object({
       operation: z.literal('add_subtask'),
@@ -497,7 +526,10 @@ export const ParentOperationsInputSchema = WriteOperationContextSchema.extend({
         title: z.string().min(1),
         type: TaskTypeSchema.optional(),
         after: z.string().optional(),
-        sequence: z.string().regex(/^\d{2}$/).optional(),
+        sequence: z
+          .string()
+          .regex(/^\d{2}$/)
+          .optional(),
         template: z.string().optional(),
       }),
     }),
@@ -509,11 +541,13 @@ export const ParentOperationsOutputSchema = createResponseSchema(
   z.object({
     operation: z.enum(['resequence', 'parallelize', 'add_subtask']),
     parentId: z.string(),
-    affectedSubtasks: z.array(z.object({
-      id: z.string(),
-      previousSequence: z.string().optional(),
-      currentSequence: z.string(),
-    })),
+    affectedSubtasks: z.array(
+      z.object({
+        id: z.string(),
+        previousSequence: z.string().optional(),
+        currentSequence: z.string(),
+      })
+    ),
     newSubtask: SubTaskSchema.optional(),
   })
 );

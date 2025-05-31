@@ -137,7 +137,7 @@ function transformBaseTask(task: core.Task) {
     workflowState: normalizeWorkflowState(task.metadata.location.workflowState),
     area: task.document.frontmatter.area || 'general',
     tags: (task.document.frontmatter.tags as string[]) || [],
-    assignee: task.document.frontmatter.assignee || undefined,
+    assignee: (typeof task.document.frontmatter.assignee === 'string' ? task.document.frontmatter.assignee : undefined) || undefined,
     createdDate: undefined, // TODO: Extract from file stats if needed
     updatedDate: undefined, // TODO: Extract from file stats if needed
     archivedDate: task.metadata.location.workflowState === 'archive' ? undefined : undefined, // TODO: Extract archive date
@@ -171,7 +171,7 @@ export function transformSimpleTask(task: core.Task, includeContent = false): Si
   const simpleTask: SimpleTask = {
     ...baseTask,
     taskStructure: 'simple' as const,
-    bodyContent: includeContent ? core.serializeTaskContent(task.document) : undefined,
+    content: includeContent ? core.serializeTaskContent(task.document) : undefined,
     sections: includeContent ? transformTaskSections(task) : undefined,
   };
 
@@ -194,7 +194,7 @@ export function transformSubTask(task: core.Task, includeContent = false): SubTa
     taskStructure: 'subtask' as const,
     parentId: task.metadata.parentTask,
     sequenceNumber: task.metadata.sequenceNumber,
-    bodyContent: includeContent ? core.serializeTaskContent(task.document) : undefined,
+    content: includeContent ? core.serializeTaskContent(task.document) : undefined,
     sections: includeContent ? transformTaskSections(task) : undefined,
   };
 
@@ -238,7 +238,7 @@ export async function transformParentTask(
       percentage: subtaskCount > 0 ? Math.round((completedCount / subtaskCount) * 100) : 0,
     },
     subtaskIds: parentData.subtasks.map((st) => st.metadata.id),
-    overviewContent: includeContent ? core.serializeTaskContent(task.document) : undefined,
+    content: includeContent ? core.serializeTaskContent(task.document) : undefined,
     sections: includeContent ? transformTaskSections(task) : undefined,
     subtasks: includeSubtasks
       ? parentData.subtasks.map((st) => transformSubTask(st, includeContent))

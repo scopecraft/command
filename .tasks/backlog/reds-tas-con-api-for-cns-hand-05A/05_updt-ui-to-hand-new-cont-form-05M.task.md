@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: To Do
+status: in_progress
 area: ui
 tags:
   - ui
@@ -27,11 +27,11 @@ Update the UI components to handle the new content format and display clean cont
 - Content parsers
 
 ## Tasks
-- [ ] Update TaskContent to use new content fields
-- [ ] Modify API client to request content-only
+- [x] Update TaskContent to use new content fields
+- [x] Modify API client to request content-only
 - [ ] Update task edit forms to handle sections
 - [ ] Add support for custom section display
-- [ ] Update mock data with new format
+- [x] Update mock data with new format
 - [ ] Test content rendering without metadata
 - [ ] Update Storybook stories
 

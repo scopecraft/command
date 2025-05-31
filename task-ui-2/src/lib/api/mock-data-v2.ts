@@ -16,29 +16,29 @@ export const mockV2SimpleTasks: Task[] = [
     tags: ['auth', 'security', 'urgent'],
     path: '/current/simple-001.md',
     filename: 'simple-001.md',
-    content: `# Fix Authentication Bug
-
+    content: `## Instruction
 Users are experiencing login failures when using social auth providers.
 
-## Steps to Reproduce
+### Steps to Reproduce
 1. Navigate to login page
 2. Click "Login with Google"
 3. Complete OAuth flow
 4. Returns to app with error
 
-## Expected Behavior
+### Expected Behavior
 User should be logged in successfully.
 
-## Investigation Notes
-- Issue appears to be related to OAuth callback URL configuration
-- Only affects Google and GitHub providers
-- Local auth works fine
+## Tasks
+- [ ] Check OAuth app configuration in Google Console
+- [ ] Verify callback URLs match production domain
+- [ ] Test with different providers
+- [ ] Update error handling for better UX
 
-## Solution Plan
-1. Check OAuth app configuration in Google Console
-2. Verify callback URLs match production domain
-3. Test with different providers
-4. Update error handling for better UX`,
+## Deliverable
+Working social authentication for all providers
+
+## Log
+- 2025-05-28: Investigation started - issue appears OAuth callback related`,
   },
   {
     id: 'simple-002',
@@ -50,18 +50,20 @@ User should be logged in successfully.
     created_date: '2025-05-20',
     updated_date: '2025-05-20',
     tags: ['docs', 'api'],
-    content: `# Update API Documentation
-
+    content: `## Instruction
 Bring the API docs up to date with recent endpoint changes.
 
-## Changes Needed
-- Add new authentication endpoints
-- Update rate limiting documentation
-- Document new error response formats
-- Add examples for new features
+## Tasks
+- [ ] Add new authentication endpoints
+- [ ] Update rate limiting documentation
+- [ ] Document new error response formats
+- [ ] Add examples for new features
 
-## Timeline
-Target completion: End of sprint`,
+## Deliverable
+Updated API documentation with all recent changes
+
+## Log
+- 2025-05-20: Task created - target completion end of sprint`,
   },
   {
     id: 'simple-003',
@@ -74,20 +76,20 @@ Target completion: End of sprint`,
     updated_date: '2025-04-15',
     archived_date: '2025-04',
     tags: ['database', 'performance'],
-    content: `# Refactor Database Connection Pooling
+    content: `## Instruction
+Improve database connection management for better performance.
 
-Completed: Improved database connection management for better performance.
+## Tasks
+- [x] Migrate from basic connection to connection pooling
+- [x] Optimize pool size based on load testing
+- [x] Add connection health checks
+- [x] Implement graceful shutdown handling
 
-## What Was Done
-- Migrated from basic connection to connection pooling
-- Optimized pool size based on load testing
-- Added connection health checks
-- Implemented graceful shutdown handling
+## Deliverable
+Improved database connection system with better performance
 
-## Results
-- 40% improvement in response times
-- Reduced connection errors to near zero
-- Better resource utilization`,
+## Log
+- 2025-04-15: Completed - 40% improvement in response times, reduced connection errors to near zero`,
   },
 ];
 
@@ -104,19 +106,19 @@ export const mockV2Subtasks: Task[] = [
     created_date: '2025-05-10',
     updated_date: '2025-05-15',
     tags: ['database', 'schema'],
-    content: `# Setup Authentication Database Schema
-
+    content: `## Instruction
 Create tables for user authentication and sessions.
 
-## Tables Created
-- users (id, email, password_hash, created_at, updated_at)
-- sessions (id, user_id, token, expires_at, created_at)
-- oauth_providers (id, user_id, provider, provider_id, created_at)
+## Tasks
+- [x] Create users table (id, email, password_hash, created_at, updated_at)
+- [x] Create sessions table (id, user_id, token, expires_at, created_at)
+- [x] Create oauth_providers table (id, user_id, provider, provider_id, created_at)
 
-## Migration Status
-✅ Development database updated
-✅ Test database updated  
-✅ Production migration ready`,
+## Deliverable
+Complete database schema for authentication system
+
+## Log
+- 2025-05-15: Migration completed - dev, test, and production ready`,
   },
   {
     id: 'subtask-002',
@@ -130,16 +132,21 @@ Create tables for user authentication and sessions.
     created_date: '2025-05-12',
     updated_date: '2025-05-28',
     tags: ['security', 'middleware'],
-    content: `# Add Password Hashing Middleware
-
+    content: `## Instruction
 Implement bcrypt hashing for password security.
 
-## Progress
-- ✅ Installed bcrypt dependency
-- ✅ Created hashing utility functions  
-- 🔄 Currently: Integrating with registration endpoint
-- ⏳ TODO: Add to password change endpoint
-- ⏳ TODO: Write unit tests
+## Tasks
+- [x] Install bcrypt dependency
+- [x] Create hashing utility functions
+- [ ] Integrate with registration endpoint
+- [ ] Add to password change endpoint
+- [ ] Write unit tests
+
+## Deliverable
+Secure password hashing middleware integrated into auth system
+
+## Log
+- 2025-05-28: In progress - working on registration endpoint integration
 
 ## Security Notes
 - Using bcrypt with salt rounds: 12
@@ -185,16 +192,20 @@ Add middleware to validate JWT tokens on protected routes.
     created_date: '2025-05-13',
     updated_date: '2025-05-13',
     tags: ['api', 'endpoint'],
-    content: `# Create Login Endpoint
-
+    content: `## Instruction
 Build POST /auth/login endpoint with validation.
 
-## Specification
-- **Endpoint**: POST /auth/login
-- **Body**: { email: string, password: string }
-- **Response**: { token: string, user: UserProfile }
-- **Validation**: Email format, password requirements
-- **Error Handling**: Invalid credentials, account locked, etc.
+## Tasks
+- [ ] Create POST /auth/login endpoint
+- [ ] Validate email format and password requirements
+- [ ] Return JWT token and user profile on success
+- [ ] Handle invalid credentials errors
+- [ ] Add account lockout protection
+
+## Deliverable
+Functional login endpoint with proper validation and error handling
+
+## Log
 
 ## Parallel with Logout
 This task can be developed in parallel with the logout endpoint (04b).`,
@@ -296,7 +307,7 @@ export const mockV2ParentTasks: ParentTask[] = [
     created_date: '2025-05-10',
     updated_date: '2025-05-28',
     tags: ['security', 'backend', 'api', 'authentication'],
-    overview: `# User Authentication System
+    content: `# User Authentication System
 
 Implement complete user authentication system with JWT tokens, password hashing, and session management. Includes login, logout, and password reset functionality.
 
@@ -326,7 +337,6 @@ The authentication system follows industry best practices:
 - Database schema completed ✅
 - Password hashing in progress 🔄
 - Remaining tasks depend on infrastructure setup`,
-    content: '',
     subtasks: [
       'subtask-001',
       'subtask-002',
@@ -351,7 +361,7 @@ The authentication system follows industry best practices:
     created_date: '2025-05-25',
     updated_date: '2025-05-25',
     tags: ['api', 'security', 'performance'],
-    overview: `# API Rate Limiting
+    content: `# API Rate Limiting
 
 Implement comprehensive rate limiting to protect API endpoints from abuse and ensure fair usage.
 
@@ -382,7 +392,6 @@ Implement comprehensive rate limiting to protect API endpoints from abuse and en
 - Rate limiting doesn't impact normal usage
 - System remains performant under high load
 - Easy configuration for different environments`,
-    content: '',
     subtasks: [],
     progress: {
       completed: 0,
@@ -400,7 +409,7 @@ Implement comprehensive rate limiting to protect API endpoints from abuse and en
     created_date: '2025-03-01',
     updated_date: '2025-04-20',
     tags: ['database', 'migration', 'postgresql'],
-    overview: `# Database Migration to PostgreSQL
+    content: `# Database Migration to PostgreSQL
 
 Successfully migrated from SQLite to PostgreSQL for improved performance and scalability.
 
@@ -423,7 +432,6 @@ Successfully migrated from SQLite to PostgreSQL for improved performance and sca
 - Early performance testing saved significant rework
 - Staged migration approach minimized downtime
 - Connection pooling crucial for performance`,
-    content: '',
     subtasks: [],
     progress: {
       completed: 6,

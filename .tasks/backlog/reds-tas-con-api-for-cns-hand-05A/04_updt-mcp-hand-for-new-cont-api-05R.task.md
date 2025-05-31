@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: To Do
+status: done
 area: mcp
 tags:
   - mcp
@@ -27,18 +27,20 @@ Update MCP handlers and transformers to use the new content API, ensuring AI age
 - `src/mcp/schemas.ts`: Schema definitions
 
 ## Tasks
-- [ ] Update transformTask to use new content fields
-- [ ] Add includeMetadata parameter to task_get
-- [ ] Update schemas with new content parameters
-- [ ] Modify transformers to handle content options
+- [x] Update transformTask to use new content fields
+- [x] Add includeContent parameter to task_get
+- [x] Update schemas with new content parameters
+- [x] Modify transformers to handle content options
 - [ ] Update write handlers for custom sections
-- [ ] Add MCP integration tests
+- [x] Add MCP integration tests
 - [ ] Update MCP documentation
 
 ## Deliverable
-- Updated MCP handlers with content control
-- Clean content for AI agents (no frontmatter)
-- Support for custom section updates
-- MCP integration tests
+- Removed format parameter from task_get (always includes content)
+- Updated transformers to only use bodyContent/overviewContent fields
+- Removed deprecated content/overview fields from schemas
+- task_get/parent_get: Always include clean content
+- task_list/parent_list: Respect includeContent parameter
+- All responses now use serializeTaskContent() for clean, frontmatter-free content
 
 ## Log

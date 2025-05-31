@@ -17,10 +17,10 @@ function ParentDetailPage() {
   const [isEditing, setIsEditing] = React.useState(false)
   const [content, setContent] = React.useState('')
   
-  // Update content when parent data loads - normalized API provides clean overview
+  // Update content when parent data loads - normalized API provides clean content
   React.useEffect(() => {
     if (parentData?.success && parentData.data) {
-      setContent(parentData.data.overview || '')
+      setContent(parentData.data.content || '')
     }
   }, [parentData])
   
@@ -60,7 +60,7 @@ function ParentDetailPage() {
   
   const handleCancel = () => {
     if (parentData?.success && parentData.data) {
-      setContent(parentData.data.overview || '')
+      setContent(parentData.data.content || '')
     }
     setIsEditing(false)
   }
