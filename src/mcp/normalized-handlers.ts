@@ -219,12 +219,11 @@ export async function handleTaskGetNormalized(rawParams: unknown): Promise<McpRe
       return createErrorResponse(result.error || 'Task not found');
     }
 
-    // Transform to normalized schema
-    const includeContent = params.format === 'full';
+    // Transform to normalized schema - always include content for get operations
     const normalizedTask = await transformTask(
       projectRoot,
       result.data,
-      includeContent,
+      true, // Always include content for task_get
       false // task_get does NOT include subtasks (use parent_get for that)
     );
 

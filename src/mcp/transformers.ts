@@ -171,7 +171,6 @@ export function transformSimpleTask(task: core.Task, includeContent = false): Si
   const simpleTask: SimpleTask = {
     ...baseTask,
     taskStructure: 'simple' as const,
-    content: includeContent ? core.serializeTaskDocument(task.document) : undefined,
     bodyContent: includeContent ? core.serializeTaskContent(task.document) : undefined,
     sections: includeContent ? transformTaskSections(task) : undefined,
   };
@@ -195,7 +194,6 @@ export function transformSubTask(task: core.Task, includeContent = false): SubTa
     taskStructure: 'subtask' as const,
     parentId: task.metadata.parentTask,
     sequenceNumber: task.metadata.sequenceNumber,
-    content: includeContent ? core.serializeTaskDocument(task.document) : undefined,
     bodyContent: includeContent ? core.serializeTaskContent(task.document) : undefined,
     sections: includeContent ? transformTaskSections(task) : undefined,
   };
@@ -240,7 +238,6 @@ export async function transformParentTask(
       percentage: subtaskCount > 0 ? Math.round((completedCount / subtaskCount) * 100) : 0,
     },
     subtaskIds: parentData.subtasks.map((st) => st.metadata.id),
-    overview: includeContent ? core.serializeTaskDocument(task.document) : undefined,
     overviewContent: includeContent ? core.serializeTaskContent(task.document) : undefined,
     sections: includeContent ? transformTaskSections(task) : undefined,
     subtasks: includeSubtasks
