@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
 import { mockV2ParentTasks, mockV2SimpleTasks } from '../../lib/api/mock-data-v2';
 import { Button } from '../ui/button';
-import { TaskTable, type TableTask } from './TaskTable';
+import { type TableTask, TaskTable } from './TaskTable';
 
 const meta: Meta<typeof TaskTable> = {
   title: 'V2 Components/TaskTable',
@@ -11,7 +11,8 @@ const meta: Meta<typeof TaskTable> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'A reusable table component for displaying both parent tasks and simple tasks with selection, sorting, and actions.',
+        component:
+          'A reusable table component for displaying both parent tasks and simple tasks with selection, sorting, and actions.',
       },
     },
   },
@@ -37,8 +38,8 @@ type Story = StoryObj<typeof TaskTable>;
 
 // Prepare combined task data
 const allTasks: TableTask[] = [
-  ...mockV2ParentTasks.map(task => ({ ...task, task_type: 'parent' as const })),
-  ...mockV2SimpleTasks.map(task => ({ ...task, task_type: 'simple' as const })),
+  ...mockV2ParentTasks.map((task) => ({ ...task, task_type: 'parent' as const })),
+  ...mockV2SimpleTasks.map((task) => ({ ...task, task_type: 'simple' as const })),
 ];
 
 export const Default: Story = {
@@ -53,7 +54,7 @@ export const Default: Story = {
 export const WithSelection: Story = {
   render: () => {
     const [selectedRows, setSelectedRows] = React.useState<Record<string, boolean>>({});
-    
+
     return (
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -69,7 +70,7 @@ export const WithSelection: Story = {
             </div>
           )}
         </div>
-        
+
         <TaskTable
           tasks={allTasks}
           selectable={true}
@@ -85,7 +86,7 @@ export const WithSelection: Story = {
 
 export const ParentTasksOnly: Story = {
   args: {
-    tasks: mockV2ParentTasks.map(task => ({ ...task, task_type: 'parent' as const })),
+    tasks: mockV2ParentTasks.map((task) => ({ ...task, task_type: 'parent' as const })),
     selectable: true,
     onRowClick: (task) => console.log('Open parent task detail:', task.title),
     onParentTaskClick: (parentId) => console.log('Navigate to parent:', parentId),
@@ -94,8 +95,8 @@ export const ParentTasksOnly: Story = {
 
 export const ParentTasksWithProgress: Story = {
   args: {
-    tasks: mockV2ParentTasks.map(task => ({ 
-      ...task, 
+    tasks: mockV2ParentTasks.map((task) => ({
+      ...task,
       task_type: 'parent' as const,
       subtask_count: Math.floor(Math.random() * 10) + 1,
       subtask_completed: Math.floor(Math.random() * 5),
@@ -108,7 +109,8 @@ export const ParentTasksWithProgress: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Shows parent tasks with subtask progress indicators including count and percentage completion with visual progress bars.',
+        story:
+          'Shows parent tasks with subtask progress indicators including count and percentage completion with visual progress bars.',
       },
     },
   },
@@ -116,7 +118,7 @@ export const ParentTasksWithProgress: Story = {
 
 export const SimpleTasksOnly: Story = {
   args: {
-    tasks: mockV2SimpleTasks.map(task => ({ ...task, task_type: 'simple' as const })),
+    tasks: mockV2SimpleTasks.map((task) => ({ ...task, task_type: 'simple' as const })),
     selectable: false,
     onRowClick: (task) => console.log('Open simple task detail:', task.title),
     onParentTaskClick: (parentId) => console.log('Navigate to parent:', parentId),
@@ -125,7 +127,7 @@ export const SimpleTasksOnly: Story = {
 
 export const FilteredByWorkflow: Story = {
   args: {
-    tasks: allTasks.filter(task => task.workflow_state === 'current'),
+    tasks: allTasks.filter((task) => task.workflow_state === 'current'),
     selectable: true,
     onRowClick: (task) => console.log('Current task clicked:', task.title),
     onTaskAction: (action, task) => console.log(`${action} action:`, task.title),
@@ -144,7 +146,7 @@ export const WithCustomActions: Story = {
   render: () => {
     const [selectedRows, setSelectedRows] = React.useState<Record<string, boolean>>({});
     const selectedCount = Object.values(selectedRows).filter(Boolean).length;
-    
+
     return (
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -154,22 +156,22 @@ export const WithCustomActions: Story = {
               <span className="text-sm text-muted-foreground">
                 {selectedCount} task{selectedCount === 1 ? '' : 's'} selected
               </span>
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 size="sm"
                 onClick={() => console.log('Moving tasks to current...')}
               >
                 Move to Current
               </Button>
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 size="sm"
                 onClick={() => console.log('Archiving tasks...')}
               >
                 Archive
               </Button>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 size="sm"
                 onClick={() => console.log('Deleting tasks...')}
               >
@@ -178,7 +180,7 @@ export const WithCustomActions: Story = {
             </div>
           )}
         </div>
-        
+
         <TaskTable
           tasks={allTasks}
           selectable={true}
@@ -194,12 +196,13 @@ export const WithCustomActions: Story = {
           }}
           onParentTaskClick={(parentId) => console.log('Navigate to parent:', parentId)}
         />
-        
+
         {selectedCount > 0 && (
           <div className="text-sm text-muted-foreground">
-            Selected tasks: {Object.entries(selectedRows)
+            Selected tasks:{' '}
+            {Object.entries(selectedRows)
               .filter(([_, selected]) => selected)
-              .map(([taskId]) => allTasks.find(t => t.id === taskId)?.title)
+              .map(([taskId]) => allTasks.find((t) => t.id === taskId)?.title)
               .join(', ')}
           </div>
         )}

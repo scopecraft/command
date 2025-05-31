@@ -175,7 +175,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       }
       
       if (req.method === 'POST') {
-        const result = await handleTaskCreate(params);
+        const result = await methodRegistry[McpMethod.TASK_CREATE](params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 201 : 400,
           headers: corsHeaders
@@ -195,7 +195,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       }
       
       if (req.method === 'PUT' || req.method === 'PATCH') {
-        const result = await handleTaskUpdate({ id, updates: params });
+        const result = await methodRegistry[McpMethod.TASK_UPDATE]({ id, updates: params });
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
           headers: corsHeaders
@@ -203,7 +203,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       }
       
       if (req.method === 'DELETE') {
-        const result = await handleTaskDelete({ id });
+        const result = await methodRegistry[McpMethod.TASK_DELETE]({ id });
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
           headers: corsHeaders
@@ -211,36 +211,39 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       }
     }
     
-    if (path === '/tasks/next') {
-      if (req.method === 'GET') {
-        const result = await handleTaskNext(params);
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 200 : 400,
-          headers: corsHeaders
-        });
-      }
-    }
+    // TODO: Implement task_next handler in methodRegistry
+    // if (path === '/tasks/next') {
+    //   if (req.method === 'GET') {
+    //     const result = await methodRegistry[McpMethod.TASK_NEXT](params);
+    //     return new Response(JSON.stringify(result), { 
+    //       status: result.success ? 200 : 400,
+    //       headers: corsHeaders
+    //     });
+    //   }
+    // }
     
     
-    if (path === '/workflow/current') {
-      if (req.method === 'GET') {
-        const result = await handleWorkflowCurrent(params);
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 200 : 400,
-          headers: corsHeaders
-        });
-      }
-    }
+    // TODO: Implement workflow_current handler in methodRegistry
+    // if (path === '/workflow/current') {
+    //   if (req.method === 'GET') {
+    //     const result = await methodRegistry[McpMethod.WORKFLOW_CURRENT](params);
+    //     return new Response(JSON.stringify(result), { 
+    //       status: result.success ? 200 : 400,
+    //       headers: corsHeaders
+    //     });
+    //   }
+    // }
     
-    if (path === '/workflow/mark-complete-next') {
-      if (req.method === 'POST') {
-        const result = await handleWorkflowMarkCompleteNext(params);
-        return new Response(JSON.stringify(result), { 
-          status: result.success ? 200 : 400,
-          headers: corsHeaders
-        });
-      }
-    }
+    // TODO: Implement workflow_mark_complete_next handler in methodRegistry
+    // if (path === '/workflow/mark-complete-next') {
+    //   if (req.method === 'POST') {
+    //     const result = await methodRegistry[McpMethod.WORKFLOW_MARK_COMPLETE_NEXT](params);
+    //     return new Response(JSON.stringify(result), { 
+    //       status: result.success ? 200 : 400,
+    //       headers: corsHeaders
+    //     });
+    //   }
+    // }
     
     // Parent Task endpoints
     if (path === '/parents') {
@@ -261,7 +264,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       }
       
       if (req.method === 'POST') {
-        const result = await handleParentCreate(params);
+        const result = await methodRegistry[McpMethod.PARENT_CREATE](params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 201 : 400,
           headers: corsHeaders
@@ -283,7 +286,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       
       if (req.method === 'POST') {
         // Parent operations (resequence, parallelize, add_subtask)
-        const result = await handleParentOperations({ parent_id, ...params });
+        const result = await methodRegistry[McpMethod.PARENT_OPERATIONS]({ parent_id, ...params });
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
           headers: corsHeaders
@@ -295,7 +298,7 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
     // Task Move endpoint
     if (path === '/tasks/move') {
       if (req.method === 'POST') {
-        const result = await handleTaskMove(params);
+        const result = await methodRegistry[McpMethod.TASK_MOVE](params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
           headers: corsHeaders

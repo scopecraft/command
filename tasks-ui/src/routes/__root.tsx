@@ -1,12 +1,12 @@
-import { Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { useState } from 'react'
-import { Sidebar } from '../components/v2/Sidebar'
-import { Button } from '../components/ui/button'
-import { Menu, Moon, Sun } from 'lucide-react'
-import { cn } from '../lib/utils'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Outlet, createRootRoute, useNavigate } from '@tanstack/react-router';
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { Menu, Moon, Sun } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '../components/ui/button';
+import { Sidebar } from '../components/v2/Sidebar';
+import { cn } from '../lib/utils';
 
 // Create a query client
 const queryClient = new QueryClient({
@@ -18,22 +18,22 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: true,
     },
   },
-})
+});
 
 export const Route = createRootRoute({
   component: RootComponent,
-})
+});
 
 function RootComponent() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [darkMode, setDarkMode] = useState(false)
-  const navigate = useNavigate()
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+  const navigate = useNavigate();
 
   // Toggle dark mode class on document
   if (darkMode) {
-    document.documentElement.classList.add('dark')
+    document.documentElement.classList.add('dark');
   } else {
-    document.documentElement.classList.remove('dark')
+    document.documentElement.classList.remove('dark');
   }
 
   return (
@@ -50,7 +50,7 @@ function RootComponent() {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            
+
             {/* Logo */}
             <div
               className="flex items-center gap-3 cursor-pointer"
@@ -62,12 +62,14 @@ function RootComponent() {
                 S
               </div>
               <div className="flex flex-col">
-                <h1 className="text-lg font-bold text-foreground uppercase leading-tight">Scopecraft</h1>
+                <h1 className="text-lg font-bold text-foreground uppercase leading-tight">
+                  Scopecraft
+                </h1>
                 <div className="text-[10px] text-muted-foreground uppercase">TASK MANAGER V2</div>
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -92,25 +94,27 @@ function RootComponent() {
                 aria-hidden="true"
               />
               {/* Sidebar */}
-              <div className={cn(
-                "fixed md:relative z-50 md:z-auto h-full w-64 border-r border-border bg-background",
-                "md:block"
-              )}>
+              <div
+                className={cn(
+                  'fixed md:relative z-50 md:z-auto h-full w-64 border-r border-border bg-background',
+                  'md:block'
+                )}
+              >
                 <Sidebar onNavigate={(path) => navigate({ to: path })} />
               </div>
             </>
           )}
-          
+
           {/* Main content */}
           <main className="flex-1 overflow-auto p-4 bg-background">
             <Outlet />
           </main>
         </div>
       </div>
-      
+
       {/* Dev tools */}
       <TanStackRouterDevtools position="bottom-right" />
       <ReactQueryDevtools position="bottom-left" />
     </QueryClientProvider>
-  )
+  );
 }

@@ -16,9 +16,7 @@ export function MessageStream({ messages }: MessageStreamProps) {
           No messages yet. Send a prompt to start the conversation.
         </div>
       ) : (
-        messages.map((message) => (
-          <MessageDisplay key={message.id} message={message} />
-        ))
+        messages.map((message) => <MessageDisplay key={message.id} message={message} />)
       )}
     </div>
   );

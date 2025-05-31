@@ -25,7 +25,7 @@ export type {
   TaskPriority,
   V2Config,
   StructureVersion,
-  MigrationResult
+  MigrationResult,
 } from '../../../../src/core/v2/types';
 
 // UI-specific area model (simplified for organizational purposes)

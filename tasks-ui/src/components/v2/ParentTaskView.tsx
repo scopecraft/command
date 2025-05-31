@@ -1,50 +1,51 @@
-import React from 'react'
-import ReactMarkdown from 'react-markdown'
-import rehypeRaw from 'rehype-raw'
-import remarkGfm from 'remark-gfm'
-import { useNavigate } from '@tanstack/react-router'
-import { Button } from '../ui/button'
-import { TaskTypeIcon } from './TaskTypeIcon'
-import { StatusBadge, PriorityIndicator, WorkflowStateBadge } from './WorkflowStateBadge'
-import { ClaudeAgentButton } from './ClaudeAgentButton'
-import { SubtaskList } from './SubtaskList'
-import { SubtasksIcon, DocumentsIcon } from '../../lib/icons'
-import { getTaskUrl } from '../../lib/task-routing'
+import { useNavigate } from '@tanstack/react-router';
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import { DocumentsIcon, SubtasksIcon } from '../../lib/icons';
+import { getTaskUrl } from '../../lib/task-routing';
+import { Button } from '../ui/button';
+import { ClaudeAgentButton } from './ClaudeAgentButton';
+import { SubtaskList } from './SubtaskList';
+import { TaskTypeIcon } from './TaskTypeIcon';
+import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 interface ParentTaskViewProps {
-  task: any
-  subtasks: any[]
-  documents?: any[]
-  content: string
-  isEditing: boolean
-  onEdit: () => void
-  onCancel: () => void
-  onSave: () => void
-  onContentChange: (content: string) => void
-  isUpdating?: boolean
+  task: any;
+  subtasks: any[];
+  documents?: any[];
+  content: string;
+  isEditing: boolean;
+  onEdit: () => void;
+  onCancel: () => void;
+  onSave: () => void;
+  onContentChange: (content: string) => void;
+  isUpdating?: boolean;
 }
 
-export function ParentTaskView({ 
-  task, 
+export function ParentTaskView({
+  task,
   subtasks,
   documents = [],
-  content, 
-  isEditing, 
-  onEdit, 
-  onCancel, 
-  onSave, 
+  content,
+  isEditing,
+  onEdit,
+  onCancel,
+  onSave,
   onContentChange,
-  isUpdating = false 
+  isUpdating = false,
 }: ParentTaskViewProps) {
-  const navigate = useNavigate()
-  const metadata = task.metadata || task
-  
+  const navigate = useNavigate();
+  const metadata = task.metadata || task;
+
   // Ensure subtasks have parent context for proper URL generation
-  const subtasksWithParent = subtasks.map(subtask => ({
+  const subtasksWithParent = subtasks.map((subtask) => ({
     ...subtask,
     // Add parent task reference if not already present
-    parent_task: subtask.parent_task || subtask.metadata?.parentTask || (task.id || task.metadata?.id)
-  }))
+    parent_task:
+      subtask.parent_task || subtask.metadata?.parentTask || task.id || task.metadata?.id,
+  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,7 +123,10 @@ export function ParentTaskView({
                 >
                   Edit
                 </Button>
-                <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={onEdit}>
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                  onClick={onEdit}
+                >
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {content || '*No overview yet. Click Edit to add details.*'}
                   </ReactMarkdown>
@@ -141,23 +145,29 @@ export function ParentTaskView({
                   <h3 className="font-semibold text-foreground">Subtasks</h3>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {subtasks.filter((t) => (t.metadata?.status || t.status) === 'Done').length}/{subtasks.length}
+                  {subtasks.filter((t) => (t.metadata?.status || t.status) === 'Done').length}/
+                  {subtasks.length}
                 </div>
               </div>
-              
+
               {/* Progress Bar */}
               {subtasks.length > 0 && (
                 <div className="mb-4">
                   <div className="w-full bg-muted rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-primary h-2 rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${Math.round((subtasks.filter(t => (t.metadata?.status || t.status) === 'Done').length / subtasks.length) * 100)}%` 
+                      style={{
+                        width: `${Math.round((subtasks.filter((t) => (t.metadata?.status || t.status) === 'Done').length / subtasks.length) * 100)}%`,
                       }}
                     />
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {Math.round((subtasks.filter(t => (t.metadata?.status || t.status) === 'Done').length / subtasks.length) * 100)}% complete
+                    {Math.round(
+                      (subtasks.filter((t) => (t.metadata?.status || t.status) === 'Done').length /
+                        subtasks.length) *
+                        100
+                    )}
+                    % complete
                   </div>
                 </div>
               )}
@@ -168,8 +178,8 @@ export function ParentTaskView({
                   subtasks={subtasksWithParent}
                   variant="compact"
                   onTaskClick={(task) => {
-                    const url = getTaskUrl(task)
-                    navigate({ to: url })
+                    const url = getTaskUrl(task);
+                    navigate({ to: url });
                   }}
                 />
               ) : (
@@ -201,9 +211,7 @@ export function ParentTaskView({
                   <DocumentsIcon size="md" className="text-muted-foreground" />
                   <h3 className="font-semibold text-foreground">Documents</h3>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {documents.length}
-                </div>
+                <div className="text-sm text-muted-foreground">{documents.length}</div>
               </div>
 
               {/* Documents List */}
@@ -211,12 +219,16 @@ export function ParentTaskView({
                 <div className="space-y-2">
                   {documents.map((doc) => {
                     // Extract document type from filename (e.g., "plan", "architecture", "design")
-                    const docType = doc.toLowerCase().includes('plan') ? 'plan' :
-                                  doc.toLowerCase().includes('architecture') ? 'architecture' :
-                                  doc.toLowerCase().includes('design') ? 'design' :
-                                  doc.toLowerCase().includes('analysis') ? 'analysis' :
-                                  'document';
-                    
+                    const docType = doc.toLowerCase().includes('plan')
+                      ? 'plan'
+                      : doc.toLowerCase().includes('architecture')
+                        ? 'architecture'
+                        : doc.toLowerCase().includes('design')
+                          ? 'design'
+                          : doc.toLowerCase().includes('analysis')
+                            ? 'analysis'
+                            : 'document';
+
                     return (
                       <button
                         key={doc}
@@ -259,5 +271,5 @@ export function ParentTaskView({
         </div>
       </div>
     </div>
-  )
+  );
 }

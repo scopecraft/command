@@ -1,15 +1,15 @@
-import { createFileRoute } from '@tanstack/react-router'
-import React from 'react'
-import ReactMarkdown from 'react-markdown'
-import rehypeRaw from 'rehype-raw'
-import remarkGfm from 'remark-gfm'
-import { useTask, useParentTask, useSubtasks, useUpdateTask } from '../../../lib/api/hooks'
-import { Button } from '../../../components/ui/button'
-import { TaskTypeIcon } from '../../../components/v2/TaskTypeIcon'
-import { StatusBadge, PriorityIndicator } from '../../../components/v2/WorkflowStateBadge'
-import { ClaudeAgentButton } from '../../../components/v2/ClaudeAgentButton'
-import { SubtaskList } from '../../../components/v2/SubtaskList'
-import { SubtasksIcon } from '../../../lib/icons'
+import { createFileRoute } from '@tanstack/react-router';
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import { Button } from '../../../components/ui/button';
+import { ClaudeAgentButton } from '../../../components/v2/ClaudeAgentButton';
+import { SubtaskList } from '../../../components/v2/SubtaskList';
+import { TaskTypeIcon } from '../../../components/v2/TaskTypeIcon';
+import { PriorityIndicator, StatusBadge } from '../../../components/v2/WorkflowStateBadge';
+import { useParentTask, useSubtasks, useTask, useUpdateTask } from '../../../lib/api/hooks';
+import { SubtasksIcon } from '../../../lib/icons';
 
 // TODO: DELETE THIS HELPER FUNCTION ONCE CORE TEAM FIXES THE API
 // Task created: add-par-to-get-tas-con-wit-05A
@@ -17,68 +17,68 @@ import { SubtasksIcon } from '../../../lib/icons'
 // so UI doesn't need to parse and strip it manually
 // Helper function to extract content without frontmatter
 function extractContentWithoutFrontmatter(content: string): string {
-  if (!content) return ''
-  
+  if (!content) return '';
+
   // Split content into lines
-  const lines = content.split('\n')
-  
+  const lines = content.split('\n');
+
   // Skip title line (starts with #)
-  let startIndex = 0
+  let startIndex = 0;
   if (lines[0]?.startsWith('# ')) {
-    startIndex = 1
+    startIndex = 1;
   }
-  
+
   // Skip empty line after title
   if (lines[startIndex] === '') {
-    startIndex++
+    startIndex++;
   }
-  
+
   // Find the end of frontmatter (look for ending ---)
-  let endOfFrontmatter = startIndex
+  let endOfFrontmatter = startIndex;
   if (lines[startIndex] === '---') {
     // Find closing ---
     for (let i = startIndex + 1; i < lines.length; i++) {
       if (lines[i] === '---') {
-        endOfFrontmatter = i + 1
-        break
+        endOfFrontmatter = i + 1;
+        break;
       }
     }
   }
-  
+
   // Skip empty line after frontmatter
   if (lines[endOfFrontmatter] === '') {
-    endOfFrontmatter++
+    endOfFrontmatter++;
   }
-  
+
   // Return everything after frontmatter
-  return lines.slice(endOfFrontmatter).join('\n').trim()
+  return lines.slice(endOfFrontmatter).join('\n').trim();
 }
 
 export const Route = createFileRoute('/tasks/$parentId/$subtaskId')({
   component: SubtaskDetailPage,
-})
+});
 
 function SubtaskDetailPage() {
-  const { parentId, subtaskId } = Route.useParams()
-  
-  const { data: subtaskData, isLoading, error } = useTask(subtaskId, parentId)
-  const { data: parentData } = useParentTask(parentId)
-  const { data: subtasksData } = useSubtasks({ parent_id: parentId })
-  const updateTask = useUpdateTask()
-  
-  const [isEditing, setIsEditing] = React.useState(false)
-  const [content, setContent] = React.useState('')
-  
+  const { parentId, subtaskId } = Route.useParams();
+
+  const { data: subtaskData, isLoading, error } = useTask(subtaskId, parentId);
+  const { data: parentData } = useParentTask(parentId);
+  const { data: subtasksData } = useSubtasks({ parent_id: parentId });
+  const updateTask = useUpdateTask();
+
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [content, setContent] = React.useState('');
+
   // Update content when task data loads
   React.useEffect(() => {
     if (subtaskData?.success && subtaskData.data) {
       // Extract content without frontmatter for editing
-      const fullContent = subtaskData.data.content || ''
-      const contentWithoutFrontmatter = extractContentWithoutFrontmatter(fullContent)
-      setContent(contentWithoutFrontmatter)
+      const fullContent = subtaskData.data.content || '';
+      const contentWithoutFrontmatter = extractContentWithoutFrontmatter(fullContent);
+      setContent(contentWithoutFrontmatter);
     }
-  }, [subtaskData])
-  
+  }, [subtaskData]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -87,7 +87,7 @@ function SubtaskDetailPage() {
           <p className="text-muted-foreground">Loading subtask...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !subtaskData?.success) {
@@ -100,42 +100,45 @@ function SubtaskDetailPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
-  const subtask = subtaskData.data
-  const parentTask = parentData?.success ? parentData.data : null
-  const subtasks = subtasksData?.success ? subtasksData.data : []
-  const metadata = subtask.metadata || subtask
+  const subtask = subtaskData.data;
+  const parentTask = parentData?.success ? parentData.data : null;
+  const subtasks = subtasksData?.success ? subtasksData.data : [];
+  const metadata = subtask.metadata || subtask;
 
   const handleEdit = () => {
-    setIsEditing(true)
-  }
+    setIsEditing(true);
+  };
 
   const handleCancel = () => {
     if (subtaskData?.success && subtaskData.data) {
       // Reset to saved version without frontmatter
-      const fullContent = subtaskData.data.content || ''
-      const contentWithoutFrontmatter = extractContentWithoutFrontmatter(fullContent)
-      setContent(contentWithoutFrontmatter)
+      const fullContent = subtaskData.data.content || '';
+      const contentWithoutFrontmatter = extractContentWithoutFrontmatter(fullContent);
+      setContent(contentWithoutFrontmatter);
     }
-    setIsEditing(false)
-  }
+    setIsEditing(false);
+  };
 
   const handleSave = () => {
-    updateTask.mutate({
-      id: subtaskId,
-      parent_id: parentId,
-      updates: {
-        // Update the full content - V2 tasks use 'content' field for full markdown
-        content: content,
+    updateTask.mutate(
+      {
+        id: subtaskId,
+        parent_id: parentId,
+        updates: {
+          // Update the full content - V2 tasks use 'content' field for full markdown
+          content: content,
+        },
+      },
+      {
+        onSuccess: () => {
+          setIsEditing(false);
+        },
       }
-    }, {
-      onSuccess: () => {
-        setIsEditing(false)
-      }
-    })
-  }
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -151,7 +154,7 @@ function SubtaskDetailPage() {
             <span>/</span>
             <span className="font-mono">{metadata.sequenceNumber || '01'}</span>
           </div>
-          
+
           {/* Subtask Header */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -209,14 +212,10 @@ function SubtaskDetailPage() {
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-foreground">Edit Subtask</h2>
                   <div className="flex items-center gap-2">
-                    <Button 
-                      onClick={handleCancel}
-                      variant="ghost"
-                      size="sm"
-                    >
+                    <Button onClick={handleCancel} variant="ghost" size="sm">
                       Cancel
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleSave}
                       variant="atlas"
                       size="sm"
@@ -249,11 +248,11 @@ function SubtaskDetailPage() {
                 >
                   Edit
                 </Button>
-                <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={handleEdit}>
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                  >
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                  onClick={handleEdit}
+                >
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {content || '*No content yet. Click Edit to add details.*'}
                   </ReactMarkdown>
                 </div>
@@ -271,10 +270,10 @@ function SubtaskDetailPage() {
                   <h3 className="font-semibold text-foreground">Sibling Subtasks</h3>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {subtasks.filter(t => t.status === 'Done').length}/{subtasks.length}
+                  {subtasks.filter((t) => t.status === 'Done').length}/{subtasks.length}
                 </div>
               </div>
-              
+
               {subtasks.length > 0 ? (
                 <SubtaskList
                   subtasks={subtasks}
@@ -292,5 +291,5 @@ function SubtaskDetailPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

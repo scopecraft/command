@@ -1,11 +1,11 @@
-import React from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import type { TaskStatus, TaskType, WorkflowState } from '../../lib/types';
+import React from 'react';
 import type { ApiResponse } from '../../lib/api/client';
+import type { TaskStatus, TaskType, WorkflowState } from '../../lib/types';
 import { Button } from '../ui/button';
 import { FilterCategory, FilterPanel } from '../ui/filter-panel';
 import { SearchInput } from '../ui/search-input';
-import { TaskTable, type TableTask } from './TaskTable';
+import { type TableTask, TaskTable } from './TaskTable';
 
 // Filter state interface
 interface TaskFilters {
@@ -30,15 +30,19 @@ interface TaskManagementViewProps {
   searchParams?: TaskSearchParams;
 }
 
-export function TaskManagementView({ className = '', data, searchParams = {} }: TaskManagementViewProps) {
+export function TaskManagementView({
+  className = '',
+  data,
+  searchParams = {},
+}: TaskManagementViewProps) {
   const navigate = useNavigate();
 
   // API now returns normalized data - minimal mapping needed
   const allTasks: TableTask[] = React.useMemo(() => {
     if (!data?.success || !data.data) return [];
-    
+
     // Data is already normalized, just ensure compatibility fields and defaults
-    return data.data.map(task => ({
+    return data.data.map((task) => ({
       ...task,
       // Legacy field mappings for UI compatibility
       workflow: task.workflowState,
@@ -55,40 +59,70 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
   // State management from URL search params
   const [selectedRows, setSelectedRows] = React.useState<Record<string, boolean>>({});
   const [showFilters, setShowFilters] = React.useState(false);
-  
+
   const searchQuery = searchParams.search || '';
-  const filters: TaskFilters = React.useMemo(() => ({
-    status: searchParams.status ? (Array.isArray(searchParams.status) ? searchParams.status : [searchParams.status]) as TaskStatus[] : [],
-    type: searchParams.type ? (Array.isArray(searchParams.type) ? searchParams.type : [searchParams.type]) as TaskType[] : [],
-    workflow: searchParams.workflow ? (Array.isArray(searchParams.workflow) ? searchParams.workflow : [searchParams.workflow]) as WorkflowState[] : [],
-    area: searchParams.area ? (Array.isArray(searchParams.area) ? searchParams.area : [searchParams.area]) : [],
-  }), [searchParams]);
+  const filters: TaskFilters = React.useMemo(
+    () => ({
+      status: searchParams.status
+        ? ((Array.isArray(searchParams.status)
+            ? searchParams.status
+            : [searchParams.status]) as TaskStatus[])
+        : [],
+      type: searchParams.type
+        ? ((Array.isArray(searchParams.type)
+            ? searchParams.type
+            : [searchParams.type]) as TaskType[])
+        : [],
+      workflow: searchParams.workflow
+        ? ((Array.isArray(searchParams.workflow)
+            ? searchParams.workflow
+            : [searchParams.workflow]) as WorkflowState[])
+        : [],
+      area: searchParams.area
+        ? Array.isArray(searchParams.area)
+          ? searchParams.area
+          : [searchParams.area]
+        : [],
+    }),
+    [searchParams]
+  );
 
   // Update search params via navigation
-  const updateSearchParams = React.useCallback((updates: Partial<TaskSearchParams>) => {
-    navigate({
-      search: (prev) => ({ ...prev, ...updates }),
-    });
-  }, [navigate]);
+  const updateSearchParams = React.useCallback(
+    (updates: Partial<TaskSearchParams>) => {
+      navigate({
+        search: (prev) => ({ ...prev, ...updates }),
+      });
+    },
+    [navigate]
+  );
 
-  const setSearchQuery = React.useCallback((query: string) => {
-    updateSearchParams({ search: query || undefined });
-  }, [updateSearchParams]);
+  const setSearchQuery = React.useCallback(
+    (query: string) => {
+      updateSearchParams({ search: query || undefined });
+    },
+    [updateSearchParams]
+  );
 
-  const setFilters = React.useCallback((newFilters: TaskFilters) => {
-    updateSearchParams({
-      status: newFilters.status.length ? newFilters.status : undefined,
-      type: newFilters.type.length ? newFilters.type : undefined,
-      workflow: newFilters.workflow.length ? newFilters.workflow : undefined,
-      area: newFilters.area.length ? newFilters.area : undefined,
-    });
-  }, [updateSearchParams]);
+  const setFilters = React.useCallback(
+    (newFilters: TaskFilters) => {
+      updateSearchParams({
+        status: newFilters.status.length ? newFilters.status : undefined,
+        type: newFilters.type.length ? newFilters.type : undefined,
+        workflow: newFilters.workflow.length ? newFilters.workflow : undefined,
+        area: newFilters.area.length ? newFilters.area : undefined,
+      });
+    },
+    [updateSearchParams]
+  );
 
   // Filter options
   const filterOptions = React.useMemo(() => {
     // Get unique values from tasks
-    const uniqueAreas = Array.from(new Set(allTasks.map(t => t.area).filter(Boolean))) as string[];
-    
+    const uniqueAreas = Array.from(
+      new Set(allTasks.map((t) => t.area).filter(Boolean))
+    ) as string[];
+
     return {
       status: [
         { value: 'todo' as TaskStatus, label: 'To Do' },
@@ -109,7 +143,7 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
         { value: 'current' as WorkflowState, label: 'Current' },
         { value: 'archive' as WorkflowState, label: 'Archive' },
       ],
-      area: uniqueAreas.map(area => ({ value: area, label: area })),
+      area: uniqueAreas.map((area) => ({ value: area, label: area })),
     };
   }, [allTasks]);
 
@@ -120,32 +154,33 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(task =>
-        task.title.toLowerCase().includes(query) ||
-        task.area?.toLowerCase().includes(query) ||
-        task.tags?.some(tag => tag.toLowerCase().includes(query)) ||
-        ('parent_task' in task && task.parent_task?.toLowerCase().includes(query))
+      result = result.filter(
+        (task) =>
+          task.title.toLowerCase().includes(query) ||
+          task.area?.toLowerCase().includes(query) ||
+          task.tags?.some((tag) => tag.toLowerCase().includes(query)) ||
+          ('parent_task' in task && task.parent_task?.toLowerCase().includes(query))
       );
     }
 
     // Apply status filter
     if (filters.status.length > 0) {
-      result = result.filter(task => filters.status.includes(task.status));
+      result = result.filter((task) => filters.status.includes(task.status));
     }
 
     // Apply type filter
     if (filters.type.length > 0) {
-      result = result.filter(task => filters.type.includes(task.type));
+      result = result.filter((task) => filters.type.includes(task.type));
     }
 
     // Apply workflow filter
     if (filters.workflow.length > 0) {
-      result = result.filter(task => filters.workflow.includes(task.workflow));
+      result = result.filter((task) => filters.workflow.includes(task.workflow));
     }
 
     // Apply area filter
     if (filters.area.length > 0) {
-      result = result.filter(task => task.area && filters.area.includes(task.area));
+      result = result.filter((task) => task.area && filters.area.includes(task.area));
     }
 
     return result;
@@ -155,12 +190,12 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
   const handleFilterChange = (category: keyof TaskFilters, value: any) => {
     const currentValues = filters[category];
     const newValues = currentValues.includes(value)
-      ? currentValues.filter(item => item !== value)
+      ? currentValues.filter((item) => item !== value)
       : [...currentValues, value];
-    
+
     setFilters({
       ...filters,
-      [category]: newValues
+      [category]: newValues,
     });
   };
 
@@ -175,7 +210,9 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
   };
 
   // Calculate active filter count
-  const activeFilterCount = Object.values(filters).reduce((count, filterArray) => count + filterArray.length, 0) + (searchQuery ? 1 : 0);
+  const activeFilterCount =
+    Object.values(filters).reduce((count, filterArray) => count + filterArray.length, 0) +
+    (searchQuery ? 1 : 0);
 
   // Selection handlers
   const selectedCount = Object.values(selectedRows).filter(Boolean).length;
@@ -187,13 +224,9 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Task Management</h1>
-          <p className="text-muted-foreground">
-            Search, filter, and manage your tasks efficiently
-          </p>
+          <p className="text-muted-foreground">Search, filter, and manage your tasks efficiently</p>
         </div>
-        <Button variant="atlas">
-          + Create Task
-        </Button>
+        <Button variant="atlas">+ Create Task</Button>
       </div>
 
       {/* Search and Filter Bar */}
@@ -206,7 +239,7 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
             onClear={() => setSearchQuery('')}
           />
         </div>
-        
+
         <FilterPanel
           show={showFilters}
           activeFilterCount={activeFilterCount}
@@ -221,21 +254,21 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
               selectedValues={filters.status}
               onChange={(value) => handleFilterChange('status', value)}
             />
-            
+
             <FilterCategory
               name="Type"
               options={filterOptions.type}
               selectedValues={filters.type}
               onChange={(value) => handleFilterChange('type', value)}
             />
-            
+
             <FilterCategory
               name="Workflow"
               options={filterOptions.workflow}
               selectedValues={filters.workflow}
               onChange={(value) => handleFilterChange('workflow', value)}
             />
-            
+
             {filterOptions.area.length > 0 && (
               <FilterCategory
                 name="Area"
@@ -248,9 +281,7 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
         </FilterPanel>
 
         {hasSelection && (
-          <div className="text-sm text-muted-foreground">
-            {selectedCount} selected
-          </div>
+          <div className="text-sm text-muted-foreground">{selectedCount} selected</div>
         )}
       </div>
 
@@ -292,16 +323,13 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
             </span>
           )}
         </div>
-        
+
         {activeFilterCount > 0 && (
           <div className="flex items-center gap-2">
-            <span>{activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} active</span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={clearAllFilters}
-              className="text-xs"
-            >
+            <span>
+              {activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} active
+            </span>
+            <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-xs">
               Clear all
             </Button>
           </div>
@@ -326,12 +354,7 @@ export function TaskManagementView({ className = '', data, searchParams = {} }: 
               <>
                 <p className="text-lg font-medium mb-2">No tasks found</p>
                 <p>Try adjusting your search or filters</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={clearAllFilters}
-                  className="mt-4"
-                >
+                <Button variant="outline" size="sm" onClick={clearAllFilters} className="mt-4">
                   Clear all filters
                 </Button>
               </>

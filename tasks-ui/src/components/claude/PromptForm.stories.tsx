@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { PromptForm } from './PromptForm';
 import { useState } from 'react';
+import { PromptForm } from './PromptForm';
 
 const meta: Meta<typeof PromptForm> = {
   title: 'Claude/PromptForm',

@@ -1,13 +1,10 @@
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import React from 'react';
-import { Button } from '../ui/button';
-import { cn } from '../../lib/utils';
-import { 
-  ChevronRight,
-  ChevronDown
-} from 'lucide-react';
-import { TaskTypeIcon as SharedTaskIcon } from '../../lib/icons';
 import { useRecentTasks, useWorkflowCounts } from '../../lib/api/hooks';
+import { TaskTypeIcon as SharedTaskIcon } from '../../lib/icons';
 import type { Task, TaskType } from '../../lib/types';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
 
 interface SidebarProps {
   className?: string;
@@ -77,15 +74,15 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
     workflow: false,
     recent: false,
   });
-  
+
   // Fetch recent tasks
   const { data: recentTasks = [] } = useRecentTasks(5);
-  
+
   // Fetch workflow counts
   const { data: workflowCounts } = useWorkflowCounts();
 
   const toggleSection = (section: keyof CollapsedSections) => {
-    setCollapsedSections(prev => ({
+    setCollapsedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
@@ -97,7 +94,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
   };
 
   return (
-    <aside className={cn("w-64 h-full bg-card border-r border-border flex flex-col", className)}>
+    <aside className={cn('w-64 h-full bg-card border-r border-border flex flex-col', className)}>
       {/* Tasks Section */}
       <SectionHeader
         title="Tasks"
@@ -118,10 +115,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
             <h3 className="text-xs font-medium text-muted-foreground uppercase mb-1">Tasks</h3>
             <ul className="space-y-1">
               <li>
-                <Button 
-                  variant={activeItem === 'tasks-todo' ? 'secondary' : 'ghost'} 
+                <Button
+                  variant={activeItem === 'tasks-todo' ? 'secondary' : 'ghost'}
                   className={cn(
-                    "w-full justify-start text-left normal-case",
+                    'w-full justify-start text-left normal-case',
                     activeItem === 'tasks-todo' && 'bg-accent'
                   )}
                   onClick={() => handleItemClick('tasks-todo', '/tasks?status=todo')}
@@ -130,10 +127,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
                 </Button>
               </li>
               <li>
-                <Button 
-                  variant={activeItem === 'tasks-progress' ? 'secondary' : 'ghost'} 
+                <Button
+                  variant={activeItem === 'tasks-progress' ? 'secondary' : 'ghost'}
                   className={cn(
-                    "w-full justify-start text-left normal-case",
+                    'w-full justify-start text-left normal-case',
                     activeItem === 'tasks-progress' && 'bg-accent'
                   )}
                   onClick={() => handleItemClick('tasks-progress', '/tasks?status=in_progress')}
@@ -142,10 +139,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
                 </Button>
               </li>
               <li>
-                <Button 
-                  variant={activeItem === 'tasks-all' ? 'secondary' : 'ghost'} 
+                <Button
+                  variant={activeItem === 'tasks-all' ? 'secondary' : 'ghost'}
                   className={cn(
-                    "w-full justify-start text-left normal-case",
+                    'w-full justify-start text-left normal-case',
                     activeItem === 'tasks-all' && 'bg-accent'
                   )}
                   onClick={() => handleItemClick('tasks-all', '/tasks')}
@@ -158,13 +155,15 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
 
           {/* Parent Tasks Section */}
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase mb-1">Parent Tasks</h3>
+            <h3 className="text-xs font-medium text-muted-foreground uppercase mb-1">
+              Parent Tasks
+            </h3>
             <ul className="space-y-1">
               <li>
-                <Button 
-                  variant={activeItem === 'parents-todo' ? 'secondary' : 'ghost'} 
+                <Button
+                  variant={activeItem === 'parents-todo' ? 'secondary' : 'ghost'}
                   className={cn(
-                    "w-full justify-start text-left normal-case",
+                    'w-full justify-start text-left normal-case',
                     activeItem === 'parents-todo' && 'bg-accent'
                   )}
                   onClick={() => handleItemClick('parents-todo', '/parents?status=todo')}
@@ -173,10 +172,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
                 </Button>
               </li>
               <li>
-                <Button 
-                  variant={activeItem === 'parents-progress' ? 'secondary' : 'ghost'} 
+                <Button
+                  variant={activeItem === 'parents-progress' ? 'secondary' : 'ghost'}
                   className={cn(
-                    "w-full justify-start text-left normal-case",
+                    'w-full justify-start text-left normal-case',
                     activeItem === 'parents-progress' && 'bg-accent'
                   )}
                   onClick={() => handleItemClick('parents-progress', '/parents?status=in_progress')}
@@ -185,10 +184,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
                 </Button>
               </li>
               <li>
-                <Button 
-                  variant={activeItem === 'parents-all' ? 'secondary' : 'ghost'} 
+                <Button
+                  variant={activeItem === 'parents-all' ? 'secondary' : 'ghost'}
                   className={cn(
-                    "w-full justify-start text-left normal-case",
+                    'w-full justify-start text-left normal-case',
                     activeItem === 'parents-all' && 'bg-accent'
                   )}
                   onClick={() => handleItemClick('parents-all', '/parents')}
@@ -217,10 +216,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
       >
         <ul className="space-y-1">
           <li>
-            <Button 
-              variant={activeItem === 'workflow-backlog' ? 'secondary' : 'ghost'} 
+            <Button
+              variant={activeItem === 'workflow-backlog' ? 'secondary' : 'ghost'}
               className={cn(
-                "w-full justify-start text-left normal-case",
+                'w-full justify-start text-left normal-case',
                 activeItem === 'workflow-backlog' && 'bg-accent'
               )}
               onClick={() => handleItemClick('workflow-backlog', '/workflow/backlog')}
@@ -232,10 +231,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
             </Button>
           </li>
           <li>
-            <Button 
-              variant={activeItem === 'workflow-current' ? 'secondary' : 'ghost'} 
+            <Button
+              variant={activeItem === 'workflow-current' ? 'secondary' : 'ghost'}
               className={cn(
-                "w-full justify-start text-left normal-case",
+                'w-full justify-start text-left normal-case',
                 activeItem === 'workflow-current' && 'bg-accent'
               )}
               onClick={() => handleItemClick('workflow-current', '/workflow/current')}
@@ -247,10 +246,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
             </Button>
           </li>
           <li>
-            <Button 
-              variant={activeItem === 'workflow-archive' ? 'secondary' : 'ghost'} 
+            <Button
+              variant={activeItem === 'workflow-archive' ? 'secondary' : 'ghost'}
               className={cn(
-                "w-full justify-start text-left normal-case",
+                'w-full justify-start text-left normal-case',
                 activeItem === 'workflow-archive' && 'bg-accent'
               )}
               onClick={() => handleItemClick('workflow-archive', '/workflow/archive')}
@@ -285,8 +284,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
             recentTasks.map((task) => {
               // Data is normalized from MCP API
               const taskType = getDisplayType(task);
-              const path = task.taskStructure === 'parent' ? `/parents/${task.id}` : `/tasks/${task.id}`;
-              
+              const path =
+                task.taskStructure === 'parent' ? `/parents/${task.id}` : `/tasks/${task.id}`;
+
               return (
                 <li key={`recent-task-${task.id}`}>
                   <Button
@@ -297,7 +297,11 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
                     )}
                     onClick={() => handleItemClick(task.id, path)}
                   >
-                    <SharedTaskIcon type={taskType} size="md" className="mr-2 text-muted-foreground" />
+                    <SharedTaskIcon
+                      type={taskType}
+                      size="md"
+                      className="mr-2 text-muted-foreground"
+                    />
                     <span className="truncate">{task.title}</span>
                   </Button>
                 </li>
@@ -309,11 +313,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
 
       {/* Bottom Actions */}
       <div className="p-4 border-t border-border space-y-2">
-        <Button
-          variant="atlas"
-          className="w-full"
-          onClick={() => onNavigate?.('/task/new')}
-        >
+        <Button variant="atlas" className="w-full" onClick={() => onNavigate?.('/task/new')}>
           + New Task
         </Button>
         <Button

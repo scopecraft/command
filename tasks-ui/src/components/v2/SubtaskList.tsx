@@ -1,9 +1,9 @@
 import React from 'react';
-import { TaskTypeIcon } from './TaskTypeIcon';
-import { StatusBadge, PriorityIndicator } from './WorkflowStateBadge';
-import { Button } from '../ui/button';
+import type { SubTask, Task } from '../../lib/types';
 import { cn } from '../../lib/utils';
-import type { Task, SubTask } from '../../lib/types';
+import { Button } from '../ui/button';
+import { TaskTypeIcon } from './TaskTypeIcon';
+import { PriorityIndicator, StatusBadge } from './WorkflowStateBadge';
 
 interface SubtaskListProps {
   subtasks: SubTask[];
@@ -29,12 +29,12 @@ export function SubtaskList({
   // Group subtasks by sequence number
   const groupedSubtasks = React.useMemo(() => {
     const groups: Record<string, SubTask[]> = {};
-    
+
     subtasks.forEach((task) => {
       // Use normalized API field: sequenceNumber
       const sequence = task.sequenceNumber || '99';
       const baseSequence = sequence.replace(/[a-z]$/, ''); // Remove letter suffix (04a → 04)
-      
+
       if (!groups[baseSequence]) {
         groups[baseSequence] = [];
       }
@@ -43,11 +43,15 @@ export function SubtaskList({
 
     return Object.entries(groups)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([sequence, tasks]): GroupedSubtasks => ({
-        sequence,
-        tasks: tasks.sort((a, b) => (a.sequenceNumber || '').localeCompare(b.sequenceNumber || '')),
-        isParallel: tasks.length > 1,
-      }));
+      .map(
+        ([sequence, tasks]): GroupedSubtasks => ({
+          sequence,
+          tasks: tasks.sort((a, b) =>
+            (a.sequenceNumber || '').localeCompare(b.sequenceNumber || '')
+          ),
+          isParallel: tasks.length > 1,
+        })
+      );
   }, [subtasks]);
 
   if (subtasks.length === 0) {
@@ -82,15 +86,16 @@ export function SubtaskList({
                     <div
                       key={task.id || `parallel-${groupIndex}-${taskIndex}`}
                       className={cn(
-                        "flex items-center gap-2 cursor-pointer py-1 px-2 rounded",
-                        highlightTaskId === task.id 
-                          ? "bg-primary/10 border border-primary" 
-                          : "hover:bg-accent/50"
+                        'flex items-center gap-2 cursor-pointer py-1 px-2 rounded',
+                        highlightTaskId === task.id
+                          ? 'bg-primary/10 border border-primary'
+                          : 'hover:bg-accent/50'
                       )}
                       onClick={() => onTaskClick?.(task)}
                     >
                       <span className="text-muted-foreground w-6">
-                        {isLastGroup ? '  ' : '│ '}{isLastTask ? '└─' : '├─'}
+                        {isLastGroup ? '  ' : '│ '}
+                        {isLastTask ? '└─' : '├─'}
                       </span>
                       <span>{statusSymbol}</span>
                       <span className="truncate flex-1">{task.title}</span>
@@ -107,16 +112,14 @@ export function SubtaskList({
               <div
                 key={task.id || `single-${groupIndex}`}
                 className={cn(
-                  "flex items-center gap-2 cursor-pointer py-1 px-2 rounded",
-                  highlightTaskId === task.id 
-                    ? "bg-primary/10 border border-primary" 
-                    : "hover:bg-accent/50"
+                  'flex items-center gap-2 cursor-pointer py-1 px-2 rounded',
+                  highlightTaskId === task.id
+                    ? 'bg-primary/10 border border-primary'
+                    : 'hover:bg-accent/50'
                 )}
                 onClick={() => onTaskClick?.(task)}
               >
-                <span className="text-muted-foreground">
-                  {isLastGroup ? '└──' : '├──'}
-                </span>
+                <span className="text-muted-foreground">{isLastGroup ? '└──' : '├──'}</span>
                 <span>{statusSymbol}</span>
                 <span className="truncate flex-1">{task.title}</span>
                 <span className="text-muted-foreground">[{task.sequenceNumber}]</span>
@@ -124,7 +127,7 @@ export function SubtaskList({
             );
           }
         })}
-        
+
         {/* Legend */}
         <div className="text-xs text-muted-foreground border-t pt-2 mt-3">
           <div className="font-medium mb-1">Legend:</div>
@@ -171,20 +174,21 @@ export function SubtaskList({
                     <div
                       key={task.id || `parallel-${groupIndex}-${taskIndex}`}
                       className={cn(
-                        "flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors",
-                        highlightTaskId === task.id 
-                          ? "bg-primary/10 border-primary" 
-                          : "bg-card hover:bg-accent/50"
+                        'flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors',
+                        highlightTaskId === task.id
+                          ? 'bg-primary/10 border-primary'
+                          : 'bg-card hover:bg-accent/50'
                       )}
                       onClick={() => onTaskClick?.(task)}
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-muted-foreground text-sm">
-                          {isLastGroup ? '  ' : '│ '}{isLastTask ? '└─' : '├─'}
+                          {isLastGroup ? '  ' : '│ '}
+                          {isLastTask ? '└─' : '├─'}
                         </span>
                         <TaskTypeIcon task={task} size="sm" />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
@@ -209,10 +213,10 @@ export function SubtaskList({
             <div
               key={task.id || `single-${groupIndex}`}
               className={cn(
-                "flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors",
-                highlightTaskId === task.id 
-                  ? "bg-primary/10 border-primary" 
-                  : "bg-card hover:bg-accent/50"
+                'flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors',
+                highlightTaskId === task.id
+                  ? 'bg-primary/10 border-primary'
+                  : 'bg-card hover:bg-accent/50'
               )}
               onClick={() => onTaskClick?.(task)}
             >
@@ -222,7 +226,7 @@ export function SubtaskList({
                 </span>
                 <TaskTypeIcon task={task} size="sm" />
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">

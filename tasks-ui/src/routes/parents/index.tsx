@@ -1,30 +1,30 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
-import { useParentList } from '../../lib/api/hooks'
-import { ParentTaskListView } from '../../components/v2/ParentTaskListView'
+import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
+import { ParentTaskListView } from '../../components/v2/ParentTaskListView';
+import { useParentList } from '../../lib/api/hooks';
 
 const parentSearchSchema = z.object({
   search: z.string().optional(),
   status: z.union([z.string(), z.array(z.string())]).optional(),
   workflow: z.union([z.string(), z.array(z.string())]).optional(),
   area: z.union([z.string(), z.array(z.string())]).optional(),
-})
+});
 
 export const Route = createFileRoute('/parents/')({
   component: ParentsPage,
   validateSearch: parentSearchSchema,
-})
+});
 
 function ParentsPage() {
-  const search = Route.useSearch()
-  
+  const search = Route.useSearch();
+
   // Get parent tasks with progress info from all locations
   const { data, isLoading, error } = useParentList({
     location: ['backlog', 'current', 'archive'],
     include_progress: true,
     include_subtasks: false,
-  })
-  
+  });
+
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -33,7 +33,7 @@ function ParentsPage() {
           <p className="text-muted-foreground">Loading parent tasks...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -46,12 +46,12 @@ function ParentsPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
-  
+
   return (
     <div className="h-full">
       <ParentTaskListView data={data} searchParams={search} />
     </div>
-  )
+  );
 }

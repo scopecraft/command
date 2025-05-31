@@ -23,7 +23,7 @@ export async function handleInitCommand(options: {
       if (structureVersion === 'v1') {
         console.log('\n⚠️  This project uses v1 structure (phases).');
         console.log('Migration from v1 is not yet implemented.');
-        console.log('\nCurrent features:';
+        console.log('\nCurrent features:');
         console.log('  - Workflow-based organization (backlog → current → archive)');
         console.log('  - Parent tasks (folder-based tasks with subtasks)');
         console.log('  - Automatic status updates on workflow transitions');

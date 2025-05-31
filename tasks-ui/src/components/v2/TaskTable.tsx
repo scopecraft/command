@@ -1,11 +1,11 @@
-import React from 'react';
 import { Link } from '@tanstack/react-router';
+import type React from 'react';
+import { getTaskUrl } from '../../lib/task-routing';
+import type { TableTask } from '../../lib/types';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { TaskTypeIcon } from './TaskTypeIcon';
 import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
-import { getTaskUrl } from '../../lib/task-routing';
-import type { TableTask } from '../../lib/types';
 
 export type { TableTask };
 
@@ -53,12 +53,15 @@ export function TaskTable({
 
   const handleSelectAll = (checked: boolean) => {
     if (!onSelectionChange) return;
-    
+
     if (checked) {
-      const allSelected = tasks.reduce((acc, task) => {
-        acc[task.id] = true;
-        return acc;
-      }, {} as Record<string, boolean>);
+      const allSelected = tasks.reduce(
+        (acc, task) => {
+          acc[task.id] = true;
+          return acc;
+        },
+        {} as Record<string, boolean>
+      );
       onSelectionChange(allSelected);
     } else {
       onSelectionChange({});
@@ -67,7 +70,7 @@ export function TaskTable({
 
   const handleRowSelect = (taskId: string, checked: boolean) => {
     if (!onSelectionChange) return;
-    
+
     onSelectionChange({
       ...selectedRows,
       [taskId]: checked,
@@ -80,7 +83,7 @@ export function TaskTable({
     if (target.closest('button') || target.closest('input[type="checkbox"]')) {
       return;
     }
-    
+
     onRowClick?.(task);
   };
 
@@ -127,14 +130,17 @@ export function TaskTable({
                     />
                   </td>
                 )}
-                
+
                 {/* Type Column */}
                 <td className="p-3">
                   <div className="flex items-center gap-2">
                     <TaskTypeIcon task={task} />
                     <span className="text-xs text-muted-foreground">
-                      {task.taskStructure === 'parent' ? 'Parent' : 
-                       task.taskStructure === 'subtask' ? 'Subtask' : 'Task'}
+                      {task.taskStructure === 'parent'
+                        ? 'Parent'
+                        : task.taskStructure === 'subtask'
+                          ? 'Subtask'
+                          : 'Task'}
                     </span>
                   </div>
                 </td>
@@ -157,7 +163,7 @@ export function TaskTable({
                         <div className="flex items-center gap-1">
                           <span>({task.progress.percentage}%)</span>
                           <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-green-500 transition-all duration-300"
                               style={{ width: `${task.progress.percentage}%` }}
                             />
@@ -204,9 +210,7 @@ export function TaskTable({
 
                 {/* Area Column */}
                 <td className="p-3">
-                  <div className="text-sm text-muted-foreground">
-                    {task.area || '—'}
-                  </div>
+                  <div className="text-sm text-muted-foreground">{task.area || '—'}</div>
                 </td>
 
                 {/* Tags Column */}
@@ -246,18 +250,12 @@ export function TaskTable({
             <div>
               Showing {tasks.length} task{tasks.length === 1 ? '' : 's'}
               {selectable && selectedCount > 0 && (
-                <span className="ml-2 font-medium">
-                  ({selectedCount} selected)
-                </span>
+                <span className="ml-2 font-medium">({selectedCount} selected)</span>
               )}
             </div>
             <div className="flex items-center gap-4">
-              <span>
-                {tasks.filter(t => t.task_type === 'parent').length} parent
-              </span>
-              <span>
-                {tasks.filter(t => t.task_type === 'simple').length} simple
-              </span>
+              <span>{tasks.filter((t) => t.task_type === 'parent').length} parent</span>
+              <span>{tasks.filter((t) => t.task_type === 'simple').length} simple</span>
             </div>
           </div>
         </div>

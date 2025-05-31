@@ -1,44 +1,44 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
-import React from 'react'
-import { useTask, useSubtasks, useUpdateTask } from '../../lib/api/hooks'
-import { SimpleTaskView } from '../../components/v2/SimpleTaskView'
-import { ParentTaskView } from '../../components/v2/ParentTaskView'
+import { createFileRoute } from '@tanstack/react-router';
+import React from 'react';
+import { z } from 'zod';
+import { ParentTaskView } from '../../components/v2/ParentTaskView';
+import { SimpleTaskView } from '../../components/v2/SimpleTaskView';
+import { useSubtasks, useTask, useUpdateTask } from '../../lib/api/hooks';
 
 // Content extraction helper no longer needed - MCP API provides clean content
 
 const taskDetailSearchSchema = z.object({
   parent_id: z.string().optional(),
-})
+});
 
 export const Route = createFileRoute('/tasks/$taskId')({
   component: TaskDetailPage,
   validateSearch: taskDetailSearchSchema,
-})
+});
 
 function TaskDetailPage() {
-  const { taskId } = Route.useParams()
-  const { parent_id } = Route.useSearch()
-  
-  const { data: taskData, isLoading, error } = useTask(taskId, parent_id)
-  const updateTask = useUpdateTask()
-  
+  const { taskId } = Route.useParams();
+  const { parent_id } = Route.useSearch();
+
+  const { data: taskData, isLoading, error } = useTask(taskId, parent_id);
+  const updateTask = useUpdateTask();
+
   // API now provides normalized taskStructure field
-  const isParentTask = taskData?.success && taskData.data?.taskStructure === 'parent'
-  
+  const isParentTask = taskData?.success && taskData.data?.taskStructure === 'parent';
+
   // Get subtasks if this is a parent task
-  const { data: subtasksData } = useSubtasks({ parent_id: taskId }, { enabled: isParentTask })
-  
-  const [isEditing, setIsEditing] = React.useState(false)
-  const [content, setContent] = React.useState('')
-  
+  const { data: subtasksData } = useSubtasks({ parent_id: taskId }, { enabled: isParentTask });
+
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [content, setContent] = React.useState('');
+
   // Update content when task data loads - content is now clean from API
   React.useEffect(() => {
     if (taskData?.success && taskData.data) {
-      setContent(taskData.data.content || '')
+      setContent(taskData.data.content || '');
     }
-  }, [taskData])
-  
+  }, [taskData]);
+
   // Loading state
   if (isLoading) {
     return (
@@ -48,7 +48,7 @@ function TaskDetailPage() {
           <p className="text-muted-foreground">Loading task...</p>
         </div>
       </div>
-    )
+    );
   }
 
   // Error state
@@ -62,34 +62,37 @@ function TaskDetailPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // Event handlers
-  const handleEdit = () => setIsEditing(true)
-  
+  const handleEdit = () => setIsEditing(true);
+
   const handleCancel = () => {
     if (taskData?.success && taskData.data) {
-      setContent(taskData.data.content || '')
+      setContent(taskData.data.content || '');
     }
-    setIsEditing(false)
-  }
+    setIsEditing(false);
+  };
 
   const handleSave = () => {
-    updateTask.mutate({
-      id: taskId,
-      parent_id,
-      updates: { content: content }
-    }, {
-      onSuccess: () => setIsEditing(false)
-    })
-  }
+    updateTask.mutate(
+      {
+        id: taskId,
+        parent_id,
+        updates: { content: content },
+      },
+      {
+        onSuccess: () => setIsEditing(false),
+      }
+    );
+  };
 
-  const handleContentChange = (newContent: string) => setContent(newContent)
+  const handleContentChange = (newContent: string) => setContent(newContent);
 
   // Render appropriate view based on task type
-  const task = taskData.data
-  const subtasks = subtasksData?.success ? subtasksData.data : []
+  const task = taskData.data;
+  const subtasks = subtasksData?.success ? subtasksData.data : [];
 
   if (isParentTask) {
     return (
@@ -104,7 +107,7 @@ function TaskDetailPage() {
         onContentChange={handleContentChange}
         isUpdating={updateTask.isPending}
       />
-    )
+    );
   }
 
   return (
@@ -118,5 +121,5 @@ function TaskDetailPage() {
       onContentChange={handleContentChange}
       isUpdating={updateTask.isPending}
     />
-  )
+  );
 }

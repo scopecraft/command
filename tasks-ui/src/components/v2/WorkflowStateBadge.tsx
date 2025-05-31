@@ -1,8 +1,8 @@
 import React from 'react';
-import { Button } from '../ui/button';
+import { PriorityIcon, StatusIcon, WorkflowStateIcon } from '../../lib/icons';
+import type { TaskStatus, WorkflowState } from '../../lib/types';
 import { cn } from '../../lib/utils';
-import { StatusIcon, WorkflowStateIcon, PriorityIcon } from '../../lib/icons';
-import type { WorkflowState, TaskStatus } from '../../lib/types';
+import { Button } from '../ui/button';
 
 interface WorkflowStateBadgeProps {
   workflow: WorkflowState;
@@ -20,16 +20,16 @@ interface StatusBadgeProps {
   onClick?: () => void;
 }
 
-export function WorkflowStateBadge({ 
-  workflow, 
-  size = 'sm', 
-  className = '', 
+export function WorkflowStateBadge({
+  workflow,
+  size = 'sm',
+  className = '',
   interactive = false,
-  onClick 
+  onClick,
 }: WorkflowStateBadgeProps) {
   const workflowLabels = {
     backlog: 'Backlog',
-    current: 'Current', 
+    current: 'Current',
     archive: 'Archive',
   };
 
@@ -54,7 +54,7 @@ export function WorkflowStateBadge({
   }
 
   return (
-    <span 
+    <span
       className={cn(
         'inline-flex items-center gap-1 font-mono uppercase rounded-md border bg-background px-2 py-1 text-xs whitespace-nowrap',
         className
@@ -65,12 +65,12 @@ export function WorkflowStateBadge({
   );
 }
 
-export function StatusBadge({ 
-  status, 
-  size = 'sm', 
-  className = '', 
+export function StatusBadge({
+  status,
+  size = 'sm',
+  className = '',
   interactive = false,
-  onClick 
+  onClick,
 }: StatusBadgeProps) {
   const statusLabels = {
     todo: 'To Do',
@@ -102,7 +102,7 @@ export function StatusBadge({
   }
 
   return (
-    <span 
+    <span
       className={cn(
         'inline-flex items-center gap-1 font-mono uppercase rounded-md border bg-background px-2 py-1 text-xs whitespace-nowrap',
         className
@@ -123,13 +123,13 @@ interface PriorityIndicatorProps {
   onClick?: () => void;
 }
 
-export function PriorityIndicator({ 
-  priority, 
-  size = 'sm', 
-  inline = false, 
-  className = '', 
+export function PriorityIndicator({
+  priority,
+  size = 'sm',
+  inline = false,
+  className = '',
   interactive = false,
-  onClick 
+  onClick,
 }: PriorityIndicatorProps) {
   // Handle undefined priority and don't show medium priority (follows existing pattern)
   if (!priority || priority.toLowerCase() === 'medium') {
@@ -175,7 +175,7 @@ export function PriorityIndicator({
   }
 
   return (
-    <span 
+    <span
       className={cn(
         'inline-flex items-center gap-1 font-mono uppercase rounded-md border bg-background px-2 py-1 text-xs',
         className

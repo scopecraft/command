@@ -1,9 +1,9 @@
-import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import React from 'react';
+import { useTask } from '../../lib/api/hooks';
 import { cn } from '../../lib/utils';
 import { TaskTypeIcon } from '../v2/TaskTypeIcon';
 import { StatusBadge } from '../v2/WorkflowStateBadge';
-import { useTask } from '../../lib/api/hooks';
 
 interface SessionInfo {
   sessionName: string;
@@ -38,30 +38,40 @@ export function AutonomousSessionCard({
 }: AutonomousSessionCardProps) {
   // Fetch task details
   const { data: task } = useTask(session.taskId, session.parentId);
-  
+
   const getSessionStatusColor = (status: string) => {
     switch (status) {
-      case 'running': return 'text-blue-500';
-      case 'waiting_feedback': return 'text-yellow-500';
-      case 'completed': return 'text-green-500';
-      case 'error': return 'text-red-500';
-      default: return 'text-gray-500';
+      case 'running':
+        return 'text-blue-500';
+      case 'waiting_feedback':
+        return 'text-yellow-500';
+      case 'completed':
+        return 'text-green-500';
+      case 'error':
+        return 'text-red-500';
+      default:
+        return 'text-gray-500';
     }
   };
-  
+
   const getSessionStatusIcon = (status: string) => {
     switch (status) {
-      case 'running': return '⚡';
-      case 'waiting_feedback': return '⏳';
-      case 'completed': return '✅';
-      case 'error': return '❌';
-      default: return '⏸️';
+      case 'running':
+        return '⚡';
+      case 'waiting_feedback':
+        return '⏳';
+      case 'completed':
+        return '✅';
+      case 'error':
+        return '❌';
+      default:
+        return '⏸️';
     }
   };
-  
+
   if (variant === 'compact') {
     return (
-      <div 
+      <div
         className={cn(
           'border rounded-lg p-3 bg-card hover:bg-accent/50 transition-colors',
           onClick && 'cursor-pointer',
@@ -77,14 +87,12 @@ export function AutonomousSessionCard({
             <span className="text-xs">{session.status}</span>
           </span>
         </div>
-        
+
         <div className="flex items-center gap-2 text-xs">
           {task && <StatusBadge status={task.status} />}
           {session.stats && (
             <>
-              <span className="font-mono text-muted-foreground">
-                {session.stats.messages} msgs
-              </span>
+              <span className="font-mono text-muted-foreground">{session.stats.messages} msgs</span>
               {session.stats.totalCost && (
                 <span className="font-mono text-muted-foreground">
                   ${session.stats.totalCost.toFixed(4)}
@@ -105,10 +113,10 @@ export function AutonomousSessionCard({
       </div>
     );
   }
-  
+
   // Default variant
   return (
-    <div 
+    <div
       className={cn(
         'border rounded-lg p-4 bg-card hover:shadow-md transition-shadow',
         onClick && 'cursor-pointer',
@@ -122,17 +130,20 @@ export function AutonomousSessionCard({
           <h3 className="font-mono font-medium">{session.taskId}</h3>
           <div className="flex items-center gap-2 mt-1">
             {task && <StatusBadge status={task.status} size="sm" />}
-            <span className={cn('flex items-center gap-1 text-sm', getSessionStatusColor(session.status))}>
+            <span
+              className={cn(
+                'flex items-center gap-1 text-sm',
+                getSessionStatusColor(session.status)
+              )}
+            >
               {getSessionStatusIcon(session.status)}
               {session.status}
             </span>
             {session.pid && (
-              <span className="text-xs text-muted-foreground">
-                PID: {session.pid}
-              </span>
+              <span className="text-xs text-muted-foreground">PID: {session.pid}</span>
             )}
           </div>
-          
+
           {session.stats && (
             <div className="flex items-center gap-3 mt-2 text-sm">
               <span className="font-mono text-muted-foreground">
@@ -150,18 +161,16 @@ export function AutonomousSessionCard({
               )}
             </div>
           )}
-          
-          <div className="text-xs text-muted-foreground mt-2">
-            Session: {session.sessionName}
-          </div>
-          
+
+          <div className="text-xs text-muted-foreground mt-2">Session: {session.sessionName}</div>
+
           {session.stats?.lastOutput && (
             <div className="text-sm text-muted-foreground mt-2 italic">
               Last: "{session.stats.lastOutput}"
             </div>
           )}
         </div>
-        
+
         <div className="text-sm text-muted-foreground">
           {formatDistanceToNow(new Date(session.startTime), { addSuffix: true })}
         </div>

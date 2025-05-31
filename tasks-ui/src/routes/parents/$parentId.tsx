@@ -1,34 +1,34 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
-import React from 'react'
-import { useParent, useUpdateTask } from '../../lib/api/hooks'
-import { ParentTaskView } from '../../components/v2/ParentTaskView'
+import { Outlet, createFileRoute } from '@tanstack/react-router';
+import React from 'react';
+import { ParentTaskView } from '../../components/v2/ParentTaskView';
+import { useParent, useUpdateTask } from '../../lib/api/hooks';
 
 export const Route = createFileRoute('/parents/$parentId')({
   component: ParentDetailPage,
-})
+});
 
 function ParentDetailPage() {
-  const { parentId, subtaskId } = Route.useParams() as { parentId: string; subtaskId?: string }
-  
+  const { parentId, subtaskId } = Route.useParams() as { parentId: string; subtaskId?: string };
+
   // All hooks must be called before any conditional returns
-  const { data: parentData, isLoading, error } = useParent(parentId)
-  const updateTask = useUpdateTask()
-  
-  const [isEditing, setIsEditing] = React.useState(false)
-  const [content, setContent] = React.useState('')
-  
+  const { data: parentData, isLoading, error } = useParent(parentId);
+  const updateTask = useUpdateTask();
+
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [content, setContent] = React.useState('');
+
   // Update content when parent data loads - normalized API provides clean content
   React.useEffect(() => {
     if (parentData?.success && parentData.data) {
-      setContent(parentData.data.content || '')
+      setContent(parentData.data.content || '');
     }
-  }, [parentData])
-  
+  }, [parentData]);
+
   // If we have a subtaskId, just render the outlet for the child route
   if (subtaskId) {
-    return <Outlet />
+    return <Outlet />;
   }
-  
+
   // Loading state
   if (isLoading) {
     return (
@@ -38,7 +38,7 @@ function ParentDetailPage() {
           <p className="text-muted-foreground">Loading parent task...</p>
         </div>
       </div>
-    )
+    );
   }
 
   // Error state
@@ -52,34 +52,37 @@ function ParentDetailPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // Event handlers
-  const handleEdit = () => setIsEditing(true)
-  
+  const handleEdit = () => setIsEditing(true);
+
   const handleCancel = () => {
     if (parentData?.success && parentData.data) {
-      setContent(parentData.data.content || '')
+      setContent(parentData.data.content || '');
     }
-    setIsEditing(false)
-  }
+    setIsEditing(false);
+  };
 
   const handleSave = () => {
-    updateTask.mutate({
-      id: parentId,
-      updates: { instruction: content }
-    }, {
-      onSuccess: () => setIsEditing(false)
-    })
-  }
+    updateTask.mutate(
+      {
+        id: parentId,
+        updates: { instruction: content },
+      },
+      {
+        onSuccess: () => setIsEditing(false),
+      }
+    );
+  };
 
-  const handleContentChange = (newContent: string) => setContent(newContent)
+  const handleContentChange = (newContent: string) => setContent(newContent);
 
   // Data is normalized from MCP API - direct usage
-  const parentTask = parentData.data
-  const subtasks = parentData.data.subtasks || []
-  const supportingFiles = parentData.data.supportingFiles || []
+  const parentTask = parentData.data;
+  const subtasks = parentData.data.subtasks || [];
+  const supportingFiles = parentData.data.supportingFiles || [];
 
   return (
     <ParentTaskView
@@ -94,5 +97,5 @@ function ParentDetailPage() {
       onContentChange={handleContentChange}
       isUpdating={updateTask.isPending}
     />
-  )
+  );
 }

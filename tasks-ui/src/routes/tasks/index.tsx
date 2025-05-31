@@ -1,7 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
-import { TaskManagementView } from '../../components/v2/TaskManagementView'
-import { useTopLevelTasks } from '../../lib/api/hooks'
+import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
+import { TaskManagementView } from '../../components/v2/TaskManagementView';
+import { useTopLevelTasks } from '../../lib/api/hooks';
 
 const taskSearchSchema = z.object({
   search: z.string().optional(),
@@ -10,17 +10,17 @@ const taskSearchSchema = z.object({
   workflow: z.union([z.string(), z.array(z.string())]).optional(),
   area: z.union([z.string(), z.array(z.string())]).optional(),
   assignee: z.string().optional(),
-})
+});
 
 export const Route = createFileRoute('/tasks/')({
   component: TasksPage,
   validateSearch: taskSearchSchema,
-})
+});
 
 function TasksPage() {
-  const { data, isLoading, error } = useTopLevelTasks()
-  const search = Route.useSearch()
-  
+  const { data, isLoading, error } = useTopLevelTasks();
+  const search = Route.useSearch();
+
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -29,7 +29,7 @@ function TasksPage() {
           <p className="text-muted-foreground">Loading tasks...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -42,12 +42,12 @@ function TasksPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
-  
+
   return (
     <div className="h-full">
       <TaskManagementView data={data} searchParams={search} />
     </div>
-  )
+  );
 }

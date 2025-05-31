@@ -1,34 +1,34 @@
-import React from 'react'
-import ReactMarkdown from 'react-markdown'
-import rehypeRaw from 'rehype-raw'
-import remarkGfm from 'remark-gfm'
-import { Button } from '../ui/button'
-import { TaskTypeIcon } from './TaskTypeIcon'
-import { StatusBadge, PriorityIndicator, WorkflowStateBadge } from './WorkflowStateBadge'
-import { ClaudeAgentButton } from './ClaudeAgentButton'
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import { Button } from '../ui/button';
+import { ClaudeAgentButton } from './ClaudeAgentButton';
+import { TaskTypeIcon } from './TaskTypeIcon';
+import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 interface SimpleTaskViewProps {
-  task: any
-  content: string
-  isEditing: boolean
-  onEdit: () => void
-  onCancel: () => void
-  onSave: () => void
-  onContentChange: (content: string) => void
-  isUpdating?: boolean
+  task: any;
+  content: string;
+  isEditing: boolean;
+  onEdit: () => void;
+  onCancel: () => void;
+  onSave: () => void;
+  onContentChange: (content: string) => void;
+  isUpdating?: boolean;
 }
 
-export function SimpleTaskView({ 
-  task, 
-  content, 
-  isEditing, 
-  onEdit, 
-  onCancel, 
-  onSave, 
+export function SimpleTaskView({
+  task,
+  content,
+  isEditing,
+  onEdit,
+  onCancel,
+  onSave,
   onContentChange,
-  isUpdating = false 
+  isUpdating = false,
 }: SimpleTaskViewProps) {
-  const metadata = task.metadata || task
+  const metadata = task.metadata || task;
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,7 +120,10 @@ export function SimpleTaskView({
                 >
                   Edit
                 </Button>
-                <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={onEdit}>
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                  onClick={onEdit}
+                >
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {content || '*No content yet. Click Edit to add details.*'}
                   </ReactMarkdown>
@@ -135,9 +138,7 @@ export function SimpleTaskView({
             <div className="bg-card border rounded-lg p-4">
               <h3 className="font-semibold text-foreground mb-3">Related Tasks</h3>
               <div className="space-y-2 text-sm">
-                <div className="text-muted-foreground text-center py-4">
-                  No related tasks found
-                </div>
+                <div className="text-muted-foreground text-center py-4">No related tasks found</div>
               </div>
               <Button className="w-full mt-3" variant="outline" size="sm">
                 Link Task
@@ -147,5 +148,5 @@ export function SimpleTaskView({
         </div>
       </div>
     </div>
-  )
+  );
 }

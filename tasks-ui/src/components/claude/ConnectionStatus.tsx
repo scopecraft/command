@@ -11,7 +11,13 @@ interface ConnectionStatusProps {
 /**
  * Connection status indicator component
  */
-export function ConnectionStatus({ isConnected, isConnecting, error, onConnect, onDisconnect }: ConnectionStatusProps) {
+export function ConnectionStatus({
+  isConnected,
+  isConnecting,
+  error,
+  onConnect,
+  onDisconnect,
+}: ConnectionStatusProps) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
