@@ -147,6 +147,7 @@ export async function handleGetCommand(
   options: {
     format?: string;
     subdirectory?: string;
+    contentOnly?: boolean;
   }
 ): Promise<void> {
   try {
@@ -162,8 +163,14 @@ export async function handleGetCommand(
     }
 
     // Format and display
-    const format = (options.format || 'default') as OutputFormat;
-    console.log(formatTaskDetail(result.data!, format));
+    if (options.contentOnly) {
+      // Display only section content without metadata
+      const contentOnly = v2.serializeTaskContent(result.data!.document);
+      console.log(contentOnly);
+    } else {
+      const format = (options.format || 'default') as OutputFormat;
+      console.log(formatTaskDetail(result.data!, format));
+    }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);

@@ -72,6 +72,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .description('Get a task by ID')
     .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
     .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
+    .option('--content-only', 'Show only section content without title and metadata')
     .action(handleGetCommand);
 
   // task create command
