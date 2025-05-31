@@ -90,7 +90,8 @@ export const TaskSectionsSchema = z.object({
 // Simple standalone task
 export const SimpleTaskSchema = TaskBaseSchema.extend({
   taskStructure: z.literal('simple'),
-  content: z.string().optional(), // Full markdown when requested
+  content: z.string().optional(), // Full markdown when requested (deprecated)
+  bodyContent: z.string().optional(), // Sections only, no title/frontmatter
   sections: TaskSectionsSchema.optional(),
 });
 
@@ -99,7 +100,8 @@ export const SubTaskSchema = TaskBaseSchema.extend({
   taskStructure: z.literal('subtask'),
   parentId: z.string(),
   sequenceNumber: z.string(), // "01", "02", "03a", etc.
-  content: z.string().optional(),
+  content: z.string().optional(), // Full markdown when requested (deprecated)
+  bodyContent: z.string().optional(), // Sections only, no title/frontmatter
   sections: TaskSectionsSchema.optional(),
 });
 
@@ -114,7 +116,8 @@ export const ParentTaskSchema = TaskBaseSchema.extend({
   taskStructure: z.literal('parent'),
   progress: ParentTaskProgressSchema,
   subtaskIds: z.array(z.string()),
-  overview: z.string().optional(), // Overview content when requested
+  overview: z.string().optional(), // Overview content when requested (deprecated)
+  overviewContent: z.string().optional(), // Overview sections only, no title/frontmatter
   sections: TaskSectionsSchema.optional(),
   subtasks: z.array(SubTaskSchema).optional(), // Full subtasks when requested
 });
