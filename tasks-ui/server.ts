@@ -211,39 +211,6 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
       }
     }
     
-    // TODO: Implement task_next handler in methodRegistry
-    // if (path === '/tasks/next') {
-    //   if (req.method === 'GET') {
-    //     const result = await methodRegistry[McpMethod.TASK_NEXT](params);
-    //     return new Response(JSON.stringify(result), { 
-    //       status: result.success ? 200 : 400,
-    //       headers: corsHeaders
-    //     });
-    //   }
-    // }
-    
-    
-    // TODO: Implement workflow_current handler in methodRegistry
-    // if (path === '/workflow/current') {
-    //   if (req.method === 'GET') {
-    //     const result = await methodRegistry[McpMethod.WORKFLOW_CURRENT](params);
-    //     return new Response(JSON.stringify(result), { 
-    //       status: result.success ? 200 : 400,
-    //       headers: corsHeaders
-    //     });
-    //   }
-    // }
-    
-    // TODO: Implement workflow_mark_complete_next handler in methodRegistry
-    // if (path === '/workflow/mark-complete-next') {
-    //   if (req.method === 'POST') {
-    //     const result = await methodRegistry[McpMethod.WORKFLOW_MARK_COMPLETE_NEXT](params);
-    //     return new Response(JSON.stringify(result), { 
-    //       status: result.success ? 200 : 400,
-    //       headers: corsHeaders
-    //     });
-    //   }
-    // }
     
     // Parent Task endpoints
     if (path === '/parents') {

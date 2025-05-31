@@ -214,17 +214,6 @@ class ApiClient {
     });
   }
 
-  // Workflow endpoints
-  async getCurrentWorkflow(_params = {}) {
-    return this.request('/workflow/current', { method: 'GET' });
-  }
-
-  async markCompleteNext(params: { id: string }) {
-    return this.request('/workflow/mark-complete-next', {
-      method: 'POST',
-      body: JSON.stringify(params),
-    });
-  }
 }
 
 export const apiClient = new ApiClient();

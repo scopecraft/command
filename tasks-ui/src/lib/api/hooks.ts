@@ -10,7 +10,6 @@ export const queryKeys = {
   tasks: (params?: Record<string, unknown>) => ['tasks', params] as const,
   task: (id: string, parentId?: string) => ['task', id, parentId] as const,
   parents: (params?: Record<string, unknown>) => ['parents', params] as const,
-  workflow: () => ['workflow'] as const,
 };
 
 // Task hooks
@@ -157,26 +156,6 @@ export function useParentOperation() {
   });
 }
 
-// Workflow hooks
-export function useCurrentWorkflow() {
-  return useQuery({
-    queryKey: queryKeys.workflow(),
-    queryFn: () => apiClient.getCurrentWorkflow(),
-    staleTime: 1000 * 30, // 30 seconds
-  });
-}
-
-export function useMarkCompleteNext() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id }: { id: string }) => apiClient.markCompleteNext({ id }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['workflow'] });
-    },
-  });
-}
 
 // Convenience hooks for common use cases
 export function useTopLevelTasks() {
