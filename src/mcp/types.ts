@@ -1,14 +1,7 @@
 /**
  * Types specific to the MCP server
  */
-import {
-  Area,
-  AreaFilterOptions,
-  AreaUpdateOptions,
-  Task,
-  type TaskFilterOptions,
-  type TaskUpdateOptions,
-} from '../core/types.js';
+import { Task, type TaskUpdateOptions } from '../core/types.js';
 
 import type {
   OperationResult,
@@ -23,7 +16,7 @@ import type {
   Task as V2Task,
   TaskUpdateOptions as V2TaskUpdateOptions,
   WorkflowState,
-} from '../core/v2/types.js';
+} from '../core/types.js';
 
 // MCP method names
 export enum McpMethod {
@@ -42,13 +35,6 @@ export enum McpMethod {
   PARENT_GET = 'parent_get',
   PARENT_CREATE = 'parent_create',
   PARENT_OPERATIONS = 'parent_operations',
-
-  // Area methods
-  AREA_LIST = 'area_list',
-  AREA_GET = 'area_get',
-  AREA_CREATE = 'area_create',
-  AREA_UPDATE = 'area_update',
-  AREA_DELETE = 'area_delete',
 
   // Workflow methods
   WORKFLOW_CURRENT = 'workflow_current',
@@ -193,58 +179,6 @@ export interface TaskNextParams {
 export interface ParentGetParams {
   id: string;
   root_dir?: string; // Override for tasks directory location
-}
-
-// Area list request params
-export interface AreaListParams {
-  root_dir?: string; // Override for tasks directory location
-  phase?: string;
-  status?: string;
-  format?: string;
-  include_tasks?: boolean;
-  include_progress?: boolean;
-}
-
-// Area get request params
-export interface AreaGetParams {
-  root_dir?: string; // Override for tasks directory location
-  id: string;
-  phase?: string;
-  format?: string;
-}
-
-// Area create request params
-export interface AreaCreateParams {
-  root_dir?: string; // Override for tasks directory location
-  name: string;
-  title: string;
-  phase: string;
-  type?: string;
-  status?: string;
-  description?: string;
-  assignee?: string;
-  tags?: string[];
-}
-
-// Area update request params
-export interface AreaUpdateParams {
-  root_dir?: string; // Override for tasks directory location
-  id: string;
-  updates: {
-    name?: string;
-    title?: string;
-    description?: string;
-    status?: string;
-  };
-  phase?: string;
-}
-
-// Area delete request params
-export interface AreaDeleteParams {
-  root_dir?: string; // Override for tasks directory location
-  id: string;
-  phase?: string;
-  force?: boolean;
 }
 
 // Workflow current request params

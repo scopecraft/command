@@ -45,7 +45,7 @@ class ApiClient {
       area?: string;
       assignee?: string;
       tags?: string[];
-      include_content?: boolean;
+      includeContent?: boolean; // Updated to match MCP API parameter name
       include_completed?: boolean;
       include_parent_tasks?: boolean;
       parent_id?: string;
@@ -71,7 +71,7 @@ class ApiClient {
   async getTask(id: string, parentId?: string) {
     const params = new URLSearchParams();
     if (parentId) params.append('parent_id', parentId);
-    params.append('format', 'full'); // Always get full content for task details
+    // Note: task_get always includes content now, no format parameter needed
 
     return this.request(`/tasks/${id}?${params}`);
   }

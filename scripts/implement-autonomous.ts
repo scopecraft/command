@@ -1,9 +1,10 @@
 #!/usr/bin/env bun
 
-import { stream } from 'channelcoder';
+import { session, monitorLog } from 'channelcoder';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parseArgs } from 'util';
+import { homedir } from 'os';
 
 // Colors for output
 const colors = {
@@ -20,17 +21,13 @@ const colors = {
 const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
   options: {
-    'log-dir': {
-      type: 'string',
-      default: '.autonomous-tasks/logs',
-    },
-    'parallel': {
-      type: 'boolean',
-      default: false,
-    },
     'help': {
       type: 'boolean',
       short: 'h',
+    },
+    'continue': {
+      type: 'string',
+      short: 'c',
     },
   },
   strict: true,
@@ -38,159 +35,222 @@ const { values, positionals } = parseArgs({
 });
 
 // Show help
-if (values.help || positionals.length === 0) {
+if (values.help || (positionals.length === 0 && !values.continue)) {
   console.log(`${colors.cyan}${colors.bright}Autonomous Task Executor${colors.reset}`);
   console.log('\nUsage:');
-  console.log('  bun run scripts/implement-autonomous.ts <taskId> [parentId] [options]');
+  console.log('  implement-auto <taskId> [parentId]     Start autonomous task');
+  console.log('  implement-auto --continue <taskId>     Continue task with feedback');
   console.log('\nExamples:');
   console.log('  # Execute a subtask within a parent');
-  console.log('  bun run scripts/implement-autonomous.ts 01_investigate-api-05A fix-mcp-api-res-cnsstncy-05A');
+  console.log('  implement-auto 01_investigate-api-05A fix-mcp-api-res-cnsstncy-05A');
   console.log('\n  # Execute a standalone task');
-  console.log('  bun run scripts/implement-autonomous.ts fix-typo-bug-05B');
-  console.log('\n  # Execute multiple tasks (sequentially with streaming)');
-  console.log('  bun run scripts/implement-autonomous.ts task1 task2 task3 --parallel');
+  console.log('  implement-auto fix-typo-bug-05B');
+  console.log('\n  # Continue a task that needs feedback');
+  console.log('  implement-auto --continue 01_investigate-api-05A "Yes, use option 2"');
   console.log('\nOptions:');
-  console.log('  --log-dir <path>  Directory for execution logs (default: .autonomous-tasks/logs)');
-  console.log('  --parallel        Execute multiple tasks in parallel');
-  console.log('  -h, --help        Show this help message');
+  console.log('  -c, --continue <taskId>  Continue existing task with feedback');
+  console.log('  -h, --help               Show this help message');
+  console.log('\nMonitor tasks with: monitor-auto');
   process.exit(0);
 }
 
-// Ensure log directory exists
-async function ensureLogDir(logDir: string) {
-  await fs.mkdir(logDir, { recursive: true });
+// Constants
+const PROJECT_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const AUTONOMOUS_BASE_DIR = path.join(PROJECT_ROOT, '.tasks/.autonomous-sessions');
+const LOG_DIR = path.join(AUTONOMOUS_BASE_DIR, 'logs');
+
+// Ensure directories exist
+async function ensureDirectories() {
+  await fs.mkdir(LOG_DIR, { recursive: true });
 }
 
-// Generate log filename
-function getLogFilename(taskId: string, parentId?: string): string {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const prefix = parentId ? `${parentId}_${taskId}` : taskId;
-  return `${prefix}_${timestamp}.log`;
+// Generate session name from task ID
+function getSessionName(taskId: string, parentId?: string): string {
+  // Use task ID as the primary identifier
+  const base = parentId ? `${taskId}-${parentId}` : taskId;
+  // Add timestamp for uniqueness but keep task ID prominent
+  return `task-${base}-${Date.now()}`;
+}
+
+// Get session info path
+function getSessionInfoPath(sessionName: string): string {
+  return path.join(AUTONOMOUS_BASE_DIR, `${sessionName}.info.json`);
+}
+
+// Save session info for monitor
+async function saveSessionInfo(sessionName: string, taskId: string, parentId?: string, logFile?: string) {
+  const info = {
+    sessionName,
+    taskId,
+    parentId,
+    logFile,
+    startTime: new Date().toISOString(),
+    status: 'running',
+    pid: process.pid,
+  };
+  
+  await fs.writeFile(getSessionInfoPath(sessionName), JSON.stringify(info, null, 2));
+}
+
+// Load session info
+async function loadSessionInfo(taskId: string): Promise<any | null> {
+  try {
+    // Find the most recent session for this task
+    const files = await fs.readdir(AUTONOMOUS_BASE_DIR);
+    const infoFiles = files.filter(f => f.includes(`task-${taskId}`) && f.endsWith('.info.json'));
+    
+    if (infoFiles.length === 0) return null;
+    
+    // Sort by timestamp (newest first)
+    infoFiles.sort((a, b) => b.localeCompare(a));
+    
+    const content = await fs.readFile(path.join(AUTONOMOUS_BASE_DIR, infoFiles[0]), 'utf-8');
+    return JSON.parse(content);
+  } catch {
+    return null;
+  }
 }
 
 // Execute a single task
-async function executeTask(taskId: string, parentId?: string, logDir?: string) {
-  const logFile = logDir ? path.join(logDir, getLogFilename(taskId, parentId)) : undefined;
+async function executeTask(taskId: string, parentId?: string) {
+  const sessionName = getSessionName(taskId, parentId);
+  const logFile = path.join(LOG_DIR, `${sessionName}.log`);
   
   console.log(`\n${colors.cyan}Starting autonomous execution:${colors.reset}`);
   console.log(`  Task: ${colors.bright}${taskId}${colors.reset}`);
   if (parentId) {
     console.log(`  Parent: ${colors.bright}${parentId}${colors.reset}`);
   }
-  if (logFile) {
-    console.log(`  Log: ${colors.dim}${logFile}${colors.reset}`);
-  }
+  console.log(`  Session: ${colors.dim}${sessionName}${colors.reset}`);
+  console.log(`  Log: ${colors.dim}${logFile}${colors.reset}`);
   
   try {
-    console.log(`${colors.green}✅ Starting autonomous execution...${colors.reset}`);
-    console.log(`${colors.yellow}Streaming output:${colors.reset}\n`);
-    console.log(`${colors.dim}${'─'.repeat(80)}${colors.reset}`);
+    // Create session with meaningful name
+    const s = session({
+      name: sessionName,
+      autoSave: true,
+    });
     
-    let logContent = '';
-    const startTime = Date.now();
+    // Save session info for monitor
+    await saveSessionInfo(sessionName, taskId, parentId, logFile);
     
-    // Stream the execution
-    for await (const chunk of stream('.tasks/.modes/implement/autonomous.md', {
+    console.log(`${colors.yellow}Starting detached process...${colors.reset}`);
+    
+    // Build the prompt with task context
+    const promptFile = '.tasks/.modes/implement/autonomous.md';
+    
+    // Start detached process
+    const result = await s.detached(promptFile, {
       data: {
         taskId,
         ...(parentId && { parentId }),
       },
-    })) {
-      if (chunk.type === 'content') {
-        // Write to console
-        process.stdout.write(chunk.content);
+      logFile,
+      stream: true,
+      outputFormat: 'stream-json',
+    });
+    
+    if (result.success) {
+      console.log(`${colors.green}✅ Task started successfully${colors.reset}`);
+      if (result.pid) {
+        console.log(`  PID: ${result.pid}`);
         
-        // Accumulate for log file
-        logContent += chunk.content;
-      } else if (chunk.type === 'error') {
-        console.error(`\n${colors.red}Error: ${chunk.error}${colors.reset}`);
-        if (logFile) {
-          await fs.writeFile(logFile, logContent + `\nError: ${chunk.error}\n`);
+        // Update session info with PID
+        const info = await loadSessionInfo(taskId);
+        if (info) {
+          info.pid = result.pid;
+          await fs.writeFile(getSessionInfoPath(sessionName), JSON.stringify(info, null, 2));
         }
-        throw new Error(chunk.error);
       }
+      console.log(`  Monitor with: ${colors.cyan}monitor-auto${colors.reset}`);
+      console.log(`  Continue with: ${colors.cyan}implement-auto --continue ${taskId}${colors.reset}`);
+      
+      return { success: true, taskId, parentId, sessionName, logFile };
+    } else {
+      console.error(`${colors.red}❌ Failed to start task: ${result.error}${colors.reset}`);
+      return { success: false, taskId, parentId, error: result.error };
     }
-    
-    const duration = Math.round((Date.now() - startTime) / 1000);
-    console.log(`\n${colors.dim}${'─'.repeat(80)}${colors.reset}`);
-    console.log(`${colors.green}✅ Task completed successfully${colors.reset}`);
-    console.log(`  Duration: ${colors.bright}${duration}s${colors.reset}`);
-    
-    // Save log if requested
-    if (logFile) {
-      await fs.writeFile(logFile, logContent);
-      console.log(`  Log saved: ${colors.dim}${logFile}${colors.reset}`);
-    }
-    
-    return { success: true, taskId, parentId, logFile, duration };
   } catch (error) {
     console.error(`\n${colors.red}❌ Task execution failed:${colors.reset}`, error);
     return { success: false, taskId, parentId, error };
   }
 }
 
+// Continue an existing task
+async function continueTask(taskId: string, feedback: string) {
+  console.log(`\n${colors.cyan}Continuing task:${colors.reset}`);
+  console.log(`  Task: ${colors.bright}${taskId}${colors.reset}`);
+  
+  try {
+    // Load session info
+    const info = await loadSessionInfo(taskId);
+    if (!info) {
+      console.error(`${colors.red}❌ No session found for task: ${taskId}${colors.reset}`);
+      console.log(`\nHint: Use ${colors.cyan}monitor-auto${colors.reset} to see running tasks`);
+      return { success: false, taskId };
+    }
+    
+    console.log(`  Session: ${colors.dim}${info.sessionName}${colors.reset}`);
+    
+    // Load the session
+    const s = await session.load(info.sessionName);
+    
+    // Create new log file for continuation
+    const logFile = path.join(LOG_DIR, `${info.sessionName}-continue-${Date.now()}.log`);
+    
+    console.log(`${colors.yellow}Continuing session...${colors.reset}`);
+    
+    // Continue with feedback
+    const result = await s.detached(feedback, {
+      logFile,
+      stream: true,
+      outputFormat: 'stream-json',
+    });
+    
+    if (result.success) {
+      console.log(`${colors.green}✅ Task continued successfully${colors.reset}`);
+      if (result.pid) {
+        console.log(`  PID: ${result.pid}`);
+      }
+      console.log(`  Monitor with: ${colors.cyan}monitor-auto${colors.reset}`);
+      
+      return { success: true, taskId, sessionName: info.sessionName };
+    } else {
+      console.error(`${colors.red}❌ Failed to continue task: ${result.error}${colors.reset}`);
+      return { success: false, taskId, error: result.error };
+    }
+  } catch (error) {
+    console.error(`${colors.red}❌ Error continuing task:${colors.reset}`, error);
+    return { success: false, taskId, error };
+  }
+}
+
 // Main execution
 async function main() {
-  const logDir = values['log-dir'] as string;
-  const isParallel = values.parallel;
-  
-  // Ensure log directory exists if specified
-  if (logDir) {
-    await ensureLogDir(logDir);
-  }
-  
-  // Parse task arguments
-  let tasks: Array<{ taskId: string; parentId?: string }> = [];
-  
-  if (isParallel) {
-    // In parallel mode, each positional is a taskId
-    tasks = positionals.map(taskId => ({ taskId }));
-  } else {
-    // In single mode, first is taskId, second (optional) is parentId
-    const [taskId, parentId] = positionals;
-    tasks = [{ taskId, parentId }];
-  }
+  // Ensure directories exist
+  await ensureDirectories();
   
   console.log(`${colors.cyan}${colors.bright}Autonomous Task Executor${colors.reset}`);
-  console.log(`${colors.dim}This executes tasks with no user interaction - all output goes to task files${colors.reset}`);
   
-  // Execute tasks
-  if (isParallel && tasks.length > 1) {
-    console.log(`\n${colors.yellow}Executing ${tasks.length} tasks in parallel...${colors.reset}`);
-    
-    const promises = tasks.map(({ taskId, parentId }) => 
-      executeTask(taskId, parentId, logDir)
-    );
-    
-    const results = await Promise.all(promises);
-    
-    // Summary
-    console.log(`\n${colors.bright}Execution Summary:${colors.reset}`);
-    const successful = results.filter(r => r.success);
-    const failed = results.filter(r => !r.success);
-    
-    if (successful.length > 0) {
-      console.log(`${colors.green}✅ Completed: ${successful.length} tasks${colors.reset}`);
-      successful.forEach(r => {
-        console.log(`   - ${r.taskId} (${r.duration}s)`);
-      });
-    }
-    
-    if (failed.length > 0) {
-      console.log(`${colors.red}❌ Failed: ${failed.length} tasks${colors.reset}`);
-      failed.forEach(r => {
-        console.log(`   - ${r.taskId}`);
-      });
-    }
-  } else {
-    // Single task execution
-    const { taskId, parentId } = tasks[0];
-    await executeTask(taskId, parentId, logDir);
+  // Handle continue mode
+  if (values.continue) {
+    const taskId = values.continue as string;
+    const feedback = positionals.join(' ') || 'Please continue';
+    await continueTask(taskId, feedback);
+    return;
   }
   
-  if (!isParallel) {
-    console.log(`\n${colors.dim}Task execution complete. Check the task file for all updates.${colors.reset}`);
+  // Normal execution mode
+  if (positionals.length === 0) {
+    console.error(`${colors.red}No task ID provided${colors.reset}`);
+    process.exit(1);
   }
+  
+  const [taskId, parentId] = positionals;
+  
+  console.log(`${colors.dim}Tasks execute in background - output goes to task files${colors.reset}`);
+  
+  await executeTask(taskId, parentId);
 }
 
 // Run

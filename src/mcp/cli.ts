@@ -7,7 +7,7 @@ import path from 'node:path';
  */
 import { Command } from 'commander';
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import { ensureDirectoryExists, getTasksDirectory, projectConfig } from '../core/index.js';
+import { ensureDirectoryExists, projectConfig } from '../core/index.js';
 import { startServer } from './server.js';
 
 // Read package version from package.json
@@ -82,7 +82,7 @@ program
     }
 
     // Ensure tasks directory exists
-    const tasksDir = getTasksDirectory();
+    const tasksDir = projectConfig.getTasksDirectory();
     ensureDirectoryExists(tasksDir);
 
     // Start server

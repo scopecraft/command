@@ -13,6 +13,11 @@ import {
   handleSessionCheck,
   handleSessionStart
 } from './server/claude-session-handlers.js';
+import {
+  handleAutonomousList,
+  handleAutonomousGet,
+  handleAutonomousLogs
+} from './server/autonomous-handlers.js';
 
 // Configuration
 const DIST_DIR = './task-ui-2/dist';
@@ -373,6 +378,40 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
         const result = await handleSessionStart(params);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 201 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    // Autonomous Session endpoints
+    if (path === '/autonomous-sessions') {
+      if (req.method === 'GET') {
+        const result = await handleAutonomousList();
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    if (path.match(/^\/autonomous-sessions\/[^\/]+$/)) {
+      const taskId = path.split('/').pop() || '';
+      
+      if (req.method === 'GET') {
+        const result = await handleAutonomousGet(taskId);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 404,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    if (path === '/autonomous-sessions/logs') {
+      if (req.method === 'GET') {
+        const limit = params.limit ? parseInt(params.limit as string) : 50;
+        const result = await handleAutonomousLogs(limit);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
           headers: corsHeaders
         });
       }

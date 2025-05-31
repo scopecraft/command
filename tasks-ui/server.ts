@@ -33,6 +33,11 @@ import {
   handleSessionCheck,
   handleSessionStart
 } from './server/claude-session-handlers.js';
+import {
+  handleAutonomousList,
+  handleAutonomousGet,
+  handleAutonomousLogs
+} from './server/autonomous-handlers.js';
 
 // Configuration
 const DIST_DIR = './tasks-ui/dist';

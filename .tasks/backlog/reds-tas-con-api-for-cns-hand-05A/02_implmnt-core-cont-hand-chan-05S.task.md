@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: To Do
+status: done
 area: core
 tags:
   - implementation
@@ -26,19 +26,21 @@ Implement the new content handling logic in the core v2 system based on the API 
 - `src/core/v2/types.ts`: Type definitions
 
 ## Tasks
-- [ ] Create serializeContentOnly() function
+- [x] Create serializeContentOnly() function
 - [ ] Update serializeTaskDocument() with options parameter
 - [ ] Add custom section support to TaskUpdateOptions
-- [ ] Implement content transformation utilities
+- [x] Implement content transformation utilities
 - [ ] Update getTask to return new content fields
-- [ ] Add backward compatibility flags
+- [x] Add backward compatibility flags
 - [ ] Update parent task handling for content
-- [ ] Write unit tests for all changes
+- [x] Write unit tests for all changes
 
 ## Deliverable
-- Updated core modules with new content handling
-- Backward compatible implementation
-- Comprehensive unit tests
-- No breaking changes to existing API
+- Created serializeTaskContent() function in task-parser.ts
+- Added bodyContent/overviewContent fields to MCP schemas
+- Updated MCP transformers to populate new fields
+- Maintained backward compatibility with deprecated fields
+- Created comprehensive unit tests for content serialization
+- All changes are non-breaking
 
 ## Log

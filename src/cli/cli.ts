@@ -2,19 +2,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
 /**
- * Main CLI entry point
+ * Main CLI entry point for v2
  * Sets up commands and validates environment
  */
 import { Command } from 'commander';
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import { ensureDirectoryExists, getTasksDirectory, projectConfig } from '../core/index.js';
+import * as v2 from '../core/index.js';
 import { setupEntityCommands } from './entity-commands.js';
 
 // Create the main command
 const program = new Command();
 
 // Read package version from package.json
-let version = '0.10.6'; // Default
+let version = '0.11.0'; // v2 version
 try {
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')
@@ -26,9 +26,7 @@ try {
 
 program
   .name('scopecraft')
-  .description(
-    'CLI for managing Markdown-Driven Task Management (MDTM) files with TOML/YAML frontmatter'
-  )
+  .description('CLI v2 for managing workflow-based task management with Markdown files')
   .version(version)
   .option('--root-dir <path>', 'Set project root directory (overrides all other sources)')
   .option('--config <path>', 'Path to configuration file (default: ~/.scopecraft/config.json)');
@@ -66,46 +64,65 @@ USAGE: sc [entity] [command] [options]
 
 Available entity types:
   task       Task operations (create, list, update, delete, etc.)
-  phase      Phase management operations
-  feature    Feature management operations
-  area       Area management operations
+  parent     Parent task management (folder-based tasks with subtasks)
+  area       Cross-cutting area management  
   workflow   Task workflow and sequence operations
   template   Template management operations
+
+Workflow shortcuts:
+  backlog    List backlog tasks
+  current    List current tasks
+  archive    List archived tasks
 
 Global options:
   --root-dir <path>   Set project root directory (overrides environment variables and config)
   --config <path>     Path to configuration file (default: ~/.scopecraft/config.json)
 
 Examples:
-  sc task list                     List tasks from current and backlog
-  sc task create --title "New task" --type feature   Create a new task
-  sc phase list                    List all phases
-  sc workflow next                 Find next task to work on
-  sc --root-dir ./e2e_test/worktree-test task list    List tasks in specified directory
+  sc init                          Initialize new project with workflow folders
+  sc task create --title "New task" --type feature   Create a new task in backlog
+  sc task list --current           List tasks in current workflow
+  sc workflow promote <id>         Move task from backlog to current
+  sc parent create --name "Epic"   Create a parent task with subtasks
 `
 );
 
-// Set up entity commands (task, phase, feature, area, workflow)
+// Set up entity commands (task, parent, area, workflow)
 setupEntityCommands(program);
-
-// No footnote needed for alternative command formats
 
 /**
  * Validate environment before running commands
  */
 function validateEnvironment() {
-  if (!projectConfig.validateEnvironment()) {
-    console.error('\n⚠️  No Scopecraft project found in this directory.\n');
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = configManager.getProjectRoot();
+
+  if (!projectRoot) {
+    console.error('\n⚠️  No Scopecraft project found.\n');
     console.error('To get started:');
-    console.error('  sc init               - Initialize a new project here');
+    console.error('  sc init               - Initialize a new v2 project here');
     console.error('  sc --root-dir <path>  - Use an existing project\n');
     console.error('Learn more: https://github.com/scopecraft/scopecraft-command\n');
     process.exit(1);
   }
 
-  // Ensure tasks directory exists
-  const tasksDir = getTasksDirectory();
-  ensureDirectoryExists(tasksDir);
+  // Check structure version
+  const structureVersion = v2.detectStructureVersion(projectRoot);
+
+  if (structureVersion === 'none') {
+    console.error('\n⚠️  No Scopecraft project structure found.\n');
+    console.error('Run: sc init');
+    process.exit(1);
+  }
+
+  if (structureVersion === 'v1') {
+    console.warn('\n⚠️  This project uses v1 structure (phases). Consider migrating to v2.\n');
+  }
+
+  // Ensure workflow directories exist for v2
+  if (structureVersion === 'v2' || structureVersion === 'mixed') {
+    v2.ensureWorkflowDirectories(projectRoot);
+  }
 }
 
 // Validate environment before running commands (except for 'init')

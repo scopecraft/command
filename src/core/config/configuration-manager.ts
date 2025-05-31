@@ -244,6 +244,18 @@ export class ConfigurationManager implements IConfigurationManager {
   }
 
   /**
+   * Get project root path (convenience method)
+   */
+  public getProjectRoot(): string | null {
+    try {
+      const rootConfig = this.getRootConfig();
+      return rootConfig?.path || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
    * Clear session configuration
    */
   public clearSessionConfig(): void {

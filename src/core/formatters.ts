@@ -1,256 +1,502 @@
 /**
- * Formatters for displaying tasks and phases in various formats
+ * Formatters for displaying v2 tasks in various formats
  */
-import type { Feature, OutputFormat, Phase, Task } from './types.js';
+import type * as v2 from './types.js';
+
+export type OutputFormat =
+  | 'tree'
+  | 'table'
+  | 'json'
+  | 'minimal'
+  | 'workflow'
+  | 'default'
+  | 'markdown'
+  | 'full';
+
+// Emoji mappings for presentation layer
+export const STATUS_EMOJIS: Record<v2.TaskStatus, string> = {
+  'To Do': '🟡',
+  'In Progress': '🔵',
+  Done: '🟢',
+  Blocked: '🔴',
+  Archived: '⚪',
+};
+
+const TYPE_EMOJIS: Record<v2.TaskType, string> = {
+  feature: '🌟',
+  bug: '🐛',
+  chore: '🔧',
+  documentation: '📚',
+  test: '🧪',
+  spike: '🔍',
+  idea: '💡',
+};
+
+const PRIORITY_EMOJIS: Record<v2.TaskPriority, string> = {
+  Highest: '🔥',
+  High: '🔼',
+  Medium: '▶️',
+  Low: '🔽',
+};
 
 /**
- * Format a list of tasks for display
- * @param tasks List of tasks to format
- * @param format Output format
- * @returns Formatted string
+ * Format a list of v2 tasks for display
  */
-export function formatTasksList(tasks: Task[], format: OutputFormat): string {
+export function formatTasksList(tasks: v2.Task[], format: OutputFormat): string {
   if (format === 'json') {
     return JSON.stringify(tasks, null, 2);
   }
 
   if (format === 'minimal') {
-    return tasks.map((task) => `${task.metadata.id}\t${task.metadata.title}`).join('\n');
+    return tasks.map((task) => `${task.metadata.id}\t${task.document.title}`).join('\n');
   }
 
   if (format === 'workflow') {
-    // Build a workflow/dependency graph representation
-    const taskMap = new Map<string, Task>();
-    tasks.forEach((task) => taskMap.set(task.metadata.id, task));
+    return formatWorkflowView(tasks);
+  }
 
-    let output = '\nTask Workflow:\n';
+  // Default to tree format
+  if (format === 'tree' || !format) {
+    return formatTreeView(tasks);
+  }
 
-    // First, find tasks with no dependencies
-    const startTasks = tasks.filter(
-      (task) =>
-        (!task.metadata.depends_on || task.metadata.depends_on.length === 0) &&
-        !task.metadata.previous_task
-    );
+  // Table format (legacy)
+  if (format === 'table') {
+    return formatTableView(tasks);
+  }
 
-    const visitedTasks = new Set<string>();
+  // Fallback to tree
+  return formatTreeView(tasks);
+}
 
-    // Recursive function to print workflow
-    const printWorkflow = (task: Task, depth = 0): void => {
-      if (visitedTasks.has(task.metadata.id)) return;
-      visitedTasks.add(task.metadata.id);
+/**
+ * Format workflow view showing task relationships
+ */
+function formatWorkflowView(tasks: v2.Task[]): string {
+  const taskMap = new Map<string, v2.Task>();
+  tasks.forEach((task) => taskMap.set(task.metadata.id, task));
 
-      const indent = '  '.repeat(depth);
-      const statusEmoji = task.metadata.status?.split(' ')[0] || '❓';
-      const title = task.metadata.title;
-      output += `${indent}${statusEmoji} ${task.metadata.id}: ${title}\n`;
+  let output = '\nTask Workflow:\n';
 
-      // First, follow explicit next_task links
-      if (task.metadata.next_task && taskMap.has(task.metadata.next_task)) {
-        printWorkflow(taskMap.get(task.metadata.next_task)!, depth + 1);
-      }
+  // Group by workflow state
+  const byState: Record<v2.WorkflowState, v2.Task[]> = {
+    backlog: [],
+    current: [],
+    archive: [],
+  };
 
-      // Then, check for tasks that depend on this one
-      tasks.forEach((t) => {
-        if (t.metadata.depends_on?.includes(task.metadata.id) && !visitedTasks.has(t.metadata.id)) {
-          printWorkflow(t, depth + 1);
+  tasks.forEach((task) => {
+    byState[task.metadata.location.workflowState].push(task);
+  });
+
+  // Show each workflow state
+  (['current', 'backlog', 'archive'] as v2.WorkflowState[]).forEach((state) => {
+    if (byState[state].length > 0) {
+      output += `\n${state.toUpperCase()}:\n`;
+
+      byState[state].forEach((task) => {
+        const statusEmoji = STATUS_EMOJIS[task.document.frontmatter.status];
+        const typeEmoji = TYPE_EMOJIS[task.document.frontmatter.type];
+        const isParent = task.metadata.isParentTask ? '📁 ' : '';
+
+        output += `  ${statusEmoji} ${typeEmoji} ${isParent}${task.metadata.id}: ${task.document.title}\n`;
+
+        // Show relationships
+        const meta = task.document.frontmatter as any;
+        if (meta.parent) {
+          output += `     └─ Parent: ${meta.parent}\n`;
+        }
+        if (meta.depends) {
+          output += `     └─ Depends on: ${meta.depends.join(', ')}\n`;
+        }
+        if (meta.next) {
+          output += `     └─ Next: ${meta.next}\n`;
         }
       });
-
-      // Finally, check for subtasks
-      if (task.metadata.subtasks) {
-        task.metadata.subtasks.forEach((subtaskId) => {
-          if (taskMap.has(subtaskId) && !visitedTasks.has(subtaskId)) {
-            printWorkflow(taskMap.get(subtaskId)!, depth + 1);
-          }
-        });
-      }
-    };
-
-    // Start printing from the start tasks
-    startTasks.forEach((task) => printWorkflow(task));
-
-    // Add any tasks that weren't reached through dependencies
-    tasks.forEach((task) => {
-      if (!visitedTasks.has(task.metadata.id)) {
-        output += `⚠️  Isolated Task ${task.metadata.id}: ${task.metadata.title}\n`;
-      }
-    });
-
-    return output;
-  }
-
-  // Clean table format without separators (prioritizing title readability)
-  const header =
-    'ID                        Title                                              Status          Phase';
-
-  const rows = tasks.map((task) => {
-    const id = task.metadata.id.substring(0, 26).padEnd(26);
-    const title = (task.metadata.title || '').substring(0, 50).padEnd(50);
-    const status = (task.metadata.status || '').padEnd(16);
-    const phase = (task.metadata.phase || '').padEnd(14);
-
-    return `${id}${title}${status}${phase}`;
-  });
-
-  return `\nTasks:\n${header}\n${rows.join('\n')}\n\nTotal: ${tasks.length} tasks\n`;
-}
-
-/**
- * Format a list of phases for display
- * @param phases List of phases to format
- * @param format Output format
- * @returns Formatted string
- */
-export function formatPhasesList(phases: Phase[], format: OutputFormat): string {
-  if (format === 'json') {
-    return JSON.stringify(phases, null, 2);
-  }
-
-  // Default table format
-  const header =
-    'ID               | Name              | Status        | Tasks  | Description\n' +
-    '-----------------|-------------------|---------------|--------|---------------------------';
-
-  const rows = phases.map((phase) => {
-    const id = phase.id.padEnd(17);
-    const name = (phase.name || phase.id).substring(0, 18).padEnd(18);
-    const status = (phase.status || '').padEnd(15);
-    const taskCount = (phase.task_count || 0).toString().padEnd(8);
-    const description = phase.description || '';
-
-    return `${id}| ${name}| ${status}| ${taskCount}| ${description}`;
-  });
-
-  return `\nPhases:\n${header}\n${rows.join('\n')}\n\nTotal: ${phases.length} phases\n`;
-}
-
-/**
- * Format a task for display
- * @param task Task to format
- * @param format Output format
- * @returns Formatted string
- */
-export function formatTaskDetail(task: Task, format: OutputFormat): string {
-  if (format === 'json') {
-    return JSON.stringify(task, null, 2);
-  }
-
-  if (format === 'markdown') {
-    // This requires the formatTaskFile function from task-parser
-    // For simplicity, just return the raw content - in real code, import and use formatTaskFile
-    return `+++\n${JSON.stringify(task.metadata, null, 2)}\n+++\n\n${task.content}`;
-  }
-
-  // Check if we're displaying full details
-  const isFullFormat = format === 'full';
-
-  // Default format (human readable)
-  let output = `\nTask ${task.metadata.id}:\n` + `${'─'.repeat(80)}\n`;
-
-  // Core fields always included
-  output += `Title           : ${task.metadata.title}\n`;
-  output += `Status          : ${task.metadata.status || ''}\n`;
-  output += `Type            : ${task.metadata.type || ''}\n`;
-  output += `Priority        : ${task.metadata.priority || ''}\n`;
-  output += `Assigned To     : ${task.metadata.assigned_to || ''}\n`;
-
-  // Show dates
-  output += `Created         : ${task.metadata.created_date || ''}\n`;
-  output += `Updated         : ${task.metadata.updated_date || ''}\n`;
-
-  // Show relationship fields
-  if (task.metadata.phase) {
-    output += `Phase           : ${task.metadata.phase}\n`;
-  }
-
-  if (task.metadata.parent_task) {
-    output += `Parent Task     : ${task.metadata.parent_task}\n`;
-  }
-
-  if (task.metadata.depends_on && task.metadata.depends_on.length > 0) {
-    output += `Depends On      : ${task.metadata.depends_on.join(', ')}\n`;
-  }
-
-  if (task.metadata.previous_task) {
-    output += `Previous Task   : ${task.metadata.previous_task}\n`;
-  }
-
-  if (task.metadata.next_task) {
-    output += `Next Task       : ${task.metadata.next_task}\n`;
-  }
-
-  if (task.metadata.subtasks && task.metadata.subtasks.length > 0) {
-    output += `Subtasks        : ${task.metadata.subtasks.join(', ')}\n`;
-  }
-
-  // Other metadata fields only in full format
-  if (isFullFormat) {
-    const otherFields = Object.entries(task.metadata)
-      .filter(
-        ([key]) =>
-          ![
-            'id',
-            'title',
-            'status',
-            'type',
-            'priority',
-            'assigned_to',
-            'created_date',
-            'updated_date',
-            'phase',
-            'parent_task',
-            'depends_on',
-            'previous_task',
-            'next_task',
-            'subtasks',
-          ].includes(key)
-      )
-      .map(
-        ([key, value]) =>
-          `${key.padEnd(15)}: ${typeof value === 'object' ? JSON.stringify(value) : value}`
-      )
-      .join('\n');
-
-    if (otherFields) {
-      output += '\nOther Metadata:\n';
-      output += `${otherFields}\n`;
     }
-  }
-
-  output += `${'─'.repeat(80)}\n`;
-  output += `Content:\n${task.content}\n`;
+  });
 
   return output;
 }
 
 /**
- * Format a list of features for display
- * @param features List of features to format
- * @param format Output format
- * @returns Formatted string
+ * Format tasks in a tree view showing parent/subtask hierarchy
  */
-export function formatFeaturesList(features: Feature[], format: OutputFormat): string {
-  if (format === 'json') {
-    return JSON.stringify(features, null, 2);
+function formatTreeView(tasks: v2.Task[]): string {
+  if (tasks.length === 0) {
+    return '\nCURRENT:\n  (No tasks in current workflow)\n';
   }
 
-  if (format === 'minimal') {
-    return features.map((feature) => `${feature.id}\t${feature.title}`).join('\n');
-  }
+  // Group tasks by workflow state
+  const byState: Record<v2.WorkflowState, v2.Task[]> = {
+    backlog: [],
+    current: [],
+    archive: [],
+  };
 
-  // Clean table format without separators
-  const header =
-    'ID                              Title                                    Status      Phase         Progress';
-
-  const rows = features.map((feature) => {
-    const id = feature.id.substring(0, 32).padEnd(32);
-    const title = (feature.title || '').substring(0, 40).padEnd(40);
-    const status = (feature.status || '').padEnd(12);
-    const phase = (feature.phase || '').padEnd(14);
-    const progress = `${feature.progress || 0}%`.padEnd(8);
-
-    return `${id}${title}${status}${phase}${progress}`;
+  tasks.forEach((task) => {
+    byState[task.metadata.location.workflowState].push(task);
   });
 
-  return `\nFeatures:\n${header}\n${rows.join('\n')}\n\nTotal: ${features.length} features\n`;
+  let output = '\n';
+  let hasContent = false;
+
+  // Show each workflow state
+  (['current', 'backlog', 'archive'] as v2.WorkflowState[]).forEach((state) => {
+    const stateTasks = byState[state];
+    if (stateTasks.length === 0) return;
+
+    hasContent = true;
+    output += `${state.toUpperCase()}:\n`;
+
+    // Separate parent tasks and standalone tasks
+    const parentTasks = stateTasks.filter((t) => t.metadata.isParentTask);
+    const standaloneTasks = stateTasks.filter(
+      (t) => !t.metadata.isParentTask && !t.metadata.parentTask
+    );
+    const subtasks = stateTasks.filter((t) => !t.metadata.isParentTask && t.metadata.parentTask);
+
+    // Create a map of parent ID to subtasks
+    const subtasksByParent = new Map<string, v2.Task[]>();
+    subtasks.forEach((task) => {
+      const parentId = task.metadata.parentTask!;
+      if (!subtasksByParent.has(parentId)) {
+        subtasksByParent.set(parentId, []);
+      }
+      subtasksByParent.get(parentId)!.push(task);
+    });
+
+    // Handle empty state
+    if (parentTasks.length === 0 && standaloneTasks.length === 0 && subtasks.length === 0) {
+      output += `  (No tasks in ${state} workflow)\n`;
+      return;
+    }
+
+    // Display parent tasks with their subtasks
+    parentTasks.forEach((parent, index) => {
+      const isLastParent = index === parentTasks.length - 1 && standaloneTasks.length === 0;
+      const prefix = isLastParent ? '└── ' : '├── ';
+      const statusSymbol = getStatusSymbol(parent.document.frontmatter.status);
+      const meta = parent.document.frontmatter as any;
+
+      // Build parent line
+      let line = `${prefix}📁 ${statusSymbol} ${parent.document.title} [${parent.metadata.id}]`;
+      line += ` • ${parent.document.frontmatter.status}`;
+
+      // Add progress for parent tasks
+      const parentSubtasks = subtasksByParent.get(parent.metadata.id) || [];
+      if (parentSubtasks.length > 0) {
+        const done = parentSubtasks.filter((t) => t.document.frontmatter.status === 'Done').length;
+        line += ` • ${done}/${parentSubtasks.length} done`;
+      }
+
+      // Add metadata
+      if (meta.priority && meta.priority !== 'Medium') {
+        line += ` • ${meta.priority === 'High' ? '↑' : '↓'} ${meta.priority}`;
+      }
+      if (meta.assignee) line += ` • @${meta.assignee}`;
+      if (meta.tags && meta.tags.length > 0) {
+        line += ` • ${meta.tags.map((t: string) => `#${t}`).join(' ')}`;
+      }
+
+      output += line + '\n';
+
+      // Show subtasks of this parent
+      if (parentSubtasks.length > 0) {
+        // Sort by sequence number
+        const sortedSubtasks = parentSubtasks.sort((a, b) => {
+          const seqA = a.metadata.sequenceNumber || '99';
+          const seqB = b.metadata.sequenceNumber || '99';
+          return seqA.localeCompare(seqB);
+        });
+
+        // Group by sequence for parallel tasks
+        const bySequence = new Map<string, v2.Task[]>();
+        sortedSubtasks.forEach((task) => {
+          const seq = task.metadata.sequenceNumber || '99';
+          if (!bySequence.has(seq)) {
+            bySequence.set(seq, []);
+          }
+          bySequence.get(seq)!.push(task);
+        });
+
+        const sequences = Array.from(bySequence.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+
+        sequences.forEach(([seq, seqTasks], seqIndex) => {
+          const isLastSeq = seqIndex === sequences.length - 1;
+          const seqPrefix = isLastParent ? '    ' : '│   ';
+
+          if (seqTasks.length === 1) {
+            // Single task
+            const task = seqTasks[0];
+            const taskPrefix = isLastSeq ? '└── ' : '├── ';
+            const statusSymbol = getStatusSymbol(task.document.frontmatter.status);
+            const taskMeta = task.document.frontmatter as any;
+
+            let taskLine = `${seqPrefix}${taskPrefix}${statusSymbol} ${task.document.title} [${task.metadata.id}]`;
+            taskLine += ` • ${task.document.frontmatter.status}`;
+
+            // Add metadata
+            if (taskMeta.priority && taskMeta.priority !== 'Medium') {
+              taskLine += ` • ${taskMeta.priority === 'High' ? '↑' : '↓'} ${taskMeta.priority}`;
+            }
+            if (taskMeta.assignee) taskLine += ` • @${taskMeta.assignee}`;
+            if (taskMeta.tags && taskMeta.tags.length > 0) {
+              taskLine += ` • ${taskMeta.tags.map((t: string) => `#${t}`).join(' ')}`;
+            }
+
+            output += taskLine + '\n';
+          } else {
+            // Parallel tasks
+            output += `${seqPrefix}├─┬ [Parallel execution - ${seq}]\n`;
+            seqTasks.forEach((task, taskIndex) => {
+              const isLastTask = taskIndex === seqTasks.length - 1;
+              const taskPrefix = isLastTask ? '└─ ' : '├─ ';
+              const statusSymbol = getStatusSymbol(task.document.frontmatter.status);
+              const taskMeta = task.document.frontmatter as any;
+
+              let taskLine = `${seqPrefix}│ ${taskPrefix}${statusSymbol} ${task.document.title} [${task.metadata.id}]`;
+              taskLine += ` • ${task.document.frontmatter.status}`;
+
+              // Add metadata
+              if (taskMeta.priority && taskMeta.priority !== 'Medium') {
+                taskLine += ` • ${taskMeta.priority === 'High' ? '↑' : '↓'} ${taskMeta.priority}`;
+              }
+              if (taskMeta.assignee) taskLine += ` • @${taskMeta.assignee}`;
+              if (taskMeta.tags && taskMeta.tags.length > 0) {
+                taskLine += ` • ${taskMeta.tags.map((t: string) => `#${t}`).join(' ')}`;
+              }
+
+              output += taskLine + '\n';
+            });
+          }
+        });
+      }
+    });
+
+    // Display standalone tasks
+    standaloneTasks.forEach((task, index) => {
+      const isLast = index === standaloneTasks.length - 1;
+      const prefix = isLast ? '└── ' : '├── ';
+      const statusSymbol = getStatusSymbol(task.document.frontmatter.status);
+      const meta = task.document.frontmatter as any;
+
+      let line = `${prefix}${statusSymbol} ${task.document.title} [${task.metadata.id}]`;
+      line += ` • ${task.document.frontmatter.status}`;
+
+      // Add metadata
+      if (meta.priority && meta.priority !== 'Medium') {
+        line += ` • ${meta.priority === 'High' ? '↑' : '↓'} ${meta.priority}`;
+      }
+      if (meta.assignee) line += ` • @${meta.assignee}`;
+      if (meta.tags && meta.tags.length > 0) {
+        line += ` • ${meta.tags.map((t: string) => `#${t}`).join(' ')}`;
+      }
+
+      // Check for orphaned tasks
+      if (task.metadata.parentTask) {
+        line += ' (⚠️ no parent)';
+      }
+
+      output += line + '\n';
+    });
+
+    output += '\n';
+  });
+
+  if (hasContent) {
+    output += 'Legend: ✓ Done  → In Progress  ○ To Do  ⊗ Blocked  • High ↑  Low ↓\n';
+  }
+
+  return output;
+}
+
+/**
+ * Get status symbol for tree view
+ */
+function getStatusSymbol(status: v2.TaskStatus): string {
+  switch (status) {
+    case 'Done':
+      return '✓';
+    case 'In Progress':
+      return '→';
+    case 'Blocked':
+      return '⊗';
+    case 'To Do':
+      return '○';
+    case 'Archived':
+      return '⊙';
+    default:
+      return '○';
+  }
+}
+
+/**
+ * Format tasks in legacy table view
+ */
+function formatTableView(tasks: v2.Task[]): string {
+  const header =
+    'ID                        Title                                              Status          Location      Type';
+
+  const rows = tasks.map((task) => {
+    const id = task.metadata.id.substring(0, 26).padEnd(26);
+    const title = task.document.title.substring(0, 50).padEnd(50);
+    const status =
+      `${STATUS_EMOJIS[task.document.frontmatter.status]} ${task.document.frontmatter.status}`.padEnd(
+        16
+      );
+    const location = task.metadata.location.workflowState.padEnd(14);
+    const type =
+      `${TYPE_EMOJIS[task.document.frontmatter.type]} ${task.document.frontmatter.type}`.padEnd(12);
+
+    return `${id}${title}${status}${location}${type}`;
+  });
+
+  return `\nTasks:\n${header}\n${rows.join('\n')}`;
+}
+
+/**
+ * Format a single v2 task for detailed display
+ */
+export function formatTaskDetail(task: v2.Task, format: OutputFormat): string {
+  if (format === 'json') {
+    return JSON.stringify(task, null, 2);
+  }
+
+  if (format === 'markdown' || format === 'full') {
+    return formatTaskAsMarkdown(task);
+  }
+
+  // Default format
+  const meta = task.document.frontmatter as any;
+  const statusEmoji = STATUS_EMOJIS[task.document.frontmatter.status];
+  const typeEmoji = TYPE_EMOJIS[task.document.frontmatter.type];
+  const priorityEmoji = meta.priority
+    ? PRIORITY_EMOJIS[meta.priority as keyof typeof PRIORITY_EMOJIS] || ''
+    : '';
+
+  let output = `\n${task.document.title}\n${'='.repeat(task.document.title.length)}\n\n`;
+  output += `ID:       ${task.metadata.id}\n`;
+  output += `Type:     ${typeEmoji} ${task.document.frontmatter.type}\n`;
+  output += `Status:   ${statusEmoji} ${task.document.frontmatter.status}\n`;
+  output += `Location: ${task.metadata.location.workflowState}`;
+
+  if (task.metadata.location.archiveDate) {
+    output += ` (${task.metadata.location.archiveDate})`;
+  }
+  output += '\n';
+
+  if (meta.priority) {
+    output += `Priority: ${priorityEmoji} ${meta.priority}\n`;
+  }
+  if (meta.assignee) {
+    output += `Assignee: ${meta.assignee}\n`;
+  }
+  if (meta.tags) {
+    output += `Tags:     ${meta.tags.join(', ')}\n`;
+  }
+
+  // Show sections
+  output += '\n## Instruction\n';
+  output += task.document.sections.instruction || '(No instruction provided)';
+  output += '\n';
+
+  if (task.document.sections.tasks) {
+    output += '\n## Tasks\n';
+    output += task.document.sections.tasks;
+    output += '\n';
+  }
+
+  if (format === 'full') {
+    if (task.document.sections.deliverable) {
+      output += '\n## Deliverable\n';
+      output += task.document.sections.deliverable;
+      output += '\n';
+    }
+
+    if (task.document.sections.log) {
+      output += '\n## Log\n';
+      output += task.document.sections.log;
+      output += '\n';
+    }
+  }
+
+  return output;
+}
+
+/**
+ * Format task as markdown
+ */
+function formatTaskAsMarkdown(task: v2.Task): string {
+  let output = `# ${task.document.title}\n\n`;
+
+  // Frontmatter
+  output += '---\n';
+  output += `type: ${task.document.frontmatter.type}\n`;
+  output += `status: ${task.document.frontmatter.status}\n`;
+  output += `area: ${task.document.frontmatter.area}\n`;
+
+  // Add custom metadata
+  const meta = task.document.frontmatter as any;
+  Object.entries(meta).forEach(([key, value]) => {
+    if (!['type', 'status', 'area'].includes(key)) {
+      if (Array.isArray(value)) {
+        output += `${key}: [${value.join(', ')}]\n`;
+      } else {
+        output += `${key}: ${value}\n`;
+      }
+    }
+  });
+
+  output += '---\n\n';
+
+  // Sections
+  output += '## Instruction\n\n';
+  output += task.document.sections.instruction || '(No instruction provided)';
+  output += '\n\n';
+
+  output += '## Tasks\n\n';
+  output += task.document.sections.tasks || '- [ ] Define tasks';
+  output += '\n\n';
+
+  output += '## Deliverable\n\n';
+  output += task.document.sections.deliverable || '(To be defined)';
+  output += '\n\n';
+
+  output += '## Log\n\n';
+  output += task.document.sections.log || '(No log entries yet)';
+  output += '\n';
+
+  return output;
+}
+
+/**
+ * Format template list
+ */
+export function formatTemplatesList(templates: v2.TemplateInfo[]): string {
+  let output = '\nAvailable Templates:\n';
+  output += 'ID                  Title                                   Description\n';
+  output += '─'.repeat(80) + '\n';
+
+  templates.forEach((template) => {
+    const id = template.id.padEnd(20);
+    const title = template.title.substring(0, 40).padEnd(40);
+    const description = template.description.substring(0, 20);
+    output += `${id}${title}${description}\n`;
+  });
+
+  return output;
+}
+
+/**
+ * Format progress percentage
+ */
+export function formatProgress(completed: number, total: number): string {
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const filled = Math.round(percentage / 10);
+  const empty = 10 - filled;
+
+  const bar = '█'.repeat(filled) + '░'.repeat(empty);
+
+  return `${bar} ${percentage}%`;
 }

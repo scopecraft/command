@@ -1,168 +1,305 @@
 /**
- * Core types used across the task management system
+ * Scopecraft Task System V2 Types
+ *
+ * Core type definitions for the workflow-based task system
  */
 
-import type { RuntimeConfig } from './config/types.js';
+// ============================================
+// Core Enums and Constants
+// ============================================
 
-// Task metadata schema
-export interface TaskMetadata {
-  id: string;
-  title: string;
-  status?: string;
-  type?: string;
-  priority?: string;
-  created_date?: string;
-  updated_date?: string;
-  assigned_to?: string;
+export type WorkflowState = 'backlog' | 'current' | 'archive';
+
+export type TaskType = 'feature' | 'bug' | 'chore' | 'documentation' | 'test' | 'spike' | 'idea';
+
+export type TaskStatus = 'To Do' | 'In Progress' | 'Done' | 'Blocked' | 'Archived';
+
+export type TaskPriority = 'Highest' | 'High' | 'Medium' | 'Low';
+
+// Required sections in v2 task documents
+export const REQUIRED_SECTIONS = ['instruction', 'tasks', 'deliverable', 'log'] as const;
+export type RequiredSection = (typeof REQUIRED_SECTIONS)[number];
+
+// ============================================
+// Task Document Structure
+// ============================================
+
+/**
+ * V2 Task frontmatter - minimal required fields + custom
+ */
+export interface TaskFrontmatter {
+  // Required fields
+  type: TaskType;
+  status: TaskStatus;
+  area: string;
+
+  // Optional typed fields
+  priority?: TaskPriority;
   tags?: string[];
-  parent_task?: string;
-  depends_on?: string[];
-  related_tasks?: string[];
-  phase?: string;
-  subdirectory?: string; // Supports MDTM directory structure (e.g., "FEATURE_Login")
-  is_overview?: boolean; // Special flag for _overview.md files
-  next_task?: string;
-  previous_task?: string;
-  subtasks?: string[];
-  [key: string]: any; // Allow for additional fields
+
+  // Allow custom fields for extensibility
+  [key: string]: unknown;
 }
 
-// Task object with metadata and content
+/**
+ * Task document sections
+ */
+export interface TaskSections {
+  // Required sections
+  instruction: string;
+  tasks: string;
+  deliverable: string;
+  log: string;
+
+  // Allow custom sections
+  [key: string]: string;
+}
+
+/**
+ * Complete task document structure
+ */
+export interface TaskDocument {
+  title: string;
+  frontmatter: TaskFrontmatter;
+  sections: TaskSections;
+}
+
+// ============================================
+// Task Metadata and Location
+// ============================================
+
+/**
+ * Task location within workflow
+ */
+export interface TaskLocation {
+  workflowState: WorkflowState;
+  archiveDate?: string; // YYYY-MM format for archive organization
+}
+
+/**
+ * Task metadata including file system info
+ */
+export interface TaskMetadata {
+  id: string; // filename without .task.md
+  filename: string; // full filename with extension
+  path: string; // absolute file path
+  location: TaskLocation; // workflow location
+  isParentTask: boolean; // true if task is a folder with subtasks
+  parentTask?: string; // for subtasks in complex tasks
+  sequenceNumber?: string; // e.g., "01" for ordered subtasks
+}
+
+/**
+ * Complete task with document and metadata
+ */
 export interface Task {
   metadata: TaskMetadata;
-  content: string;
-  filePath?: string;
+  document: TaskDocument;
 }
 
-// Phase object
-export interface Phase {
+// ============================================
+// Parent Task Support
+// ============================================
+
+/**
+ * Parent task (folder-based) structure
+ */
+export interface ParentTask {
+  metadata: TaskMetadata;
+  overview: TaskDocument; // _overview.md content
+  subtasks: Task[]; // ordered subtasks
+  supportingFiles: string[]; // non-task files in folder
+}
+
+/**
+ * Subtask info for parent tasks
+ */
+export interface SubtaskInfo {
+  sequenceNumber: string; // "01", "02", etc.
+  filename: string;
+  canRunParallel: boolean; // true if same sequence number as another
+}
+
+// ============================================
+// ID System
+// ============================================
+
+/**
+ * Components of a v2 task ID
+ */
+export interface TaskIdComponents {
+  descriptiveName: string; // intelligently abbreviated name
+  monthCode: string; // MM format (01-12)
+  letterSuffix: string; // Single letter A-Z
+  sequenceNumber?: string; // NN format for subtasks (01, 02, etc)
+}
+
+/**
+ * Task reference format: @task:{id}#{section}
+ */
+export interface TaskReference {
   id: string;
-  name: string;
-  description?: string;
-  tasks?: string[]; // Optional list of task IDs
-  task_count?: number; // Count of tasks in the phase
-  status?: string;
-  order?: number;
+  section?: string;
+  explicitPath?: string; // e.g., "current/implement-oauth-0127-AB"
 }
 
-// Feature object representing a feature directory structure
-export interface Feature {
-  id: string; // Directory name (e.g., "FEATURE_Authentication")
-  name: string; // Clean name (e.g., "Authentication")
-  title: string; // Display title from overview
-  description?: string; // Description from overview
-  phase?: string; // Phase this feature belongs to
-  tasks: string[]; // List of task IDs in this feature
-  status?: string; // Computed status based on tasks
-  progress?: number; // Progress percentage (0-100)
-  overview?: Task; // Reference to the overview task
-  task_count?: number; // Count of tasks in this feature
+// ============================================
+// Operations and Options
+// ============================================
+
+/**
+ * Task creation options
+ */
+export interface TaskCreateOptions {
+  title: string;
+  type: TaskType;
+  area: string;
+  workflowState?: WorkflowState; // defaults to 'backlog'
+  status?: TaskStatus; // defaults to 'To Do'
+  tags?: string[]; // task tags
+  template?: string; // template ID to use
+  instruction?: string; // initial instruction content
+  tasks?: string[]; // initial checklist items
+  customMetadata?: Record<string, unknown>;
+  customSections?: Record<string, string>;
 }
 
-// Area object representing an area directory structure
-export interface Area {
-  id: string; // Directory name (e.g., "AREA_Performance")
-  name: string; // Clean name (e.g., "Performance")
-  title: string; // Display title from overview
-  description?: string; // Description from overview
-  phase?: string; // Phase this area belongs to
-  tasks: string[]; // List of task IDs in this area
-  status?: string; // Computed status based on tasks
-  progress?: number; // Progress percentage (0-100)
-  overview?: Task; // Reference to the overview task
-  task_count?: number; // Count of tasks in this area
-}
-
-// Filter options for feature listing
-export interface FeatureFilterOptions {
-  phase?: string;
-  status?: string;
-  type?: string;
-  include_tasks?: boolean; // Whether to include task details
-  include_progress?: boolean; // Whether to include progress calculation
-  include_content?: boolean; // Controls whether feature content is included
-  include_completed?: boolean; // Controls whether completed features are included
-  config?: RuntimeConfig; // Runtime configuration support
-}
-
-// Filter options for area listing
-export interface AreaFilterOptions {
-  phase?: string;
-  status?: string;
-  type?: string;
-  include_tasks?: boolean; // Whether to include task details
-  include_progress?: boolean; // Whether to include progress calculation
-  include_content?: boolean; // Controls whether area content is included
-  include_completed?: boolean; // Controls whether completed areas are included
-  config?: RuntimeConfig; // Runtime configuration support
-}
-
-// Filter options for task listing
-export interface TaskFilterOptions {
-  status?: string;
-  type?: string;
-  assignee?: string;
-  tags?: string[];
-  phase?: string;
-  subdirectory?: string;
-  is_overview?: boolean;
-  include_content?: boolean; // Controls whether task content is included in the response (default: true)
-  include_completed?: boolean; // Controls whether completed tasks are included in the response (default: true)
-  config?: RuntimeConfig; // Runtime configuration support
-}
-
-// Update options for task
+/**
+ * Task update options
+ */
 export interface TaskUpdateOptions {
-  // Direct field updates (for convenience)
-  status?: string;
-  priority?: string;
-  phase?: string;
-  subdirectory?: string;
-  new_id?: string;
-
-  // Nested metadata updates (for full control)
-  metadata?: Partial<TaskMetadata>;
-
-  // Content updates
-  content?: string;
-
-  // Runtime configuration
-  config?: RuntimeConfig;
-}
-
-// Update options for feature
-export interface FeatureUpdateOptions {
-  name?: string;
+  frontmatter?: Partial<TaskFrontmatter>;
+  sections?: Partial<TaskSections>;
   title?: string;
-  description?: string;
-  status?: string;
-  new_id?: string;
 }
 
-// Update options for area
-export interface AreaUpdateOptions {
-  name?: string;
-  title?: string;
-  description?: string;
-  status?: string;
-  new_id?: string;
+/**
+ * Task move options
+ */
+export interface TaskMoveOptions {
+  targetState: WorkflowState;
+  archiveDate?: string; // YYYY-MM format for archive
+  updateStatus?: boolean; // auto-update status based on move
 }
 
-// Output formats for various displays
-export type OutputFormat =
-  | 'table'
-  | 'json'
-  | 'minimal'
-  | 'workflow'
-  | 'markdown'
-  | 'default'
-  | 'full';
+/**
+ * List/filter options
+ */
+export interface TaskListOptions {
+  workflowStates?: WorkflowState[];
+  type?: TaskType;
+  status?: TaskStatus;
+  excludeStatuses?: TaskStatus[]; // Filter OUT multiple statuses for token efficiency
+  area?: string;
+  tags?: string[];
+  includeArchived?: boolean;
+  includeParentTasks?: boolean;
+  // Additional filters
+  [key: string]: unknown;
+}
 
-// Response type for operations
-export interface OperationResult<T> {
+/**
+ * Section update options
+ */
+export interface SectionUpdateOptions {
+  taskId: string;
+  sectionName: string;
+  content: string;
+  createIfMissing?: boolean;
+}
+
+// ============================================
+// Results and Errors
+// ============================================
+
+/**
+ * Section reference result
+ */
+export interface SectionContent {
+  taskId: string;
+  sectionName: string;
+  content: string;
+  taskPath: string;
+  exists: boolean;
+}
+
+/**
+ * Validation error details
+ */
+export interface ValidationError {
+  field: string;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
+/**
+ * Operation result wrapper
+ */
+export interface OperationResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
-  message?: string;
-  warnings?: string[]; // Additional warnings for non-critical issues
+  validationErrors?: ValidationError[];
+}
+
+/**
+ * Task search result
+ */
+export interface TaskSearchResult {
+  task: Task;
+  matchedIn?: 'title' | 'content' | 'metadata';
+  excerpt?: string;
+}
+
+// ============================================
+// Configuration
+// ============================================
+
+/**
+ * V2-specific configuration options
+ */
+export interface V2Config {
+  workflowFolders?: {
+    backlog: string;
+    current: string;
+    archive: string;
+  };
+  archiveDateFormat?: string; // default "YYYY-MM"
+  defaultWorkflowState?: WorkflowState;
+  autoStatusUpdate?: boolean; // update status on workflow transitions
+  autoWorkflowTransitions?: boolean; // automatically move tasks between workflows on status changes
+  complexTaskPrefix?: string; // prefix for subtask numbering
+}
+
+// ============================================
+// Migration Support
+// ============================================
+
+/**
+ * Structure version detection
+ */
+export type StructureVersion = 'v1' | 'v2' | 'mixed' | 'none';
+
+/**
+ * Migration info for v1 tasks
+ */
+export interface V1TaskInfo {
+  path: string;
+  phase: string;
+  subdirectory?: string;
+  id: string;
+  type: string;
+}
+
+/**
+ * Migration result
+ */
+export interface MigrationResult {
+  tasksFound: number;
+  tasksMigrated: number;
+  errors: Array<{
+    task: string;
+    error: string;
+  }>;
+  warnings: string[];
 }

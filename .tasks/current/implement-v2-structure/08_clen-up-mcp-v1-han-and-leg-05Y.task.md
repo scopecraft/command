@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: To Do
+status: Done
 area: core
 ---
 
@@ -14,22 +14,22 @@ Remove all V1 MCP handlers and legacy code from the MCP server. Clean up old han
 ## Tasks
 
 ### MCP Handler Cleanup
-- [ ] Remove all V1 handlers from `/src/mcp/handlers.ts`
-- [ ] Delete old handler files (`handlers.old.ts`, `core-server.old.ts`)
-- [ ] Clean up phase-related MCP operations
-- [ ] Remove legacy feature/area management handlers
-- [ ] Simplify handler exports to V2 only
+- [x] Remove all V1 handlers from `/src/mcp/handlers.ts`
+- [x] Delete old handler files (`handlers.old.ts`, `core-server.old.ts`)
+- [x] Clean up phase-related MCP operations
+- [x] Remove legacy feature/area management handlers
+- [x] Simplify handler exports to V2 only
 
 ### Schema and Type Cleanup
-- [ ] Remove V1 schemas and types
-- [ ] Clean up MCP type definitions
-- [ ] Remove phase-related input/output schemas
-- [ ] Simplify MCP tool definitions
+- [x] Remove V1 schemas and types
+- [x] Clean up MCP type definitions
+- [x] Remove phase-related input/output schemas
+- [x] Simplify MCP tool definitions
 
 ### Testing and Validation
-- [ ] Ensure all V2 MCP functionality works
-- [ ] Test MCP integration with cleaned handlers
-- [ ] Verify no V1 references remain in MCP code
+- [x] Ensure all V2 MCP functionality works
+- [x] Test MCP integration with cleaned handlers
+- [x] Verify no V1 references remain in MCP code
 
 ## Deliverable
 

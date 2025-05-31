@@ -5,7 +5,7 @@
  */
 
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import * as core from '../core/v2/index.js';
+import * as core from '../core/index.js';
 import {
   type ParentGetInput,
   ParentGetInputSchema,

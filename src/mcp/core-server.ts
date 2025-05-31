@@ -7,7 +7,7 @@ import path from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import * as v2 from '../core/v2/index.js';
+import * as v2 from '../core/index.js';
 import {
   handleDebugCodePath,
   handleGetCurrentRoot,
@@ -26,20 +26,20 @@ import {
 
 // Import normalized handlers for write operations
 import {
+  handleParentCreateNormalized,
+  handleParentOperationsNormalized,
   handleTaskCreateNormalized,
-  handleTaskUpdateNormalized,
   handleTaskDeleteNormalized,
   handleTaskMoveNormalized,
   handleTaskTransformNormalized,
-  handleParentCreateNormalized,
-  handleParentOperationsNormalized,
+  handleTaskUpdateNormalized,
 } from './normalized-write-handlers.js';
 
 // Import clean enum schemas
 import {
-  TaskTypeSchema,
-  TaskStatusSchema,
   TaskPrioritySchema,
+  TaskStatusSchema,
+  TaskTypeSchema,
   WorkflowStateSchema,
 } from './schemas.js';
 
@@ -754,9 +754,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     ),
     area: z.string().describe('Task area').default('general').optional(),
     status: taskStatusEnum
-      .describe(
-        'Initial status: "todo" (default), "in_progress", "done", "blocked", or "archived"'
-      )
+      .describe('Initial status: "todo" (default), "in_progress", "done", "blocked", or "archived"')
       .default('todo')
       .optional(),
     priority: taskPriorityEnum

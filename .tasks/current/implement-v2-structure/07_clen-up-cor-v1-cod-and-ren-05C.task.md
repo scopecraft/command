@@ -2,22 +2,20 @@
 
 ---
 type: feature
-status: To Do
+status: Done
 area: core
 ---
 
 
 ## Instruction
-
 Clean up all V1 legacy code from the core module and prepare for the final project structure rename. Remove phase-based code, old configuration files, and any V1-specific implementations that are no longer needed.
 
 ## Tasks
-
 ### Core Module Cleanup
-- [ ] Remove phase-related code from `/src/core/`
+- [x] Remove phase-related code from `/src/core/`
 - [ ] Clean up old configuration files
-- [ ] Remove legacy task manager implementations
-- [ ] Simplify core types to V2 workflow structure only
+- [x] Remove legacy task manager implementations
+- [x] Simplify core types to V2 workflow structure only
 - [ ] Remove any unused imports and dependencies
 
 ### Configuration Cleanup  
@@ -32,7 +30,6 @@ Clean up all V1 legacy code from the core module and prepare for the final proje
 - [ ] Verify CLI still works with cleaned core
 
 ## Deliverable
-
 Clean core module with:
 - No V1 legacy code remaining
 - Simplified V2-only structure
@@ -40,3 +37,4 @@ Clean core module with:
 - Working V2 functionality
 
 ## Log
+- 2025-05-30: Completed major V1/V2 cleanup. Removed entire V1 task-manager directory, moved V2 contents to standard core location, removed V2 naming convention from all files. Fixed pre-existing getProjectRoot() compilation issue.

@@ -323,6 +323,13 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         >
           🤖 Claude Assistant
         </Button>
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => handleItemClick('autonomous', '/autonomous')}
+        >
+          🚀 Autonomous Monitor
+        </Button>
       </div>
     </aside>
   );

@@ -1,326 +1,396 @@
 /**
- * Template management functionality
- * Handles copying, listing, and applying templates for task creation
+ * V2 Template Manager
+ *
+ * Handles task templates with v2 section structure
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { parse, stringify } from '@iarna/toml';
-import type { RuntimeConfig } from './config/types.js';
-import { projectConfig } from './project-config.js';
+
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { basename, join } from 'node:path';
+import { getTemplatesDirectory } from './directory-utils.js';
+import { ensureRequiredSections, parseTaskDocument, serializeTaskDocument } from './task-parser.js';
+import type { TaskCreateOptions, TaskDocument, TaskType, V2Config } from './types.js';
 
 /**
- * Template metadata
+ * Template info
  */
 export interface TemplateInfo {
   id: string;
+  filename: string;
+  type: TaskType;
   name: string;
-  path: string;
-  description: string;
 }
 
 /**
- * Get the templates directory
- * @param config Optional runtime configuration
- * @returns Path to the templates directory
+ * Get list of available templates
  */
-export function getTemplatesDirectory(config?: RuntimeConfig): string {
-  // If runtime config is provided and has tasksDir, use it to construct templates path
-  if (config?.tasksDir) {
-    return path.join(config.tasksDir, '.templates');
-  }
-  // Otherwise fall back to project config
-  return projectConfig.getTemplatesDirectory();
-}
+export function listTemplates(projectRoot: string): TemplateInfo[] {
+  const templatesDir = getTemplatesDirectory(projectRoot);
 
-/**
- * Ensures templates directory exists and contains basic templates
- * @param config Optional runtime configuration
- */
-export function initializeTemplates(config?: RuntimeConfig): void {
-  const templatesDir = getTemplatesDirectory(config);
-
-  // Create templates directory if it doesn't exist
-  if (!fs.existsSync(templatesDir)) {
-    fs.mkdirSync(templatesDir, { recursive: true });
+  if (!existsSync(templatesDir)) {
+    return [];
   }
 
-  // Copy templates from docs/templates to .tasks/templates
-  const sourceTemplatesDir = path.join(process.cwd(), 'docs', 'templates');
-
-  if (fs.existsSync(sourceTemplatesDir)) {
-    // Only copy task templates (01-06)
-    const templateFiles = fs.readdirSync(sourceTemplatesDir).filter((file) => {
-      // Match files like 01_feature.md, 02_bug.md, etc.
-      return /^0[1-6]_.+\.md$/.test(file);
-    });
-
-    for (const file of templateFiles) {
-      const sourcePath = path.join(sourceTemplatesDir, file);
-      const targetPath = path.join(templatesDir, file);
-
-      // Only copy if the file doesn't already exist
-      if (!fs.existsSync(targetPath)) {
-        fs.copyFileSync(sourcePath, targetPath);
-      }
-    }
-  } else {
-    // If templates not found, create some basic ones
-    createBasicTemplates(templatesDir);
-  }
-}
-
-/**
- * Create basic templates when source templates are not available
- * @param templatesDir Directory to create templates in
- */
-function createBasicTemplates(templatesDir: string): void {
-  // Try to copy from bundled templates first
-  const bundledTemplatesDir = path.join(
-    path.dirname(import.meta.url).replace('file://', ''),
-    '..',
-    'templates'
-  );
-  const templateFiles = [
-    '01_feature.md',
-    '02_bug.md',
-    '03_chore.md',
-    '04_documentation.md',
-    '05_test.md',
-    '06_spike.md',
-  ];
-
-  let copiedFromBundled = false;
-
-  if (fs.existsSync(bundledTemplatesDir)) {
-    try {
-      for (const file of templateFiles) {
-        const sourcePath = path.join(bundledTemplatesDir, file);
-        const targetPath = path.join(templatesDir, file);
-
-        if (fs.existsSync(sourcePath) && !fs.existsSync(targetPath)) {
-          fs.copyFileSync(sourcePath, targetPath);
-        }
-      }
-      copiedFromBundled = true;
-    } catch (error) {
-      console.warn('Failed to copy bundled templates, falling back to hardcoded templates');
-    }
-  }
-
-  // If bundled templates don't exist or copy failed, create minimal fallback templates
-  if (!copiedFromBundled) {
-    // Create minimal fallback templates
-    const fallbackFeature = `# [Title]
-
-## Description ✍️
-Describe the feature in detail.
-
-## Acceptance Criteria ✅
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-
-## Implementation Notes 📝
-Add any technical details or implementation considerations here.
-`;
-
-    const fallbackBug = `# [Title]
-
-## Description ✍️
-Describe the bug in detail.
-
-## Steps to Reproduce 🔄
-1. Step 1
-2. Step 2
-3. Step 3
-
-## Expected Behavior ✓
-What should happen?
-
-## Actual Behavior ✗
-What actually happens?
-
-## Fix Implementation 🔧
-- [ ] Identify root cause
-- [ ] Implement fix
-- [ ] Add regression test
-`;
-
-    // Only create feature and bug templates as fallback
-    if (!fs.existsSync(path.join(templatesDir, '01_feature.md'))) {
-      fs.writeFileSync(path.join(templatesDir, '01_feature.md'), fallbackFeature);
-    }
-    if (!fs.existsSync(path.join(templatesDir, '02_bug.md'))) {
-      fs.writeFileSync(path.join(templatesDir, '02_bug.md'), fallbackBug);
-    }
-
-    console.warn('Only basic templates created. Full template set available after installation.');
-  }
-}
-
-/**
- * List available templates
- * @param config Optional runtime configuration
- * @returns Array of template info objects
- */
-export function listTemplates(config?: RuntimeConfig): TemplateInfo[] {
-  const templatesDir = getTemplatesDirectory(config);
+  const files = readdirSync(templatesDir);
   const templates: TemplateInfo[] = [];
 
-  if (!fs.existsSync(templatesDir)) {
-    return templates;
-  }
-
-  const files = fs.readdirSync(templatesDir);
-
   for (const file of files) {
-    // Only include .md files and skip README files
-    if (!file.endsWith('.md') || file.includes('README')) {
-      continue;
-    }
-
-    const filePath = path.join(templatesDir, file);
-
-    // Extract template ID and name from filename
-    const match = file.match(/^(\d+)_(.+)\.md$/);
+    // Match pattern: NN_type.md
+    const match = file.match(/^(\d+)_(\w+)\.md$/);
     if (match) {
-      const [, _id, name] = match;
-
-      // Map template names to their task types
-      const typeMap: Record<string, string> = {
-        feature: '🌟 Feature',
-        bug: '🐞 Bug',
-        chore: '🧹 Chore',
-        documentation: '📖 Documentation',
-        test: '🧪 Test',
-        spike: '💡 Spike/Research'
-      };
-      
-      const description = typeMap[name] || name;
-
+      const type = match[2] as TaskType;
       templates.push({
-        id: name,
-        name: name.replace(/_/g, ' '),
-        path: filePath,
-        description,
+        id: type,
+        filename: file,
+        type,
+        name: getTemplateName(type),
       });
     }
   }
 
-  return templates;
+  return templates.sort((a, b) => a.filename.localeCompare(b.filename));
 }
 
 /**
- * Get a template by ID
- * @param templateId Template ID
- * @param config Optional runtime configuration
- * @returns Template content or null if not found
+ * Get a specific template content
  */
-export function getTemplate(templateId: string, config?: RuntimeConfig): string | null {
-  const templates = listTemplates(config);
+export function getTemplate(projectRoot: string, templateId: string): string | null {
+  const templates = listTemplates(projectRoot);
   const template = templates.find((t) => t.id === templateId);
 
   if (!template) {
     return null;
   }
 
-  try {
-    return fs.readFileSync(template.path, 'utf-8');
-  } catch (_error) {
+  const templatePath = join(getTemplatesDirectory(projectRoot), template.filename);
+
+  if (!existsSync(templatePath)) {
     return null;
+  }
+
+  return readFileSync(templatePath, 'utf-8');
+}
+
+/**
+ * Apply template to create task document
+ */
+export function applyTemplate(templateContent: string, options: TaskCreateOptions): TaskDocument {
+  // Replace title placeholders
+  const content = templateContent
+    .replace(/<< ?FEATURE TITLE ?>>|<< ?TITLE ?>>/gi, options.title)
+    .replace(/\[Title\]/gi, options.title)
+    .replace(/# ?\[Title\]/gi, `# ${options.title}`);
+
+  // Parse sections from template
+  const sections = parseTemplateIntoSections(content);
+
+  // Merge with provided options
+  if (options.instruction) {
+    sections.instruction = options.instruction;
+  }
+
+  if (options.tasks && options.tasks.length > 0) {
+    sections.tasks = options.tasks.map((task) => `- [ ] ${task}`).join('\n');
+  }
+
+  // Add custom sections
+  if (options.customSections) {
+    Object.assign(sections, options.customSections);
+  }
+
+  // Ensure all required sections exist
+  const finalSections = ensureRequiredSections(sections);
+
+  // Create document
+  const document: TaskDocument = {
+    title: options.title,
+    frontmatter: {
+      type: options.type,
+      status: options.status || 'To Do',
+      area: options.area,
+      ...options.customMetadata,
+    },
+    sections: finalSections,
+  };
+
+  return document;
+}
+
+/**
+ * Parse template content into sections
+ */
+function parseTemplateIntoSections(content: string): Partial<TaskSections> {
+  const sections: Partial<TaskSections> = {};
+  const lines = content.split('\n');
+
+  let currentSection: string | null = null;
+  let sectionContent: string[] = [];
+
+  for (const line of lines) {
+    // Check for section header
+    const sectionMatch = line.match(/^## (.+)$/);
+    if (sectionMatch) {
+      // Save previous section
+      if (currentSection) {
+        sections[currentSection.toLowerCase()] = sectionContent.join('\n').trim();
+      }
+
+      currentSection = sectionMatch[1];
+      sectionContent = [];
+    } else if (currentSection) {
+      // Add to current section
+      sectionContent.push(line);
+    }
+  }
+
+  // Save last section
+  if (currentSection) {
+    sections[currentSection.toLowerCase()] = sectionContent.join('\n').trim();
+  }
+
+  // If no sections found, treat entire content as instruction
+  if (Object.keys(sections).length === 0) {
+    sections.instruction = content.trim();
+  }
+
+  return sections;
+}
+
+/**
+ * Initialize v2 templates
+ */
+export function initializeV2Templates(projectRoot: string): void {
+  const templatesDir = getTemplatesDirectory(projectRoot);
+
+  // Ensure directory exists
+  if (!existsSync(templatesDir)) {
+    mkdirSync(templatesDir, { recursive: true });
+  }
+
+  // Create default templates if none exist
+  const existingTemplates = listTemplates(projectRoot);
+  if (existingTemplates.length === 0) {
+    createDefaultV2Templates(templatesDir);
   }
 }
 
 /**
- * Apply template with values
- * @param templateContent Template content
- * @param values Values to apply to the template
- * @returns Processed template content
+ * Create default v2 templates
  */
-export function applyTemplate(templateContent: string, values: Record<string, any>): string {
-  // Check if template has frontmatter (legacy format)
-  const frontmatterRegex = /^\+\+\+\s*\n([\s\S]*?)\n\+\+\+\s*\n([\s\S]*)$/;
-  const match = templateContent.match(frontmatterRegex);
+function createDefaultV2Templates(templatesDir: string): void {
+  const templates = [
+    {
+      filename: '01_feature.md',
+      content: `## Instruction
 
-  let markdownContent: string;
-  let metadata: Record<string, any> = {};
+Implement << FEATURE TITLE >> with the following requirements:
+- [Requirement 1]
+- [Requirement 2]
+- [Requirement 3]
 
-  if (match) {
-    // Legacy template with frontmatter
-    const [, tomlContent, content] = match;
-    markdownContent = content;
-    
-    // Try to parse existing TOML
-    try {
-      metadata = parse(tomlContent) as Record<string, any>;
-    } catch (error) {
-      console.warn('Template has invalid TOML, using defaults');
+## Tasks
+
+- [ ] Analyze requirements and create design
+- [ ] Implement core functionality
+- [ ] Add unit tests
+- [ ] Update documentation
+- [ ] Code review and refactoring
+
+## Deliverable
+
+[Implementation details will be documented here]
+
+## Log
+
+[Progress updates will be tracked here]`,
+    },
+    {
+      filename: '02_bug.md',
+      content: `## Instruction
+
+Fix the bug: << TITLE >>
+
+**Steps to Reproduce:**
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+**Expected Behavior:**
+[What should happen]
+
+**Actual Behavior:**
+[What actually happens]
+
+## Tasks
+
+- [ ] Reproduce the bug
+- [ ] Identify root cause
+- [ ] Implement fix
+- [ ] Add regression test
+- [ ] Verify fix in staging
+
+## Deliverable
+
+[Fix details and test results will be documented here]
+
+## Log
+
+[Investigation and fix progress will be tracked here]`,
+    },
+    {
+      filename: '03_chore.md',
+      content: `## Instruction
+
+Complete maintenance task: << TITLE >>
+
+**Purpose:**
+[Why this maintenance is needed]
+
+**Scope:**
+[What will be affected]
+
+## Tasks
+
+- [ ] Review current state
+- [ ] Plan maintenance steps
+- [ ] Execute maintenance
+- [ ] Verify results
+- [ ] Document changes
+
+## Deliverable
+
+[Maintenance results will be documented here]
+
+## Log
+
+[Progress updates will be tracked here]`,
+    },
+    {
+      filename: '04_documentation.md',
+      content: `## Instruction
+
+Create/update documentation for: << TITLE >>
+
+**Documentation Type:**
+- [ ] User Guide
+- [ ] API Reference
+- [ ] Architecture Doc
+- [ ] README
+- [ ] Other: [Specify]
+
+**Target Audience:**
+[Who will read this documentation]
+
+## Tasks
+
+- [ ] Research existing documentation
+- [ ] Outline documentation structure
+- [ ] Write first draft
+- [ ] Add examples/diagrams
+- [ ] Review and polish
+
+## Deliverable
+
+[Documentation content or links will be provided here]
+
+## Log
+
+[Documentation progress will be tracked here]`,
+    },
+    {
+      filename: '05_test.md',
+      content: `## Instruction
+
+Create/improve tests for: << TITLE >>
+
+**Test Type:**
+- [ ] Unit Tests
+- [ ] Integration Tests
+- [ ] E2E Tests
+- [ ] Performance Tests
+- [ ] Other: [Specify]
+
+**Coverage Goals:**
+[What should be tested]
+
+## Tasks
+
+- [ ] Identify test scenarios
+- [ ] Write test cases
+- [ ] Implement tests
+- [ ] Verify test coverage
+- [ ] Document test approach
+
+## Deliverable
+
+[Test implementation and results will be documented here]
+
+## Log
+
+[Test development progress will be tracked here]`,
+    },
+    {
+      filename: '06_spike.md',
+      content: `## Instruction
+
+Research and investigate: << TITLE >>
+
+**Research Questions:**
+1. [Question 1]
+2. [Question 2]
+3. [Question 3]
+
+**Success Criteria:**
+[What defines a successful spike]
+
+## Tasks
+
+- [ ] Define research scope
+- [ ] Gather information
+- [ ] Prototype/experiment
+- [ ] Document findings
+- [ ] Present recommendations
+
+## Deliverable
+
+[Research findings and recommendations will be documented here]
+
+## Log
+
+[Research progress and discoveries will be tracked here]`,
+    },
+  ];
+
+  // Write templates
+  for (const template of templates) {
+    const templatePath = join(templatesDir, template.filename);
+    if (!existsSync(templatePath)) {
+      writeFileSync(templatePath, template.content, 'utf-8');
     }
-  } else {
-    // New template format - just markdown
-    markdownContent = templateContent;
   }
+}
 
-  // Apply all values from the input, merging with any existing metadata
-  for (const [key, value] of Object.entries(values)) {
-    if (key === 'content') {
-      continue; // Skip content, handle it separately
-    }
+/**
+ * Get human-readable template name
+ */
+function getTemplateName(type: TaskType): string {
+  const names: Record<TaskType, string> = {
+    feature: '🌟 Feature',
+    bug: '🐞 Bug',
+    chore: '🧹 Chore',
+    documentation: '📖 Documentation',
+    test: '🧪 Test',
+    spike: '💡 Spike/Research',
+    idea: '💭 Idea',
+  };
 
-    // Skip undefined or null values
-    if (value === undefined || value === null) {
-      continue;
-    }
+  return names[type] || type;
+}
 
-    // Set the value in our metadata object
-    metadata[key] = value;
-  }
-
-  // Ensure required fields are present
-  const requiredFields = ['title', 'type'];
-  for (const field of requiredFields) {
-    if (!metadata[field]) {
-      console.warn(`Warning: Required field '${field}' is not set in template or values`);
-    }
-  }
-
-  // Don't include empty ID in metadata - let task-crud generate it
-  if (metadata.id === '') {
-    delete metadata.id;
-  }
-
-  // Convert the metadata to TOML
-  const newTomlContent = stringify(metadata);
-
-  // Build the complete task file
-  let newContent = `+++\n${newTomlContent}+++\n\n${markdownContent}`;
-
-  // Replace title in Markdown (if specified)
-  if (values.title) {
-    // Replace title placeholder in Markdown body
-    newContent = newContent.replace(/# \[Title\]/, `# ${values.title}`);
-    // Replace various template title placeholders
-    newContent = newContent.replace(/# << .+ >>/, `# ${values.title}`);
-  }
-
-  // Apply custom content if provided
-  if (values.content) {
-    // Find the end of TOML frontmatter and the first empty line after the title
-    const endOfFrontmatter = newContent.indexOf('+++', 3) + 3;
-
-    // Rest of content after frontmatter
-    const afterContent = newContent.substring(endOfFrontmatter);
-
-    // Split after first heading
-    const parts = afterContent.split('\n\n', 2);
-    if (parts.length > 1) {
-      // Keep title heading and replace content
-      newContent = `${newContent.substring(0, endOfFrontmatter) + parts[0]}\n\n${values.content}`;
-    } else {
-      // Just append content
-      newContent = `${newContent.substring(0, endOfFrontmatter)}\n\n${values.content}`;
-    }
-  }
-
-  return newContent;
+// Type import to fix the missing import
+interface TaskSections {
+  instruction: string;
+  tasks: string;
+  deliverable: string;
+  log: string;
+  [key: string]: string;
 }

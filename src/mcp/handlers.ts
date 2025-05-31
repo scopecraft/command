@@ -1,11 +1,6 @@
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import * as v2 from '../core/v2/index.js';
+import * as v2 from '../core/index.js';
 import {
-  type AreaCreateParams,
-  type AreaDeleteParams,
-  type AreaGetParams,
-  type AreaListParams,
-  type AreaUpdateParams,
   type ConfigGetCurrentRootParams,
   type ConfigInitRootParams,
   type ConfigListProjectsParams,
@@ -14,9 +9,6 @@ import {
   type McpMethodRegistry,
   type TemplateListParams,
 } from './types.js';
-
-// Keep area imports from v1 for now
-import { createArea, deleteArea, getArea, listAreas, updateArea } from '../core/index.js';
 
 // Import normalized handlers for read operations
 import {
@@ -28,13 +20,13 @@ import {
 
 // Import normalized handlers for write operations
 import {
+  handleParentCreateNormalized,
+  handleParentOperationsNormalized,
   handleTaskCreateNormalized,
-  handleTaskUpdateNormalized,
   handleTaskDeleteNormalized,
   handleTaskMoveNormalized,
   handleTaskTransformNormalized,
-  handleParentCreateNormalized,
-  handleParentOperationsNormalized,
+  handleTaskUpdateNormalized,
 } from './normalized-write-handlers.js';
 
 /**
@@ -61,68 +53,13 @@ export async function handleTemplateList(params: TemplateListParams) {
   const configManager = ConfigurationManager.getInstance();
   const projectRoot = params.root_dir || configManager.getRootConfig().path;
 
-  const result = await v2.listTemplates(projectRoot);
+  const templates = await v2.listTemplates(projectRoot);
 
-  if (result.success && result.data) {
-    return {
-      success: true,
-      data: result.data,
-      message: `Found ${result.data.length} templates`,
-    };
-  }
-
-  return formatV2Response(result);
-}
-
-// ============================================================================
-// Area handlers - Still using V1 core
-// ============================================================================
-
-export async function handleAreaList(params: AreaListParams) {
-  const configManager = ConfigurationManager.getInstance();
-  const projectRoot = params.root_dir || configManager.getRootConfig().path;
-  const areas = await listAreas(projectRoot);
   return {
     success: true,
-    data: areas,
-    message: `Found ${areas.length} areas`,
+    data: templates,
+    message: `Found ${templates.length} templates`,
   };
-}
-
-export async function handleAreaGet(params: AreaGetParams) {
-  const configManager = ConfigurationManager.getInstance();
-  const projectRoot = params.root_dir || configManager.getRootConfig().path;
-  const area = await getArea(projectRoot, params.id);
-  return { success: true, data: area };
-}
-
-export async function handleAreaCreate(params: AreaCreateParams) {
-  const configManager = ConfigurationManager.getInstance();
-  const projectRoot = params.root_dir || configManager.getRootConfig().path;
-  const result = await createArea(projectRoot, {
-    title: params.title,
-    description: params.description,
-    color: params.color,
-  });
-  return {
-    success: result.success,
-    data: result.data,
-    error: result.error,
-  };
-}
-
-export async function handleAreaUpdate(params: AreaUpdateParams) {
-  const configManager = ConfigurationManager.getInstance();
-  const projectRoot = params.root_dir || configManager.getRootConfig().path;
-  const result = await updateArea(projectRoot, params.id, params.updates);
-  return result;
-}
-
-export async function handleAreaDelete(params: AreaDeleteParams) {
-  const configManager = ConfigurationManager.getInstance();
-  const projectRoot = params.root_dir || configManager.getRootConfig().path;
-  const result = await deleteArea(projectRoot, params.id);
-  return result;
 }
 
 // ============================================================================
@@ -132,23 +69,33 @@ export async function handleAreaDelete(params: AreaDeleteParams) {
 export async function handleInitRoot(params: ConfigInitRootParams) {
   try {
     const configManager = ConfigurationManager.getInstance();
-    const result = await configManager.initializeProject(params.path, {
-      skipGitCheck: params.skipGitCheck,
-      projectName: params.projectName,
-    });
-
-    if (result.success) {
-      return {
-        success: true,
-        data: result.data,
-        message: result.message || 'Project initialized successfully',
-      };
+    
+    // For V2, we need to initialize the project structure using v2 functions
+    const projectRoot = params.path;
+    
+    // Check if V2 init is needed
+    const initNeeded = await v2.needsV2Init(projectRoot);
+    if (initNeeded) {
+      const initResult = await v2.initializeV2ProjectStructure(projectRoot);
+      if (!initResult.success) {
+        return {
+          success: false,
+          error: initResult.error,
+          message: 'Failed to initialize V2 project structure',
+        };
+      }
     }
 
+    // Set the root in config manager
+    configManager.setRootFromCLI(projectRoot);
+
     return {
-      success: false,
-      error: result.error,
-      message: result.message || 'Failed to initialize project',
+      success: true,
+      data: {
+        path: projectRoot,
+        initialized: true,
+      },
+      message: 'Project initialized successfully',
     };
   } catch (error) {
     return {
@@ -166,10 +113,7 @@ export async function handleGetCurrentRoot(_params: ConfigGetCurrentRootParams) 
 
     return {
       success: true,
-      data: {
-        path: rootConfig.path,
-        ...rootConfig,
-      },
+      data: rootConfig,
       message: 'Current root configuration retrieved',
     };
   } catch (error) {
@@ -184,7 +128,7 @@ export async function handleGetCurrentRoot(_params: ConfigGetCurrentRootParams) 
 export async function handleListProjects(_params: ConfigListProjectsParams) {
   try {
     const configManager = ConfigurationManager.getInstance();
-    const projects = configManager.listProjects();
+    const projects = configManager.getProjects();
 
     return {
       success: true,
@@ -229,7 +173,7 @@ export async function handleDebugCodePath(_params: DebugCodePathParams) {
 /**
  * Registry of all MCP method handlers
  * This is the single source of truth for all MCP method routing
- * 
+ *
  * All core task operations use normalized handlers with:
  * - Zod schema validation
  * - Consistent field names (workflowState, parentId, etc.)
@@ -240,7 +184,7 @@ export const methodRegistry: McpMethodRegistry = {
   // ============================================================================
   // Normalized handlers - Consistent API with Zod schemas
   // ============================================================================
-  
+
   // Read operations
   [McpMethod.TASK_LIST]: handleTaskListNormalized,
   [McpMethod.TASK_GET]: handleTaskGetNormalized,
@@ -259,14 +203,7 @@ export const methodRegistry: McpMethodRegistry = {
   // ============================================================================
   // Legacy handlers - Not yet normalized
   // ============================================================================
-  
-  // Area operations (V1 core)
-  [McpMethod.AREA_LIST]: handleAreaList,
-  [McpMethod.AREA_GET]: handleAreaGet,
-  [McpMethod.AREA_CREATE]: handleAreaCreate,
-  [McpMethod.AREA_UPDATE]: handleAreaUpdate,
-  [McpMethod.AREA_DELETE]: handleAreaDelete,
-  
+
   // System operations
   [McpMethod.TEMPLATE_LIST]: handleTemplateList,
   [McpMethod.CONFIG_INIT_ROOT]: handleInitRoot,

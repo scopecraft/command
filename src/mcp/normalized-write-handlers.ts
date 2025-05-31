@@ -1,45 +1,45 @@
 /**
  * Normalized Write Operation Handlers
- * 
+ *
  * Implements MCP write operations with consistent field names, Zod validation,
  * and normalized response formats matching the read operations.
  */
 
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import * as core from '../core/v2/index.js';
-import { type McpResponse } from './types.js';
+import * as core from '../core/index.js';
 import {
-  TaskCreateInputSchema,
-  TaskCreateOutputSchema,
-  TaskUpdateInputSchema,
-  TaskUpdateOutputSchema,
-  TaskDeleteInputSchema,
-  TaskDeleteOutputSchema,
-  TaskMoveInputSchema,
-  TaskMoveOutputSchema,
-  TaskTransformInputSchema,
-  TaskTransformOutputSchema,
+  type ParentCreateInput,
   ParentCreateInputSchema,
+  type ParentCreateOutput,
   ParentCreateOutputSchema,
+  type ParentOperationsInput,
   ParentOperationsInputSchema,
+  type ParentOperationsOutput,
   ParentOperationsOutputSchema,
   type Task,
   type TaskCreateInput,
+  TaskCreateInputSchema,
   type TaskCreateOutput,
-  type TaskUpdateInput,
-  type TaskUpdateOutput,
+  TaskCreateOutputSchema,
   type TaskDeleteInput,
+  TaskDeleteInputSchema,
   type TaskDeleteOutput,
+  TaskDeleteOutputSchema,
   type TaskMoveInput,
+  TaskMoveInputSchema,
   type TaskMoveOutput,
+  TaskMoveOutputSchema,
   type TaskTransformInput,
+  TaskTransformInputSchema,
   type TaskTransformOutput,
-  type ParentCreateInput,
-  type ParentCreateOutput,
-  type ParentOperationsInput,
-  type ParentOperationsOutput,
+  TaskTransformOutputSchema,
+  type TaskUpdateInput,
+  TaskUpdateInputSchema,
+  type TaskUpdateOutput,
+  TaskUpdateOutputSchema,
 } from './schemas.js';
-import { transformTaskToNormalized, normalizeStatus } from './transformers.js';
+import { normalizeStatus, transformTaskToNormalized } from './transformers.js';
+import type { McpResponse } from './types.js';
 
 /**
  * Create consistent response metadata
@@ -54,14 +54,16 @@ function createResponseMetadata() {
 /**
  * Handler for task_create method
  */
-export async function handleTaskCreateNormalized(rawParams: unknown): Promise<McpResponse<TaskCreateOutput['data']>> {
+export async function handleTaskCreateNormalized(
+  rawParams: unknown
+): Promise<McpResponse<TaskCreateOutput['data']>> {
   try {
     // Validate input with Zod schema
     const params = TaskCreateInputSchema.parse(rawParams);
-    
+
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
-    
+
     // Build create options with normalized field names
     const createOptions: core.TaskCreateOptions = {
       title: params.title,
@@ -74,14 +76,14 @@ export async function handleTaskCreateNormalized(rawParams: unknown): Promise<Mc
       tasks: params.tasks,
       customMetadata: {},
     };
-    
+
     // Add optional metadata
     if (params.priority) createOptions.customMetadata.priority = params.priority;
     if (params.assignee) createOptions.customMetadata.assignee = params.assignee;
     if (params.tags) createOptions.customMetadata.tags = params.tags;
-    
+
     const result = await core.createTask(projectRoot, createOptions);
-    
+
     if (!result.success || !result.data) {
       return {
         success: false,
@@ -90,26 +92,27 @@ export async function handleTaskCreateNormalized(rawParams: unknown): Promise<Mc
         metadata: createResponseMetadata(),
       };
     }
-    
+
     // Transform and validate output
     const outputData = {
       id: result.data.metadata.id,
       title: result.data.document.title,
       type: result.data.document.frontmatter.type as TaskCreateOutput['data']['type'],
       status: result.data.document.frontmatter.status as TaskCreateOutput['data']['status'],
-      workflowState: result.data.metadata.location.workflowState as TaskCreateOutput['data']['workflowState'],
+      workflowState: result.data.metadata.location
+        .workflowState as TaskCreateOutput['data']['workflowState'],
       area: result.data.document.frontmatter.area || 'general',
       path: result.data.metadata.path,
       createdAt: new Date().toISOString(),
     };
-    
+
     const response = TaskCreateOutputSchema.parse({
       success: true,
       data: outputData,
       message: `Task ${outputData.id} created successfully`,
       metadata: createResponseMetadata(),
     });
-    
+
     return response;
   } catch (error) {
     if (error instanceof Error) {
@@ -131,50 +134,51 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
   try {
     // Validate input with Zod schema
     const params = TaskUpdateInputSchema.parse(rawParams);
-    
+
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
-    
+
     // Build update options
     const updateOptions: core.TaskUpdateOptions = {};
-    
+
     // Handle metadata updates
     if (params.updates.title) updateOptions.title = params.updates.title;
-    
+
     const frontmatter: Partial<core.TaskFrontmatter> = {};
     if (params.updates.status) frontmatter.status = params.updates.status;
     if (params.updates.priority) frontmatter.priority = params.updates.priority;
     if (params.updates.area) frontmatter.area = params.updates.area;
     if (params.updates.assignee) frontmatter.assignee = params.updates.assignee;
     if (params.updates.tags) frontmatter.tags = params.updates.tags;
-    
+
     if (Object.keys(frontmatter).length > 0) {
       updateOptions.frontmatter = frontmatter;
     }
-    
+
     // Handle section updates
     const sections: Partial<core.TaskSections> = {};
     if (params.updates.instruction) sections.instruction = params.updates.instruction;
     if (params.updates.tasks) sections.tasks = params.updates.tasks;
     if (params.updates.deliverable) sections.deliverable = params.updates.deliverable;
     if (params.updates.log) sections.log = params.updates.log;
-    
+
     // Handle special log entry appending
     if (params.updates.addLogEntry) {
       const currentTask = await core.getTask(projectRoot, params.id, undefined, params.parentId);
       if (currentTask.success && currentTask.data) {
         const currentLog = currentTask.data.document.sections.log || '';
         const timestamp = new Date().toISOString().split('T')[0];
-        sections.log = currentLog + (currentLog ? '\n' : '') + `- ${timestamp}: ${params.updates.addLogEntry}`;
+        sections.log =
+          currentLog + (currentLog ? '\n' : '') + `- ${timestamp}: ${params.updates.addLogEntry}`;
       }
     }
-    
+
     if (Object.keys(sections).length > 0) {
       updateOptions.sections = sections;
     }
-    
+
     const result = await core.updateTask(projectRoot, params.id, updateOptions, params.parentId);
-    
+
     if (!result.success || !result.data) {
       return {
         success: false,
@@ -183,22 +187,22 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
         metadata: createResponseMetadata(),
       };
     }
-    
+
     // Transform to normalized format - always include content for update responses
     const normalizedTask = await transformTaskToNormalized(
       projectRoot,
       result.data,
       false, // includeSubtasks
-      true   // includeContent - always true for updates to show changes
+      true // includeContent - always true for updates to show changes
     );
-    
+
     const response = TaskUpdateOutputSchema.parse({
       success: true,
       data: normalizedTask,
       message: `Task ${params.id} updated successfully`,
       metadata: createResponseMetadata(),
     });
-    
+
     return response;
   } catch (error) {
     if (error instanceof Error) {
@@ -216,20 +220,22 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
 /**
  * Handler for task_delete method
  */
-export async function handleTaskDeleteNormalized(rawParams: unknown): Promise<McpResponse<TaskDeleteOutput['data']>> {
+export async function handleTaskDeleteNormalized(
+  rawParams: unknown
+): Promise<McpResponse<TaskDeleteOutput['data']>> {
   try {
     // Validate input with Zod schema
     const params = TaskDeleteInputSchema.parse(rawParams);
-    
+
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
-    
+
     const deleteOptions: core.TaskDeleteOptions = {
       cascade: params.cascade,
     };
-    
+
     const result = await core.deleteTask(projectRoot, params.id, deleteOptions, params.parentId);
-    
+
     if (!result.success) {
       return {
         success: false,
@@ -238,20 +244,20 @@ export async function handleTaskDeleteNormalized(rawParams: unknown): Promise<Mc
         metadata: createResponseMetadata(),
       };
     }
-    
+
     const outputData = {
       id: params.id,
       deleted: true,
       cascadeCount: result.data?.cascadeCount,
     };
-    
+
     const response = TaskDeleteOutputSchema.parse({
       success: true,
       data: outputData,
       message: `Task ${params.id} deleted successfully`,
       metadata: createResponseMetadata(),
     });
-    
+
     return response;
   } catch (error) {
     if (error instanceof Error) {
@@ -269,20 +275,22 @@ export async function handleTaskDeleteNormalized(rawParams: unknown): Promise<Mc
 /**
  * Handler for task_move method
  */
-export async function handleTaskMoveNormalized(rawParams: unknown): Promise<McpResponse<TaskMoveOutput['data']>> {
+export async function handleTaskMoveNormalized(
+  rawParams: unknown
+): Promise<McpResponse<TaskMoveOutput['data']>> {
   try {
     // Validate input with Zod schema
     const params = TaskMoveInputSchema.parse(rawParams);
-    
+
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
-    
+
     const moveOptions: core.TaskMoveOptions = {
       targetState: params.targetState,
       updateStatus: params.updateStatus,
       archiveDate: params.archiveDate,
     };
-    
+
     // Get current state before move
     const currentTask = await core.getTask(projectRoot, params.id, undefined, params.parentId);
     if (!currentTask.success || !currentTask.data) {
@@ -293,11 +301,11 @@ export async function handleTaskMoveNormalized(rawParams: unknown): Promise<McpR
         metadata: createResponseMetadata(),
       };
     }
-    
+
     const previousState = currentTask.data.metadata.location.workflowState;
-    
+
     const result = await core.moveTask(projectRoot, params.id, moveOptions);
-    
+
     if (!result.success || !result.data) {
       return {
         success: false,
@@ -306,24 +314,25 @@ export async function handleTaskMoveNormalized(rawParams: unknown): Promise<McpR
         metadata: createResponseMetadata(),
       };
     }
-    
+
     const outputData = {
       id: params.id,
       previousState: previousState as TaskMoveOutput['data']['previousState'],
       currentState: params.targetState,
       statusUpdated: params.updateStatus,
-      newStatus: params.updateStatus && result.data.document.frontmatter.status 
-        ? normalizeStatus(result.data.document.frontmatter.status) 
-        : undefined,
+      newStatus:
+        params.updateStatus && result.data.document.frontmatter.status
+          ? normalizeStatus(result.data.document.frontmatter.status)
+          : undefined,
     };
-    
+
     const response = TaskMoveOutputSchema.parse({
       success: true,
       data: outputData,
       message: `Task ${params.id} moved to ${params.targetState}`,
       metadata: createResponseMetadata(),
     });
-    
+
     return response;
   } catch (error) {
     if (error instanceof Error) {
@@ -341,17 +350,19 @@ export async function handleTaskMoveNormalized(rawParams: unknown): Promise<McpR
 /**
  * Handler for task_transform method
  */
-export async function handleTaskTransformNormalized(rawParams: unknown): Promise<McpResponse<TaskTransformOutput['data']>> {
+export async function handleTaskTransformNormalized(
+  rawParams: unknown
+): Promise<McpResponse<TaskTransformOutput['data']>> {
   try {
     // Validate input with Zod schema
     const params = TaskTransformInputSchema.parse(rawParams);
-    
+
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
-    
+
     let result: core.OperationResult<core.Task | core.ParentTask>;
     let affectedTasks: string[] = [];
-    
+
     switch (params.operation) {
       case 'promote': {
         const promoteResult = await core.promoteToParent(projectRoot, params.id, {
@@ -360,11 +371,11 @@ export async function handleTaskTransformNormalized(rawParams: unknown): Promise
         });
         result = promoteResult;
         if (promoteResult.success && promoteResult.data) {
-          affectedTasks = promoteResult.data.subtasks.map(st => st.metadata.id);
+          affectedTasks = promoteResult.data.subtasks.map((st) => st.metadata.id);
         }
         break;
       }
-      
+
       case 'extract': {
         if (!params.parentId) {
           return {
@@ -374,7 +385,7 @@ export async function handleTaskTransformNormalized(rawParams: unknown): Promise
             metadata: createResponseMetadata(),
           };
         }
-        
+
         const extractResult = await core.extractSubtask(
           projectRoot,
           params.parentId,
@@ -387,7 +398,7 @@ export async function handleTaskTransformNormalized(rawParams: unknown): Promise
         }
         break;
       }
-      
+
       case 'adopt': {
         if (!params.targetParentId) {
           return {
@@ -397,7 +408,7 @@ export async function handleTaskTransformNormalized(rawParams: unknown): Promise
             metadata: createResponseMetadata(),
           };
         }
-        
+
         // Note: adoption is currently broken in core
         return {
           success: false,
@@ -406,7 +417,7 @@ export async function handleTaskTransformNormalized(rawParams: unknown): Promise
           metadata: createResponseMetadata(),
         };
       }
-      
+
       default:
         return {
           success: false,
@@ -415,7 +426,7 @@ export async function handleTaskTransformNormalized(rawParams: unknown): Promise
           metadata: createResponseMetadata(),
         };
     }
-    
+
     if (!result.success || !result.data) {
       return {
         success: false,
@@ -424,7 +435,7 @@ export async function handleTaskTransformNormalized(rawParams: unknown): Promise
         metadata: createResponseMetadata(),
       };
     }
-    
+
     // Transform the task to normalized format
     const normalizedTask = await transformTaskToNormalized(
       projectRoot,
@@ -432,20 +443,20 @@ export async function handleTaskTransformNormalized(rawParams: unknown): Promise
       false,
       true
     );
-    
+
     const outputData = {
       operation: params.operation,
       transformedTask: normalizedTask,
       affectedTasks: affectedTasks.length > 0 ? affectedTasks : undefined,
     };
-    
+
     const response = TaskTransformOutputSchema.parse({
       success: true,
       data: outputData,
       message: `Task ${params.id} transformed successfully`,
       metadata: createResponseMetadata(),
     });
-    
+
     return response;
   } catch (error) {
     if (error instanceof Error) {
@@ -463,14 +474,16 @@ export async function handleTaskTransformNormalized(rawParams: unknown): Promise
 /**
  * Handler for parent_create method
  */
-export async function handleParentCreateNormalized(rawParams: unknown): Promise<McpResponse<ParentCreateOutput['data']>> {
+export async function handleParentCreateNormalized(
+  rawParams: unknown
+): Promise<McpResponse<ParentCreateOutput['data']>> {
   try {
     // Validate input with Zod schema
     const params = ParentCreateInputSchema.parse(rawParams);
-    
+
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
-    
+
     // Create parent task
     const createOptions: core.TaskCreateOptions = {
       title: params.title,
@@ -481,13 +494,13 @@ export async function handleParentCreateNormalized(rawParams: unknown): Promise<
       instruction: params.overviewContent,
       customMetadata: {},
     };
-    
+
     if (params.priority) createOptions.customMetadata.priority = params.priority;
     if (params.assignee) createOptions.customMetadata.assignee = params.assignee;
     if (params.tags) createOptions.customMetadata.tags = params.tags;
-    
+
     const result = await core.createParentTask(projectRoot, createOptions);
-    
+
     if (!result.success || !result.data) {
       return {
         success: false,
@@ -496,9 +509,9 @@ export async function handleParentCreateNormalized(rawParams: unknown): Promise<
         metadata: createResponseMetadata(),
       };
     }
-    
+
     const createdSubtasks: { id: string; title: string; sequence: string }[] = [];
-    
+
     // Add initial subtasks if provided
     if (params.subtasks && params.subtasks.length > 0) {
       for (const subtaskDef of params.subtasks) {
@@ -511,7 +524,7 @@ export async function handleParentCreateNormalized(rawParams: unknown): Promise<
             area: params.area,
           }
         );
-        
+
         if (subtaskResult.success && subtaskResult.data) {
           createdSubtasks.push({
             id: subtaskResult.data.metadata.id,
@@ -520,27 +533,28 @@ export async function handleParentCreateNormalized(rawParams: unknown): Promise<
           });
         }
       }
-      
+
       // Handle parallel tasks if specified
-      const parallelTasks = params.subtasks.filter(st => st.parallelWith);
+      const parallelTasks = params.subtasks.filter((st) => st.parallelWith);
       if (parallelTasks.length > 0) {
         // Group tasks by what they should be parallel with
         const parallelGroups: Record<string, string[]> = {};
-        
+
         for (const task of parallelTasks) {
           if (task.parallelWith) {
             // Find the current task that was just created
-            const currentSubtask = createdSubtasks.find(st => st.title === task.title);
+            const currentSubtask = createdSubtasks.find((st) => st.title === task.title);
             if (!currentSubtask) continue;
-            
+
             // Find the target task to be parallel with
             // It could be specified by title (for tasks in same batch) or ID
-            const targetSubtask = createdSubtasks.find(st => 
-              st.title === task.parallelWith || 
-              st.id === task.parallelWith ||
-              st.id.endsWith(task.parallelWith) // Handle partial ID match like "01_test-sub-one"
+            const targetSubtask = createdSubtasks.find(
+              (st) =>
+                st.title === task.parallelWith ||
+                st.id === task.parallelWith ||
+                st.id.endsWith(task.parallelWith) // Handle partial ID match like "01_test-sub-one"
             );
-            
+
             if (targetSubtask) {
               // Group tasks that should share the same sequence number
               const groupKey = targetSubtask.id;
@@ -551,39 +565,36 @@ export async function handleParentCreateNormalized(rawParams: unknown): Promise<
             }
           }
         }
-        
+
         // Parallelize each group
         for (const [baseTaskId, allIds] of Object.entries(parallelGroups)) {
           // Remove duplicates and parallelize
           const uniqueIds = [...new Set(allIds)];
           if (uniqueIds.length > 1) {
-            await core.parallelizeSubtasks(
-              projectRoot,
-              result.data.metadata.id,
-              uniqueIds
-            );
+            await core.parallelizeSubtasks(projectRoot, result.data.metadata.id, uniqueIds);
           }
         }
       }
     }
-    
+
     const outputData = {
       id: result.data.metadata.id,
       title: result.data.overview.title,
       type: result.data.overview.frontmatter.type as ParentCreateOutput['data']['type'],
-      workflowState: result.data.metadata.location.workflowState as ParentCreateOutput['data']['workflowState'],
+      workflowState: result.data.metadata.location
+        .workflowState as ParentCreateOutput['data']['workflowState'],
       path: result.data.metadata.path,
       subtaskCount: createdSubtasks.length,
       createdSubtasks: createdSubtasks.length > 0 ? createdSubtasks : undefined,
     };
-    
+
     const response = ParentCreateOutputSchema.parse({
       success: true,
       data: outputData,
       message: `Parent task ${outputData.id} created successfully`,
       metadata: createResponseMetadata(),
     });
-    
+
     return response;
   } catch (error) {
     if (error instanceof Error) {
@@ -601,17 +612,19 @@ export async function handleParentCreateNormalized(rawParams: unknown): Promise<
 /**
  * Handler for parent_operations method
  */
-export async function handleParentOperationsNormalized(rawParams: unknown): Promise<McpResponse<ParentOperationsOutput['data']>> {
+export async function handleParentOperationsNormalized(
+  rawParams: unknown
+): Promise<McpResponse<ParentOperationsOutput['data']>> {
   try {
     // Validate input with Zod schema
     const params = ParentOperationsInputSchema.parse(rawParams);
-    
+
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
-    
+
     const affectedSubtasks: ParentOperationsOutput['data']['affectedSubtasks'] = [];
     let newSubtask: Task | undefined;
-    
+
     switch (params.operationData.operation) {
       case 'resequence': {
         // Note: v2.resequenceSubtasks expects from/to positions
@@ -623,7 +636,7 @@ export async function handleParentOperationsNormalized(rawParams: unknown): Prom
             currentSequence: mapping.sequence,
           });
         }
-        
+
         return {
           success: true,
           data: {
@@ -636,7 +649,7 @@ export async function handleParentOperationsNormalized(rawParams: unknown): Prom
           metadata: createResponseMetadata(),
         };
       }
-      
+
       case 'parallelize': {
         const result = await core.parallelizeSubtasks(
           projectRoot,
@@ -644,7 +657,7 @@ export async function handleParentOperationsNormalized(rawParams: unknown): Prom
           params.operationData.subtaskIds,
           params.operationData.targetSequence
         );
-        
+
         if (!result.success) {
           return {
             success: false,
@@ -653,7 +666,7 @@ export async function handleParentOperationsNormalized(rawParams: unknown): Prom
             metadata: createResponseMetadata(),
           };
         }
-        
+
         // Track affected subtasks
         for (const id of params.operationData.subtaskIds) {
           affectedSubtasks.push({
@@ -662,10 +675,10 @@ export async function handleParentOperationsNormalized(rawParams: unknown): Prom
             currentSequence: params.operationData.targetSequence || '01',
           });
         }
-        
+
         break;
       }
-      
+
       case 'add_subtask': {
         const result = await core.addSubtask(
           projectRoot,
@@ -676,7 +689,7 @@ export async function handleParentOperationsNormalized(rawParams: unknown): Prom
             template: params.operationData.subtask.template,
           }
         );
-        
+
         if (!result.success || !result.data) {
           return {
             success: false,
@@ -685,38 +698,33 @@ export async function handleParentOperationsNormalized(rawParams: unknown): Prom
             metadata: createResponseMetadata(),
           };
         }
-        
+
         // Transform new subtask to normalized format
-        newSubtask = await transformTaskToNormalized(
-          projectRoot,
-          result.data,
-          false,
-          true
-        );
-        
+        newSubtask = await transformTaskToNormalized(projectRoot, result.data, false, true);
+
         affectedSubtasks.push({
           id: result.data.metadata.id,
           currentSequence: result.data.metadata.sequenceNumber || '01',
         });
-        
+
         break;
       }
     }
-    
+
     const outputData = {
       operation: params.operationData.operation,
       parentId: params.parentId,
       affectedSubtasks,
       newSubtask,
     };
-    
+
     const response = ParentOperationsOutputSchema.parse({
       success: true,
       data: outputData,
       message: `Parent operation ${params.operationData.operation} completed successfully`,
       metadata: createResponseMetadata(),
     });
-    
+
     return response;
   } catch (error) {
     if (error instanceof Error) {

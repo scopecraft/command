@@ -2,77 +2,6 @@
 input:
   taskId: string
   parentId?: string
-allowedTools:
-  # File operations
-  - Read
-  - Write
-  - Edit
-  - MultiEdit
-  - NotebookRead
-  - NotebookEdit
-  - Glob
-  - Grep
-  - LS
-  
-  # Task management
-  - mcp__scopecraft__task_list
-  - mcp__scopecraft__task_get
-  - mcp__scopecraft__task_update
-  - mcp__scopecraft__task_create
-  - mcp__scopecraft__parent_list
-  - mcp__scopecraft__parent_get
-  - mcp__scopecraft__workflow_current
-  - TodoRead
-  - TodoWrite
-  
-  # Development tools
-  - Bash(bun:*)
-  - Bash(bun run:*)
-  - Bash(npm run:*)
-  - Bash(npm test:*)
-  - Bash(npx biome:*)
-  - Bash(npx tsc:*)
-  - Bash(git add:*)
-  - Bash(git commit:*)
-  - Bash(git status:*)
-  - Bash(git diff:*)
-  - Bash(git log:*)
-  
-  # CLI commands for task management
-  - Bash(bun run dev:cli:*)
-  - Bash(./dist/cli/cli.js:*)
-  
-  # Testing and validation
-  - Bash(test:*)
-  - Bash(./test:*)
-  - Bash(bun test:*)
-  
-  # Utilities
-  - Bash(grep:*)
-  - Bash(rg:*)
-  - Bash(find:*)
-  - Bash(ls:*)
-  - Bash(cat:*)
-  - Bash(echo:*)
-  - Bash(mkdir:*)
-  - Bash(rm:*)
-  - Bash(mv:*)
-  - Bash(cp:*)
-  - Bash(touch:*)
-  - Bash(chmod:*)
-  - Bash(sed:*)
-  - Bash(awk:*)
-  - Bash(jq:*)
-  - Bash(tree:*)
-  - Bash(diff:*)
-  
-  # Code quality
-  - Bash(biome check:*)
-  - Bash(tsc:*)
-  
-  # Web fetch (for documentation)
-  - WebFetch
-  - WebSearch
 ---
 
 # Autonomous Subtask Execution Mode
@@ -216,7 +145,7 @@ Load area guidance and adopt appropriate mindset:
 - Document data flow decisions
 - Reference existing patterns with file:line
 
-### CLI Area  
+### CLI Area
 - Test commands and document output
 - Include example command usage in Deliverable
 - Document any new options added
@@ -269,7 +198,7 @@ Load area guidance and adopt appropriate mindset:
   - Files modified: 5 (listed below)
   - Tests added: 3
   - Questions pending: 2 (see Tasks section)
-  
+
   Modified files:
   1. src/mcp/handlers.ts - Added response normalization
   2. src/mcp/types.ts - New ResponseFormat interface
@@ -290,7 +219,7 @@ Load area guidance and adopt appropriate mindset:
   - Blocker: Need database schema decision
   - Questions added: 3 (see Tasks section)
   - Can resume when: Schema decision made
-  
+
 ## Deliverable
 [Everything completed so far, clearly marked as partial]
 ```

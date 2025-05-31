@@ -2,7 +2,7 @@
  * Transformation utilities to convert core types to normalized MCP schema
  */
 
-import * as core from '../core/v2/index.js';
+import * as core from '../core/index.js';
 import {
   type ParentTask,
   type ParentTaskDetail,
@@ -137,7 +137,10 @@ function transformBaseTask(task: core.Task) {
     workflowState: normalizeWorkflowState(task.metadata.location.workflowState),
     area: task.document.frontmatter.area || 'general',
     tags: (task.document.frontmatter.tags as string[]) || [],
-    assignee: (typeof task.document.frontmatter.assignee === 'string' ? task.document.frontmatter.assignee : undefined) || undefined,
+    assignee:
+      (typeof task.document.frontmatter.assignee === 'string'
+        ? task.document.frontmatter.assignee
+        : undefined) || undefined,
     createdDate: undefined, // TODO: Extract from file stats if needed
     updatedDate: undefined, // TODO: Extract from file stats if needed
     archivedDate: task.metadata.location.workflowState === 'archive' ? undefined : undefined, // TODO: Extract archive date

@@ -1,5 +1,5 @@
 import type { RuntimeConfig } from '../config/types.js';
-import { getFeature, getTask, listTasks } from '../task-manager/index.js';
+// Note: getFeature and related functions were removed in V2 - worktree needs to be updated
 import {
   DevelopmentMode,
   type FeatureProgress,
@@ -63,11 +63,11 @@ export class TaskCorrelationService {
 
       // If not found and we have a branch component, try that in worktree
       if (!taskResult.success && branchComponent && branchComponent !== taskId) {
-        taskResult = await getTask(branchComponent, { config: worktreeConfig });
+        taskResult = await getTask(worktree.path, branchComponent, worktreeConfig);
 
         // If not found in worktree, try main repo as fallback
         if (!taskResult.success) {
-          taskResult = await getTask(branchComponent);
+          taskResult = await getTask(process.cwd(), branchComponent);
         }
 
         // Update taskId if we found a match
@@ -276,16 +276,11 @@ export class TaskCorrelationService {
     config?: RuntimeConfig
   ): Promise<{ tasks?: string[] }> {
     // Try with config first (worktree-specific lookup)
-    let featureResult = await getFeature(featureId, {
-      phase: undefined,
-      config,
-    });
+    let featureResult = await getParentTask(featureId, config);
 
     // If not found and config was provided, try without config (main repo fallback)
     if (!featureResult.success && config) {
-      featureResult = await getFeature(featureId, {
-        phase: undefined,
-      });
+      featureResult = await getParentTask(featureId);
     }
 
     if (!featureResult.success || !featureResult.data) {
@@ -337,13 +332,12 @@ export class TaskCorrelationService {
   ): Promise<void> {
     for (const taskId of taskIds) {
       // Try with config first (worktree-specific lookup)
-      let taskResult = await getTask(taskId, {
-        config,
-      });
+      const projectRoot = config?.rootPath || process.cwd();
+      let taskResult = await getTask(projectRoot, taskId, config);
 
       // If not found in worktree and config provided, try main repo as fallback
       if ((!taskResult.success || !taskResult.data) && config) {
-        taskResult = await getTask(taskId);
+        taskResult = await getTask(process.cwd(), taskId);
       }
 
       if (!taskResult.success || !taskResult.data) continue;
@@ -393,13 +387,12 @@ export class TaskCorrelationService {
 
     for (const taskId of taskIds) {
       // Try with config first (worktree-specific lookup)
-      let taskResult = await getTask(taskId, {
-        config,
-      });
+      const projectRoot = config?.rootPath || process.cwd();
+      let taskResult = await getTask(projectRoot, taskId, config);
 
       // If not found in worktree and config provided, try main repo as fallback
       if ((!taskResult.success || !taskResult.data) && config) {
-        taskResult = await getTask(taskId);
+        taskResult = await getTask(process.cwd(), taskId);
       }
 
       if (taskResult.success && taskResult.data) {

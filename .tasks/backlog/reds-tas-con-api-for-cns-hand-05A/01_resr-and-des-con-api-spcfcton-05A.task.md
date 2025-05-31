@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: To Do
+status: done
 area: core
 tags:
   - research
@@ -28,20 +28,22 @@ Research current content handling implementation and design a comprehensive API 
 - Content transformation needs
 
 ## Tasks
-- [ ] Analyze current serializeTaskDocument implementation
-- [ ] Document how each client uses content fields
-- [ ] Review add-par-to-get-tas-con-wit-05A requirements
-- [ ] Survey custom section usage patterns
-- [ ] Design content field structure (content, bodyContent, sections, etc.)
-- [ ] Define API parameters for content control
-- [ ] Create API specification document
+- [x] Analyze current serializeTaskDocument implementation
+- [x] Document how each client uses content fields
+- [x] Review add-par-to-get-tas-con-wit-05A requirements
+- [x] Survey custom section usage patterns
+- [x] Design content field structure (content, bodyContent, sections, etc.)
+- [x] Define API parameters for content control
+- [x] Create API specification document
 
 ## Deliverable
-Comprehensive API specification document including:
-- Current state analysis
-- Proposed content field structure
-- API method signatures
-- Migration strategy
-- Examples for each use case
+Created comprehensive API specification document:
+- content-api-specification.md - Full API design with migration strategy
+- content-serialization-analysis.md - Root cause analysis of the issue
+
+Key decisions:
+- Separate serializeTaskDocument() (files) from serializeTaskContent() (display)
+- Add bodyContent field for backward compatibility
+- Phased migration approach to avoid breaking changes
 
 ## Log

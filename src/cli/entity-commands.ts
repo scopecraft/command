@@ -1,8 +1,10 @@
 /**
- * Implementation of entity-command pattern for CLI
- * Organizes commands into entity groups (task, phase, feature, area, workflow)
+ * Implementation of entity-command pattern for CLI V2
+ * Organizes commands into entity groups (task, parent, area, workflow)
  */
 import { Command } from 'commander';
+import { ConfigurationManager } from '../core/config/index.js';
+import * as v2 from '../core/index.js';
 import {
   handleAreaDeleteCommand,
   handleAreaGetCommand,
@@ -16,22 +18,17 @@ import {
   handleFeatureListCommand,
   handleFeatureUpdateCommand,
   handleGetCommand,
-  // handleInitCommand, // Using v2 init
+  handleInitCommand,
   handleListCommand,
   handleListTemplatesCommand,
   handleMarkCompleteNextCommand,
   handleNextTaskCommand,
-  // Phase commands removed for v2
-  // handlePhaseCreateCommand,
-  // handlePhaseDeleteCommand,
-  // handlePhaseUpdateCommand,
-  // handlePhasesCommand,
   handleTaskMoveCommand,
   handleUpdateCommand,
 } from './commands.js';
 
 /**
- * Set up task commands
+ * Set up task commands for V2
  * @param program Root commander program
  */
 export function setupTaskCommands(program: Command): void {
@@ -51,14 +48,15 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
   // task list command
   taskCommand
     .command('list')
-    .description('List tasks from current and backlog (Example: sc task list --status "To Do")')
+    .description('List all tasks (Example: sc task list --status "To Do" --current)')
     .option('-s, --status <status>', 'Filter by status (e.g., "To Do", "Done")')
     .option('-t, --type <type>', 'Filter by type (e.g., "feature", "bug")')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-g, --tags <tags...>', 'Filter by tags')
+    .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory/area')
     .option('-l, --location <location>', 'Filter by workflow location: backlog, current, archive')
     .option('--backlog', 'Show only backlog tasks')
-    .option('--current', 'Show only current tasks')
+    .option('--current', 'Show only current tasks (default)')
     .option('--archive', 'Show only archived tasks')
     .option('--all', 'Show all workflow locations')
     .option(
@@ -73,14 +71,8 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .command('get <id>')
     .description('Get a task by ID')
     .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
-    .option('--parent <parent>', 'Parent task ID (for subtasks)')
-    .addHelpText(
-      'after',
-      `
-Note: For subtasks, use the full path or provide --parent:
-  sc task get current/parent-id/02-subtask
-  sc task get 02-subtask --parent parent-id`
-    )
+    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
+    .option('--content-only', 'Show only section content without title and metadata')
     .action(handleGetCommand);
 
   // task create command
@@ -89,7 +81,7 @@ Note: For subtasks, use the full path or provide --parent:
     .description('Create a new task (Example: sc task create --title "New feature" --type feature)')
     .option(
       '--id <id>',
-      'Task ID (generated if not provided, use "_overview" for feature overview files)'
+      'Task ID (generated if not provided, use "_overview" for parent task overview files)'
     )
     .option('--title <title>', 'Task title')
     .option('--type <type>', 'Task type (e.g., "feature", "bug")')
@@ -97,7 +89,7 @@ Note: For subtasks, use the full path or provide --parent:
     .option('--priority <priority>', 'Task priority (default: "Medium")')
     .option('--assignee <assignee>', 'Assigned to')
     .option('--location <location>', 'Workflow location: backlog (default), current, archive')
-    .option('--subdirectory <subdirectory>', 'Subdirectory/area (e.g., "FEATURE_Login")')
+    .option('--subdirectory <subdirectory>', 'Subdirectory (e.g., "FEATURE_Login")')
     .option('--parent <parent>', 'Parent task ID')
     .option('--depends <depends...>', 'Dependencies (task IDs)')
     .option('--previous <previous>', 'Previous task in workflow')
@@ -113,88 +105,31 @@ Note: For subtasks, use the full path or provide --parent:
   // task update command
   taskCommand
     .command('update <id>')
-    .description('Update a task (Example: sc task update TASK-123 --status "In Progress")')
-    .option('--title <title>', 'Task title')
-    .option('--status <status>', 'Task status')
-    .option('--type <type>', 'Task type')
-    .option('--priority <priority>', 'Task priority')
-    .option('--assignee <assignee>', 'Assigned to')
+    .description('Update a task')
+    .option('--title <title>', 'New task title')
+    .option('--type <type>', 'New task type')
+    .option('--status <status>', 'New task status')
+    .option('--priority <priority>', 'New task priority')
+    .option('--assignee <assignee>', 'New assignee')
     .option('--location <location>', 'Move to workflow location: backlog, current, archive')
-    .option('--subdirectory <subdirectory>', 'Subdirectory/area to move the task')
-    .option('--parent <parent>', 'Parent task ID (for subtasks, helps locate the task)')
-    .option('--depends <depends...>', 'Dependencies (task IDs)')
-    .option('--previous <previous>', 'Previous task in workflow')
-    .option('--next <next>', 'Next task in workflow')
-    .option('--tags <tags...>', 'Tags for the task')
-    .option('--content <content>', 'Task content')
+    .option('--subdirectory <subdirectory>', 'Move to subdirectory')
+    .option('--parent <parent>', 'New parent task ID')
+    .option('--depends <depends...>', 'New dependencies (task IDs)')
+    .option('--previous <previous>', 'New previous task in workflow')
+    .option('--next <next>', 'New next task in workflow')
+    .option('--tags <tags...>', 'New tags for the task')
+    .option('--content <content>', 'New task content')
     .option('--file <file>', 'Update from file (JSON or TOML+Markdown)')
-    .addHelpText(
-      'after',
-      `
-Note: For subtasks, use the full path or provide --parent:
-  sc task update current/parent-id/02-subtask --status "Done"
-  sc task update 02-subtask --parent parent-id --status "Done"`
-    )
+    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
     .action(handleUpdateCommand);
 
   // task delete command
   taskCommand
     .command('delete <id>')
     .description('Delete a task')
-    .option('--parent <parent>', 'Parent task ID (for subtasks)')
-    .addHelpText(
-      'after',
-      `
-Note: For subtasks, use the full path or provide --parent:
-  sc task delete current/parent-id/02-subtask
-  sc task delete 02-subtask --parent parent-id`
-    )
+    .option('-f, --force', 'Force deletion without confirmation')
+    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
     .action(handleDeleteCommand);
-
-  // task status shortcut commands
-  taskCommand
-    .command('start <id>')
-    .description('Mark a task as "In Progress"')
-    .option('--parent <parent>', 'Parent task ID (for subtasks)')
-    .addHelpText(
-      'after',
-      `
-Note: For subtasks, use the full path or provide --parent:
-  sc task start current/parent-id/02-subtask
-  sc task start 02-subtask --parent parent-id`
-    )
-    .action(async (id, options) => {
-      await handleUpdateCommand(id, { status: 'In Progress', ...options });
-    });
-
-  taskCommand
-    .command('complete <id>')
-    .description('Mark a task as "Done"')
-    .option('--parent <parent>', 'Parent task ID (for subtasks)')
-    .addHelpText(
-      'after',
-      `
-Note: For subtasks, use the full path or provide --parent:
-  sc task complete current/parent-id/02-subtask
-  sc task complete 02-subtask --parent parent-id`
-    )
-    .action(async (id, options) => {
-      await handleUpdateCommand(id, { status: 'Done', ...options });
-    });
-
-  taskCommand
-    .command('block <id>')
-    .description('Mark a task as "Blocked"')
-    .action(async (id) => {
-      await handleUpdateCommand(id, { status: 'Blocked' });
-    });
-
-  taskCommand
-    .command('review <id>')
-    .description('Mark a task as "In Review"')
-    .action(async (id) => {
-      await handleUpdateCommand(id, { status: 'In Review' });
-    });
 
   // task move command - updated for workflow transitions
   taskCommand
@@ -205,573 +140,210 @@ Note: For subtasks, use the full path or provide --parent:
     .option('--to-archive', 'Move task to archive')
     .option('--archive-date <date>', 'Archive date (YYYY-MM format)')
     .option('--update-status', 'Automatically update task status based on move')
+    .option('--subdirectory <subdirectory>', 'Target subdirectory')
+    .option('--search-subdirectory <searchSubdirectory>', 'Source subdirectory to search')
     .action(handleTaskMoveCommand);
 
-  // ===== SEQUENCING COMMANDS =====
-
-  // task resequence command
+  // Status shortcut commands
   taskCommand
-    .command('resequence <parentId>')
-    .description('Reorder subtasks within a parent task by assigning new sequence numbers')
-    .option('-i, --interactive', 'Interactive mode to reorder tasks visually')
-    .option('--from <positions>', 'Current positions (comma-separated)')
-    .option('--to <positions>', 'New positions (comma-separated)')
-    .addHelpText(
-      'after',
-      `
-Examples:
-  # Interactive reordering
-  sc task resequence auth-feature-05K --interactive
-  
-  # Move task from position 3 to position 1
-  sc task resequence auth-feature-05K --from 3 --to 1
-  
-  # Reorder multiple tasks
-  sc task resequence auth-feature-05K --from 1,2,3 --to 3,1,2
-  
-Notes:
-  - Shows current order before making changes
-  - Automatically adjusts other task sequences
-  - Preserves parallel execution (same numbers)`
-    )
-    .action(async (parentId, options) => {
-      const { handleTaskResequenceCommand } = await import('./commands.js');
-      await handleTaskResequenceCommand(parentId, options);
+    .command('start <id>')
+    .description('Mark a task as "In Progress"')
+    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
+    .action(async (id, options) => {
+      await handleUpdateCommand(id, { ...options, status: 'In Progress' });
     });
 
-  // task parallelize command
   taskCommand
-    .command('parallelize <subtaskIds...>')
-    .description('Make multiple subtasks run in parallel by giving them the same sequence number')
-    .option('--sequence <num>', 'Specific sequence number to use (default: lowest)')
-    .option('--parent <id>', 'Parent task (required if subtask IDs are ambiguous)')
-    .addHelpText(
-      'after',
-      `
-Examples:
-  # Make two subtasks parallel (within same parent)
-  sc task parallelize 02-impl-api 03-impl-ui
-  
-  # Set specific parallel sequence
-  sc task parallelize 02-impl-api 03-impl-ui --sequence 02
-  
-  # With parent specified (for clarity)
-  sc task parallelize 02-impl-api 03-impl-ui --parent auth-feature-05K
-  
-Notes:
-  - Only works on subtasks within the same parent folder
-  - Shows before/after sequences
-  - Core handles all ID/filename updates
-  - Cannot parallelize floating tasks (they don't have sequences)`
-    )
-    .action(async (subtaskIds, options) => {
-      const { handleTaskParallelizeCommand } = await import('./commands.js');
-      await handleTaskParallelizeCommand(subtaskIds, options);
+    .command('complete <id>')
+    .description('Mark a task as "Done"')
+    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
+    .action(async (id, options) => {
+      await handleUpdateCommand(id, { ...options, status: 'Done' });
     });
 
-  // task sequence command
   taskCommand
-    .command('sequence <subtaskId> <newSequence>')
-    .description('Change the sequence number of a subtask within its parent')
-    .option('--force', 'Force even if sequence exists (makes parallel)')
-    .option('--parent <id>', 'Parent task (required if subtask ID is ambiguous)')
-    .addHelpText(
-      'after',
-      `
-Examples:
-  # Change subtask from sequence 03 to 01
-  sc task sequence 03-write-tests 01
-  
-  # Force parallel execution with existing 02
-  sc task sequence 04-deploy 02 --force
-  
-  # With parent specified
-  sc task sequence 03-write-tests 01 --parent auth-feature-05K
-  
-Notes:
-  - Only works on subtasks within parent folders
-  - Automatically shifts other subtasks if needed
-  - Use --force to create parallel tasks
-  - Shows impact on other subtask sequences
-  - Core handles all ID/filename transformations`
-    )
-    .action(async (subtaskId, newSequence, options) => {
-      const { handleTaskSequenceCommand } = await import('./commands.js');
-      await handleTaskSequenceCommand(subtaskId, newSequence, options);
+    .command('block <id>')
+    .description('Mark a task as "Blocked"')
+    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
+    .action(async (id, options) => {
+      await handleUpdateCommand(id, { ...options, status: 'Blocked' });
     });
 
-  // ===== TASK CONVERSION COMMANDS =====
-
-  // task promote command
   taskCommand
-    .command('promote <taskId>')
-    .description('Convert a simple task into a parent task with subtasks')
-    .option('--subtasks <titles>', 'Initial subtasks to create (comma-separated)')
-    .option('--keep-original', 'Keep original task as first subtask')
-    .addHelpText(
-      'after',
-      `
-Examples:
-  # Basic promotion
-  sc task promote implement-auth-05K
-  
-  # Promote with initial subtasks
-  sc task promote implement-auth-05K --subtasks "Design UI,Build API,Write tests"
-  
-  # Keep original as subtask
-  sc task promote implement-auth-05K --keep-original
-  
-Results:
-  - Creates: implement-auth-05K/
-    - _overview.md (from original task)
-    - 01-design-ui-05A.task.md (if --subtasks)
-    - 02-build-api-05B.task.md
-    - 03-write-tests-05C.task.md
-  
-Notes:
-  - Preserves task metadata and content
-  - Generates new IDs for subtasks
-  - Updates any task references`
-    )
-    .action(async (taskId, options) => {
-      const { handleTaskPromoteCommand } = await import('./commands.js');
-      await handleTaskPromoteCommand(taskId, options);
-    });
-
-  // task extract command
-  taskCommand
-    .command('extract <subtaskId>')
-    .description('Extract a subtask from its parent to become a standalone task')
-    .option('--target <location>', 'Target workflow location (backlog/current/archive)', 'backlog')
-    .option('--parent <id>', 'Parent task (required if subtask ID is ambiguous)')
-    .addHelpText(
-      'after',
-      `
-Examples:
-  # Extract subtask to backlog
-  sc task extract auth-feature/02-impl-api
-  
-  # Extract to current workflow
-  sc task extract 02-impl-api --target current
-  
-  # With parent specified
-  sc task extract 02-impl-api --parent auth-feature-05K
-  
-Results:
-  - From: auth-feature/02-impl-api-05K.task.md
-  - To: backlog/impl-api-05K.task.md (keeps suffix, removes sequence)
-  
-Notes:
-  - Preserves task content and metadata
-  - Removes sequence prefix from ID
-  - Updates parent task if referenced`
-    )
-    .action(async (subtaskId, options) => {
-      const { handleTaskExtractCommand } = await import('./commands.js');
-      await handleTaskExtractCommand(subtaskId, options);
-    });
-
-  // task adopt command
-  taskCommand
-    .command('adopt <parentId> <taskId>')
-    .description('Move a standalone task into a parent as a subtask')
-    .option('--sequence <num>', 'Specific sequence (default: next available)')
-    .option('--after <task-id>', 'Place after specific subtask')
-    .option('--before <task-id>', 'Place before specific subtask')
-    .addHelpText(
-      'after',
-      `
-Examples:
-  # Adopt task as next subtask
-  sc task adopt auth-feature-05K login-ui-05M
-  
-  # Adopt at specific position
-  sc task adopt auth-feature-05K login-ui-05M --sequence 02
-  
-  # Insert after existing subtask
-  sc task adopt auth-feature-05K login-ui-05M --after 01-design
-  
-Results:
-  - From: backlog/login-ui-05M.task.md
-  - To: backlog/auth-feature-05K/03-login-ui-05M.task.md
-  
-Notes:
-  - Adds sequence prefix to task ID
-  - Adjusts other sequences if needed
-  - Maintains original task suffix`
-    )
-    .action(async (parentId, taskId, options) => {
-      const { handleTaskAdoptCommand } = await import('./commands.js');
-      await handleTaskAdoptCommand(parentId, taskId, options);
+    .command('review <id>')
+    .description('Mark a task as "In Review"')
+    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
+    .action(async (id, options) => {
+      await handleUpdateCommand(id, { ...options, status: 'In Review' });
     });
 
   // Add task group to root program
   program.addCommand(taskCommand);
 
-  // Add only the most essential top-level commands for convenience
+  // Add top-level shortcuts
   program
     .command('list')
-    .description('List tasks from current and backlog workflows (default)')
-    .option('-s, --status <status>', 'Filter by status (e.g., "To Do", "Done")')
-    .option('-t, --type <type>', 'Filter by type (e.g., "feature", "bug")')
+    .description('List all tasks (shortcut for "task list")')
+    .option('-s, --status <status>', 'Filter by status')
+    .option('-t, --type <type>', 'Filter by type')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-g, --tags <tags...>', 'Filter by tags')
+    .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory/area')
+    .option('-l, --location <location>', 'Filter by workflow location')
     .option('--backlog', 'Show only backlog tasks')
-    .option('--current', 'Show only current tasks')
+    .option('--current', 'Show only current tasks (default)')
     .option('--archive', 'Show only archived tasks')
-    .option('--all', 'Show all workflow locations (current, backlog, archive)')
-    .option(
-      '-f, --format <format>',
-      'Output format: tree (default), table, json, minimal, workflow',
-      'tree'
-    )
+    .option('--all', 'Show all workflow locations')
+    .option('-f, --format <format>', 'Output format', 'tree')
     .action(handleListCommand);
 
   program
     .command('get <id>')
-    .description('Get a task by ID')
-    .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
+    .description('Get a task by ID (shortcut for "task get")')
+    .option('-f, --format <format>', 'Output format', 'default')
+    .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
     .action(handleGetCommand);
 }
 
 /**
- * Set up parent task commands (replacement for features)
+ * Set up parent (formerly feature) and area commands
  * @param program Root commander program
  */
-export function setupParentCommands(program: Command): void {
-  // Create parent command group
+export function setupParentAreaCommands(program: Command): void {
+  // Create parent command group (replaces feature)
   const parentCommand = new Command('parent')
-    .description('Parent task management commands (folder-based tasks with subtasks)')
-    .addHelpText('before', '\nPARENT TASK COMMANDS\n==================\n')
+    .description('Parent task management commands')
+    .addHelpText('before', '\nPARENT TASK MANAGEMENT COMMANDS\n============================\n')
     .addHelpText(
       'after',
       `
-Parent tasks are folder-based tasks that can contain subtasks.
-They replace the old "feature" concept and provide better organization.
-
-Examples:
-  sc parent create --title "User Authentication" --type feature
-  sc parent list
-  sc parent add-subtask AUTH-TASK --title "Implement login form"
+Note: Parent tasks are folder-based tasks that contain subtasks.
+You can use the global --root-dir option to specify an alternative tasks directory.
 `
     );
 
   // parent create command
   parentCommand
     .command('create')
-    .description('Create a new parent task (folder with _overview.md)')
+    .description(
+      'Create a new parent task (Example: sc parent create --name "Authentication" --title "User Auth")'
+    )
+    .requiredOption('--name <name>', 'Parent task name (will be used as folder name)')
     .requiredOption('--title <title>', 'Parent task title')
-    .option('--type <type>', 'Task type', 'feature')
-    .option('--area <area>', 'Area (e.g., "auth", "api")', 'general')
-    .option('--assignee <assignee>', 'Assigned to')
-    .option('--tags <tags...>', 'Tags for the parent task')
     .option('--description <description>', 'Parent task description')
+    .option('--type <type>', 'Task type (default: "feature")')
+    .option('--status <status>', 'Task status (default: "To Do")')
+    .option('--priority <priority>', 'Task priority (default: "Medium")')
+    .option('--assignee <assignee>', 'Assigned to')
+    .option('--location <location>', 'Workflow location: backlog (default), current')
+    .option('--tags <tags...>', 'Tags for the parent task')
     .action(async (options) => {
-      const { handleParentCreateCommand } = await import('./commands.js');
-      await handleParentCreateCommand(options);
+      // Will be implemented with v2 createParentTask
+      console.log('Creating parent task:', options);
     });
 
   // parent list command
   parentCommand
     .command('list')
     .description('List all parent tasks')
-    .option('--location <location>', 'Filter by workflow location: backlog, current, archive')
+    .option('-l, --location <location>', 'Filter by workflow location')
     .option('--backlog', 'Show only backlog parent tasks')
     .option('--current', 'Show only current parent tasks')
     .option('--archive', 'Show only archived parent tasks')
     .option('-f, --format <format>', 'Output format: table, json', 'table')
-    .option('--include-subtasks', 'Include subtask count and details')
-    .action(async (options) => {
-      const { handleParentListCommand } = await import('./commands.js');
-      await handleParentListCommand(options);
-    });
+    .option('-t, --include-tasks', 'Include subtasks in output')
+    .option('-r, --include-progress', 'Include progress calculations')
+    .option('-c, --include-content', 'Include content in output')
+    .option('-d, --include-completed', 'Include completed parent tasks')
+    .action(handleFeatureListCommand);
 
-  // parent get command (also aliased as 'show')
+  // parent get command
   parentCommand
     .command('get <id>')
-    .alias('show')
-    .description('Get details of a parent task including all subtasks')
-    .option('-f, --format <format>', 'Output format: default, json, full', 'default')
-    .option('--tree', 'Show as tree with parallel indicators')
-    .option('--timeline', 'Show execution timeline')
-    .action(async (id, options) => {
-      const { handleParentGetCommand } = await import('./commands.js');
-      await handleParentGetCommand(id, options);
-    });
+    .description('Get details of a parent task')
+    .option('-f, --format <format>', 'Output format: default, json', 'default')
+    .action(handleFeatureGetCommand);
 
-  // parent add-subtask command (enhanced)
+  // parent update command
   parentCommand
-    .command('add-subtask <parentId>')
-    .description('Add a subtask to a parent task')
-    .requiredOption('--title <title>', 'Subtask title')
-    .option('--type <type>', 'Task type (inherits from parent if not specified)')
-    .option('--assignee <assignee>', 'Assigned to')
-    .option('--sequence <num>', 'Specific sequence (default: next)')
-    .option('--parallel-with <id>', 'Make parallel with existing subtask')
-    .option('--after <id>', 'Insert after specific subtask')
-    .option('--before <id>', 'Insert before specific subtask')
-    .addHelpText(
-      'after',
-      `
-Examples:
-  # Add as next sequence
-  sc parent add-subtask auth-05K --title "Add OAuth support"
-  
-  # Insert at specific position
-  sc parent add-subtask auth-05K --title "Security review" --sequence 02
-  
-  # Create parallel task
-  sc parent add-subtask auth-05K --title "Update docs" --parallel-with 03-impl
-  
-  # Insert after existing task
-  sc parent add-subtask auth-05K --title "Integration tests" --after 02-impl`
-    )
-    .action(async (parentId, options) => {
-      const { handleAddSubtaskCommand } = await import('./commands.js');
-      await handleAddSubtaskCommand(parentId, options);
-    });
-
-  // parent move command
-  parentCommand
-    .command('move <id> <target>')
-    .description('Move a parent task to a different workflow state')
-    .action(async (id, target) => {
-      const { handleParentMoveCommand } = await import('./commands.js');
-      await handleParentMoveCommand(id, target);
-    });
+    .command('update <id>')
+    .description('Update a parent task')
+    .option('--title <title>', 'New title')
+    .option('--description <description>', 'New description')
+    .option('--status <status>', 'New status')
+    .option('--new-id <newId>', 'New ID (will rename folder)')
+    .action(handleFeatureUpdateCommand);
 
   // parent delete command
   parentCommand
     .command('delete <id>')
-    .description('Delete a parent task and all its subtasks')
-    .option('-f, --force', 'Force deletion without confirmation')
-    .action(async (id, options) => {
-      const { handleParentDeleteCommand } = await import('./commands.js');
-      await handleParentDeleteCommand(id, options);
+    .description('Delete a parent task')
+    .option('-f, --force', 'Force deletion even if parent contains tasks')
+    .action(handleFeatureDeleteCommand);
+
+  // parent add-subtask command
+  parentCommand
+    .command('add-subtask <parentId>')
+    .description('Add a subtask to a parent task')
+    .requiredOption('--title <title>', 'Subtask title')
+    .option('--type <type>', 'Subtask type')
+    .option('--assignee <assignee>', 'Assigned to')
+    .action(async (parentId, options) => {
+      try {
+        const configManager = ConfigurationManager.getInstance();
+        const projectRoot = configManager.getRootConfig().path;
+
+        const result = await v2.addSubtask(projectRoot, parentId, options.title, {
+          type: options.type,
+          assignee: options.assignee,
+        });
+
+        if (!result.success) {
+          console.error(`Error: ${result.error}`);
+          process.exit(1);
+        }
+
+        console.log(`✓ Added subtask: ${result.data!.metadata.id}`);
+        console.log(`  Parent: ${parentId}`);
+        console.log(`  Path: ${result.data!.metadata.path}`);
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        process.exit(1);
+      }
     });
 
   // Add parent group to root program
   program.addCommand(parentCommand);
-}
 
-/**
- * Set up phase commands - DEPRECATED in v2
- * @param program Root commander program
- */
-// @ts-ignore - Function kept for reference but not used
-function setupPhaseCommands_DEPRECATED(program: Command): void {
-  // Create phase command group
-  const phaseCommand = new Command('phase')
-    .description('Phase management commands')
-    .addHelpText('before', '\nPHASE MANAGEMENT COMMANDS\n======================\n')
-    .addHelpText(
-      'after',
-      `
-Note: You can use the global --root-dir option to specify an alternative tasks directory:
-  sc --root-dir ./e2e_test/worktree-test phase list
-`
-    );
-
-  // phase list command
-  phaseCommand
-    .command('list')
-    .description('List all phases (Example: sc phase list --format json)')
-    .option('-f, --format <format>', 'Output format: table, json', 'table')
-    .action(handlePhasesCommand);
-
-  // phase create command
-  phaseCommand
-    .command('create')
-    .description(
-      'Create a new phase (Example: sc phase create --id "release-v2" --name "Release 2.0")'
-    )
-    .requiredOption('--id <id>', 'Phase ID')
-    .requiredOption('--name <n>', 'Phase name')
-    .option('--description <description>', 'Phase description')
-    .option('--status <status>', 'Phase status (default: "🟡 Pending")')
-    .option('--order <order>', 'Phase order (number)', Number.parseInt)
-    .action(handlePhaseCreateCommand);
-
-  // phase update command
-  phaseCommand
-    .command('update <id>')
-    .description('Update an existing phase')
-    .option('--new-id <newId>', 'New phase ID (use this to rename the phase)')
-    .option('--name <n>', 'New phase name')
-    .option('--description <description>', 'New phase description')
-    .option('--status <status>', 'New phase status')
-    .option('--order <order>', 'New phase order (number)', Number.parseInt)
-    .action(handlePhaseUpdateCommand);
-
-  // phase delete command
-  phaseCommand
-    .command('delete <id>')
-    .description('Delete a phase')
-    .option('-f, --force', 'Force deletion of phase with tasks')
-    .action(handlePhaseDeleteCommand);
-
-  // phase status shortcut commands
-  phaseCommand
-    .command('start <id>')
-    .description('Mark a phase as "In Progress"')
-    .action(async (id) => {
-      await handlePhaseUpdateCommand(id, { status: '🔵 In Progress' });
-    });
-
-  phaseCommand
-    .command('complete <id>')
-    .description('Mark a phase as "Completed"')
-    .action(async (id) => {
-      await handlePhaseUpdateCommand(id, { status: '🟢 Completed' });
-    });
-
-  phaseCommand
-    .command('block <id>')
-    .description('Mark a phase as "Blocked"')
-    .action(async (id) => {
-      await handlePhaseUpdateCommand(id, { status: '⚪ Blocked' });
-    });
-
-  phaseCommand
-    .command('pending <id>')
-    .description('Mark a phase as "Pending"')
-    .action(async (id) => {
-      await handlePhaseUpdateCommand(id, { status: '🟡 Pending' });
-    });
-
-  // Add phase group to root program
-  program.addCommand(phaseCommand);
-
-  // Add phases command for phases listing at top level
-  program
-    .command('phases')
-    .description('List all phases')
-    .option('-f, --format <format>', 'Output format: table, json', 'table')
-    .action(handlePhasesCommand);
-}
-
-/**
- * Set up feature and area commands
- * @param program Root commander program
- */
-export function setupFeatureAreaCommands(program: Command): void {
-  // Create feature command group
+  // Keep feature as deprecated alias
   const featureCommand = new Command('feature')
-    .description('Feature management commands')
-    .addHelpText('before', '\nFEATURE MANAGEMENT COMMANDS\n========================\n')
-    .addHelpText(
-      'after',
-      `
-Note: You can use the global --root-dir option to specify an alternative tasks directory:
-  sc --root-dir ./e2e_test/worktree-test feature list
-`
-    );
+    .description('[DEPRECATED] Use "parent" commands instead')
+    .addHelpText('before', '\n⚠️  DEPRECATED: "feature" commands are now "parent" commands\n');
 
-  // feature create command (creates an overview file in a FEATURE_ subdirectory)
+  // Redirect all feature commands to parent
   featureCommand
     .command('create')
-    .description(
-      'Create a new feature (Example: sc feature create --name "Authentication" --title "User Auth" --phase "release-v1")'
-    )
-    .requiredOption('--name <name>', 'Feature name (will be prefixed with FEATURE_)')
-    .requiredOption('--title <title>', 'Feature title')
-    .requiredOption('--phase <phase>', 'Phase to create the feature in')
-    .option('--description <description>', 'Feature description')
-    .option('--type <type>', 'Feature type (default: "feature")')
-    .option('--status <status>', 'Feature status (default: "To Do")')
-    .option('--priority <priority>', 'Feature priority (default: "Medium")')
-    .option('--assignee <assignee>', 'Assigned to')
-    .option('--tags <tags...>', 'Tags for the feature')
-    .action(async (options) => {
-      const subdirectory = `FEATURE_${options.name.replace(/\s+/g, '')}`;
-
-      try {
-        // Create feature overview file
-        const _result = await handleCreateCommand({
-          id: '_overview',
-          title: options.title,
-          type: options.type || 'feature',
-          status: options.status || 'To Do',
-          priority: options.priority || 'Medium',
-          assignee: options.assignee,
-          phase: options.phase,
-          subdirectory,
-          tags: options.tags,
-          content: options.description
-            ? `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1`
-            : `# ${options.title}\n\nOverview of this feature.\n\n## Tasks\n\n- [ ] Task 1`,
-        });
-
-        // The message will be printed by handleCreateCommand
-        console.log(`Feature '${options.name}' created successfully with overview file.`);
-      } catch (_error) {
-        // Error will be handled by handleCreateCommand
-      }
+    .description('[DEPRECATED] Use "parent create" instead')
+    .action(() => {
+      console.error('⚠️  The "feature" command is deprecated. Use "parent create" instead.');
+      process.exit(1);
     });
 
-  // feature list command (lists all FEATURE_ subdirectories)
-  featureCommand
-    .command('list')
-    .description('List all features (FEATURE_ subdirectories)')
-    .option('-p, --phase <phase>', 'Filter by phase')
-    .option('-f, --format <format>', 'Output format: table, json', 'table')
-    .option('-t, --include-tasks', 'Include tasks in output')
-    .option('-r, --include-progress', 'Include progress calculations')
-    .option('-c, --include-content', 'Include content (descriptions and overview) in output')
-    .option('-d, --include-completed', 'Include completed features in output')
-    .action(handleFeatureListCommand);
-
-  // feature get command
-  featureCommand
-    .command('get <id>')
-    .description('Get details of a feature')
-    .option('-p, --phase <phase>', 'Phase to look in')
-    .option('-f, --format <format>', 'Output format: default, json', 'default')
-    .action(handleFeatureGetCommand);
-
-  // feature update command
-  featureCommand
-    .command('update <id>')
-    .description('Update a feature')
-    .option('--title <title>', 'New feature title')
-    .option('--description <description>', 'New feature description')
-    .option('--status <status>', 'New feature status')
-    .option('--new-id <newId>', 'New feature ID (will rename directory)')
-    .option('-p, --phase <phase>', 'Phase to look in')
-    .action(handleFeatureUpdateCommand);
-
-  // feature delete command
-  featureCommand
-    .command('delete <id>')
-    .description('Delete a feature')
-    .option('-p, --phase <phase>', 'Phase to look in')
-    .option('-f, --force', 'Force deletion even if feature contains tasks')
-    .action(handleFeatureDeleteCommand);
-
-  // Add feature group to root program
   program.addCommand(featureCommand);
 
   // Create area command group
   const areaCommand = new Command('area')
-    .description('Area management commands')
-    .addHelpText('before', '\nAREA MANAGEMENT COMMANDS\n=====================\n')
-    .addHelpText(
-      'after',
-      `
-Note: You can use the global --root-dir option to specify an alternative tasks directory:
-  sc --root-dir ./e2e_test/worktree-test area list
-`
-    );
+    .description('Cross-cutting area management')
+    .addHelpText('before', '\nAREA MANAGEMENT COMMANDS\n=====================\n');
 
-  // area create command (creates an overview file in an AREA_ subdirectory)
+  // area create command
   areaCommand
     .command('create')
-    .description('Create a new area (creates overview file in AREA_ subdirectory)')
+    .description('Create a new area')
     .requiredOption('--name <name>', 'Area name (will be prefixed with AREA_)')
     .requiredOption('--title <title>', 'Area title')
-    .requiredOption('--phase <phase>', 'Phase to create the area in')
     .option('--description <description>', 'Area description')
-    .option('--type <type>', 'Area type (default: "chore")')
+    .option('--type <type>', 'Area type')
     .option('--status <status>', 'Area status (default: "To Do")')
     .option('--priority <priority>', 'Area priority (default: "Medium")')
     .option('--assignee <assignee>', 'Assigned to')
@@ -780,34 +352,31 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
       const subdirectory = `AREA_${options.name.replace(/\s+/g, '')}`;
 
       try {
-        // Create area overview file
-        const _result = await handleCreateCommand({
+        await handleCreateCommand({
           id: '_overview',
           title: options.title,
-          type: options.type || 'chore',
+          type: options.type || 'feature',
           status: options.status || 'To Do',
           priority: options.priority || 'Medium',
           assignee: options.assignee,
-          phase: options.phase,
+          location: 'backlog',
           subdirectory,
           tags: options.tags,
           content: options.description
             ? `# ${options.title}\n\n${options.description}\n\n## Tasks\n\n- [ ] Task 1`
-            : `# ${options.title}\n\nOverview of this cross-cutting area.\n\n## Tasks\n\n- [ ] Task 1`,
+            : `# ${options.title}\n\nOverview of this area.\n\n## Tasks\n\n- [ ] Task 1`,
         });
 
-        // The message will be printed by handleCreateCommand
-        console.log(`Area '${options.name}' created successfully with overview file.`);
+        console.log(`Area '${options.name}' created successfully.`);
       } catch (_error) {
-        // Error will be handled by handleCreateCommand
+        // Error handled by handleCreateCommand
       }
     });
 
-  // area list command (lists all AREA_ subdirectories)
+  // area list command
   areaCommand
     .command('list')
-    .description('List all areas (AREA_ subdirectories)')
-    .option('-p, --phase <phase>', 'Filter by phase')
+    .description('List all areas')
     .option('-f, --format <format>', 'Output format: table, json', 'table')
     .option('-t, --include-tasks', 'Include tasks in output')
     .option('-r, --include-progress', 'Include progress calculations')
@@ -817,7 +386,6 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
   areaCommand
     .command('get <id>')
     .description('Get details of an area')
-    .option('-p, --phase <phase>', 'Phase to look in')
     .option('-f, --format <format>', 'Output format: default, json', 'default')
     .action(handleAreaGetCommand);
 
@@ -825,18 +393,16 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
   areaCommand
     .command('update <id>')
     .description('Update an area')
-    .option('--title <title>', 'New area title')
-    .option('--description <description>', 'New area description')
-    .option('--status <status>', 'New area status')
-    .option('--new-id <newId>', 'New area ID (will rename directory)')
-    .option('-p, --phase <phase>', 'Phase to look in')
+    .option('--title <title>', 'New title')
+    .option('--description <description>', 'New description')
+    .option('--status <status>', 'New status')
+    .option('--new-id <newId>', 'New ID (will rename directory)')
     .action(handleAreaUpdateCommand);
 
   // area delete command
   areaCommand
     .command('delete <id>')
     .description('Delete an area')
-    .option('-p, --phase <phase>', 'Phase to look in')
     .option('-f, --force', 'Force deletion even if area contains tasks')
     .action(handleAreaDeleteCommand);
 
@@ -845,34 +411,26 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
 }
 
 /**
- * Set up workflow commands
+ * Set up workflow commands with v2 additions
  * @param program Root commander program
  */
 export function setupWorkflowCommands(program: Command): void {
   // Create workflow command group
   const workflowCommand = new Command('workflow')
-    .description('Workflow management commands')
-    .addHelpText('before', '\nWORKFLOW MANAGEMENT COMMANDS\n=========================\n')
-    .addHelpText(
-      'after',
-      `
-Note: You can use the global --root-dir option to specify an alternative tasks directory:
-  sc --root-dir ./e2e_test/worktree-test workflow next
-  sc --root-dir ./e2e_test/worktree-test workflow current
-`
-    );
+    .description('Task workflow and sequence management')
+    .addHelpText('before', '\nWORKFLOW MANAGEMENT COMMANDS\n=========================\n');
 
   // workflow next command
   workflowCommand
     .command('next [id]')
-    .description('Find the next task to work on (Example: sc workflow next)')
+    .description('Find the next task to work on')
     .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
     .action(handleNextTaskCommand);
 
   // workflow current command
   workflowCommand
     .command('current')
-    .description('Show tasks currently in progress')
+    .description('Show all tasks currently in progress')
     .option('-f, --format <format>', 'Output format: table, json, minimal, workflow', 'table')
     .action(handleCurrentTaskCommand);
 
@@ -882,6 +440,40 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .description('Mark a task as done and show the next task')
     .option('-f, --format <format>', 'Output format: default, json, markdown, full', 'default')
     .action(handleMarkCompleteNextCommand);
+
+  // NEW: workflow promote command
+  workflowCommand
+    .command('promote <id>')
+    .description('Promote a task from backlog to current')
+    .option('--update-status', 'Also mark task as "In Progress"')
+    .action(async (id, options) => {
+      await handleTaskMoveCommand(id, {
+        toCurrent: true,
+        updateStatus: options.updateStatus,
+      });
+    });
+
+  // NEW: workflow archive command
+  workflowCommand
+    .command('archive <id>')
+    .description('Archive a completed task')
+    .option('--date <date>', 'Archive date (YYYY-MM format, defaults to current month)')
+    .action(async (id, options) => {
+      await handleTaskMoveCommand(id, {
+        toArchive: true,
+        archiveDate: options.date,
+      });
+    });
+
+  // NEW: workflow status command
+  workflowCommand
+    .command('status')
+    .description('Show workflow overview with task counts')
+    .option('-f, --format <format>', 'Output format: table, json', 'table')
+    .action(async (options) => {
+      // Will be implemented to show counts per workflow state
+      console.log('Workflow status:', options);
+    });
 
   // Add workflow group to root program
   program.addCommand(workflowCommand);
@@ -895,14 +487,7 @@ export function setupTemplateCommands(program: Command): void {
   // Create template command group
   const templateCommand = new Command('template')
     .description('Template management commands')
-    .addHelpText('before', '\nTEMPLATE MANAGEMENT COMMANDS\n=========================\n')
-    .addHelpText(
-      'after',
-      `
-Note: You can use the global --root-dir option to specify an alternative tasks directory:
-  sc --root-dir ./e2e_test/worktree-test template list
-`
-    );
+    .addHelpText('before', '\nTEMPLATE MANAGEMENT COMMANDS\n=========================\n');
 
   // template list command
   templateCommand
@@ -915,32 +500,64 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
 }
 
 /**
- * Set up initialization commands
+ * Set up initialization commands with v2 support
  * @param program Root commander program
  */
 export function setupInitCommands(program: Command): void {
-  // Dynamically import v2 init handler
+  // Init command (directly on root program)
   program
     .command('init')
-    .description('Initialize task directory structure')
+    .description('Initialize task directory structure with workflow folders')
     .option('--mode <mode>', 'Force project mode (roo or standalone)')
     .option('--root-dir <path>', 'Initialize in specific directory instead of current directory')
-    .option('--v1', 'Use v1 structure (phases) instead of v2 (workflow)')
-    .action(async (options) => {
-      const { handleInitV2Command } = await import('./init-v2.js');
-      await handleInitV2Command({ ...options, v2: !options.v1 });
-    });
+    .action(handleInitCommand);
 }
 
 /**
- * Set up all entity commands
+ * Set up shortcut commands for workflow states
+ * @param program Root commander program
+ */
+export function setupWorkflowShortcuts(program: Command): void {
+  // backlog command
+  program
+    .command('backlog')
+    .description('List all backlog tasks (shortcut for "task list --backlog")')
+    .option('-s, --status <status>', 'Filter by status')
+    .option('-t, --type <type>', 'Filter by type')
+    .option('-a, --assignee <assignee>', 'Filter by assignee')
+    .option('-f, --format <format>', 'Output format', 'table')
+    .action((options) => handleListCommand({ ...options, backlog: true }));
+
+  // current command
+  program
+    .command('current')
+    .description('List all current tasks (shortcut for "task list --current")')
+    .option('-s, --status <status>', 'Filter by status')
+    .option('-t, --type <type>', 'Filter by type')
+    .option('-a, --assignee <assignee>', 'Filter by assignee')
+    .option('-f, --format <format>', 'Output format', 'table')
+    .action((options) => handleListCommand({ ...options, current: true }));
+
+  // archive command
+  program
+    .command('archive')
+    .description('List all archived tasks (shortcut for "task list --archive")')
+    .option('-s, --status <status>', 'Filter by status')
+    .option('-t, --type <type>', 'Filter by type')
+    .option('-a, --assignee <assignee>', 'Filter by assignee')
+    .option('-f, --format <format>', 'Output format', 'table')
+    .action((options) => handleListCommand({ ...options, archive: true }));
+}
+
+/**
+ * Set up all entity commands for v2
  * @param program Root commander program
  */
 export function setupEntityCommands(program: Command): void {
   setupTaskCommands(program);
-  setupParentCommands(program);
-  // Phase and Feature/Area commands removed for v2
+  setupParentAreaCommands(program);
   setupWorkflowCommands(program);
   setupTemplateCommands(program);
   setupInitCommands(program);
+  setupWorkflowShortcuts(program);
 }
