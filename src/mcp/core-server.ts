@@ -8,32 +8,10 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import * as core from '../core/index.js';
-import {
-  handleDebugCodePath,
-  handleGetCurrentRoot,
-  handleInitRoot,
-  handleListProjects,
-  handleTemplateList,
-} from './handlers.js';
 
-// Import normalized handlers for read operations
-import {
-  handleParentGetNormalized,
-  handleParentListNormalized,
-  handleTaskGetNormalized,
-  handleTaskListNormalized,
-} from './normalized-handlers.js';
-
-// Import normalized handlers for write operations
-import {
-  handleParentCreateNormalized,
-  handleParentOperationsNormalized,
-  handleTaskCreateNormalized,
-  handleTaskDeleteNormalized,
-  handleTaskMoveNormalized,
-  handleTaskTransformNormalized,
-  handleTaskUpdateNormalized,
-} from './normalized-write-handlers.js';
+// Import method registry which has all handlers wrapped with transformation
+import { methodRegistry } from './handlers.js';
+import { McpMethod } from './types.js';
 
 // Import clean enum schemas
 import {
@@ -248,7 +226,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskListSchema>) => {
       try {
-        const result = await handleTaskListNormalized(params);
+        const result = await methodRegistry[McpMethod.TASK_LIST](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -293,7 +271,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskGetSchema>) => {
       try {
-        const result = await handleTaskGetNormalized(params);
+        const result = await methodRegistry[McpMethod.TASK_GET](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -377,7 +355,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskCreateSchema>) => {
       try {
-        const result = await handleTaskCreateNormalized(params);
+        const result = await methodRegistry[McpMethod.TASK_CREATE](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -448,7 +426,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskUpdateSchema>) => {
       try {
-        const result = await handleTaskUpdateNormalized(params);
+        const result = await methodRegistry[McpMethod.TASK_UPDATE](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -493,7 +471,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskMoveSchema>) => {
       try {
-        const result = await handleTaskMoveNormalized(params);
+        const result = await methodRegistry[McpMethod.TASK_MOVE](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -528,7 +506,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskDeleteSchema>) => {
       try {
-        const result = await handleTaskDeleteNormalized(params);
+        const result = await methodRegistry[McpMethod.TASK_DELETE](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -557,7 +535,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof templateListSchema>) => {
       try {
-        const result = await handleTemplateList(params);
+        const result = await methodRegistry[McpMethod.TEMPLATE_LIST](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -588,7 +566,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof initRootSchema>) => {
       try {
-        const result = await handleInitRoot(params);
+        const result = await methodRegistry[McpMethod.CONFIG_INIT_ROOT](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -611,7 +589,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async () => {
       try {
-        const result = await handleGetCurrentRoot({});
+        const result = await methodRegistry[McpMethod.CONFIG_GET_CURRENT_ROOT]({});
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -634,7 +612,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async () => {
       try {
-        const result = await handleListProjects({});
+        const result = await methodRegistry[McpMethod.CONFIG_LIST_PROJECTS]({});
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -657,7 +635,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async () => {
       try {
-        const result = await handleDebugCodePath({});
+        const result = await methodRegistry[McpMethod.DEBUG_CODE_PATH]({});
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -702,7 +680,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof parentListSchema>) => {
       try {
-        const result = await handleParentListNormalized(params);
+        const result = await methodRegistry[McpMethod.PARENT_LIST](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -734,7 +712,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof parentGetSchema>) => {
       try {
-        const result = await handleParentGetNormalized(params);
+        const result = await methodRegistry[McpMethod.PARENT_GET](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -806,7 +784,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof parentCreateSchema>) => {
       try {
-        const result = await handleParentCreateNormalized(params);
+        const result = await methodRegistry[McpMethod.PARENT_CREATE](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -883,7 +861,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof parentOperationsSchema>) => {
       try {
-        const result = await handleParentOperationsNormalized(params);
+        const result = await methodRegistry[McpMethod.PARENT_OPERATIONS](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);
@@ -940,7 +918,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     },
     async (params: z.infer<typeof taskTransformSchema>) => {
       try {
-        const result = await handleTaskTransformNormalized(params);
+        const result = await methodRegistry[McpMethod.TASK_TRANSFORM](params);
         return formatResponse(result);
       } catch (error) {
         return formatError(error);

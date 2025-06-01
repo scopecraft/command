@@ -10,6 +10,9 @@ import {
   type TemplateListParams,
 } from './types.js';
 
+// Import handler wrapper
+import { createMcpHandler } from './handler-wrapper.js';
+
 // Import normalized handlers for read operations
 import {
   handleParentGetNormalized,
@@ -186,28 +189,28 @@ export const methodRegistry: McpMethodRegistry = {
   // ============================================================================
 
   // Read operations
-  [McpMethod.TASK_LIST]: handleTaskListNormalized,
-  [McpMethod.TASK_GET]: handleTaskGetNormalized,
-  [McpMethod.PARENT_LIST]: handleParentListNormalized,
-  [McpMethod.PARENT_GET]: handleParentGetNormalized,
+  [McpMethod.TASK_LIST]: createMcpHandler(handleTaskListNormalized),
+  [McpMethod.TASK_GET]: createMcpHandler(handleTaskGetNormalized),
+  [McpMethod.PARENT_LIST]: createMcpHandler(handleParentListNormalized),
+  [McpMethod.PARENT_GET]: createMcpHandler(handleParentGetNormalized),
 
   // Write operations
-  [McpMethod.TASK_CREATE]: handleTaskCreateNormalized,
-  [McpMethod.TASK_UPDATE]: handleTaskUpdateNormalized,
-  [McpMethod.TASK_DELETE]: handleTaskDeleteNormalized,
-  [McpMethod.TASK_MOVE]: handleTaskMoveNormalized,
-  [McpMethod.TASK_TRANSFORM]: handleTaskTransformNormalized,
-  [McpMethod.PARENT_CREATE]: handleParentCreateNormalized,
-  [McpMethod.PARENT_OPERATIONS]: handleParentOperationsNormalized,
+  [McpMethod.TASK_CREATE]: createMcpHandler(handleTaskCreateNormalized),
+  [McpMethod.TASK_UPDATE]: createMcpHandler(handleTaskUpdateNormalized),
+  [McpMethod.TASK_DELETE]: createMcpHandler(handleTaskDeleteNormalized),
+  [McpMethod.TASK_MOVE]: createMcpHandler(handleTaskMoveNormalized),
+  [McpMethod.TASK_TRANSFORM]: createMcpHandler(handleTaskTransformNormalized),
+  [McpMethod.PARENT_CREATE]: createMcpHandler(handleParentCreateNormalized),
+  [McpMethod.PARENT_OPERATIONS]: createMcpHandler(handleParentOperationsNormalized),
 
   // ============================================================================
   // Legacy handlers - Not yet normalized
   // ============================================================================
 
   // System operations
-  [McpMethod.TEMPLATE_LIST]: handleTemplateList,
-  [McpMethod.CONFIG_INIT_ROOT]: handleInitRoot,
-  [McpMethod.CONFIG_GET_CURRENT_ROOT]: handleGetCurrentRoot,
-  [McpMethod.CONFIG_LIST_PROJECTS]: handleListProjects,
-  [McpMethod.DEBUG_CODE_PATH]: handleDebugCodePath,
+  [McpMethod.TEMPLATE_LIST]: createMcpHandler(handleTemplateList),
+  [McpMethod.CONFIG_INIT_ROOT]: createMcpHandler(handleInitRoot),
+  [McpMethod.CONFIG_GET_CURRENT_ROOT]: createMcpHandler(handleGetCurrentRoot),
+  [McpMethod.CONFIG_LIST_PROJECTS]: createMcpHandler(handleListProjects),
+  [McpMethod.DEBUG_CODE_PATH]: createMcpHandler(handleDebugCodePath),
 };

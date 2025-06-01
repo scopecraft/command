@@ -1,124 +1,108 @@
 # MCP (Model Context Protocol) Area Guide
 
-⚠️ **CRITICAL**: Only import from `../core/v2/`. There is NO v1 - it was never released. Ignore any legacy handlers or patterns. The v2 suffix is temporary and internal only.
+## Overview
 
-## Quick Architecture Overview
 The MCP area provides an API server that allows AI agents (like Claude) to interact with the task management system. It follows the Model Context Protocol specification and provides both HTTP/SSE and STDIO transports.
 
-## Key Files and Utilities
+For detailed architecture, field transformations, and implementation details, see: `docs/mcp-architecture.md`
 
-### Core MCP Files
-- `src/mcp/server.ts` - Main server setup and initialization
-- `src/mcp/handlers.ts` - All MCP method implementations (task_list, parent_list, etc.)
-- `src/mcp/types.ts` - TypeScript types for requests/responses
-- `src/mcp/http-server.ts` - HTTP/SSE transport implementation
-- `src/mcp/stdio-server.ts` - STDIO transport implementation
+## Key Principles
 
-### Handler Pattern
+### 1. Consistent API Design
+- All operations use the same response envelope format
+- Field names follow JavaScript conventions (camelCase)
+- Clean enum values without decorations
+- Comprehensive error messages for AI consumption
+
+### 2. Type Safety
+- Zod schemas validate all inputs and outputs
+- TypeScript types generated from schemas
+- Runtime validation prevents data corruption
+
+### 3. AI-Friendly Responses
 ```typescript
-// All handlers follow this pattern in handlers.ts
-export async function handleMethodName(
-  params: MethodParams,
-  context: HandlerContext
-): Promise<MethodResponse> {
-  // 1. Validate params
-  // 2. Call core functions
-  // 3. Transform to MCP response
-  // 4. Handle errors gracefully
+// Always provide context in errors
+{
+  success: false,
+  error: "Task with ID example-01A not found",
+  message: "Please check the task ID and try again"
 }
 ```
 
 ## Common Patterns
 
-### Response Building
-```typescript
-// Always return consistent response structure
-return {
-  success: true,
-  data: transformedData,
-  error: null
-};
-```
+### Handler Structure
+All handlers follow a consistent pattern:
+1. Parse and validate input with Zod schema
+2. Call core layer functions
+3. Transform response to normalized format
+4. Return consistent response envelope
 
 ### Error Handling
 ```typescript
-// Always provide AI-friendly error messages
+// Provide actionable error messages
 catch (error) {
   return {
     success: false,
-    data: null,
-    error: {
-      code: 'TASK_NOT_FOUND',
-      message: 'Task with ID example-01A not found. Please check the ID and try again.',
-      details: error.message
-    }
+    error: error.message,
+    message: "Operation failed - check error details",
+    metadata: { timestamp, version }
   };
 }
 ```
 
-### Core Integration
+### Response Format
 ```typescript
-// ONLY use core functions from v2 directory
-import { taskOperations } from '../core/v2';
-
-// Transform core responses to MCP format
-const coreTasks = await taskOperations.listTasks(filters);
-return coreTasks.map(transformToMCPFormat);
+// All responses use this structure
+{
+  success: boolean,
+  data?: T,
+  error?: string,
+  message: string,
+  metadata?: { timestamp, version }
+}
 ```
-
-**IMPORTANT**: There is no v1. Only import from '../core/v2/'. Ignore any legacy handlers or types.
 
 ## Do's and Don'ts
 
 ### Do's
-- ✅ Validate all input parameters
-- ✅ Return consistent response formats across all methods
-- ✅ Provide helpful error messages for AI consumption
-- ✅ Include examples in error messages when possible
-- ✅ Use TypeScript types for all requests/responses
-- ✅ Handle edge cases (empty results, not found, etc.)
-- ✅ Document response format in method comments
+- ✅ Use the method registry for all operations
+- ✅ Validate inputs with Zod schemas
+- ✅ Return consistent response formats
+- ✅ Include helpful context in error messages
+- ✅ Handle edge cases gracefully
+- ✅ Document new operations thoroughly
 
 ### Don'ts
-- ❌ Return raw core errors to the API
-- ❌ Use different response structures for similar methods
-- ❌ Assume AI knows internal implementation details
-- ❌ Return null/undefined without explanation
+- ❌ Return raw errors from core layer
 - ❌ Mix transport logic with business logic
-- ❌ Import from anywhere except '../core/v2/'
-- ❌ Look at legacy handler implementations
+- ❌ Assume AI knows internal details
+- ❌ Return null/undefined without explanation
+- ❌ Break existing response contracts
 
 ## Testing Approach
-
-### E2E Testing
-```bash
-# Test actual MCP methods via CLI
-bun run dev:cli task list --format json
-bun run dev:cli parent list --format json
-
-# Validate response consistency
-# Check for required fields
-# Ensure proper error messages
-```
 
 ### Manual Testing
 ```bash
 # Start MCP server
-bun run mcp:http
+bun run mcp:stdio
 
-# Test with curl
-curl http://localhost:3000/mcp/v1/task/list
+# Test operations through Claude or other MCP clients
 ```
 
-## Related Documentation
-- MCP Protocol Spec: `docs/mcp-sdk.md`
-- Tool Descriptions: `docs/mcp-tool-descriptions.md`
-- API Testing: `test/mcp/`
+### Unit Testing
+- Test handlers with mock data
+- Verify schema validation
+- Check error handling paths
 
-## Common Tasks for MCP Area
-- Adding new MCP methods
-- Ensuring response consistency
-- Improving error messages
-- Adding method parameters
-- Optimizing query performance
-- Enhancing AI agent experience
+## Common Tasks
+
+- **Adding new operations**: Define schema, create handler, add to registry
+- **Enhancing existing operations**: Update schema, modify handler logic
+- **Improving error messages**: Make them more actionable for AI
+- **Optimizing performance**: Use appropriate filters and projections
+
+## Related Documentation
+- Architecture Details: `docs/mcp-architecture.md`
+- Tool Descriptions: `docs/mcp-tool-descriptions.md`
+- Core Task System: `docs/specs/task-system-design.md`

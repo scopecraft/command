@@ -64,6 +64,54 @@ export async function handleTaskCreateNormalized(
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
 
+    // Check if this should be a subtask
+    if (params.parentId) {
+      // Use addSubtask for creating subtasks
+      const subtaskOptions: core.SubtaskOptions = {
+        type: params.type,
+        assignee: params.assignee,
+      };
+
+      const result = await core.addSubtask(
+        projectRoot, 
+        params.parentId, 
+        params.title, 
+        subtaskOptions,
+        undefined // config
+      );
+
+      if (!result.success || !result.data) {
+        return {
+          success: false,
+          error: result.error || 'Failed to create subtask',
+          message: result.error || 'Subtask creation failed',
+          metadata: createResponseMetadata(),
+        };
+      }
+
+      // Transform and validate output
+      const outputData = {
+        id: result.data.metadata.id,
+        title: result.data.document.title,
+        type: result.data.document.frontmatter.type as TaskCreateOutput['data']['type'],
+        status: normalizeStatus(result.data.document.frontmatter.status),
+        workflowState: result.data.metadata.location
+          .workflowState as TaskCreateOutput['data']['workflowState'],
+        area: result.data.document.frontmatter.area || 'general',
+        path: result.data.metadata.path,
+        createdAt: new Date().toISOString(),
+      };
+
+      const response = TaskCreateOutputSchema.parse({
+        success: true,
+        data: outputData,
+        message: `Subtask ${outputData.id} created successfully`,
+        metadata: createResponseMetadata(),
+      });
+
+      return response;
+    }
+
     // Build create options with normalized field names
     const createOptions: core.TaskCreateOptions = {
       title: params.title,
@@ -71,7 +119,6 @@ export async function handleTaskCreateNormalized(
       area: params.area,
       status: params.status,
       workflowState: params.workflowState,
-      parentId: params.parentId,
       instruction: params.instruction,
       tasks: params.tasks,
       customMetadata: {},
@@ -98,7 +145,7 @@ export async function handleTaskCreateNormalized(
       id: result.data.metadata.id,
       title: result.data.document.title,
       type: result.data.document.frontmatter.type as TaskCreateOutput['data']['type'],
-      status: result.data.document.frontmatter.status as TaskCreateOutput['data']['status'],
+      status: normalizeStatus(result.data.document.frontmatter.status),
       workflowState: result.data.metadata.location
         .workflowState as TaskCreateOutput['data']['workflowState'],
       area: result.data.document.frontmatter.area || 'general',

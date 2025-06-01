@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "mcp__scopecraft__parent_operations",
+      "Bash(rg:*)",
+      "mcp__scopecraft__task_create",
+      "mcp__scopecraft__task_delete",
+      "Bash(npx tsc:*)",
+      "Bash(npm search:*)",
+      "Bash(rm:*)",
+      "mcp__scopecraft__parent_get",
+      "mcp__scopecraft__task_list",
+      "mcp__scopecraft__task_get",
+      "Bash(npm test:*)",
+      "mcp__scopecraft__task_update"
     ],
     "deny": []
   }
