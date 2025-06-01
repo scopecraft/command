@@ -13,7 +13,8 @@
       "mcp__scopecraft__task_list",
       "mcp__scopecraft__task_get",
       "Bash(npm test:*)",
-      "mcp__scopecraft__task_update"
+      "mcp__scopecraft__task_update",
+      "mcp__scopecraft__parent_list"
     ],
     "deny": []
   }

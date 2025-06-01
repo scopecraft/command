@@ -2,31 +2,13 @@
 
 ---
 type: chore
-status: To Do
+status: in_progress
 area: core
 ---
 
 
 ## Instruction
 Refactor the task-crud API to use clean CRUD naming conventions (create, get, update, delete) and implement a builder pattern for parent operations. This refactoring will fix several critical bugs including subtask creation/deletion issues and API inconsistencies.
-
-## Reference Documents
-- Detailed refactoring plan: `.tasks/current/implement-v2-structure/refactoring-plan-crud-api-cleanup.md`
-- Original architecture analysis from conversation
-
-## Critical Bugs This Must Fix
-1. **Subtask deletion bug**: Currently fails with "Cannot delete parent task overview directly" when trying to delete subtasks
-2. **Subtask creation bug**: MCP task_create with parent_id was creating simple tasks instead of subtasks (partially fixed)
-3. **Inconsistent parentId support**: Some CRUD functions accept parentId, others don't
-4. **API naming inconsistency**: Non-standard function names vs. industry CRUD conventions
-
-## Major Architectural Cleanup
-**Analysis**: task-operations.ts contains NO true multi-task operations - all functions operate on single parents:
-- resequenceSubtasks, parallelizeSubtasks, updateSubtaskSequence → Move to parent builder
-- promoteToParent, extractSubtask, adoptTask → Move to parent builder
-- addSubtask → Remove (duplicate)
-
-**Decision**: If no true multi-task operations remain, DELETE task-operations.ts entirely
 
 ## Tasks
 - [ ] **Phase 1: Core CRUD Rename**
@@ -79,6 +61,9 @@ Refactor the task-crud API to use clean CRUD naming conventions (create, get, up
 - Documentation updated (refactoring plan serves as implementation guide)
 
 ## Log
+- 2025-06-01: Starting CRUD API refactoring - analyzing current codebase structure
+- 2025-06-01: Analysis complete: Found 6 CRUD functions to rename in task-crud.ts, only getTask currently has parentId parameter. task-operations.ts contains 7 single-parent operations for builder pattern migration. Starting Phase 1.
+- 2025-06-01: Read detailed refactoring plan - much more comprehensive than task description. Plan specifies methodical approach with VS Code rename symbol, incremental testing, and specific timeline. Starting Phase 1: Core CRUD Rename.
 
 ## Reference documents
 - Detailed refactoring plan: `docs/refactoring-plan-crud-api-cleanup.md`
@@ -89,3 +74,11 @@ Refactor the task-crud API to use clean CRUD naming conventions (create, get, up
 2. **Subtask creation bug**: MCP task_create with parent_id was creating simple tasks instead of subtasks (partially fixed)
 3. **Inconsistent parentId support**: Some CRUD functions accept parentId, others don't
 4. **API naming inconsistency**: Non-standard function names vs. industry CRUD conventions
+
+## Major architectural cleanup
+**Analysis**: task-operations.ts contains NO true multi-task operations - all functions operate on single parents:
+- resequenceSubtasks, parallelizeSubtasks, updateSubtaskSequence → Move to parent builder
+- promoteToParent, extractSubtask, adoptTask → Move to parent builder
+- addSubtask → Remove (duplicate)
+
+**Decision**: If no true multi-task operations remain, DELETE task-operations.ts entirely
