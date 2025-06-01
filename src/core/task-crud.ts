@@ -46,10 +46,11 @@ import type {
 /**
  * Create a new task
  */
-export async function createTask(
+export async function create(
   projectRoot: string,
   options: TaskCreateOptions,
-  config?: ProjectConfig
+  config?: ProjectConfig,
+  parentId?: string
 ): Promise<OperationResult<Task>> {
   try {
     // Generate unique ID
@@ -134,7 +135,7 @@ export async function createTask(
 /**
  * Read a task by ID
  */
-export async function getTask(
+export async function get(
   projectRoot: string,
   taskId: string,
   config?: ProjectConfig,
@@ -249,15 +250,16 @@ function shouldAutoTransition(
 /**
  * Update a task
  */
-export async function updateTask(
+export async function update(
   projectRoot: string,
   taskId: string,
   updates: TaskUpdateOptions,
-  config?: ProjectConfig
+  config?: ProjectConfig,
+  parentId?: string
 ): Promise<OperationResult<Task>> {
   try {
     // Get existing task
-    const result = await getTask(projectRoot, taskId, config);
+    const result = await get(projectRoot, taskId, config, parentId);
     if (!result.success || !result.data) {
       return result;
     }
@@ -317,14 +319,15 @@ export async function updateTask(
       writeFileSync(task.metadata.path, updatedContent, 'utf-8');
       
       // Then use moveTask with updateStatus: false to move to new workflow
-      const moveResult = await moveTask(
+      const moveResult = await move(
         projectRoot,
         taskId,
         {
           targetState: targetWorkflow,
           updateStatus: false, // Don't override the status we just set
         },
-        config
+        config,
+        parentId
       );
 
       if (moveResult.success && moveResult.data) {
@@ -357,14 +360,15 @@ export async function updateTask(
 /**
  * Delete a task
  */
-export async function deleteTask(
+export async function del(
   projectRoot: string,
   taskId: string,
-  config?: ProjectConfig
+  config?: ProjectConfig,
+  parentId?: string
 ): Promise<OperationResult<void>> {
   try {
     // Resolve task path
-    const taskPath = resolveTaskId(taskId, projectRoot, config);
+    const taskPath = resolveTaskId(taskId, projectRoot, config, parentId);
     if (!taskPath) {
       return {
         success: false,
@@ -372,8 +376,8 @@ export async function deleteTask(
       };
     }
 
-    // Check if it's a parent task
-    if (isParentTaskFolder(dirname(taskPath))) {
+    // Check if it's a parent task overview file (not a subtask)
+    if (basename(taskPath) === '_overview.md') {
       return {
         success: false,
         error: 'Cannot delete parent task overview directly. Delete the entire folder.',
@@ -397,15 +401,16 @@ export async function deleteTask(
 /**
  * Move a task between workflow states
  */
-export async function moveTask(
+export async function move(
   projectRoot: string,
   taskId: string,
   options: TaskMoveOptions,
-  config?: ProjectConfig
+  config?: ProjectConfig,
+  parentId?: string
 ): Promise<OperationResult<Task>> {
   try {
     // Get existing task
-    const result = await getTask(projectRoot, taskId, config);
+    const result = await get(projectRoot, taskId, config, parentId);
     if (!result.success || !result.data) {
       return result;
     }
@@ -485,10 +490,11 @@ export async function moveTask(
 /**
  * List tasks with filters
  */
-export async function listTasks(
+export async function list(
   projectRoot: string,
   options: TaskListOptions = {},
-  config?: ProjectConfig
+  config?: ProjectConfig,
+  parentId?: string
 ): Promise<OperationResult<Task[]>> {
   try {
     const tasks: Task[] = [];
@@ -622,7 +628,7 @@ export async function updateSection(
 ): Promise<OperationResult<Task>> {
   try {
     // Get existing task
-    const result = await getTask(projectRoot, taskId, config);
+    const result = await get(projectRoot, taskId, config, parentId);
     if (!result.success || !result.data) {
       return result;
     }

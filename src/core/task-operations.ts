@@ -36,7 +36,7 @@ import {
   reorderSubtasks,
   updateSubtaskSequence as updateSequenceLowLevel,
 } from './subtask-sequencing.js';
-import { createTask, deleteTask, getTask, moveTask, updateTask } from './task-crud.js';
+import { create as createTask, del as deleteTask, get as getTask, move as moveTask, update as updateTask } from './task-crud.js';
 import { parseTaskDocument, serializeTaskDocument } from './task-parser.js';
 import type {
   OperationResult,

@@ -15,7 +15,7 @@ import {
   parseTaskLocation,
 } from './directory-utils.js';
 import { generateSubtaskId, generateUniqueTaskId } from './id-generator.js';
-import { createTask, deleteTask, getTask, moveTask } from './task-crud.js';
+import { create as createTask, del as deleteTask, get as getTask, move as moveTask } from './task-crud.js';
 import { ensureRequiredSections, parseTaskDocument } from './task-parser.js';
 import type {
   OperationResult,
