@@ -25,9 +25,8 @@ import {
 } from './directory-utils.js';
 import { generateSubtaskId, generateTaskId, parseTaskId } from './id-generator.js';
 import {
-  addSubtask as addSubtaskLowLevel,
-  createParentTask,
-  getParentTask,
+  parent,
+  createParent,
 } from './parent-tasks.js';
 import {
   type TaskOrder,
@@ -60,7 +59,7 @@ export async function resequenceSubtasks(
 ): Promise<OperationResult<void>> {
   try {
     // Get parent task to find folder
-    const parentResult = await getParentTask(projectRoot, parentId, config);
+    const parentResult = await parent(projectRoot, parentId, config).get();
     if (!parentResult.success || !parentResult.data) {
       return {
         success: false,
@@ -156,7 +155,7 @@ export async function parallelizeSubtasks(
 ): Promise<OperationResult<void>> {
   try {
     // Get parent task
-    const parentResult = await getParentTask(projectRoot, parentId, config);
+    const parentResult = await parent(projectRoot, parentId, config).get();
     if (!parentResult.success || !parentResult.data) {
       return {
         success: false,
@@ -194,7 +193,7 @@ export async function updateSubtaskSequence(
 ): Promise<OperationResult<void>> {
   try {
     // Get parent task
-    const parentResult = await getParentTask(projectRoot, parentId, config);
+    const parentResult = await parent(projectRoot, parentId, config).get();
     if (!parentResult.success || !parentResult.data) {
       return {
         success: false,
@@ -302,7 +301,7 @@ export async function promoteToParent(
     };
 
     // Create the parent task
-    const parentResult = await createParentTask(projectRoot, parentOptions, config);
+    const parentResult = await createParent(projectRoot, parentOptions, config);
     if (!parentResult.success || !parentResult.data) {
       return {
         success: false,
@@ -315,16 +314,14 @@ export async function promoteToParent(
     // Add initial subtasks if requested
     if (options.subtasks && options.subtasks.length > 0) {
       for (const subtaskTitle of options.subtasks) {
-        await addSubtaskLowLevel(projectRoot, parentTask.metadata.id, subtaskTitle, {}, config);
+        await parent(projectRoot, parentTask.metadata.id, config).create(subtaskTitle, {});
       }
     }
 
     // If keeping original as subtask
     if (options.keepOriginal) {
       // Copy content to first subtask
-      await addSubtaskLowLevel(
-        projectRoot,
-        parentTask.metadata.id,
+      await parent(projectRoot, parentTask.metadata.id, config).create(
         task.document.title,
         {
           instruction: task.document.sections.instruction,
@@ -333,8 +330,7 @@ export async function promoteToParent(
             .filter((line) => line.trim())
             .map((line) => line.replace(/^-\s*\[.\]\s*/, '').trim()),
           deliverable: task.document.sections.deliverable,
-        },
-        config
+        }
       );
     }
 
@@ -371,7 +367,7 @@ export async function extractSubtask(
 ): Promise<OperationResult<Task>> {
   try {
     // Get parent task
-    const parentResult = await getParentTask(projectRoot, parentId, config);
+    const parentResult = await parent(projectRoot, parentId, config).get();
     if (!parentResult.success || !parentResult.data) {
       return {
         success: false,
@@ -465,7 +461,7 @@ export async function adoptTask(
     }
 
     // Get parent task
-    const parentResult = await getParentTask(projectRoot, parentId, config);
+    const parentResult = await parent(projectRoot, parentId, config).get();
     if (!parentResult.success || !parentResult.data) {
       return {
         success: false,
@@ -520,7 +516,7 @@ export async function adoptTask(
     // If we need to shift other sequences
     if (options.after || options.before) {
       // Get updated parent task
-      const updatedParent = await getParentTask(projectRoot, parentId, config);
+      const updatedParent = await parent(projectRoot, parentId, config).get();
       if (updatedParent.success && updatedParent.data) {
         // Reorder to ensure proper sequencing
         const subtasks = updatedParent.data.subtasks.sort((a, b) => {
@@ -576,7 +572,7 @@ export async function addSubtask(
 ): Promise<OperationResult<Task>> {
   try {
     // Get parent task
-    const parentResult = await getParentTask(projectRoot, parentId, config);
+    const parentResult = await parent(projectRoot, parentId, config).get();
     if (!parentResult.success || !parentResult.data) {
       return {
         success: false,
@@ -664,7 +660,7 @@ export async function addSubtask(
 
     // If we inserted in the middle, resequence
     if (options.after || options.before) {
-      const updatedParent = await getParentTask(projectRoot, parentId, config);
+      const updatedParent = await parent(projectRoot, parentId, config).get();
       if (updatedParent.success && updatedParent.data) {
         const subtasks = updatedParent.data.subtasks.sort((a, b) => {
           const seqA = Number.parseInt(a.metadata.sequenceNumber || '99', 10);

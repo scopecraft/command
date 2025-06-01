@@ -1,28 +1,28 @@
 /**
- * Parent Task Support
+ * Parent Task Operations - Clean Builder Pattern API
  *
- * Handles folder-based tasks with child tasks (subtasks)
+ * Provides a clean builder interface for all parent task operations.
+ * This is the ONLY API for working with parent tasks.
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import {
-  getSubtaskFiles,
-  getSubtaskSequence,
-  getTaskIdFromFilename,
   getWorkflowDirectory,
+  getTaskIdFromFilename,
   isParentTaskFolder,
   parseTaskLocation,
 } from './directory-utils.js';
-import { generateSubtaskId, generateUniqueTaskId } from './id-generator.js';
+import { generateUniqueTaskId, generateSubtaskId } from './id-generator.js';
 import { create, del, get, move } from './task-crud.js';
-import { ensureRequiredSections, parseTaskDocument } from './task-parser.js';
+import { parseTaskDocument } from './task-parser.js';
 import type {
   OperationResult,
   ParentTask,
   SubtaskInfo,
   Task,
   TaskCreateOptions,
+  TaskUpdateOptions,
   TaskMetadata,
   TaskStatus,
   TaskType,
@@ -31,9 +31,83 @@ import type {
 } from './types.js';
 
 /**
- * Create a parent task (folder with _overview.md)
+ * Clean builder pattern for parent-scoped operations
+ * 
+ * Usage:
+ *   parent(projectRoot, parentId).create(title, options)
+ *   parent(projectRoot, parentId).get()
+ *   parent(projectRoot, parentId).list()
+ *   parent(projectRoot, parentId).del(cascade: true)
  */
-export async function createParentTask(
+export function parent(projectRoot: string, parentId: string, config?: ProjectConfig) {
+  return {
+    // CRUD operations scoped to parent
+    async create(title: string, options: Partial<TaskCreateOptions> = {}): Promise<OperationResult<Task>> {
+      // Create subtask within this parent
+      const subtaskOptions: TaskCreateOptions = {
+        title,
+        type: options.type || 'feature',
+        area: options.area,
+        status: options.status || 'To Do',
+        workflowState: options.workflowState,
+        instruction: options.instruction,
+        tasks: options.tasks,
+        deliverable: options.deliverable,
+        customMetadata: options.customMetadata,
+      };
+      return create(projectRoot, subtaskOptions, config, parentId);
+    },
+    
+    async get(subtaskId?: string): Promise<OperationResult<Task | ParentTask>> {
+      if (subtaskId) {
+        // Get specific subtask
+        return get(projectRoot, subtaskId, config, parentId);
+      }
+      // Get parent task with all subtasks
+      return getParentTaskWithSubtasks(projectRoot, parentId, config);
+    },
+    
+    async update(updates: TaskUpdateOptions): Promise<OperationResult<Task>> {
+      // Update the parent overview
+      return update(projectRoot, parentId, updates, config);
+    },
+    
+    async del(cascade = false): Promise<OperationResult<void>> {
+      if (!cascade) {
+        throw new Error('Must specify cascade=true to delete parent task');
+      }
+      return deleteParentTaskWithSubtasks(projectRoot, parentId, config);
+    },
+    
+    async list(): Promise<OperationResult<Task[]>> {
+      const parentResult = await getParentTaskWithSubtasks(projectRoot, parentId, config);
+      if (!parentResult.success || !parentResult.data) {
+        return {
+          success: false,
+          error: parentResult.error || 'Parent task not found',
+        };
+      }
+      return { success: true, data: parentResult.data.subtasks || [] };
+    },
+    
+    // Parent-specific operations (will be implemented in Phase 3B)
+    async resequence(mapping: Array<{taskId: string, newSequence: string}>): Promise<OperationResult<void>> {
+      // TODO: Will be moved from task-operations.ts in Phase 3B
+      throw new Error('Not implemented yet - will be moved from task-operations.ts');
+    },
+    
+    async parallelize(subtaskIds: string[]): Promise<OperationResult<void>> {
+      // TODO: Will be moved from task-operations.ts in Phase 3B  
+      throw new Error('Not implemented yet - will be moved from task-operations.ts');
+    }
+  };
+}
+
+/**
+ * Create a new parent task (folder with _overview.md)
+ * This is used by the builder's create method when no parentId is provided
+ */
+export async function createParent(
   projectRoot: string,
   options: TaskCreateOptions,
   config?: ProjectConfig
@@ -77,28 +151,16 @@ export async function createParentTask(
       };
     }
 
-    // Move the created file to _overview.md
-    const tempPath = result.data.metadata.path;
-    const fs = await import('node:fs');
-    fs.renameSync(tempPath, overviewPath);
+    // Move the created task to the correct location
+    const overviewResult = await moveTaskToParentFolder(result.data, overviewPath);
+    if (!overviewResult.success) {
+      // Cleanup on failure
+      rmSync(taskFolder, { recursive: true, force: true });
+      return overviewResult;
+    }
 
-    // Update metadata
-    result.data.metadata.path = overviewPath;
-    result.data.metadata.filename = '_overview.md';
-    result.data.metadata.isParentTask = true;
-
-    // Create parent task object
-    const parentTask: ParentTask = {
-      metadata: result.data.metadata,
-      overview: result.data.document,
-      subtasks: [],
-      supportingFiles: [],
-    };
-
-    return {
-      success: true,
-      data: parentTask,
-    };
+    // Return the parent task
+    return getParentTaskWithSubtasks(projectRoot, taskId, config);
   } catch (error) {
     return {
       success: false,
@@ -107,82 +169,9 @@ export async function createParentTask(
   }
 }
 
-/**
- * Add a subtask to a parent task
- */
-export async function addSubtask(
-  projectRoot: string,
-  parentTaskId: string,
-  subtaskTitle: string,
-  options: Partial<TaskCreateOptions> = {},
-  config?: ProjectConfig
-): Promise<OperationResult<Task>> {
-  try {
-    // Get parent task
-    const parentResult = await getParentTask(projectRoot, parentTaskId, config);
-    if (!parentResult.success || !parentResult.data) {
-      return {
-        success: false,
-        error: parentResult.error || 'Parent task not found',
-      };
-    }
+// Helper functions (internal implementation details)
 
-    const parentTask = parentResult.data;
-    const taskFolder = dirname(parentTask.metadata.path);
-
-    // Determine next sequence number
-    const nextSequence = getNextSequenceNumber(taskFolder);
-
-    // Generate subtask ID using the new format
-    const subtaskId = generateSubtaskId(subtaskTitle, nextSequence);
-    const subtaskPath = join(taskFolder, `${subtaskId}.task.md`);
-
-    // Create subtask options
-    const subtaskOptions: TaskCreateOptions = {
-      title: subtaskTitle,
-      type: (options.type || parentTask.overview.frontmatter.type) as TaskType,
-      area: options.area || parentTask.overview.frontmatter.area,
-      status: (options.status || 'To Do') as TaskStatus,
-      workflowState: parentTask.metadata.location.workflowState,
-      instruction: options.instruction || `Complete the subtask: ${subtaskTitle}`,
-      tasks: options.tasks,
-      deliverable: options.deliverable,
-      customMetadata: options.customMetadata,
-    };
-
-    // Create subtask using standard task creation
-    const result = await create(projectRoot, subtaskOptions, config);
-    if (!result.success || !result.data) {
-      return result;
-    }
-
-    // Move to correct location
-    const fs = await import('node:fs');
-    fs.renameSync(result.data.metadata.path, subtaskPath);
-
-    // Update metadata
-    result.data.metadata.path = subtaskPath;
-    result.data.metadata.filename = `${subtaskId}.task.md`;
-    result.data.metadata.id = subtaskId;
-    result.data.metadata.parentTask = parentTaskId;
-    result.data.metadata.sequenceNumber = nextSequence;
-
-    return {
-      success: true,
-      data: result.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to add subtask',
-    };
-  }
-}
-
-/**
- * Get a parent task with all child tasks
- */
-export async function getParentTask(
+async function getParentTaskWithSubtasks(
   projectRoot: string,
   taskId: string,
   config?: ProjectConfig
@@ -199,73 +188,22 @@ export async function getParentTask(
 
     const task = result.data;
 
-    // Check if it's actually a parent task
+    // Verify it's a parent task (has _overview.md)
     if (!task.metadata.isParentTask) {
       return {
         success: false,
-        error: 'Not a parent task',
+        error: `Task ${taskId} is not a parent task`,
       };
     }
 
-    // Get task folder
-    const taskFolder = dirname(task.metadata.path);
-
     // Get subtasks
-    const subtaskPaths = getSubtaskFiles(taskFolder);
-    const subtasks: Task[] = [];
-
-    for (const subtaskPath of subtaskPaths) {
-      // Read subtask directly instead of trying to resolve by ID
-      try {
-        const content = readFileSync(subtaskPath, 'utf-8');
-        const document = parseTaskDocument(content);
-
-        // Parse location
-        const location = parseTaskLocation(subtaskPath, projectRoot);
-        if (!location) continue;
-
-        // Get ID and sequence from filename
-        const filename = basename(subtaskPath);
-        const id = getTaskIdFromFilename(subtaskPath);
-        const sequence = getSubtaskSequence(filename);
-
-        // Create metadata
-        const metadata: TaskMetadata = {
-          id,
-          filename,
-          path: subtaskPath,
-          location,
-          isParentTask: false,
-          parentTask: task.metadata.id,
-          sequenceNumber: sequence || undefined,
-        };
-
-        subtasks.push({
-          metadata,
-          document,
-        });
-      } catch (error) {
-        // Skip files that can't be read
-        continue;
-      }
-    }
-
-    // Get supporting files
-    const allFiles = readdirSync(taskFolder);
-    const supportingFiles = allFiles.filter((file) => {
-      const fullPath = join(taskFolder, file);
-      if (!statSync(fullPath).isFile()) return false;
-      if (file === '_overview.md') return false;
-      if (file.endsWith('.task.md')) return false;
-      return true;
-    });
+    const subtasks = await getSubtasksForParent(projectRoot, task.metadata.path);
 
     // Create parent task object
     const parentTask: ParentTask = {
       metadata: task.metadata,
       overview: task.document,
       subtasks,
-      supportingFiles,
     };
 
     return {
@@ -280,91 +218,86 @@ export async function getParentTask(
   }
 }
 
-/**
- * Move a parent task (entire folder)
- */
-export async function moveParentTask(
-  projectRoot: string,
-  taskId: string,
-  targetState: WorkflowState,
-  config?: ProjectConfig
-): Promise<OperationResult<ParentTask>> {
+async function getSubtasksForParent(projectRoot: string, overviewPath: string): Promise<Task[]> {
+  const subtasks: Task[] = [];
+  const taskFolder = dirname(overviewPath);
+
+  if (!existsSync(taskFolder)) {
+    return subtasks;
+  }
+
   try {
-    // Get parent task
-    const result = await getParentTask(projectRoot, taskId, config);
-    if (!result.success || !result.data) {
-      return result;
+    const files = readdirSync(taskFolder);
+    
+    for (const file of files) {
+      if (file === '_overview.md' || !file.endsWith('.task.md')) {
+        continue;
+      }
+
+      const subtaskPath = join(taskFolder, file);
+      try {
+        const content = readFileSync(subtaskPath, 'utf-8');
+        const document = parseTaskDocument(content);
+        const location = parseTaskLocation(subtaskPath, projectRoot);
+        
+        if (!location) continue;
+
+        const id = getTaskIdFromFilename(subtaskPath);
+        const sequenceMatch = file.match(/^(\d{2})[_-]/);
+        const sequenceNumber = sequenceMatch ? sequenceMatch[1] : undefined;
+
+        const metadata: TaskMetadata = {
+          id,
+          filename: file,
+          path: subtaskPath,
+          location,
+          isParentTask: false,
+          parentTask: basename(taskFolder),
+          sequenceNumber,
+        };
+
+        subtasks.push({
+          metadata,
+          document,
+        });
+      } catch (error) {
+        // Skip invalid subtask files
+        console.error(`Failed to parse subtask ${file}:`, error);
+      }
     }
 
-    const parentTask = result.data;
-    const currentFolder = dirname(parentTask.metadata.path);
-    const folderName = basename(currentFolder);
+    // Sort by sequence number
+    subtasks.sort((a, b) => {
+      const seqA = a.metadata.sequenceNumber || '99';
+      const seqB = b.metadata.sequenceNumber || '99';
+      return seqA.localeCompare(seqB);
+    });
 
-    // Determine target directory
-    const targetDir = getWorkflowDirectory(projectRoot, targetState, config);
-    const targetFolder = join(targetDir, folderName);
-
-    // Check if target exists
-    if (existsSync(targetFolder)) {
-      return {
-        success: false,
-        error: `Target folder already exists: ${targetFolder}`,
-      };
-    }
-
-    // Ensure target directory exists
-    if (!existsSync(targetDir)) {
-      mkdirSync(targetDir, { recursive: true });
-    }
-
-    // Move entire folder
-    const fs = await import('node:fs');
-    fs.renameSync(currentFolder, targetFolder);
-
-    // Update parent task metadata
-    parentTask.metadata.path = join(targetFolder, '_overview.md');
-    parentTask.metadata.location.workflowState = targetState;
-
-    // Update all subtask metadata
-    for (const subtask of parentTask.subtasks) {
-      const newPath = join(targetFolder, basename(subtask.metadata.path));
-      subtask.metadata.path = newPath;
-      subtask.metadata.location.workflowState = targetState;
-    }
-
-    return {
-      success: true,
-      data: parentTask,
-    };
+    return subtasks;
   } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to move parent task',
-    };
+    console.error(`Failed to read subtasks from ${taskFolder}:`, error);
+    return [];
   }
 }
 
-/**
- * Delete a parent task (entire folder)
- */
-export async function deleteParentTask(
+async function deleteParentTaskWithSubtasks(
   projectRoot: string,
   taskId: string,
   config?: ProjectConfig
 ): Promise<OperationResult<void>> {
   try {
-    // Get parent task to find folder
-    const result = await getParentTask(projectRoot, taskId, config);
-    if (!result.success || !result.data) {
+    // Get parent task to find folder location
+    const parentResult = await getParentTaskWithSubtasks(projectRoot, taskId, config);
+    if (!parentResult.success || !parentResult.data) {
       return {
         success: false,
-        error: result.error || 'Parent task not found',
+        error: parentResult.error || 'Parent task not found',
       };
     }
 
-    const taskFolder = dirname(result.data.metadata.path);
+    const taskFolder = dirname(parentResult.data.metadata.path);
 
-    // Delete entire folder
+    // Delete entire folder (overview + all subtasks)
     rmSync(taskFolder, { recursive: true, force: true });
 
     return {
@@ -378,55 +311,22 @@ export async function deleteParentTask(
   }
 }
 
-/**
- * List subtasks of a parent task
- */
-export function listSubtasks(parentTaskFolder: string): SubtaskInfo[] {
-  const subtaskPaths = getSubtaskFiles(parentTaskFolder);
-  const subtasks: SubtaskInfo[] = [];
-
-  for (const path of subtaskPaths) {
-    const filename = basename(path);
-    const sequence = getSubtaskSequence(filename);
-
-    if (sequence) {
-      // Check if another task has same sequence (parallel execution)
-      const canRunParallel = subtaskPaths.some((other) => {
-        if (other === path) return false;
-        const otherSeq = getSubtaskSequence(basename(other));
-        return otherSeq === sequence;
-      });
-
-      subtasks.push({
-        sequenceNumber: sequence,
-        filename,
-        canRunParallel,
-      });
-    }
+async function moveTaskToParentFolder(task: Task, targetPath: string): Promise<OperationResult<void>> {
+  try {
+    // Move the file to the parent folder location
+    const fs = await import('node:fs');
+    fs.renameSync(task.metadata.path, targetPath);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to move task to parent folder',
+    };
   }
-
-  return subtasks.sort((a, b) => a.sequenceNumber.localeCompare(b.sequenceNumber));
 }
 
 /**
- * Get next sequence number for subtasks
- */
-function getNextSequenceNumber(taskFolder: string): string {
-  const subtasks = listSubtasks(taskFolder);
-
-  if (subtasks.length === 0) {
-    return '01';
-  }
-
-  // Find highest sequence number
-  const sequences = subtasks.map((s) => Number.parseInt(s.sequenceNumber, 10));
-  const highest = Math.max(...sequences);
-
-  return String(highest + 1).padStart(2, '0');
-}
-
-/**
- * Check if a task can be converted to parent
+ * Check if a task can be converted to a parent task
  */
 export async function canConvertToParent(
   projectRoot: string,

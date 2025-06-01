@@ -94,14 +94,10 @@ export {
   getInitStatus,
 } from './project-init.js';
 
-// Parent task operations
+// Parent task operations - Clean Builder Pattern
 export {
-  createParentTask,
-  addSubtask as addSubtaskLowLevel,
-  getParentTask,
-  moveParentTask,
-  deleteParentTask,
-  listSubtasks,
+  parent,
+  createParent,
   canConvertToParent,
 } from './parent-tasks.js';
 

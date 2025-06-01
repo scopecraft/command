@@ -66,6 +66,8 @@ Refactor the task-crud API to use clean CRUD naming conventions (create, get, up
 - 2025-06-01: Read detailed refactoring plan - much more comprehensive than task description. Plan specifies methodical approach with VS Code rename symbol, incremental testing, and specific timeline. Starting Phase 1: Core CRUD Rename.
 - 2025-06-01: Phase 1 COMPLETE: ✅ All CRUD functions renamed (create, get, update, del, move, list) ✅ Added parentId parameters to all functions ✅ CRITICAL BUG FIX: Subtask deletion logic corrected - now checks for _overview.md specifically rather than parent folder ✅ All internal calls updated ✅ Build successful. Starting Phase 2.
 - 2025-06-01: Phase 2 COMPLETE: ✅ MCP Layer updated ✅ Parent-Tasks Layer updated ✅ CLI Layer updated (fixed v2 references) ✅ Task-Operations Layer updated. All layers now use clean CRUD API (create, get, update, del, move, list). No more verbose function names. Build successful. Starting Phase 3.
+- 2025-06-01: Cleaned up test task artifacts. Starting Phase 3: Builder Pattern Implementation
+- 2025-06-01: Phase 3A COMPLETE: ✅ Implemented clean builder pattern API for parent tasks ✅ Replaced all legacy functions (createParentTask, getParentTask, addSubtask, etc.) with single parent() builder ✅ Updated task-operations.ts to use builder pattern ✅ Build succeeds with warnings showing MCP layer needs updates ✅ Clean API: parent(projectRoot, parentId).create() .get() .list() .del() - No more confusing mixed interfaces
 
 ## Reference documents
 - Detailed refactoring plan: `docs/refactoring-plan-crud-api-cleanup.md`
