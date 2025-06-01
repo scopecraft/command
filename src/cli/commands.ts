@@ -25,12 +25,12 @@ export async function handleInitCommand(options: {
     const projectRoot = options.rootDir || process.cwd();
 
     // Check if already initialized
-    const initStatus = v2.getInitStatus(projectRoot);
+    const initStatus = core.getInitStatus(projectRoot);
     if (initStatus.initialized) {
       console.log(`✓ Project already initialized with ${initStatus.version} structure`);
 
       if (initStatus.hasV1) {
-        console.log('\n⚠️  This project has v1 phase folders. Consider migrating to v2.');
+        console.log('\n⚠️  This project has v1 phase folders. Consider migrating to core.');
       }
       return;
     }
@@ -68,7 +68,7 @@ export async function handleInitCommand(options: {
  */
 export async function handleListCommand(options: {
   status?: string;
-  type?: v2.TaskType;
+  type?: core.TaskType;
   assignee?: string;
   tags?: string[];
   subdirectory?: string;
@@ -84,7 +84,7 @@ export async function handleListCommand(options: {
     const projectRoot = configManager.getRootConfig().path;
 
     // Build filter options
-    const listOptions: v2.TaskListOptions = {};
+    const listOptions: core.TaskListOptions = {};
 
     // Handle workflow location filters
     if (options.backlog) {
@@ -94,11 +94,11 @@ export async function handleListCommand(options: {
     } else if (options.archive) {
       listOptions.workflowStates = ['archive'];
     } else if (options.location) {
-      listOptions.workflowStates = [options.location as v2.WorkflowState];
+      listOptions.workflowStates = [options.location as core.WorkflowState];
     }
 
     // Add other filters
-    if (options.status) listOptions.status = options.status as v2.TaskStatus;
+    if (options.status) listOptions.status = options.status as core.TaskStatus;
     if (options.type) listOptions.type = options.type;
     if (options.assignee) listOptions.assignee = options.assignee;
     if (options.tags) listOptions.tags = options.tags;
@@ -106,7 +106,7 @@ export async function handleListCommand(options: {
     if (options.overview) listOptions.onlyParentOverviews = true;
 
     // List tasks
-    const result = await v2.listTasks(projectRoot, listOptions);
+    const result = await core.list(projectRoot, listOptions);
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -155,7 +155,7 @@ export async function handleGetCommand(
     const projectRoot = configManager.getRootConfig().path;
 
     // Get task
-    const result = await v2.getTask(projectRoot, id);
+    const result = await core.get(projectRoot, id);
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -165,7 +165,7 @@ export async function handleGetCommand(
     // Format and display
     if (options.contentOnly) {
       // Display only section content without metadata
-      const contentOnly = v2.serializeTaskContent(result.data!.document);
+      const contentOnly = core.serializeTaskContent(result.data!.document);
       console.log(contentOnly);
     } else {
       const format = (options.format || 'default') as OutputFormat;
@@ -203,12 +203,12 @@ export async function handleCreateCommand(options: {
     const projectRoot = configManager.getRootConfig().path;
 
     // Build create options
-    const createOptions: v2.TaskCreateOptions = {
+    const createOptions: core.TaskCreateOptions = {
       title: options.title,
-      type: options.type as v2.TaskType,
+      type: options.type as core.TaskType,
       area: options.subdirectory || 'general',
-      workflowState: (options.location as v2.WorkflowState) || 'backlog',
-      status: (options.status as v2.TaskStatus) || 'To Do',
+      workflowState: (options.location as core.WorkflowState) || 'backlog',
+      status: (options.status as core.TaskStatus) || 'To Do',
       template: options.template,
       instruction: options.content,
       customMetadata: {},
@@ -231,7 +231,7 @@ export async function handleCreateCommand(options: {
     }
 
     // Create task
-    const result = await v2.createTask(projectRoot, createOptions);
+    const result = await core.create(projectRoot, createOptions);
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -287,7 +287,7 @@ export async function handleUpdateCommand(
     const projectRoot = configManager.getRootConfig().path;
 
     // Build update options
-    const updateOptions: v2.TaskUpdateOptions = {};
+    const updateOptions: core.TaskUpdateOptions = {};
 
     if (options.title) updateOptions.title = options.title;
 
@@ -323,7 +323,7 @@ export async function handleUpdateCommand(
     }
 
     // Update task
-    const result = await v2.updateTask(projectRoot, id, updateOptions);
+    const result = await core.update(projectRoot, id, updateOptions);
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -339,8 +339,8 @@ export async function handleUpdateCommand(
 
     // Handle location moves
     if (options.location) {
-      const moveResult = await v2.moveTask(projectRoot, id, {
-        targetState: options.location as v2.WorkflowState,
+      const moveResult = await core.move(projectRoot, id, {
+        targetState: options.location as core.WorkflowState,
         updateStatus: true,
       });
 
@@ -372,7 +372,7 @@ export async function handleDeleteCommand(
 
     // Confirm deletion if not forced
     if (!options.force) {
-      const result = await v2.getTask(projectRoot, id);
+      const result = await core.get(projectRoot, id);
       if (result.success && result.data) {
         console.log(`About to delete: ${result.data.document.title}`);
         console.log('Use --force to skip this confirmation.');
@@ -385,7 +385,7 @@ export async function handleDeleteCommand(
     }
 
     // Delete task
-    const result = await v2.deleteTask(projectRoot, id);
+    const result = await core.del(projectRoot, id);
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -420,7 +420,7 @@ export async function handleTaskMoveCommand(
     const projectRoot = tasksDir.replace('/.tasks', '');
 
     // Determine target state
-    let targetState: v2.WorkflowState;
+    let targetState: core.WorkflowState;
     if (options.toBacklog) {
       targetState = 'backlog';
     } else if (options.toCurrent) {
@@ -435,7 +435,7 @@ export async function handleTaskMoveCommand(
     }
 
     // Move task
-    const result = await v2.moveTask(projectRoot, id, {
+    const result = await core.move(projectRoot, id, {
       targetState,
       archiveDate: options.archiveDate,
       updateStatus: options.updateStatus,
@@ -471,7 +471,7 @@ export async function handleNextTaskCommand(
     const projectRoot = configManager.getRootConfig().path;
 
     // List current tasks with "To Do" status
-    const result = await v2.listTasks(projectRoot, {
+    const result = await core.list(projectRoot, {
       workflowStates: ['current'],
       status: 'To Do',
     });
@@ -485,7 +485,7 @@ export async function handleNextTaskCommand(
 
     if (tasks.length === 0) {
       // Check backlog
-      const backlogResult = await v2.listTasks(projectRoot, {
+      const backlogResult = await core.list(projectRoot, {
         workflowStates: ['backlog'],
         status: 'To Do',
       });
@@ -530,7 +530,7 @@ export async function handleCurrentTaskCommand(options: {
     const projectRoot = configManager.getRootConfig().path;
 
     // List tasks in progress
-    const result = await v2.listTasks(projectRoot, {
+    const result = await core.list(projectRoot, {
       status: 'In Progress',
     });
 
@@ -573,7 +573,7 @@ export async function handleMarkCompleteNextCommand(
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getRootConfig().path;
 
-    const task = await v2.getTask(projectRoot, id);
+    const task = await core.get(projectRoot, id);
     if (task.success && task.data && task.data.metadata.location.workflowState === 'current') {
       await handleTaskMoveCommand(id, { toArchive: true });
     }
@@ -595,7 +595,7 @@ export async function handleListTemplatesCommand(): Promise<void> {
     const projectRoot = configManager.getRootConfig().path;
 
     // List templates
-    const result = await v2.listTemplates(projectRoot);
+    const result = await core.listTemplates(projectRoot);
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);

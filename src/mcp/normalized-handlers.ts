@@ -154,7 +154,7 @@ export async function handleTaskListNormalized(rawParams: unknown): Promise<McpR
       listOptions.includeParentTasks = true;
     }
 
-    const result = await core.listTasks(projectRoot, listOptions);
+    const result = await core.list(projectRoot, listOptions);
 
     if (!result.success || !result.data) {
       return createErrorResponse(result.error || 'Failed to list tasks');
@@ -208,7 +208,7 @@ export async function handleTaskGetNormalized(rawParams: unknown): Promise<McpRe
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
 
     // Use getTask with parent context if available
-    const result = await core.getTask(
+    const result = await core.get(
       projectRoot,
       params.id,
       undefined, // config
@@ -265,7 +265,7 @@ export async function handleParentListNormalized(
     const listOptions = buildCoreListOptions(params);
     listOptions.includeParentTasks = true;
 
-    const result = await core.listTasks(projectRoot, listOptions);
+    const result = await core.list(projectRoot, listOptions);
 
     if (!result.success || !result.data) {
       return createErrorResponse(result.error || 'Failed to list parent tasks');

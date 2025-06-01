@@ -79,13 +79,12 @@ export {
 
 // Task CRUD operations
 export {
-  create as createTask,
-  get as getTask,
-  update as updateTask,
-  del as deleteTask,
-  move as moveTask,
-  list as listTasks,
-  updateSection as updateTaskSection,
+  create,
+  get,
+  update,
+  del,
+  move,
+  list,
 } from './task-crud.js';
 
 // Project initialization

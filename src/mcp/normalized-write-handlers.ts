@@ -129,7 +129,7 @@ export async function handleTaskCreateNormalized(
     if (params.assignee) createOptions.customMetadata.assignee = params.assignee;
     if (params.tags) createOptions.customMetadata.tags = params.tags;
 
-    const result = await core.createTask(projectRoot, createOptions);
+    const result = await core.create(projectRoot, createOptions);
 
     if (!result.success || !result.data) {
       return {
@@ -211,7 +211,7 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
 
     // Handle special log entry appending
     if (params.updates.addLogEntry) {
-      const currentTask = await core.getTask(projectRoot, params.id, undefined, params.parentId);
+      const currentTask = await core.get(projectRoot, params.id, undefined, params.parentId);
       if (currentTask.success && currentTask.data) {
         const currentLog = currentTask.data.document.sections.log || '';
         const timestamp = new Date().toISOString().split('T')[0];
@@ -224,7 +224,7 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
       updateOptions.sections = sections;
     }
 
-    const result = await core.updateTask(projectRoot, params.id, updateOptions, params.parentId);
+    const result = await core.update(projectRoot, params.id, updateOptions, params.parentId);
 
     if (!result.success || !result.data) {
       return {
@@ -281,7 +281,7 @@ export async function handleTaskDeleteNormalized(
       cascade: params.cascade,
     };
 
-    const result = await core.deleteTask(projectRoot, params.id, deleteOptions, params.parentId);
+    const result = await core.del(projectRoot, params.id, deleteOptions, params.parentId);
 
     if (!result.success) {
       return {
@@ -339,7 +339,7 @@ export async function handleTaskMoveNormalized(
     };
 
     // Get current state before move
-    const currentTask = await core.getTask(projectRoot, params.id, undefined, params.parentId);
+    const currentTask = await core.get(projectRoot, params.id, undefined, params.parentId);
     if (!currentTask.success || !currentTask.data) {
       return {
         success: false,
@@ -351,7 +351,7 @@ export async function handleTaskMoveNormalized(
 
     const previousState = currentTask.data.metadata.location.workflowState;
 
-    const result = await core.moveTask(projectRoot, params.id, moveOptions);
+    const result = await core.move(projectRoot, params.id, moveOptions);
 
     if (!result.success || !result.data) {
       return {

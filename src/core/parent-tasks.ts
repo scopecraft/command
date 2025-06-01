@@ -15,7 +15,7 @@ import {
   parseTaskLocation,
 } from './directory-utils.js';
 import { generateSubtaskId, generateUniqueTaskId } from './id-generator.js';
-import { create as createTask, del as deleteTask, get as getTask, move as moveTask } from './task-crud.js';
+import { create, del, get, move } from './task-crud.js';
 import { ensureRequiredSections, parseTaskDocument } from './task-parser.js';
 import type {
   OperationResult,
@@ -67,7 +67,7 @@ export async function createParentTask(
     };
 
     // Create overview document
-    const result = await createTask(projectRoot, overviewOptions, config);
+    const result = await create(projectRoot, overviewOptions, config);
     if (!result.success || !result.data) {
       // Cleanup folder on failure
       rmSync(taskFolder, { recursive: true, force: true });
@@ -151,7 +151,7 @@ export async function addSubtask(
     };
 
     // Create subtask using standard task creation
-    const result = await createTask(projectRoot, subtaskOptions, config);
+    const result = await create(projectRoot, subtaskOptions, config);
     if (!result.success || !result.data) {
       return result;
     }
@@ -189,7 +189,7 @@ export async function getParentTask(
 ): Promise<OperationResult<ParentTask>> {
   try {
     // Get the overview task
-    const result = await getTask(projectRoot, taskId, config);
+    const result = await get(projectRoot, taskId, config);
     if (!result.success || !result.data) {
       return {
         success: false,
@@ -433,7 +433,7 @@ export async function canConvertToParent(
   taskId: string,
   config?: ProjectConfig
 ): Promise<boolean> {
-  const result = await getTask(projectRoot, taskId, config);
+  const result = await get(projectRoot, taskId, config);
   if (!result.success || !result.data) {
     return false;
   }

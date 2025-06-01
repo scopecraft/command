@@ -36,7 +36,7 @@ import {
   reorderSubtasks,
   updateSubtaskSequence as updateSequenceLowLevel,
 } from './subtask-sequencing.js';
-import { create as createTask, del as deleteTask, get as getTask, move as moveTask, update as updateTask } from './task-crud.js';
+import { create, del, get, move, update } from './task-crud.js';
 import { parseTaskDocument, serializeTaskDocument } from './task-parser.js';
 import type {
   OperationResult,
@@ -260,7 +260,7 @@ export async function promoteToParent(
 ): Promise<OperationResult<Task>> {
   try {
     // Get the task to promote
-    const taskResult = await getTask(projectRoot, taskId, config);
+    const taskResult = await get(projectRoot, taskId, config);
     if (!taskResult.success || !taskResult.data) {
       return {
         success: false,
@@ -339,10 +339,10 @@ export async function promoteToParent(
     }
 
     // Delete the original task
-    await deleteTask(projectRoot, taskId, config);
+    await del(projectRoot, taskId, config);
 
     // Return the parent task as a regular task (overview)
-    const finalResult = await getTask(projectRoot, parentTask.metadata.id, config);
+    const finalResult = await get(projectRoot, parentTask.metadata.id, config);
     if (!finalResult.success || !finalResult.data) {
       return {
         success: false,
@@ -410,7 +410,7 @@ export async function extractSubtask(
     };
 
     // Create the floating task
-    const createResult = await createTask(projectRoot, floatingOptions, config);
+    const createResult = await create(projectRoot, floatingOptions, config);
     if (!createResult.success || !createResult.data) {
       return {
         success: false,
@@ -446,7 +446,7 @@ export async function adoptTask(
 ): Promise<OperationResult<Task>> {
   try {
     // Get the floating task
-    const taskResult = await getTask(projectRoot, taskId, config);
+    const taskResult = await get(projectRoot, taskId, config);
     if (!taskResult.success || !taskResult.data) {
       return {
         success: false,
@@ -539,7 +539,7 @@ export async function adoptTask(
     }
 
     // Return the adopted task with parent context for efficient lookup
-    const adoptedResult = await getTask(projectRoot, subtaskId, config, parentId);
+    const adoptedResult = await get(projectRoot, subtaskId, config, parentId);
     if (!adoptedResult.success || !adoptedResult.data) {
       return {
         success: false,
@@ -644,7 +644,7 @@ export async function addSubtask(
     };
 
     // Create the task using low-level function
-    const createResult = await createTask(projectRoot, createOptions, config);
+    const createResult = await create(projectRoot, createOptions, config);
     if (!createResult.success || !createResult.data) {
       return {
         success: false,
@@ -681,8 +681,8 @@ export async function addSubtask(
       }
     }
 
-    // Return the created subtask using getTask with parent context
-    const subtaskResult = await getTask(projectRoot, subtaskId, config, parentId);
+    // Return the created subtask using get with parent context
+    const subtaskResult = await get(projectRoot, subtaskId, config, parentId);
     if (!subtaskResult.success || !subtaskResult.data) {
       return {
         success: false,

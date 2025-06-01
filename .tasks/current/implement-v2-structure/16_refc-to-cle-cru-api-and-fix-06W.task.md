@@ -64,6 +64,7 @@ Refactor the task-crud API to use clean CRUD naming conventions (create, get, up
 - 2025-06-01: Starting CRUD API refactoring - analyzing current codebase structure
 - 2025-06-01: Analysis complete: Found 6 CRUD functions to rename in task-crud.ts, only getTask currently has parentId parameter. task-operations.ts contains 7 single-parent operations for builder pattern migration. Starting Phase 1.
 - 2025-06-01: Read detailed refactoring plan - much more comprehensive than task description. Plan specifies methodical approach with VS Code rename symbol, incremental testing, and specific timeline. Starting Phase 1: Core CRUD Rename.
+- 2025-06-01: Phase 1 COMPLETE: ✅ All CRUD functions renamed (create, get, update, del, move, list) ✅ Added parentId parameters to all functions ✅ CRITICAL BUG FIX: Subtask deletion logic corrected - now checks for _overview.md specifically rather than parent folder ✅ All internal calls updated ✅ Build successful. Starting Phase 2.
 
 ## Reference documents
 - Detailed refactoring plan: `docs/refactoring-plan-crud-api-cleanup.md`
