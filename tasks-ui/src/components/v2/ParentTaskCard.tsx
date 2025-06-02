@@ -27,13 +27,21 @@ export function ParentTaskCard({
     title,
     status,
     priority,
+    workflowState,
     workflow_state,
     tags = [],
     overview,
     progress,
+    createdDate,
     created_date,
+    updatedDate,
     updated_date,
   } = parentTask;
+
+  // Use camelCase fields with fallback to snake_case for backwards compatibility
+  const workflowStateValue = workflowState || workflow_state;
+  const createdDateValue = createdDate || created_date;
+  const updatedDateValue = updatedDate || updated_date;
 
   const progressPercentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
@@ -50,7 +58,7 @@ export function ParentTaskCard({
         <div className="flex items-center gap-2 mb-2">
           <TaskTypeIcon task={parentTask} size="sm" />
           <h3 className="font-mono text-sm font-medium truncate flex-1">{title}</h3>
-          <WorkflowStateBadge workflow={workflow_state} />
+          <WorkflowStateBadge workflow={workflowStateValue} />
         </div>
         
         <div className="flex items-center gap-2 text-xs">
@@ -93,7 +101,7 @@ export function ParentTaskCard({
             <div className="flex items-center gap-2 mt-1">
               <StatusBadge status={status} />
               <PriorityIndicator priority={priority} />
-              <WorkflowStateBadge workflow={workflow_state} />
+              <WorkflowStateBadge workflow={workflowStateValue} />
             </div>
           </div>
         </div>
@@ -144,7 +152,7 @@ export function ParentTaskCard({
           <div className="flex items-center gap-2 mt-1">
             <StatusBadge status={status} />
             <PriorityIndicator priority={priority} />
-            <WorkflowStateBadge workflow={workflow_state} />
+            <WorkflowStateBadge workflow={workflowStateValue} />
           </div>
         </div>
       </div>
@@ -189,8 +197,8 @@ export function ParentTaskCard({
 
       {/* Footer */}
       <div className="flex justify-between text-xs text-muted-foreground font-mono border-t pt-2">
-        <span>Created {created_date}</span>
-        <span>Updated {updated_date}</span>
+        <span>Created {createdDateValue}</span>
+        <span>Updated {updatedDateValue}</span>
       </div>
     </div>
   );

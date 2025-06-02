@@ -60,7 +60,7 @@ export function ParentTaskView({
                 <div className="flex items-center flex-wrap gap-2 mt-2">
                   <StatusBadge status={metadata.status || 'To Do'} />
                   <PriorityIndicator priority={metadata.priority || 'Medium'} />
-                  <WorkflowStateBadge workflow={metadata.location || 'backlog'} />
+                  <WorkflowStateBadge workflow={metadata.workflowState || 'backlog'} />
                   {metadata.tags && metadata.tags.length > 0 && (
                     <>
                       <span className="text-muted-foreground">•</span>
@@ -145,29 +145,24 @@ export function ParentTaskView({
                   <h3 className="font-semibold text-foreground">Subtasks</h3>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {subtasks.filter((t) => (t.metadata?.status || t.status) === 'Done').length}/
-                  {subtasks.length}
+                  {task.progress?.completed || 0}/
+                  {task.progress?.total || 0}
                 </div>
               </div>
 
               {/* Progress Bar */}
-              {subtasks.length > 0 && (
+              {task.progress?.total > 0 && (
                 <div className="mb-4">
                   <div className="w-full bg-muted rounded-full h-2">
                     <div
                       className="bg-primary h-2 rounded-full transition-all duration-300"
                       style={{
-                        width: `${Math.round((subtasks.filter((t) => (t.metadata?.status || t.status) === 'Done').length / subtasks.length) * 100)}%`,
+                        width: `${task.progress?.percentage || 0}%`,
                       }}
                     />
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {Math.round(
-                      (subtasks.filter((t) => (t.metadata?.status || t.status) === 'Done').length /
-                        subtasks.length) *
-                        100
-                    )}
-                    % complete
+                    {task.progress?.percentage || 0}% complete
                   </div>
                 </div>
               )}

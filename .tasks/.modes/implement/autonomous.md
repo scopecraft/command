@@ -71,16 +71,15 @@ Since no one can see your conversation, you must:
 ## Initial Setup
 
 1. **Load Task Context**
-   ```bash
-   bun run dev:cli task get {taskId} {parentId ? `--parent ${parentId}` : ''}
-   ```
+   Use the mcp__scopecraft__task_get tool to retrieve the task:
+   - For simple tasks: mcp__scopecraft__task_get with id={taskId}
+   - For subtasks: mcp__scopecraft__task_get with id={taskId} and parent_id={parentId}
+   
    Document task requirements in first log entry.
 
 2. **Load Area Guidance**
-   Based on task area, load and follow area-specific patterns:
-   ```bash
-   cat .tasks/.modes/implement/area/{area}.md
-   ```
+   Based on task area, read the area-specific pattern file:
+   - `.tasks/.modes/implement/area/{area}.md`
 
 3. **Set Execution Markers**
    ```markdown
@@ -232,9 +231,9 @@ Load area guidance and adopt appropriate mindset:
 ```markdown
 ## Log
 - YYYY-MM-DD HH:MM: Testing implementation
-  - Ran: bun run dev:cli task list --format json > /tmp/test-output.json
+  - Used mcp__scopecraft__task_list to verify changes
   - Result: Success - flat structure confirmed
-  - Cleaned up: rm /tmp/test-output.json
+  - Verified all fields properly normalized
 ```
 
 ### Document Test Results
@@ -263,10 +262,9 @@ Load area guidance and adopt appropriate mindset:
 ```
 
 ### Creating Follow-up Tasks
-When discovering new work:
-```bash
-bun run dev:cli task create --title "Refactor shared MCP types" --type chore
-```
+When discovering new work, use mcp__scopecraft__task_create:
+- Provide title, type, area, tags, and description
+- The tool will create the task with proper metadata
 
 Document in log:
 ```markdown

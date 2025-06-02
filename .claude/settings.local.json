@@ -21,7 +21,8 @@
       "mcp__scopecraft__parent_create",
       "mcp__scopecraft__task_transform",
       "Bash(chmod:*)",
-      "Bash(hash:*)"
+      "Bash(hash:*)",
+      "Bash(dirname:*)"
     ],
     "deny": []
   }
