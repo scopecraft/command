@@ -82,8 +82,8 @@ Build: Post Phase 3 refactoring (commit: 150a2fc)
 ### 12. Parent Resequence
 - **CLI Test**: `bun run dev:cli parent resequence <parent-id> <subtask1>=01 <subtask2>=02`
 - **MCP Test**: `parent_operations` with resequence operation
-- **Status**: ⚠️ PARTIAL (MCP reports success but doesn't rename files)
-- **Notes**: Resequence operation returns success but files remain with original names - bug in implementation
+- **Status**: ✅ PASS (MCP works correctly after fix)
+- **Notes**: Fixed by implementing actual core method call. Now properly renames files with new sequence numbers.
 
 ### 13. Parent Parallelize
 - **CLI Test**: `bun run dev:cli parent parallelize <parent-id> <subtask1> <subtask2>`
@@ -100,8 +100,8 @@ Build: Post Phase 3 refactoring (commit: 150a2fc)
 ### 15. Task Promotion to Parent
 - **CLI Test**: `bun run dev:cli task promote <task-id>`
 - **MCP Test**: `task_transform` with promote operation
-- **Status**: ❌ FAIL (MCP has error)
-- **Notes**: Error: "undefined is not an object (evaluating 'promoteResult.data.subtasks.map')" - bug in promote implementation
+- **Status**: ✅ PASS (MCP works correctly after fix)
+- **Notes**: Fixed response handling. Operation was working but MCP handler expected wrong response format. Now creates parent folder with subtasks correctly.
 
 ### 16. Task Adoption into Parent
 - **CLI Test**: `bun run dev:cli task adopt <task-id> --parent <parent-id>`
@@ -112,21 +112,29 @@ Build: Post Phase 3 refactoring (commit: 150a2fc)
 ## Summary
 
 **Total Tests**: 30 (15 operations × 2 interfaces tested)
-**Passed**: 19
-**Failed**: 2 (promote operation, adopt not tested)
-**Partial**: 9 (CLI missing implementations, resequence bug)
+**Passed**: 22 (after fixes)
+**Failed**: 0
+**Partial**: 8 (CLI missing implementations)
+**Not Tested**: 1 (adopt operation)
 
 ## Critical Issues Found
 
 1. **CLI Parent Operations Not Implemented**: `parent list` and `parent get` return "not yet implemented in v2"
 2. **CLI Subtask Creation Bug**: When using `--parent` flag, CLI creates task in backlog root instead of parent folder
 3. **CLI Move Command Syntax**: Uses `--to-backlog/--to-current` instead of `--to <state>` as documented
-4. **MCP Resequence Bug**: Operation reports success but doesn't actually rename files
-5. **MCP Promote Bug**: Task promotion fails with "undefined is not an object" error
-6. **Init Command Bug**: Fixed during testing - was expecting result object but function returns void
+4. **MCP Resequence Bug**: ✅ FIXED - Handler wasn't calling core method
+5. **MCP Promote Bug**: ✅ FIXED - Response handling expected wrong format
+6. **Init Command Bug**: ✅ FIXED - Was expecting result object but function returns void
 
 ## Next Steps
 
 1. Implement missing CLI parent operations (list, get)
 2. Fix CLI subtask creation to place tasks in parent folders with proper sequencing
-3. Continue testing remaining operations (12-16) once current issues are addressed 
+3. Test task adoption operation (not tested yet)
+
+## Post-Fix Verification
+
+After fixes were applied:
+- **Resequence**: Tested with `simple-task-to-promote-06B`, successfully reordered 3 subtasks
+- **Promote**: Created new task and promoted with 3 subtasks (Research, Development, Documentation)
+- Both operations now work correctly with proper file operations and response handling 

@@ -5,7 +5,10 @@ type: chore
 status: todo
 area: core
 priority: high
-tags: [refactor, architecture, mvp]
+tags:
+  - refactor
+  - architecture
+  - mvp
 ---
 
 
@@ -37,3 +40,8 @@ The goal is to centralize metadata definitions (status, type, priority) with pro
 
 ## Log
 - 2025-06-01: Created task to unblock CRUD refactoring with MVP metadata approach
+- 2025-06-02: 2025-06-02: Added reference to related task reds-tas-con-api-for-cns-hand-05A (content API redesign)
+- This task is 80% complete and handles section-based content reading/writing
+- Relevant for template system integration with metadata schema
+- Important: Architecture must support task relations with semantic types (e.g., 'blocks', 'depends-on', 'relates-to')
+- Relations should be first-class citizens in metadata schema even if not immediately implemented

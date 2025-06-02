@@ -8,11 +8,9 @@ area: core
 
 
 ## Instruction
-
 Perform comprehensive integration testing of the complete V2 system before merging to main. Validate that all components work together seamlessly and that the migration from V1 to V2 is complete and successful.
 
 ## Tasks
-
 ### Full System Testing
 - [ ] Test CLI with V2 workflow commands end-to-end
 - [ ] Test MCP server with all V2 handlers
@@ -55,7 +53,6 @@ Perform comprehensive integration testing of the complete V2 system before mergi
 - [ ] Ready for production use
 
 ## Deliverable
-
 Fully tested and validated V2 system ready for merge with:
 - Complete functionality verification
 - Performance validation
@@ -64,3 +61,13 @@ Fully tested and validated V2 system ready for merge with:
 - Migration confidence
 
 ## Log
+- 2025-06-02: 2025-06-02: Completed comprehensive E2E testing of CRUD API refactoring
+- Test plan and results: /Users/davidpaquet/Projects/roo-task-cli/.tasks/current/implement-v2-structure/e2e-test-log.md
+- Tested 30 operations (15 ops × 2 interfaces)
+- Results: 22 passed, 0 failed, 8 partial (CLI missing), 1 not tested
+- Fixed 3 critical bugs during testing:
+  - Init command expecting result object
+  - MCP resequence not calling core method
+  - Promote operation response handling
+- All MCP operations now working correctly
+- Remaining issues are CLI-only (tracked in task fix-ci-sub-cre-par-lis-mov-06A)

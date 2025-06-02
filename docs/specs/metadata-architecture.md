@@ -198,6 +198,93 @@ This separation allows:
 - Complete flexibility in document structure per type
 - Easy addition of new types by adding both config entry and template
 
+## Task Relations
+
+Task relations are first-class citizens in the metadata system, enabling semantic connections between tasks:
+
+### Relation Schema
+
+```json
+{
+  "relations": {
+    "type": "array",
+    "items": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "enum",
+          "values": [
+            {
+              "name": "blocks",
+              "label": "Blocks",
+              "description": "This task must be completed before the related task can start",
+              "inverse": "blocked_by"
+            },
+            {
+              "name": "depends_on",
+              "label": "Depends On",
+              "description": "This task requires the related task",
+              "inverse": "required_by"
+            },
+            {
+              "name": "relates_to",
+              "label": "Relates To",
+              "description": "This task is related but not dependent",
+              "bidirectional": true
+            },
+            {
+              "name": "parent_of",
+              "label": "Parent Of",
+              "description": "This task logically contains the related task",
+              "inverse": "child_of"
+            },
+            {
+              "name": "duplicates",
+              "label": "Duplicates",
+              "description": "This task duplicates the related task",
+              "inverse": "duplicated_by"
+            }
+          ]
+        },
+        "target": {
+          "type": "string",
+          "description": "Task ID reference"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional context about the relationship"
+        }
+      }
+    }
+  }
+}
+```
+
+### Example Usage
+
+```yaml
+---
+type: feature
+status: In Progress
+relations:
+  - type: blocks
+    target: user-profile-05B
+    description: Authentication must be complete first
+  - type: relates_to
+    target: reds-tas-con-api-for-cns-hand-05A
+    description: Content API affects how we handle user data
+---
+```
+
+### Relation Semantics
+
+Relations support:
+- **Inverse relationships**: Automatically maintained (e.g., if A blocks B, then B is blocked_by A)
+- **Bidirectional relations**: Some relations are symmetric (e.g., relates_to)
+- **Validation**: Ensures referenced tasks exist
+- **Querying**: Find all tasks that block/depend on a given task
+- **Visualization**: Generate dependency graphs and relationship maps
+
 ## Benefits
 
 - **Flexibility**: Projects define their own metadata schemas and document structures
@@ -207,6 +294,7 @@ This separation allows:
 - **Extensible**: Easy to add new metadata types and templates
 - **Composable**: Services work independently and together
 - **Separation of Concerns**: Metadata in config, document structure in templates
+- **Relationship Tracking**: First-class support for task dependencies and connections
 
 ## Example Project Schema
 
