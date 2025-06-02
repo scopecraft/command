@@ -81,6 +81,48 @@ export function normalizeStatus(rawStatus: string): TaskStatus {
 }
 
 /**
+ * Denormalize status from MCP format to core format
+ */
+export function denormalizeStatus(mcpStatus?: TaskStatus): string {
+  if (!mcpStatus) return 'To Do';
+
+  switch (mcpStatus) {
+    case 'todo':
+      return 'To Do';
+    case 'in_progress':
+      return 'In Progress';
+    case 'done':
+      return 'Done';
+    case 'blocked':
+      return 'Blocked';
+    case 'archived':
+      return 'Archived';
+    default:
+      return 'To Do';
+  }
+}
+
+/**
+ * Denormalize priority from MCP format to core format
+ */
+export function denormalizePriority(mcpPriority?: TaskPriority): string {
+  if (!mcpPriority) return 'Medium';
+
+  switch (mcpPriority) {
+    case 'highest':
+      return 'Highest';
+    case 'high':
+      return 'High';
+    case 'medium':
+      return 'Medium';
+    case 'low':
+      return 'Low';
+    default:
+      return 'Medium';
+  }
+}
+
+/**
  * Normalize task priority to clean enum values
  */
 export function normalizePriority(rawPriority?: string): TaskPriority {
@@ -221,12 +263,12 @@ export async function transformParentTask(
   }
 
   // Get full parent task data to calculate progress
-  const parentResult = await core.getParentTask(projectRoot, task.metadata.id);
+  const parentResult = await core.parent(projectRoot, task.metadata.id).get();
   if (!parentResult.success || !parentResult.data) {
     throw new Error(`Failed to get parent task data for ${task.metadata.id}`);
   }
 
-  const parentData = parentResult.data;
+  const parentData = parentResult.data as core.ParentTask;
   const subtaskCount = parentData.subtasks.length;
   const completedCount = parentData.subtasks.filter(
     (st) => normalizeStatus(st.document.frontmatter.status || 'todo') === 'done'
@@ -260,12 +302,12 @@ export async function transformParentTaskDetail(
   parentId: string,
   includeContent = true
 ): Promise<ParentTaskDetail> {
-  const parentResult = await core.getParentTask(projectRoot, parentId);
+  const parentResult = await core.parent(projectRoot, parentId).get();
   if (!parentResult.success || !parentResult.data) {
     throw new Error(`Failed to get parent task data for ${parentId}`);
   }
 
-  const parentData = parentResult.data;
+  const parentData = parentResult.data as core.ParentTask;
 
   // Transform the overview task - note: overview is TaskDocument, need to create Task structure
   const overviewTask: core.Task = {

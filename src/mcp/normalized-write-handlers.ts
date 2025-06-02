@@ -38,7 +38,13 @@ import {
   type TaskUpdateOutput,
   TaskUpdateOutputSchema,
 } from './schemas.js';
-import { normalizeStatus, transformTaskToNormalized } from './transformers.js';
+import {
+  denormalizePriority,
+  denormalizeStatus,
+  normalizePriority,
+  normalizeStatus,
+  transformTaskToNormalized,
+} from './transformers.js';
 import type { McpResponse } from './types.js';
 
 /**
@@ -66,26 +72,20 @@ export async function handleTaskCreateNormalized(
 
     // Check if this should be a subtask
     if (params.parentId) {
-      // Use addSubtask for creating subtasks
-      const subtaskOptions: core.SubtaskOptions = {
+      // Create subtask using parent builder
+      const result = await core.parent(projectRoot, params.parentId).create(params.title, {
         type: params.type,
-        assignee: params.assignee,
-      };
-
-      const result = await core.addSubtask(
-        projectRoot, 
-        params.parentId, 
-        params.title, 
-        subtaskOptions,
-        undefined // config
-      );
+        area: params.area,
+        status: params.status ? (denormalizeStatus(params.status) as core.TaskStatus) : undefined,
+        tags: params.tags,
+        customMetadata: params.assignee ? { assignee: params.assignee } : undefined,
+      });
 
       if (!result.success || !result.data) {
         return {
           success: false,
           error: result.error || 'Failed to create subtask',
           message: result.error || 'Subtask creation failed',
-          metadata: createResponseMetadata(),
         };
       }
 
@@ -106,7 +106,6 @@ export async function handleTaskCreateNormalized(
         success: true,
         data: outputData,
         message: `Subtask ${outputData.id} created successfully`,
-        metadata: createResponseMetadata(),
       });
 
       return response;
@@ -116,8 +115,8 @@ export async function handleTaskCreateNormalized(
     const createOptions: core.TaskCreateOptions = {
       title: params.title,
       type: params.type,
-      area: params.area,
-      status: params.status,
+      area: params.area || 'general',
+      status: (params.status ? denormalizeStatus(params.status) : 'To Do') as core.TaskStatus,
       workflowState: params.workflowState,
       instruction: params.instruction,
       tasks: params.tasks,
@@ -125,9 +124,10 @@ export async function handleTaskCreateNormalized(
     };
 
     // Add optional metadata
-    if (params.priority) createOptions.customMetadata.priority = params.priority;
-    if (params.assignee) createOptions.customMetadata.assignee = params.assignee;
-    if (params.tags) createOptions.customMetadata.tags = params.tags;
+    if (params.priority)
+      createOptions.customMetadata!.priority = denormalizePriority(params.priority);
+    if (params.assignee) createOptions.customMetadata!.assignee = params.assignee;
+    if (params.tags) createOptions.tags = params.tags;
 
     const result = await core.create(projectRoot, createOptions);
 
@@ -136,7 +136,6 @@ export async function handleTaskCreateNormalized(
         success: false,
         error: result.error || 'Failed to create task',
         message: result.error || 'Task creation failed',
-        metadata: createResponseMetadata(),
       };
     }
 
@@ -157,7 +156,6 @@ export async function handleTaskCreateNormalized(
       success: true,
       data: outputData,
       message: `Task ${outputData.id} created successfully`,
-      metadata: createResponseMetadata(),
     });
 
     return response;
@@ -167,7 +165,6 @@ export async function handleTaskCreateNormalized(
         success: false,
         error: error.message,
         message: 'Task creation failed',
-        metadata: createResponseMetadata(),
       };
     }
     throw error;
@@ -192,8 +189,10 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
     if (params.updates.title) updateOptions.title = params.updates.title;
 
     const frontmatter: Partial<core.TaskFrontmatter> = {};
-    if (params.updates.status) frontmatter.status = params.updates.status;
-    if (params.updates.priority) frontmatter.priority = params.updates.priority;
+    if (params.updates.status)
+      frontmatter.status = denormalizeStatus(params.updates.status) as core.TaskStatus;
+    if (params.updates.priority)
+      frontmatter.priority = denormalizePriority(params.updates.priority) as core.TaskPriority;
     if (params.updates.area) frontmatter.area = params.updates.area;
     if (params.updates.assignee) frontmatter.assignee = params.updates.assignee;
     if (params.updates.tags) frontmatter.tags = params.updates.tags;
@@ -231,7 +230,6 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
         success: false,
         error: result.error || 'Failed to update task',
         message: result.error || 'Task update failed',
-        metadata: createResponseMetadata(),
       };
     }
 
@@ -247,7 +245,6 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
       success: true,
       data: normalizedTask,
       message: `Task ${params.id} updated successfully`,
-      metadata: createResponseMetadata(),
     });
 
     return response;
@@ -257,7 +254,6 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
         success: false,
         error: error.message,
         message: 'Task update failed',
-        metadata: createResponseMetadata(),
       };
     }
     throw error;
@@ -277,32 +273,43 @@ export async function handleTaskDeleteNormalized(
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
 
-    const deleteOptions: core.TaskDeleteOptions = {
-      cascade: params.cascade,
-    };
+    let result: core.OperationResult<void>;
+    const cascadeCount = 0;
 
-    const result = await core.del(projectRoot, params.id, deleteOptions, params.parentId);
+    // Check if this is a parent task with cascade
+    if (params.cascade) {
+      // Try to delete as parent task with cascade
+      const parentDel = await core.parent(projectRoot, params.id).del(true);
+      if (parentDel.success) {
+        result = parentDel;
+        // TODO: Get cascade count from parent deletion
+      } else {
+        // Not a parent task, just delete normally
+        result = await core.del(projectRoot, params.id, undefined, params.parentId);
+      }
+    } else {
+      // Normal delete
+      result = await core.del(projectRoot, params.id, undefined, params.parentId);
+    }
 
     if (!result.success) {
       return {
         success: false,
         error: result.error || 'Failed to delete task',
         message: result.error || 'Task deletion failed',
-        metadata: createResponseMetadata(),
       };
     }
 
     const outputData = {
       id: params.id,
       deleted: true,
-      cascadeCount: result.data?.cascadeCount,
+      cascadeCount: cascadeCount > 0 ? cascadeCount : undefined,
     };
 
     const response = TaskDeleteOutputSchema.parse({
       success: true,
       data: outputData,
       message: `Task ${params.id} deleted successfully`,
-      metadata: createResponseMetadata(),
     });
 
     return response;
@@ -312,7 +319,6 @@ export async function handleTaskDeleteNormalized(
         success: false,
         error: error.message,
         message: 'Task deletion failed',
-        metadata: createResponseMetadata(),
       };
     }
     throw error;
@@ -345,7 +351,6 @@ export async function handleTaskMoveNormalized(
         success: false,
         error: 'Task not found',
         message: 'Failed to find task for move operation',
-        metadata: createResponseMetadata(),
       };
     }
 
@@ -358,7 +363,6 @@ export async function handleTaskMoveNormalized(
         success: false,
         error: result.error || 'Failed to move task',
         message: result.error || 'Task move failed',
-        metadata: createResponseMetadata(),
       };
     }
 
@@ -377,7 +381,6 @@ export async function handleTaskMoveNormalized(
       success: true,
       data: outputData,
       message: `Task ${params.id} moved to ${params.targetState}`,
-      metadata: createResponseMetadata(),
     });
 
     return response;
@@ -387,7 +390,6 @@ export async function handleTaskMoveNormalized(
         success: false,
         error: error.message,
         message: 'Task move failed',
-        metadata: createResponseMetadata(),
       };
     }
     throw error;
@@ -429,13 +431,10 @@ export async function handleTaskTransformNormalized(
             success: false,
             error: 'parentId required for extract operation',
             message: 'Missing required field for extract operation',
-            metadata: createResponseMetadata(),
           };
         }
 
-        const extractResult = await core.extractSubtask(
-          projectRoot,
-          params.parentId,
+        const extractResult = await core.parent(projectRoot, params.parentId).extractSubtask(
           params.id,
           'backlog' // Default to backlog
         );
@@ -452,7 +451,6 @@ export async function handleTaskTransformNormalized(
             success: false,
             error: 'targetParentId required for adopt operation',
             message: 'Missing required field for adopt operation',
-            metadata: createResponseMetadata(),
           };
         }
 
@@ -461,7 +459,6 @@ export async function handleTaskTransformNormalized(
           success: false,
           error: 'Task adoption is currently not implemented',
           message: 'This operation is not available at this time',
-          metadata: createResponseMetadata(),
         };
       }
 
@@ -470,7 +467,6 @@ export async function handleTaskTransformNormalized(
           success: false,
           error: `Unknown operation: ${params.operation}`,
           message: 'Invalid transform operation',
-          metadata: createResponseMetadata(),
         };
     }
 
@@ -479,7 +475,6 @@ export async function handleTaskTransformNormalized(
         success: false,
         error: result.error || 'Transform operation failed',
         message: result.error || 'Task transformation failed',
-        metadata: createResponseMetadata(),
       };
     }
 
@@ -501,7 +496,6 @@ export async function handleTaskTransformNormalized(
       success: true,
       data: outputData,
       message: `Task ${params.id} transformed successfully`,
-      metadata: createResponseMetadata(),
     });
 
     return response;
@@ -511,7 +505,6 @@ export async function handleTaskTransformNormalized(
         success: false,
         error: error.message,
         message: 'Task transformation failed',
-        metadata: createResponseMetadata(),
       };
     }
     throw error;
@@ -535,25 +528,25 @@ export async function handleParentCreateNormalized(
     const createOptions: core.TaskCreateOptions = {
       title: params.title,
       type: params.type,
-      area: params.area,
-      status: params.status,
+      area: params.area || 'general',
+      status: (params.status ? denormalizeStatus(params.status) : 'To Do') as core.TaskStatus,
       workflowState: params.workflowState,
       instruction: params.overviewContent,
       customMetadata: {},
     };
 
-    if (params.priority) createOptions.customMetadata.priority = params.priority;
-    if (params.assignee) createOptions.customMetadata.assignee = params.assignee;
-    if (params.tags) createOptions.customMetadata.tags = params.tags;
+    if (params.priority)
+      createOptions.customMetadata!.priority = denormalizePriority(params.priority);
+    if (params.assignee) createOptions.customMetadata!.assignee = params.assignee;
+    if (params.tags) createOptions.tags = params.tags;
 
-    const result = await core.createParentTask(projectRoot, createOptions);
+    const result = await core.createParent(projectRoot, createOptions);
 
     if (!result.success || !result.data) {
       return {
         success: false,
         error: result.error || 'Failed to create parent task',
         message: result.error || 'Parent task creation failed',
-        metadata: createResponseMetadata(),
       };
     }
 
@@ -562,15 +555,12 @@ export async function handleParentCreateNormalized(
     // Add initial subtasks if provided
     if (params.subtasks && params.subtasks.length > 0) {
       for (const subtaskDef of params.subtasks) {
-        const subtaskResult = await core.addSubtask(
-          projectRoot,
-          result.data.metadata.id,
-          subtaskDef.title,
-          {
+        const subtaskResult = await core
+          .parent(projectRoot, result.data.metadata.id)
+          .create(subtaskDef.title, {
             type: subtaskDef.type || params.type,
             area: params.area,
-          }
-        );
+          });
 
         if (subtaskResult.success && subtaskResult.data) {
           createdSubtasks.push({
@@ -618,19 +608,20 @@ export async function handleParentCreateNormalized(
           // Remove duplicates and parallelize
           const uniqueIds = [...new Set(allIds)];
           if (uniqueIds.length > 1) {
-            await core.parallelizeSubtasks(projectRoot, result.data.metadata.id, uniqueIds);
+            await core.parent(projectRoot, result.data.metadata.id).parallelize(uniqueIds);
           }
         }
       }
     }
 
+    const parentData = result.data;
     const outputData = {
-      id: result.data.metadata.id,
-      title: result.data.overview.title,
-      type: result.data.overview.frontmatter.type as ParentCreateOutput['data']['type'],
-      workflowState: result.data.metadata.location
+      id: parentData.metadata.id,
+      title: parentData.overview.title,
+      type: parentData.overview.frontmatter.type as ParentCreateOutput['data']['type'],
+      workflowState: parentData.metadata.location
         .workflowState as ParentCreateOutput['data']['workflowState'],
-      path: result.data.metadata.path,
+      path: parentData.metadata.path,
       subtaskCount: createdSubtasks.length,
       createdSubtasks: createdSubtasks.length > 0 ? createdSubtasks : undefined,
     };
@@ -639,7 +630,6 @@ export async function handleParentCreateNormalized(
       success: true,
       data: outputData,
       message: `Parent task ${outputData.id} created successfully`,
-      metadata: createResponseMetadata(),
     });
 
     return response;
@@ -649,7 +639,6 @@ export async function handleParentCreateNormalized(
         success: false,
         error: error.message,
         message: 'Parent task creation failed',
-        metadata: createResponseMetadata(),
       };
     }
     throw error;
@@ -693,24 +682,19 @@ export async function handleParentOperationsNormalized(
             newSubtask: undefined,
           },
           message: 'Resequence operation completed',
-          metadata: createResponseMetadata(),
         };
       }
 
       case 'parallelize': {
-        const result = await core.parallelizeSubtasks(
-          projectRoot,
-          params.parentId,
-          params.operationData.subtaskIds,
-          params.operationData.targetSequence
-        );
+        const result = await core
+          .parent(projectRoot, params.parentId)
+          .parallelize(params.operationData.subtaskIds, params.operationData.targetSequence);
 
         if (!result.success) {
           return {
             success: false,
             error: result.error || 'Failed to parallelize subtasks',
             message: result.error || 'Parallelize operation failed',
-            metadata: createResponseMetadata(),
           };
         }
 
@@ -727,22 +711,18 @@ export async function handleParentOperationsNormalized(
       }
 
       case 'add_subtask': {
-        const result = await core.addSubtask(
-          projectRoot,
-          params.parentId,
-          params.operationData.subtask.title,
-          {
+        const result = await core
+          .parent(projectRoot, params.parentId)
+          .create(params.operationData.subtask.title, {
             type: params.operationData.subtask.type,
-            template: params.operationData.subtask.template,
-          }
-        );
+            // Note: template handling might need to be added to parent builder
+          });
 
         if (!result.success || !result.data) {
           return {
             success: false,
             error: result.error || 'Failed to add subtask',
             message: result.error || 'Add subtask operation failed',
-            metadata: createResponseMetadata(),
           };
         }
 
@@ -769,7 +749,6 @@ export async function handleParentOperationsNormalized(
       success: true,
       data: outputData,
       message: `Parent operation ${params.operationData.operation} completed successfully`,
-      metadata: createResponseMetadata(),
     });
 
     return response;
@@ -779,7 +758,6 @@ export async function handleParentOperationsNormalized(
         success: false,
         error: error.message,
         message: 'Parent operation failed',
-        metadata: createResponseMetadata(),
       };
     }
     throw error;

@@ -160,6 +160,7 @@ export interface TaskCreateOptions {
   template?: string; // template ID to use
   instruction?: string; // initial instruction content
   tasks?: string[]; // initial checklist items
+  deliverable?: string; // initial deliverable content
   customMetadata?: Record<string, unknown>;
   customSections?: Record<string, string>;
 }

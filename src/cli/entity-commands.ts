@@ -293,9 +293,9 @@ You can use the global --root-dir option to specify an alternative tasks directo
         const configManager = ConfigurationManager.getInstance();
         const projectRoot = configManager.getRootConfig().path;
 
-        const result = await v2.addSubtask(projectRoot, parentId, options.title, {
+        const result = await v2.parent(projectRoot, parentId).create(options.title, {
           type: options.type,
-          assignee: options.assignee,
+          customMetadata: options.assignee ? { assignee: options.assignee } : undefined,
         });
 
         if (!result.success) {

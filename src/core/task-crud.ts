@@ -18,7 +18,8 @@ import {
   parseTaskLocation,
   resolveTaskId,
 } from './directory-utils.js';
-import { generateUniqueTaskId, parseTaskId } from './id-generator.js';
+import { generateSubtaskId, generateUniqueTaskId, parseTaskId } from './id-generator.js';
+import { getNextSequenceNumber } from './subtask-sequencing.js';
 import {
   addLogEntry,
   ensureRequiredSections,
@@ -30,6 +31,7 @@ import {
 } from './task-parser.js';
 import type {
   OperationResult,
+  ProjectConfig,
   Task,
   TaskCreateOptions,
   TaskDocument,
@@ -39,7 +41,6 @@ import type {
   TaskMoveOptions,
   TaskStatus,
   TaskUpdateOptions,
-  ProjectConfig,
   WorkflowState,
 } from './types.js';
 
@@ -53,7 +54,77 @@ export async function create(
   parentId?: string
 ): Promise<OperationResult<Task>> {
   try {
-    // Generate unique ID
+    // Check if this should be a subtask
+    if (parentId) {
+      // Create as subtask
+      const parentPath = resolveTaskId(parentId, projectRoot, config);
+      if (!parentPath) {
+        return {
+          success: false,
+          error: `Parent task not found: ${parentId}`,
+        };
+      }
+
+      // Verify it's a parent task
+      if (!parentPath.endsWith('_overview.md')) {
+        return {
+          success: false,
+          error: `Task ${parentId} is not a parent task`,
+        };
+      }
+
+      // Get parent folder - it's the directory containing _overview.md
+      const parentDir = dirname(parentPath);
+
+      // Generate subtask ID and sequence
+      const sequence = getNextSequenceNumber(parentDir);
+      const subtaskId = generateSubtaskId(options.title, sequence);
+      const filename = `${subtaskId}.task.md`;
+      const filepath = join(parentDir, filename);
+
+      // Create task document
+      const document: TaskDocument = {
+        title: options.title,
+        frontmatter: {
+          type: options.type,
+          status: options.status || 'To Do',
+          area: options.area,
+          ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
+          ...options.customMetadata,
+        },
+        sections: ensureRequiredSections({
+          instruction: options.instruction || '',
+          tasks: options.tasks ? formatTasksList(options.tasks) : '',
+          deliverable: options.deliverable || '',
+          ...options.customSections,
+        }),
+      };
+
+      // Write file
+      const content = serializeTaskDocument(document);
+      writeFileSync(filepath, content, 'utf-8');
+
+      // Create task object
+      const task: Task = {
+        metadata: {
+          id: subtaskId,
+          filename,
+          path: filepath,
+          location: parseTaskLocation(filepath, projectRoot) || { workflowState: 'current' },
+          isParentTask: false,
+          parentTask: parentId,
+          sequenceNumber: sequence,
+        },
+        document,
+      };
+
+      return {
+        success: true,
+        data: task,
+      };
+    }
+
+    // Generate unique ID for simple task
     const taskId = generateUniqueTaskId(options.title, projectRoot, config);
 
     // Determine workflow state (default to backlog)
@@ -72,6 +143,7 @@ export async function create(
       sections: ensureRequiredSections({
         instruction: options.instruction || '',
         tasks: options.tasks ? formatTasksList(options.tasks) : '',
+        deliverable: options.deliverable || '',
         ...options.customSections,
       }),
     };
@@ -270,7 +342,7 @@ export async function update(
     const originalStatus = task.document.frontmatter.status;
     const taskLocation = parseTaskLocation(task.metadata.path, projectRoot);
     const currentWorkflow = taskLocation?.workflowState;
-    
+
     if (!currentWorkflow) {
       return {
         success: false,
@@ -317,7 +389,7 @@ export async function update(
       // First, write updated content to current location to preserve status change
       const updatedContent = serializeTaskDocument(task.document);
       writeFileSync(task.metadata.path, updatedContent, 'utf-8');
-      
+
       // Then use moveTask with updateStatus: false to move to new workflow
       const moveResult = await move(
         projectRoot,
@@ -494,9 +566,10 @@ export async function list(
   projectRoot: string,
   options: TaskListOptions = {},
   config?: ProjectConfig,
-  parentId?: string
+  parentId?: string // TODO: Filter by parent when implemented
 ): Promise<OperationResult<Task[]>> {
   try {
+    // Note: parentId filtering not implemented yet
     const tasks: Task[] = [];
 
     // Determine which workflow states to search
@@ -531,7 +604,10 @@ export async function list(
             continue;
           }
 
-          if (options.excludeStatuses && options.excludeStatuses.includes(document.frontmatter.status)) {
+          if (
+            options.excludeStatuses &&
+            options.excludeStatuses.includes(document.frontmatter.status)
+          ) {
             continue;
           }
 
@@ -624,7 +700,8 @@ export async function updateSection(
   taskId: string,
   sectionName: string,
   content: string,
-  config?: ProjectConfig
+  config?: ProjectConfig,
+  parentId?: string
 ): Promise<OperationResult<Task>> {
   try {
     // Get existing task
@@ -650,6 +727,164 @@ export async function updateSection(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update section',
+    };
+  }
+}
+
+/**
+ * Promote a simple task to a parent task
+ *
+ * Transforms a simple task into a parent task with subtasks.
+ * This is a task transformation operation, not a parent-scoped operation.
+ */
+export async function promoteToParent(
+  projectRoot: string,
+  taskId: string,
+  options: {
+    subtasks?: string[];
+    keepOriginal?: boolean;
+  } = {},
+  config?: ProjectConfig
+): Promise<OperationResult<Task>> {
+  try {
+    // Get the task to promote
+    const taskResult = await get(projectRoot, taskId, config);
+    if (!taskResult.success || !taskResult.data) {
+      return {
+        success: false,
+        error: taskResult.error || 'Task not found',
+      };
+    }
+
+    const task = taskResult.data;
+
+    // Can't promote if already a parent
+    if (task.metadata.isParentTask) {
+      return {
+        success: false,
+        error: 'Task is already a parent task',
+      };
+    }
+
+    // Can't promote from archive
+    if (task.metadata.location.workflowState === 'archive') {
+      return {
+        success: false,
+        error: 'Cannot promote archived tasks',
+      };
+    }
+
+    // Generate parent folder name
+    const parentId = generateUniqueTaskId(task.document.title, projectRoot, config);
+    const workflowDir = getWorkflowDirectory(
+      projectRoot,
+      task.metadata.location.workflowState,
+      config
+    );
+    const parentFolder = join(workflowDir, parentId);
+
+    // Create parent folder
+    if (!existsSync(parentFolder)) {
+      mkdirSync(parentFolder, { recursive: true });
+    }
+
+    // Create _overview.md file with task content
+    const overviewPath = join(parentFolder, '_overview.md');
+    const overviewDocument: TaskDocument = {
+      title: task.document.title,
+      frontmatter: {
+        type: task.document.frontmatter.type,
+        status: task.document.frontmatter.status,
+        area: task.document.frontmatter.area,
+        ...Object.entries(task.document.frontmatter)
+          .filter(([key]) => !['type', 'status', 'area'].includes(key))
+          .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {}),
+      },
+      sections: {
+        instruction: task.document.sections.instruction || '',
+        tasks: '', // Parent tasks don't use the tasks section in _overview.md
+        deliverable: task.document.sections.deliverable || '',
+        log: task.document.sections.log || '',
+      },
+    };
+
+    // Write overview file
+    const overviewContent = serializeTaskDocument(overviewDocument);
+    writeFileSync(overviewPath, overviewContent, 'utf-8');
+
+    // Create initial subtasks if requested
+    let subtaskIndex = 1;
+
+    // If keeping original as first subtask
+    if (options.keepOriginal) {
+      const sequence = String(subtaskIndex).padStart(2, '0');
+      const subtaskId = generateSubtaskId(task.document.title, sequence);
+      const subtaskPath = join(parentFolder, `${subtaskId}.task.md`);
+
+      const subtaskDocument: TaskDocument = {
+        title: task.document.title,
+        frontmatter: {
+          type: task.document.frontmatter.type,
+          status: 'To Do', // Reset status for subtask
+          area: task.document.frontmatter.area,
+        },
+        sections: {
+          instruction: task.document.sections.instruction || '',
+          tasks: task.document.sections.tasks || '',
+          deliverable: task.document.sections.deliverable || '',
+          log: '',
+        },
+      };
+
+      const subtaskContent = serializeTaskDocument(subtaskDocument);
+      writeFileSync(subtaskPath, subtaskContent, 'utf-8');
+      subtaskIndex++;
+    }
+
+    // Add additional subtasks if provided
+    if (options.subtasks && options.subtasks.length > 0) {
+      for (const subtaskTitle of options.subtasks) {
+        const sequence = String(subtaskIndex).padStart(2, '0');
+        const subtaskId = generateSubtaskId(subtaskTitle, sequence);
+        const subtaskPath = join(parentFolder, `${subtaskId}.task.md`);
+
+        const subtaskDocument: TaskDocument = {
+          title: subtaskTitle,
+          frontmatter: {
+            type: task.document.frontmatter.type,
+            status: 'To Do',
+            area: task.document.frontmatter.area,
+          },
+          sections: ensureRequiredSections({
+            instruction: '',
+            tasks: '',
+            deliverable: '',
+          }),
+        };
+
+        const subtaskContent = serializeTaskDocument(subtaskDocument);
+        writeFileSync(subtaskPath, subtaskContent, 'utf-8');
+        subtaskIndex++;
+      }
+    }
+
+    // Delete the original task
+    await del(projectRoot, taskId, config);
+
+    // Return the parent task (overview)
+    const finalResult = await get(projectRoot, parentId, config);
+    if (!finalResult.success || !finalResult.data) {
+      return {
+        success: false,
+        error: 'Failed to get promoted task',
+      };
+    }
+
+    return finalResult;
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to promote task',
     };
   }
 }

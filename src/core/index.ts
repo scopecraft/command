@@ -85,6 +85,7 @@ export {
   del,
   move,
   list,
+  promoteToParent,
 } from './task-crud.js';
 
 // Project initialization
@@ -110,17 +111,6 @@ export {
   isValidSequence,
   listSubtasksWithSequence,
 } from './subtask-sequencing.js';
-
-// High-level task operations
-export {
-  resequenceSubtasks,
-  parallelizeSubtasks,
-  updateSubtaskSequence,
-  promoteToParent,
-  extractSubtask,
-  adoptTask,
-  addSubtask,
-} from './task-operations.js';
 
 // Template management
 export {

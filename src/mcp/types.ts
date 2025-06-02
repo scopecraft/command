@@ -1,11 +1,10 @@
 /**
  * Types specific to the MCP server
  */
-import { Task, type TaskUpdateOptions } from '../core/types.js';
-
 import type {
   OperationResult,
   ParentTask,
+  Task,
   TaskCreateOptions,
   TaskDocument,
   TaskListOptions,
@@ -13,7 +12,6 @@ import type {
   TaskPriority,
   TaskStatus,
   TaskType,
-  Task,
   TaskUpdateOptions,
   WorkflowState,
 } from '../core/types.js';
