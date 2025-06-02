@@ -20,49 +20,49 @@ import {
 // Input Schemas for MCP Tool Definitions
 // =============================================================================
 
-export const taskListInputJsonSchema = zodToJsonSchema(TaskListInputSchema, {
-  name: 'TaskListInput',
-  description: 'Input parameters for task_list method',
-});
+export const taskListInputJsonSchema = zodToJsonSchema(
+  TaskListInputSchema.describe('Input parameters for task_list method'),
+  { name: 'TaskListInput' }
+);
 
-export const taskGetInputJsonSchema = zodToJsonSchema(TaskGetInputSchema, {
-  name: 'TaskGetInput',
-  description: 'Input parameters for task_get method',
-});
+export const taskGetInputJsonSchema = zodToJsonSchema(
+  TaskGetInputSchema.describe('Input parameters for task_get method'),
+  { name: 'TaskGetInput' }
+);
 
-export const parentListInputJsonSchema = zodToJsonSchema(ParentListInputSchema, {
-  name: 'ParentListInput',
-  description: 'Input parameters for parent_list method',
-});
+export const parentListInputJsonSchema = zodToJsonSchema(
+  ParentListInputSchema.describe('Input parameters for parent_list method'),
+  { name: 'ParentListInput' }
+);
 
-export const parentGetInputJsonSchema = zodToJsonSchema(ParentGetInputSchema, {
-  name: 'ParentGetInput',
-  description: 'Input parameters for parent_get method',
-});
+export const parentGetInputJsonSchema = zodToJsonSchema(
+  ParentGetInputSchema.describe('Input parameters for parent_get method'),
+  { name: 'ParentGetInput' }
+);
 
 // =============================================================================
 // Output Schemas for MCP Tool Definitions
 // =============================================================================
 
-export const taskListOutputJsonSchema = zodToJsonSchema(TaskListOutputSchema, {
-  name: 'TaskListOutput',
-  description: 'Response format for task_list method',
-});
+export const taskListOutputJsonSchema = zodToJsonSchema(
+  TaskListOutputSchema.describe('Response format for task_list method'),
+  { name: 'TaskListOutput' }
+);
 
-export const taskGetOutputJsonSchema = zodToJsonSchema(TaskGetOutputSchema, {
-  name: 'TaskGetOutput',
-  description: 'Response format for task_get method',
-});
+export const taskGetOutputJsonSchema = zodToJsonSchema(
+  TaskGetOutputSchema.describe('Response format for task_get method'),
+  { name: 'TaskGetOutput' }
+);
 
-export const parentListOutputJsonSchema = zodToJsonSchema(ParentListOutputSchema, {
-  name: 'ParentListOutput',
-  description: 'Response format for parent_list method',
-});
+export const parentListOutputJsonSchema = zodToJsonSchema(
+  ParentListOutputSchema.describe('Response format for parent_list method'),
+  { name: 'ParentListOutput' }
+);
 
-export const parentGetOutputJsonSchema = zodToJsonSchema(ParentGetOutputSchema, {
-  name: 'ParentGetOutput',
-  description: 'Response format for parent_get method',
-});
+export const parentGetOutputJsonSchema = zodToJsonSchema(
+  ParentGetOutputSchema.describe('Response format for parent_get method'),
+  { name: 'ParentGetOutput' }
+);
 
 // =============================================================================
 // MCP Tool Definitions with Schema Integration

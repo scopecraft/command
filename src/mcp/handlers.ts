@@ -77,13 +77,14 @@ export async function handleInitRoot(params: ConfigInitRootParams) {
     const projectRoot = params.path;
     
     // Check if init is needed
-    const initNeeded = await core.needsInit(projectRoot);
+    const initNeeded = core.needsInit(projectRoot);
     if (initNeeded) {
-      const initResult = await core.initializeProjectStructure(projectRoot);
-      if (!initResult.success) {
+      try {
+        core.initializeProjectStructure(projectRoot);
+      } catch (error) {
         return {
           success: false,
-          error: initResult.error,
+          error: error instanceof Error ? error.message : 'Failed to initialize project structure',
           message: 'Failed to initialize project structure',
         };
       }

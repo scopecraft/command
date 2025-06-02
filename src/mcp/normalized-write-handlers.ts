@@ -94,10 +94,9 @@ export async function handleTaskCreateNormalized(
       const outputData = {
         id: data.metadata.id,
         title: data.document.title,
-        type: data.document.frontmatter.type as TaskCreateOutput['data']['type'],
+        type: data.document.frontmatter.type,
         status: normalizeStatus(data.document.frontmatter.status),
-        workflowState: data.metadata.location
-          .workflowState as TaskCreateOutput['data']['workflowState'],
+        workflowState: data.metadata.location.workflowState,
         area: data.document.frontmatter.area || 'general',
         path: data.metadata.path,
         createdAt: new Date().toISOString(),
@@ -120,7 +119,7 @@ export async function handleTaskCreateNormalized(
       status: (params.status ? denormalizeStatus(params.status) : 'To Do') as core.TaskStatus,
       workflowState: params.workflowState,
       instruction: params.instruction,
-      tasks: params.tasks,
+      tasks: params.tasks ? core.parseTasksSection(params.tasks).map(t => t.text) : undefined,
       customMetadata: {},
     };
 
@@ -145,10 +144,9 @@ export async function handleTaskCreateNormalized(
     const outputData = {
       id: data.metadata.id,
       title: data.document.title,
-      type: data.document.frontmatter.type as TaskCreateOutput['data']['type'],
+      type: data.document.frontmatter.type,
       status: normalizeStatus(data.document.frontmatter.status),
-      workflowState: data.metadata.location
-        .workflowState as TaskCreateOutput['data']['workflowState'],
+      workflowState: data.metadata.location.workflowState,
       area: data.document.frontmatter.area || 'general',
       path: data.metadata.path,
       createdAt: new Date().toISOString(),
@@ -225,7 +223,7 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
       updateOptions.sections = sections;
     }
 
-    const result = await core.update(projectRoot, params.id, updateOptions, params.parentId);
+    const result = await core.update(projectRoot, params.id, updateOptions, undefined, params.parentId);
 
     if (!result.success || !result.data) {
       return {
@@ -371,7 +369,7 @@ export async function handleTaskMoveNormalized(
     const data = result.data;
     const outputData = {
       id: params.id,
-      previousState: previousState as TaskMoveOutput['data']['previousState'],
+      previousState: previousState,
       currentState: params.targetState,
       statusUpdated: params.updateStatus,
       newStatus:
@@ -596,7 +594,7 @@ export async function handleParentCreateNormalized(
               (st) =>
                 st.title === task.parallelWith ||
                 st.id === task.parallelWith ||
-                st.id.endsWith(task.parallelWith) // Handle partial ID match like "01_test-sub-one"
+                (task.parallelWith && st.id.endsWith(task.parallelWith)) // Handle partial ID match like "01_test-sub-one"
             );
 
             if (targetSubtask) {
@@ -625,9 +623,8 @@ export async function handleParentCreateNormalized(
     const outputData = {
       id: parentData.metadata.id,
       title: parentData.overview.title,
-      type: parentData.overview.frontmatter.type as ParentCreateOutput['data']['type'],
-      workflowState: parentData.metadata.location
-        .workflowState as ParentCreateOutput['data']['workflowState'],
+      type: parentData.overview.frontmatter.type,
+      workflowState: parentData.metadata.location.workflowState,
       path: parentData.metadata.path,
       subtaskCount: createdSubtasks.length,
       createdSubtasks: createdSubtasks.length > 0 ? createdSubtasks : undefined,
@@ -665,7 +662,11 @@ export async function handleParentOperationsNormalized(
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = params.rootDir || configManager.getRootConfig().path;
 
-    const affectedSubtasks: ParentOperationsOutput['data']['affectedSubtasks'] = [];
+    const affectedSubtasks: Array<{
+      id: string;
+      currentSequence: string;
+      previousSequence?: string;
+    }> = [];
     let newSubtask: Task | undefined;
 
     switch (params.operationData.operation) {

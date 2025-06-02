@@ -9,7 +9,12 @@ import camelcaseKeys from 'camelcase-keys';
  * Handles nested objects and arrays automatically
  */
 export function transformMcpParams(params: unknown): unknown {
-  const transformed = camelcaseKeys(params, { deep: true }) as any;
+  // Type guard to ensure we have a valid object
+  if (!params || typeof params !== 'object' || Array.isArray(params)) {
+    return params;
+  }
+  
+  const transformed = camelcaseKeys(params as Record<string, unknown>, { deep: true }) as any;
   
   // Special handling for parent_operations which needs restructuring
   if (transformed?.operation && (transformed.sequenceMap || transformed.subtaskIds || transformed.subtask)) {

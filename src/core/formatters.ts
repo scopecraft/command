@@ -488,8 +488,8 @@ export function formatTemplatesList(templates: TemplateInfo[]): string {
 
   templates.forEach((template) => {
     const id = template.id.padEnd(20);
-    const title = template.title.substring(0, 40).padEnd(40);
-    const description = template.description.substring(0, 20);
+    const title = template.name.substring(0, 40).padEnd(40);
+    const description = template.type.substring(0, 20);
     output += `${id}${title}${description}\n`;
   });
 
