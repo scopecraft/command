@@ -20,7 +20,8 @@
       "mcp__scopecraft__task_move",
       "mcp__scopecraft__parent_create",
       "mcp__scopecraft__task_transform",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(hash:*)"
     ],
     "deny": []
   }

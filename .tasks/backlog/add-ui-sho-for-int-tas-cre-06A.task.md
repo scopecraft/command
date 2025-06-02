@@ -16,30 +16,67 @@ priority: Medium
 
 
 ## Instruction
-Add a UI shortcut (keyboard shortcut and/or button) that allows users to quickly create tasks with intelligent auto-classification directly from the Task UI, using the same logic as the task-create autonomous tool.
+Convert the existing Sidebar 'New Task' button to trigger intelligent auto-classification task creation using the task-create autonomous tool logic.
 
 Key requirements:
-1. Quick access via keyboard shortcut (e.g., Cmd/Ctrl+N) or button in Sidebar
-2. Simple input dialog for task description
-3. Triggers autonomous task creation with auto-classification
-4. Shows progress in autonomous monitor
-5. Notifies user when task is created
+1. Reuse existing 'New Task' button in Sidebar (already surrounded by automation links)
+2. Keep table's create task button for manual creation
+3. Open a dialog with:
+   - Text input for task description
+   - Optional quick type filters (idea, feature, bug, etc.) to guide creation
+   - Submit triggers autonomous creation with auto-classification
+4. Show progress in autonomous monitor
+5. Notify user when task is created with link to view it
+
+The quick type filters are hints/suggestions but the autonomous tool will still do full classification based on the description.
 
 ## Tasks
-- [ ] Add keyboard shortcut handler to root layout
-- [ ] Create quick input modal/dialog component
+- [ ] Modify Sidebar 'New Task' button click handler
+- [ ] Create QuickTaskDialog component with:
+  - [ ] Task description input field
+  - [ ] Optional type filter buttons (idea, feature, bug, etc.)
+  - [ ] Submit and Cancel buttons
 - [ ] Add server endpoint `/api/autonomous/task-create`
 - [ ] Integrate with task-creator-autonomous.ts logic
-- [ ] Add progress tracking to autonomous monitor
-- [ ] Add success notification when task is created
-- [ ] Update Sidebar with quick action button
-- [ ] Add Storybook stories for new components
-- [ ] Test keyboard shortcut across different pages
-- [ ] Document the feature in UI guide
+- [ ] Connect to autonomous monitor for progress tracking
+- [ ] Add success notification with task link
+- [ ] Add Storybook story for QuickTaskDialog
+- [ ] Test the flow end-to-end
+- [ ] Keep existing table create button unchanged (manual creation)
 
 ## Deliverable
-## Impact Analysis
+## Updated Analysis
 
+### Existing UI Elements:
+- **Sidebar**: Already has 'New Task' button - perfect for autonomous creation
+- **Task Table**: Has create button - keep for manual creation
+- Sidebar is already in automation context (near other autonomous features)
+
+### Design Approach:
+1. Click Sidebar 'New Task' → Opens QuickTaskDialog
+2. Dialog shows:
+   ```
+   [Task description input field]
+   
+   Quick type hints (optional):
+   [💡 Idea] [✨ Feature] [🐛 Bug] [🔧 Chore] [📚 Docs]
+   
+   [Create with AI] [Cancel]
+   ```
+3. User can:
+   - Just type description and submit
+   - Or click a type hint to add context (e.g., "Bug: ")
+   - AI still does full classification
+
+### Benefits:
+- Leverages existing UI elements
+- Clear separation: Sidebar = AI, Table = Manual
+- Optional guidance without forcing structure
+- Maintains autonomous classification power
+
+## Log
+
+## Impact analysis
 ### Files to modify:
 - `tasks-ui/src/components/v2/Sidebar.tsx` - Add quick action button
 - `tasks-ui/src/routes/__root.tsx` - Add global keyboard shortcut handler
@@ -59,5 +96,3 @@ Key requirements:
 4. Notification when complete with task ID
 
 ### No breaking changes - purely additive feature
-
-## Log

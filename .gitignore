@@ -12,6 +12,7 @@ mcp-server.log
 temp.md
 test/mcp/results/
 .tmp/
+.tasks/.autonomous-sessions/
 
 # NPM package files
 *.tgz

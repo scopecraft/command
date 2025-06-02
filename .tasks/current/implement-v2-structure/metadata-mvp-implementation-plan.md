@@ -189,3 +189,39 @@ If this causes issues:
 - We're keeping the same data flow, just centralizing the definitions
 - No breaking changes to any APIs or file formats
 - Can enhance incrementally once working
+
+## IMPORTANT: Workflow States Consideration
+
+The current plan only covers status, type, and priority enums but **misses workflow states** which are a separate concept:
+
+- **WorkflowState**: Directory location ('backlog' | 'current' | 'archive' | potentially 'idea')
+- **TaskStatus**: Task progress ('To Do' | 'In Progress' | 'Done' | 'Blocked' | 'Archived')
+
+These are distinct concepts that should not be conflated. The metadata schema should include workflow states as a separate enum:
+
+```json
+{
+  "metadata": {
+    "enums": {
+      "workflowState": {
+        "values": [
+          { "name": "backlog", "label": "Backlog", "emoji": "📋" },
+          { "name": "current", "label": "Current", "emoji": "🎯" },
+          { "name": "archive", "label": "Archive", "emoji": "📦" }
+        ]
+      },
+      "status": { /* existing status values */ },
+      "type": { /* existing type values */ },
+      "priority": { /* existing priority values */ }
+    }
+  }
+}
+```
+
+Without this, adding new workflow states (like "idea") will require hardcoded changes across multiple files:
+- `src/core/types.ts` - WorkflowState type
+- `src/mcp/schemas.ts` - WorkflowStateSchema 
+- `tasks-ui/src/lib/icons.tsx` - workflowStateIcons
+- `tasks-ui/src/components/v2/WorkflowStateBadge.tsx` - workflowLabels
+
+Including workflow states in the metadata architecture will make the system truly extensible.
