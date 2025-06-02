@@ -25,37 +25,28 @@ export async function handleInitCommand(options: {
     const projectRoot = options.rootDir || process.cwd();
 
     // Check if already initialized
-    const initStatus = core.getInitStatus(projectRoot);
-    if (initStatus.initialized) {
-      console.log(`✓ Project already initialized with ${initStatus.version} structure`);
-
-      if (initStatus.hasV1) {
-        console.log('\n⚠️  This project has v1 phase folders. Consider migrating to core.');
-      }
+    const statusMessage = core.getInitStatus(projectRoot);
+    if (statusMessage.includes('already initialized')) {
+      console.log(`✓ ${statusMessage}`);
       return;
     }
 
     // Initialize v2 structure
-    const result = await core.initializeProjectStructure(projectRoot);
+    core.initializeProjectStructure(projectRoot);
 
-    if (result.success) {
-      console.log('✓ Initialized Scopecraft v2 project structure:');
-      console.log('  .tasks/backlog/     - Tasks waiting to be worked on');
-      console.log('  .tasks/current/     - Tasks actively being worked on');
-      console.log('  .tasks/archive/     - Completed tasks organized by date');
-      console.log('  .tasks/.templates/  - Task templates');
-      console.log('\nNext steps:');
-      console.log('  sc task create --title "My first task" --type feature');
-      console.log('  sc task list');
-      console.log('  sc workflow next');
+    console.log('✓ Initialized Scopecraft v2 project structure:');
+    console.log('  .tasks/backlog/     - Tasks waiting to be worked on');
+    console.log('  .tasks/current/     - Tasks actively being worked on');
+    console.log('  .tasks/archive/     - Completed tasks organized by date');
+    console.log('  .tasks/.templates/  - Task templates');
+    console.log('\nNext steps:');
+    console.log('  sc task create --title "My first task" --type feature');
+    console.log('  sc task list');
+    console.log('  sc workflow next');
 
-      // Update config if needed
-      if (options.rootDir) {
-        configManager.setRootFromCLI(options.rootDir);
-      }
-    } else {
-      console.error(`Error: ${result.error}`);
-      process.exit(1);
+    // Update config if needed
+    if (options.rootDir) {
+      configManager.setRootFromCLI(options.rootDir);
     }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);

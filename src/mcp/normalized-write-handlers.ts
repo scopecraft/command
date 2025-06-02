@@ -420,7 +420,10 @@ export async function handleTaskTransformNormalized(
         });
         result = promoteResult;
         if (promoteResult.success && promoteResult.data) {
-          affectedTasks = promoteResult.data.subtasks.map((st) => st.metadata.id);
+          // The promoted task is now a parent, but subtasks aren't populated in the response
+          // If initial subtasks were created, they would be in the parent folder
+          // For now, just return the parent task ID as affected
+          affectedTasks = [promoteResult.data.metadata.id];
         }
         break;
       }
@@ -663,12 +666,21 @@ export async function handleParentOperationsNormalized(
 
     switch (params.operationData.operation) {
       case 'resequence': {
-        // Note: resequenceSubtasks expects from/to positions
-        // This is a simplified implementation
+        // Call the resequence method with the sequence map
+        const result = await core.parent(projectRoot, params.parentId).resequence(params.operationData.sequenceMap);
+        
+        if (!result.success) {
+          return {
+            success: false,
+            error: result.error || 'Resequence operation failed',
+            message: result.error || 'Failed to resequence subtasks',
+          };
+        }
+
+        // Build affected subtasks for response
         for (const mapping of params.operationData.sequenceMap) {
           affectedSubtasks.push({
             id: mapping.id,
-            previousSequence: undefined, // Would need to track
             currentSequence: mapping.sequence,
           });
         }

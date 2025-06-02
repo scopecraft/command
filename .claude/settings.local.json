@@ -14,7 +14,12 @@
       "mcp__scopecraft__task_get",
       "Bash(npm test:*)",
       "mcp__scopecraft__task_update",
-      "mcp__scopecraft__parent_list"
+      "mcp__scopecraft__parent_list",
+      "mcp__scopecraft__get_current_root",
+      "mcp__scopecraft__init_root",
+      "mcp__scopecraft__task_move",
+      "mcp__scopecraft__parent_create",
+      "mcp__scopecraft__task_transform"
     ],
     "deny": []
   }

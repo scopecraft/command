@@ -96,8 +96,7 @@ export function parent(projectRoot: string, parentId: string, config?: ProjectCo
 
     // Parent-specific operations
     async resequence(
-      fromPositions: number[],
-      toPositions: number[]
+      sequenceMap: Array<{ id: string; sequence: string }>
     ): Promise<OperationResult<void>> {
       try {
         // Get parent task to find folder
@@ -112,64 +111,41 @@ export function parent(projectRoot: string, parentId: string, config?: ProjectCo
         const parentFolder = dirname(parentResult.data.metadata.path);
         const subtasks = parentResult.data.subtasks;
 
-        // Validate positions
-        if (fromPositions.length !== toPositions.length) {
-          return {
-            success: false,
-            error: 'From and to positions must have same length',
-          };
-        }
-
-        // Sort subtasks by sequence
+        // Sort subtasks by current sequence
         subtasks.sort((a, b) => {
           const seqA = a.metadata.sequenceNumber || '99';
           const seqB = b.metadata.sequenceNumber || '99';
           return seqA.localeCompare(seqB);
         });
 
-        // Build new order
+        // Build new order based on sequence map
         const newOrder: TaskOrder[] = [];
-        const movedTasks = new Map<number, number>(); // from -> to
-
-        for (let i = 0; i < fromPositions.length; i++) {
-          movedTasks.set(fromPositions[i] - 1, toPositions[i] - 1); // Convert to 0-based
-        }
-
-        // Create new ordering
-        for (let i = 0; i < subtasks.length; i++) {
-          let targetPosition = i;
-
-          // Check if this position has a moved task
-          for (const [from, to] of movedTasks) {
-            if (to === i) {
-              targetPosition = from;
-              break;
-            }
+        
+        // First, handle all explicitly mapped tasks
+        for (const mapping of sequenceMap) {
+          // Find the subtask by ID (check both full ID and partial match)
+          const subtask = subtasks.find(st => 
+            st.metadata.id === mapping.id || 
+            st.metadata.filename.includes(mapping.id)
+          );
+          
+          if (!subtask) {
+            return {
+              success: false,
+              error: `Subtask not found: ${mapping.id}`,
+            };
           }
-
-          // If this task is being moved, skip it here
-          if (movedTasks.has(i)) {
-            continue;
-          }
-
-          const task = subtasks[targetPosition];
-          const taskName = basename(task.metadata.filename).replace(/\.task\.md$/, '');
+          
+          // Extract task name from filename (remove sequence prefix and .task.md)
+          const filename = basename(subtask.metadata.filename);
+          const taskName = filename.replace(/^\d{2}_/, '').replace(/\.task\.md$/, '');
+          
           newOrder.push({
             taskId: taskName,
-            newSequence: String(i + 1).padStart(2, '0'),
+            newSequence: mapping.sequence,
           });
         }
-
-        // Add moved tasks at their new positions
-        for (const [from, to] of movedTasks) {
-          const task = subtasks[from];
-          const taskName = basename(task.metadata.filename).replace(/\.task\.md$/, '');
-          newOrder.splice(to, 0, {
-            taskId: taskName,
-            newSequence: String(to + 1).padStart(2, '0'),
-          });
-        }
-
+        
         // Apply reordering
         const result = reorderSubtasks(parentFolder, newOrder);
         if (!result.success) {
