@@ -586,14 +586,7 @@ export async function handleListTemplatesCommand(): Promise<void> {
     const projectRoot = configManager.getRootConfig().path;
 
     // List templates
-    const result = await core.listTemplates(projectRoot);
-
-    if (!result.success) {
-      console.error(`Error: ${result.error}`);
-      process.exit(1);
-    }
-
-    const templates = result.data || [];
+    const templates = await core.listTemplates(projectRoot);
 
     if (templates.length === 0) {
       console.log('No templates found.');

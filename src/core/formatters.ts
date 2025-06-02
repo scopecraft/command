@@ -7,9 +7,9 @@ import type {
   TaskType,
   TaskPriority,
   WorkflowState,
-  ParentTask,
-  TemplateInfo
+  ParentTask
 } from './types.js';
+import type { TemplateInfo } from './template-manager.js';
 
 export type OutputFormat =
   | 'tree'
@@ -415,7 +415,7 @@ export function formatTaskDetail(task: Task, format: OutputFormat): string {
     output += '\n';
   }
 
-  if (format === 'full') {
+  if ((format as string) === 'full') {
     if (task.document.sections.deliverable) {
       output += '\n## Deliverable\n';
       output += task.document.sections.deliverable;

@@ -90,15 +90,16 @@ export async function handleTaskCreateNormalized(
       }
 
       // Transform and validate output
+      const data = result.data;
       const outputData = {
-        id: result.data.metadata.id,
-        title: result.data.document.title,
-        type: result.data.document.frontmatter.type as TaskCreateOutput['data']['type'],
-        status: normalizeStatus(result.data.document.frontmatter.status),
-        workflowState: result.data.metadata.location
+        id: data.metadata.id,
+        title: data.document.title,
+        type: data.document.frontmatter.type as TaskCreateOutput['data']['type'],
+        status: normalizeStatus(data.document.frontmatter.status),
+        workflowState: data.metadata.location
           .workflowState as TaskCreateOutput['data']['workflowState'],
-        area: result.data.document.frontmatter.area || 'general',
-        path: result.data.metadata.path,
+        area: data.document.frontmatter.area || 'general',
+        path: data.metadata.path,
         createdAt: new Date().toISOString(),
       };
 
@@ -140,15 +141,16 @@ export async function handleTaskCreateNormalized(
     }
 
     // Transform and validate output
+    const data = result.data;
     const outputData = {
-      id: result.data.metadata.id,
-      title: result.data.document.title,
-      type: result.data.document.frontmatter.type as TaskCreateOutput['data']['type'],
-      status: normalizeStatus(result.data.document.frontmatter.status),
-      workflowState: result.data.metadata.location
+      id: data.metadata.id,
+      title: data.document.title,
+      type: data.document.frontmatter.type as TaskCreateOutput['data']['type'],
+      status: normalizeStatus(data.document.frontmatter.status),
+      workflowState: data.metadata.location
         .workflowState as TaskCreateOutput['data']['workflowState'],
-      area: result.data.document.frontmatter.area || 'general',
-      path: result.data.metadata.path,
+      area: data.document.frontmatter.area || 'general',
+      path: data.metadata.path,
       createdAt: new Date().toISOString(),
     };
 
@@ -366,14 +368,15 @@ export async function handleTaskMoveNormalized(
       };
     }
 
+    const data = result.data;
     const outputData = {
       id: params.id,
       previousState: previousState as TaskMoveOutput['data']['previousState'],
       currentState: params.targetState,
       statusUpdated: params.updateStatus,
       newStatus:
-        params.updateStatus && result.data.document.frontmatter.status
-          ? normalizeStatus(result.data.document.frontmatter.status)
+        params.updateStatus && data.document.frontmatter.status
+          ? normalizeStatus(data.document.frontmatter.status)
           : undefined,
     };
 
@@ -553,13 +556,14 @@ export async function handleParentCreateNormalized(
       };
     }
 
+    const data = result.data;
     const createdSubtasks: { id: string; title: string; sequence: string }[] = [];
 
     // Add initial subtasks if provided
     if (params.subtasks && params.subtasks.length > 0) {
       for (const subtaskDef of params.subtasks) {
         const subtaskResult = await core
-          .parent(projectRoot, result.data.metadata.id)
+          .parent(projectRoot, data.metadata.id)
           .create(subtaskDef.title, {
             type: subtaskDef.type || params.type,
             area: params.area,
@@ -611,13 +615,13 @@ export async function handleParentCreateNormalized(
           // Remove duplicates and parallelize
           const uniqueIds = [...new Set(allIds)];
           if (uniqueIds.length > 1) {
-            await core.parent(projectRoot, result.data.metadata.id).parallelize(uniqueIds);
+            await core.parent(projectRoot, data.metadata.id).parallelize(uniqueIds);
           }
         }
       }
     }
 
-    const parentData = result.data;
+    const parentData = data;
     const outputData = {
       id: parentData.metadata.id,
       title: parentData.overview.title,
@@ -739,11 +743,12 @@ export async function handleParentOperationsNormalized(
         }
 
         // Transform new subtask to normalized format
-        newSubtask = await transformTaskToNormalized(projectRoot, result.data, false, true);
+        const subtaskData = result.data;
+        newSubtask = await transformTaskToNormalized(projectRoot, subtaskData, false, true);
 
         affectedSubtasks.push({
-          id: result.data.metadata.id,
-          currentSequence: result.data.metadata.sequenceNumber || '01',
+          id: subtaskData.metadata.id,
+          currentSequence: subtaskData.metadata.sequenceNumber || '01',
         });
 
         break;
