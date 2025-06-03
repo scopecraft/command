@@ -156,11 +156,15 @@ export async function handleGetCommand(
     // Format and display
     if (options.contentOnly) {
       // Display only section content without metadata
-      const contentOnly = core.serializeTaskContent(result.data!.document);
-      console.log(contentOnly);
+      if (result.data?.document) {
+        const contentOnly = core.serializeTaskContent(result.data.document);
+        console.log(contentOnly);
+      }
     } else {
       const format = (options.format || 'default') as OutputFormat;
-      console.log(formatTaskDetail(result.data!, format));
+      if (result.data) {
+        console.log(formatTaskDetail(result.data, format));
+      }
     }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -207,12 +211,11 @@ export async function handleCreateCommand(options: {
 
     // Add optional metadata
     if (options.priority) {
-      // Normalize priority - CLI accepts lowercase but core stores capitalized
-      const normalizedPriority = core.normalizePriority(options.priority);
-      createOptions.customMetadata!.priority = normalizedPriority;
+      // Pass raw priority - core will normalize it
+      createOptions.customMetadata!.priority = options.priority;
     }
     if (options.assignee) createOptions.customMetadata!.assignee = options.assignee;
-    if (options.tags) createOptions.customMetadata!.tags = options.tags;
+    if (options.tags) createOptions.tags = options.tags; // Pass directly to core
     if (options.parent) createOptions.customMetadata!.parent = options.parent;
     if (options.depends) createOptions.customMetadata!.depends = options.depends;
     if (options.previous) createOptions.customMetadata!.previous = options.previous;
@@ -291,7 +294,7 @@ export async function handleUpdateCommand(
     if (options.type) frontmatter.type = options.type;
     if (options.status) frontmatter.status = options.status;
     if (options.subdirectory) frontmatter.area = options.subdirectory;
-    if (options.priority) frontmatter.priority = core.normalizePriority(options.priority);
+    if (options.priority) frontmatter.priority = options.priority;
     if (options.assignee) frontmatter.assignee = options.assignee;
     if (options.tags) frontmatter.tags = options.tags;
     if (options.parent) frontmatter.parent = options.parent;

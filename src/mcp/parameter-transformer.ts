@@ -16,6 +16,12 @@ export function transformMcpParams(params: unknown): unknown {
 
   const transformed = camelcaseKeys(params as Record<string, unknown>, { deep: true });
 
+  // Special handling for location -> workflowState mapping
+  if ('location' in transformed && !('workflowState' in transformed)) {
+    transformed.workflowState = transformed.location;
+    transformed.location = undefined;
+  }
+
   // Special handling for parent_operations which needs restructuring
   if (
     transformed?.operation &&
