@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: In Progress
+status: in_progress
 area: general
 ---
 

@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: core
 ---
 

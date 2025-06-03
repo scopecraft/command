@@ -2,9 +2,9 @@
 
 ---
 type: chore
-status: Done
+status: done
 area: general
-priority: Medium
+priority: medium
 tags:
   - core
   - v2-design

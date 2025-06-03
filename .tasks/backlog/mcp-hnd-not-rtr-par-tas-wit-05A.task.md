@@ -2,9 +2,9 @@
 
 ---
 type: bug
-status: Done
+status: done
 area: mcp
-priority: High
+priority: high
 tags:
   - v2
   - task-filtering
@@ -27,7 +27,6 @@ The `handleTaskList` function in the MCP handlers is not returning parent tasks 
 The `handleTaskList` function should correctly return both simple tasks and parent tasks when `task_type='top-level'` is specified, matching the behavior described in the code comments.
 
 ## Log
-
 - 2025-05-29: Investigated issue and found root cause in `handleTaskList` function in `src/mcp/handlers.ts`
 - 2025-05-29: Issue was that `includeParentTasks` option was not being passed to `v2.listTasks()` when `task_type='top-level'`
 - 2025-05-29: Fixed by adding logic to set `listOptions.includeParentTasks = true` for top-level, parent, and all task types

@@ -2,39 +2,11 @@
 
 ---
 type: chore
-status: To Do
+status: todo
 area: general
-priority: Medium
+priority: medium
 ---
 
-## Instruction
-
-Currently, the v2 task system places the title before the frontmatter, which is non-standard for markdown files. Standard markdown frontmatter should appear at the very beginning of the file.
-
-**Current format (non-standard):**
-```markdown
-# Task Title
-
----
-type: feature
-status: To Do
-area: general
----
-
-## Instruction
-...
-```
-
-**Target format (standard):**
-```markdown
----
-type: feature
-status: To Do
-area: general
-title: Task Title
----
-
-# Task Title
 
 ## Instruction
 ...
@@ -43,7 +15,6 @@ title: Task Title
 This migration will ensure our task files follow the standard markdown frontmatter convention, improving compatibility with other tools and parsers.
 
 ## Tasks
-
 - [ ] Update `parseTaskDocument()` in `/src/core/v2/task-parser.ts` to expect frontmatter first
 - [ ] Update `serializeTaskDocument()` to output frontmatter at the beginning of the file
 - [ ] Add backward compatibility to read both formats during transition
@@ -56,7 +27,6 @@ This migration will ensure our task files follow the standard markdown frontmatt
 - [ ] Update any documentation that shows task file format examples
 
 ## Deliverable
-
 - Updated v2 task parser that reads/writes standard frontmatter format
 - Migration tool that converts existing tasks
 - All existing tasks migrated to standard format

@@ -2,14 +2,14 @@
 
 ---
 type: chore
-status: Done
+status: done
 area: ui
 assignee: null
 tags:
   - refactoring
   - cleanup
   - v2
-priority: High
+priority: high
 parent: implement-v2-structure
 ---
 

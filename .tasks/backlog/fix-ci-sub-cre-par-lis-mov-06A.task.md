@@ -2,9 +2,9 @@
 
 ---
 type: bug
-status: To Do
+status: todo
 area: cli
-priority: High
+priority: high
 ---
 
 

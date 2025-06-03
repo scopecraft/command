@@ -150,14 +150,18 @@ Scopecraft loads schemas from three levels, with each level extending the previo
 ## Layer Responsibilities
 
 ### Core Layer
-- Stores human-readable values in Markdown files
-- Uses Schema Service for validation
-- Maintains data integrity
+- Stores canonical names in Markdown files (e.g., "in_progress", "feature")
+- Implements Map-based alias normalization for O(1) performance
+- Uses Schema Service for validation and alias resolution
+- Maintains data integrity and single source of truth
 
 ### MCP Layer
-- Exposes normalized API with consistent enum values
-- Generates Zod schemas from metadata definitions
-- Provides detailed validation errors
+- Exposes flexible API accepting aliases and canonical values
+- Handlers normalize input using core normalizers (aliases → canonical)
+- Uses separate input/output schemas: liberal input acceptance, conservative output
+- Generates dynamic Zod descriptions from schema registry
+- Provides detailed validation errors with valid options
+- Transformers do pure structural conversion (NO normalization, NO defaults)
 
 ### CLI Layer
 - Accepts user-friendly input including aliases
@@ -168,6 +172,41 @@ Scopecraft loads schemas from three levels, with each level extending the previo
 - Consumes normalized data from MCP
 - Applies display formatting from schemas
 - Provides rich interactions with tooltips and descriptions
+
+## Alias Support Architecture
+
+### Map-Based Normalization
+
+The system uses efficient Map-based lookups for alias normalization:
+
+```typescript
+// Built from schema on first use
+const normalizer = new Map([
+  ['feat', 'feature'],
+  ['fix', 'bug'], 
+  ['wip', 'in_progress'],
+  ['p2', 'high'],
+  // ... all aliases from schema
+]);
+```
+
+### Dual Schema Pattern (MCP)
+
+MCP follows Postel's Law with separate schemas:
+
+- **Input Schemas**: Accept any string, provide AI guidance with canonical examples
+- **Output Schemas**: Return only canonical values for consistency
+- **Dynamic Descriptions**: Generated from schema registry, never hardcoded
+
+```typescript
+// Input: Flexible validation
+export const TaskTypeInputSchema = z.string().describe(
+  `Task type. Use: ${getTypeValues().map(t => `"${t.name}"`).join(', ')}`
+);
+
+// Output: Strict canonical values  
+export const TaskTypeSchema = z.enum(['feature', 'bug', 'chore', ...]);
+```
 
 ## Validation and Transformation
 
@@ -182,6 +221,20 @@ Scopecraft loads schemas from three levels, with each level extending the previo
 - **Display Output**: Uses labels (e.g., "In Progress")
 - **User Input**: Accepts names, labels, or aliases
 - **API Transport**: Uses canonical names
+
+### Data Flow Through Layers
+
+```
+User Input → MCP Handler → Core → Storage
+   "wip"    →  normalizes → stores as → "in_progress"
+              to canonical   canonical
+
+Storage → Core → MCP Transformer → API Response
+"in_progress" → returns → passes through → "in_progress"
+                canonical  (no normalization)
+```
+
+**Critical**: MCP transformers receive data FROM core, which is already canonical. They must NOT re-normalize or provide defaults - only convert data structures.
 
 ## Template and Type Relationship
 

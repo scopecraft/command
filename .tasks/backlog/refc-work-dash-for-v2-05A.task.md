@@ -2,9 +2,9 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: ui
-priority: Medium
+priority: medium
 tags:
   - ui
   - v2
@@ -15,7 +15,6 @@ tags:
 
 
 ## Instruction
-
 Refactor and improve the worktree dashboard functionality for the V2 UI. The current V1 implementation works but needs architectural improvements and better integration with the V2 design system.
 
 ### Background
@@ -38,7 +37,6 @@ Refactor and improve the worktree dashboard functionality for the V2 UI. The cur
 - Navigation to task details from worktree view
 
 ## Tasks
-
 - [ ] Analyze current worktree implementation
   - [ ] Document current architecture and pain points
   - [ ] Identify reusable components
@@ -70,7 +68,6 @@ Refactor and improve the worktree dashboard functionality for the V2 UI. The cur
   - [ ] Empty states
 
 ## Deliverable
-
 - Refactored worktree dashboard with clean architecture
 - Improved UX with V2 design system integration
 - Better performance and real-time updates

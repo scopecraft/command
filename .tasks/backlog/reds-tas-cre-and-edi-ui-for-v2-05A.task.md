@@ -2,9 +2,9 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: ui
-priority: Medium
+priority: medium
 tags:
   - ui
   - v2

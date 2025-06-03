@@ -2,17 +2,15 @@
 
 ---
 type: feature
-status: Done
+status: done
 area: core
 ---
 
 
 ## Instruction
-
 Remove all V1 MCP handlers and legacy code from the MCP server. Clean up old handlers, remove phase-based operations, and ensure only V2 workflow-based handlers remain.
 
 ## Tasks
-
 ### MCP Handler Cleanup
 - [x] Remove all V1 handlers from `/src/mcp/handlers.ts`
 - [x] Delete old handler files (`handlers.old.ts`, `core-server.old.ts`)
@@ -32,7 +30,6 @@ Remove all V1 MCP handlers and legacy code from the MCP server. Clean up old han
 - [x] Verify no V1 references remain in MCP code
 
 ## Deliverable
-
 Clean MCP module with:
 - Only V2 workflow-based handlers
 - No phase or V1 legacy code

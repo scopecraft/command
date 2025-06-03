@@ -3,17 +3,7 @@
  */
 
 import * as core from '../core/index.js';
-import {
-  getPriorityLabel,
-  getPriorityName,
-  getStatusLabel,
-  getStatusName,
-  getTypeLabel,
-  getTypeName,
-  getWorkflowStateLabel,
-  getWorkflowStateName,
-  isValidType,
-} from '../core/metadata/schema-service.js';
+import { getPriorityLabel, getStatusLabel } from '../core/metadata/schema-service.js';
 import {
   type ParentTask,
   type ParentTaskDetail,
@@ -34,29 +24,6 @@ import {
 // =============================================================================
 // Field Transformation Utilities
 // =============================================================================
-
-/**
- * Normalize task type to enum values
- */
-export function cleanTaskType(rawType: string): TaskType {
-  // Core already stores canonical names (e.g., "bug", "feature")
-  // Just validate it's a valid type, don't transform it
-  if (isValidType(rawType)) {
-    return rawType as TaskType;
-  }
-  // If invalid, default to feature
-  return 'feature' as TaskType;
-}
-
-/**
- * Normalize task status to clean enum values
- * Converts from core format (e.g., "In Progress") to MCP format (e.g., "in_progress")
- */
-export function normalizeStatus(rawStatus: string): TaskStatus {
-  // Use schema service to get the normalized name
-  const normalizedName = getStatusName(rawStatus);
-  return normalizedName as TaskStatus;
-}
 
 /**
  * Denormalize status from MCP format to core format
@@ -80,34 +47,6 @@ export function denormalizePriority(mcpPriority?: TaskPriority): string {
   return getPriorityLabel(mcpPriority);
 }
 
-/**
- * Normalize task priority to clean enum values
- * Converts from core format (e.g., "High") to MCP format (e.g., "high")
- */
-export function normalizePriority(rawPriority?: string): TaskPriority {
-  if (!rawPriority) return 'medium';
-
-  // Use schema service to get the normalized name
-  const normalizedName = getPriorityName(rawPriority);
-  return normalizedName as TaskPriority;
-}
-
-/**
- * Map core workflow state to normalized enum
- * In this case, core and MCP both use lowercase names, so this is mostly for validation
- */
-export function normalizeWorkflowState(workflowState: string): WorkflowState {
-  // Validate that it's a known workflow state
-  const validStates = ['backlog', 'current', 'archive'];
-  if (validStates.includes(workflowState)) {
-    return workflowState as WorkflowState;
-  }
-
-  // Try to get by label (in case someone passes "Backlog" instead of "backlog")
-  const normalizedName = getWorkflowStateName(workflowState);
-  return normalizedName as WorkflowState;
-}
-
 // =============================================================================
 // Base Task Transformation
 // =============================================================================
@@ -119,16 +58,16 @@ function transformBaseTask(task: core.Task) {
   return {
     id: task.metadata.id,
     title: task.document.title,
-    type: cleanTaskType(task.document.frontmatter.type || 'chore'),
-    status: normalizeStatus(task.document.frontmatter.status || 'todo'),
-    priority: normalizePriority(task.document.frontmatter.priority),
-    workflowState: normalizeWorkflowState(task.metadata.location.workflowState),
-    area: task.document.frontmatter.area || 'general',
-    tags: (task.document.frontmatter.tags as string[]) || [],
+    type: task.document.frontmatter.type as TaskType,
+    status: task.document.frontmatter.status as TaskStatus,
+    priority: task.document.frontmatter.priority as TaskPriority,
+    workflowState: task.metadata.location.workflowState as WorkflowState,
+    area: task.document.frontmatter.area,
+    tags: task.document.frontmatter.tags as string[],
     assignee:
-      (typeof task.document.frontmatter.assignee === 'string'
+      typeof task.document.frontmatter.assignee === 'string'
         ? task.document.frontmatter.assignee
-        : undefined) || undefined,
+        : undefined,
     createdDate: undefined, // TODO: Extract from file stats if needed
     updatedDate: undefined, // TODO: Extract from file stats if needed
     archivedDate: task.metadata.location.workflowState === 'archive' ? undefined : undefined, // TODO: Extract archive date
@@ -217,7 +156,7 @@ export async function transformParentTask(
   const parentData = parentResult.data as core.ParentTask;
   const subtaskCount = parentData.subtasks.length;
   const completedCount = parentData.subtasks.filter(
-    (st) => normalizeStatus(st.document.frontmatter.status || 'todo') === 'done'
+    (st) => st.document.frontmatter.status === 'done'
   ).length;
 
   const parentTask: ParentTask = {

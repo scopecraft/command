@@ -2,9 +2,9 @@
 
 ---
 type: feature
-status: Done
+status: done
 area: general
-priority: Medium
+priority: medium
 ---
 
 

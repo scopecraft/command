@@ -2,17 +2,17 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: core
-priority: Medium
+priority: medium
 tags:
   - unix-philosophy
   - ai-context
   - work-documents
 ---
 
-## Instruction
 
+## Instruction
 Implement minimal Unix-philosophy approach to work documents that supports rich AI context while maintaining simplicity. Enable complex tasks to have supporting documents (design docs, specs, meeting notes) that are automatically discovered and made available to AI agents without requiring explicit linking.
 
 ### Background & Vision Alignment
@@ -103,7 +103,6 @@ current/
 - Should templates support variable substitution (task title, dates, etc.)?
 
 ## Tasks
-
 - [ ] Review and validate design approach with project maintainer
 - [ ] Finalize document template structure and content
 - [ ] Determine integration points with existing mode system
@@ -113,7 +112,6 @@ current/
 - [ ] Consider testing strategy for file discovery and template creation
 
 ## Deliverable
-
 **Not ready for implementation** - This is a feature proposal requiring design review and decisions on the questions above. Implementation should only proceed after:
 
 1. Design approach is validated
@@ -124,7 +122,6 @@ current/
 The deliverable will be a refined implementation plan addressing all design questions.
 
 ## Log
-
 - 2025-05-28: Created feature proposal based on Unix philosophy discussion  
 - 2025-05-28: Identified minimal approach: template + create + automated discovery
 - 2025-05-28: Documented integration points with vision and existing specs

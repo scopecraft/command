@@ -2,14 +2,14 @@
 
 ---
 type: bug
-status: Done
+status: done
 area: ui
 tags:
   - parent-tasks
   - progress-calculation
   - data-mismatch
   - mcp-api
-priority: High
+priority: high
 ---
 
 

@@ -2,24 +2,22 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: general
-priority: Medium
+priority: medium
 ---
 
 
 ## Instruction
-## Add parameter to get task content without frontmatter
-
-Task description goes here.
-
-## Acceptance Criteria
-
-- [ ] Criteria 1
-
 
 ## Tasks
 
 ## Deliverable
 
 ## Log
+
+## Add parameter to get task content without frontmatter
+Task description goes here.
+
+## Acceptance criteria
+- [ ] Criteria 1

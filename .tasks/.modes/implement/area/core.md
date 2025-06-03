@@ -71,7 +71,7 @@ await fs.rename(tempPath, finalPath);
 
 ---
 type: feature
-status: To Do
+status: todo
 area: core
 tags: ["tag1", "tag2"]
 ---

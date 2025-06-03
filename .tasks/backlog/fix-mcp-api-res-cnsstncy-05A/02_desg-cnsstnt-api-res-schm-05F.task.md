@@ -2,7 +2,7 @@
 
 ---
 type: bug
-status: Done
+status: done
 area: mcp
 tags:
   - design

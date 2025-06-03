@@ -16,38 +16,6 @@ priority: medium
 ## Instruction
 Add the ability to delete multiple tasks at once through the bulk actions section in the Task Management View. When users select tasks and click the Delete button, show a confirmation dialog before performing the deletion.
 
-## Requirements
-
-1. **Confirmation Dialog**
-   - Show number of tasks to be deleted
-   - Display warning about permanent deletion
-   - List selected task titles (truncate if more than 5)
-   - Provide Cancel and Confirm Delete buttons
-   - Use existing Dialog component from Radix UI
-
-2. **Delete Implementation**
-   - Add onClick handler to existing Delete button in bulk actions
-   - Execute deletions sequentially to avoid overwhelming the system
-   - Handle partial failures gracefully
-   - Show success/error toast notifications
-   - Clear selection after successful deletion
-   - Refresh task list to reflect changes
-
-3. **API Integration**
-   - Add bulkDelete method to API client
-   - Create bulk delete endpoint in worktree API server
-   - Optionally: Add bulk delete MCP handler for efficiency
-
-## UI Flow
-
-1. User selects multiple tasks via checkboxes
-2. Bulk actions section appears with Delete button
-3. User clicks Delete button
-4. Confirmation dialog appears with task count and titles
-5. User confirms or cancels
-6. If confirmed, tasks are deleted with progress feedback
-7. Success/error message shown, list refreshes
-
 ## Tasks
 - [ ] Add confirmation dialog state management to TaskManagementView
 - [ ] Create DeleteConfirmationDialog component
@@ -71,3 +39,33 @@ Add the ability to delete multiple tasks at once through the bulk actions sectio
 - Documentation of the bulk delete flow
 
 ## Log
+
+## Requirements
+1. **Confirmation Dialog**
+   - Show number of tasks to be deleted
+   - Display warning about permanent deletion
+   - List selected task titles (truncate if more than 5)
+   - Provide Cancel and Confirm Delete buttons
+   - Use existing Dialog component from Radix UI
+
+2. **Delete Implementation**
+   - Add onClick handler to existing Delete button in bulk actions
+   - Execute deletions sequentially to avoid overwhelming the system
+   - Handle partial failures gracefully
+   - Show success/error toast notifications
+   - Clear selection after successful deletion
+   - Refresh task list to reflect changes
+
+3. **API Integration**
+   - Add bulkDelete method to API client
+   - Create bulk delete endpoint in worktree API server
+   - Optionally: Add bulk delete MCP handler for efficiency
+
+## Ui flow
+1. User selects multiple tasks via checkboxes
+2. Bulk actions section appears with Delete button
+3. User clicks Delete button
+4. Confirmation dialog appears with task count and titles
+5. User confirms or cancels
+6. If confirmed, tasks are deleted with progress feedback
+7. Success/error message shown, list refreshes

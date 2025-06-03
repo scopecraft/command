@@ -153,7 +153,7 @@ I'll create a single brainstorming task:
 
 ---
 type: idea
-status: To Do
+status: todo
 area: {area}
 mode: brainstorm
 tags: ["exploration", "requirements-gathering", "execution:interactive"]

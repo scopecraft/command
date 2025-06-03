@@ -2,7 +2,7 @@
 
 ---
 type: chore
-status: Done
+status: done
 area: core
 priority: high
 tags:
@@ -43,16 +43,6 @@ The goal is to centralize metadata definitions (status, type, priority) with pro
 - Task UI still has hardcoded values (see task 16)
 - CLI formatters not updated
 
-## What was achieved:
-- Infrastructure is in place
-- MCP layer fully integrated
-- Schema includes all needed fields (name, label, emoji, icon)
-- Helper functions available for all layers
-
-## What's blocking CRUD refactoring:
-- Core and UI still have hardcoded values
-- Need tasks 15 and 16 completed for true schema-driven system
-
 ## Log
 - 2025-06-01: Created task to unblock CRUD refactoring with MVP metadata approach
 - 2025-06-02: 2025-06-02: Added reference to related task reds-tas-con-api-for-cns-hand-05A (content API redesign)
@@ -68,3 +58,13 @@ The goal is to centralize metadata definitions (status, type, priority) with pro
   - Schema service now centralizes all metadata definitions
   - Ready for future enhancements (project schemas, emojis, aliases)
 - 2025-06-03: Completed MVP infrastructure: schema with icons/emojis, service layer, MCP integration. Created subtasks 15 & 16 for Core and UI integration. Realized the goal wasn't fully achieved - still have hardcoded values blocking CRUD refactoring.
+
+## What was achieved:
+- Infrastructure is in place
+- MCP layer fully integrated
+- Schema includes all needed fields (name, label, emoji, icon)
+- Helper functions available for all layers
+
+## What's blocking crud refactoring:
+- Core and UI still have hardcoded values
+- Need tasks 15 and 16 completed for true schema-driven system

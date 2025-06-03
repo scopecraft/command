@@ -2,9 +2,9 @@
 
 ---
 type: feature
-status: In Progress
+status: in_progress
 area: core
-priority: High
+priority: high
 tags: ["architecture", "breaking-change", "core"]
 ---
 

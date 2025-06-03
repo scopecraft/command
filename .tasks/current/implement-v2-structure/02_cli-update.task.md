@@ -2,7 +2,7 @@
 
 ---
 type: chore
-status: Done
+status: done
 area: cli
 assignee: null
 ---

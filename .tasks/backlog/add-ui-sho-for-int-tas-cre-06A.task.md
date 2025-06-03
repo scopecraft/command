@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: ui
 tags:
   - 'team:ui'
@@ -11,7 +11,7 @@ tags:
   - shortcut
   - task-creation
   - autonomous
-priority: Medium
+priority: medium
 ---
 
 
@@ -45,8 +45,10 @@ The quick type filters are hints/suggestions but the autonomous tool will still 
 - [ ] Keep existing table create button unchanged (manual creation)
 
 ## Deliverable
-## Updated Analysis
 
+## Log
+
+## Updated analysis
 ### Existing UI Elements:
 - **Sidebar**: Already has 'New Task' button - perfect for autonomous creation
 - **Task Table**: Has create button - keep for manual creation
@@ -73,8 +75,6 @@ The quick type filters are hints/suggestions but the autonomous tool will still 
 - Clear separation: Sidebar = AI, Table = Manual
 - Optional guidance without forcing structure
 - Maintains autonomous classification power
-
-## Log
 
 ## Impact analysis
 ### Files to modify:

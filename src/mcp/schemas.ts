@@ -24,22 +24,35 @@ export const WorkflowStateSchema = z.enum(['backlog', 'current', 'archive']);
 // This follows Postel's Law: be liberal in what you accept, conservative in what you send
 // Descriptions are dynamically generated from schema registry for AI guidance
 
-import { getTypeValues, getStatusValues, getPriorityValues, getWorkflowStateValues } from '../core/metadata/schema-service.js';
+import {
+  getPriorityValues,
+  getStatusValues,
+  getTypeValues,
+  getWorkflowStateValues,
+} from '../core/metadata/schema-service.js';
 
 export const TaskTypeInputSchema = z.string().describe(
-  `Task type. Use: ${getTypeValues().map(t => `"${t.name}"`).join(', ')}`
+  `Task type. Use: ${getTypeValues()
+    .map((t) => `"${t.name}"`)
+    .join(', ')}`
 );
 
 export const TaskStatusInputSchema = z.string().describe(
-  `Task status. Use: ${getStatusValues().map(s => `"${s.name}"`).join(', ')}`
+  `Task status. Use: ${getStatusValues()
+    .map((s) => `"${s.name}"`)
+    .join(', ')}`
 );
 
 export const TaskPriorityInputSchema = z.string().describe(
-  `Task priority. Use: ${getPriorityValues().map(p => `"${p.name}"`).join(', ')}`
+  `Task priority. Use: ${getPriorityValues()
+    .map((p) => `"${p.name}"`)
+    .join(', ')}`
 );
 
 export const WorkflowStateInputSchema = z.string().describe(
-  `Workflow state. Use: ${getWorkflowStateValues().map(w => `"${w.name}"`).join(', ')}`
+  `Workflow state. Use: ${getWorkflowStateValues()
+    .map((w) => `"${w.name}"`)
+    .join(', ')}`
 );
 
 export const TaskStructureSchema = z.enum(['simple', 'subtask', 'parent']);
@@ -77,12 +90,12 @@ export const TaskBaseSchema = z.object({
   // Task metadata - Clean enums
   type: TaskTypeSchema,
   status: TaskStatusSchema,
-  priority: TaskPrioritySchema,
+  priority: TaskPrioritySchema.optional(),
 
   // Organization - Renamed for clarity
   workflowState: WorkflowStateSchema,
   area: z.string(),
-  tags: z.array(z.string()),
+  tags: z.array(z.string()).optional(),
 
   // Assignment & Dates
   assignee: z.string().optional(),

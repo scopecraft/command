@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: Done
+status: done
 area: mcp
 ---
 
@@ -23,5 +23,4 @@ Add parent_get MCP method to properly handle parent task retrieval with subtasks
 Clean separation of concerns: task_list for general queries, parent_get for parent-specific data with complete subtask information
 
 ## Log
-
 - 2025-05-30: Implemented parent_get MCP method for clean separation of concerns. Also removed deprecated V1 tools.

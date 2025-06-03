@@ -23,14 +23,19 @@ Refactor MCP handlers and core functions to resolve excessive cognitive complexi
 **Impact**: High complexity makes code hard to understand, test, and maintain. The worst offender (`handleParentCreateNormalized`) has complexity 58 - nearly 4x the limit.
 
 ## Tasks
-## CRITICAL PRIORITY (Complexity 50+)
+
+## Deliverable
+
+## Log
+
+## Critical priority (complexity 50+)
 - [ ] **handleParentCreateNormalized** (58→15) - `src/mcp/normalized-write-handlers.ts:519`
   - Extract subtask creation logic into separate function
   - Extract metadata building into helper function
   - Extract validation logic into separate function
   - Split parent vs simple task creation paths
 
-## HIGH PRIORITY (Complexity 25+)
+## High priority (complexity 25+)
 - [ ] **handleTaskUpdateNormalized** (28→15) - `src/mcp/normalized-write-handlers.ts:171`
   - Extract input validation and normalization
   - Extract update options building logic
@@ -46,7 +51,7 @@ Refactor MCP handlers and core functions to resolve excessive cognitive complexi
   - Extract metadata preparation
   - Separate creation from validation
 
-## MEDIUM PRIORITY (Complexity 20-24)
+## Medium priority (complexity 20-24)
 - [ ] **handleParentOperationsNormalized** (24→15) - `src/mcp/normalized-write-handlers.ts:656`
   - Extract individual operation handlers (resequence, parallelize, add_subtask)
   - Create operation-specific validation functions
@@ -59,20 +64,18 @@ Refactor MCP handlers and core functions to resolve excessive cognitive complexi
   - Extract operation-specific logic (promote, extract, adopt)
   - Create transformation helper functions
 
-## LOW PRIORITY (Complexity 17-19)
+## Low priority (complexity 17-19)
 - [ ] **handleTaskListNormalized** (17→15) - `src/mcp/normalized-handlers.ts:111`
   - Extract filter building logic to separate function
   - Simplify conditional branching
 
-## RELATED ISSUES
+## Related issues
 - [ ] **Fix worktree TypeScript errors** - 18 errors in `src/core/worktree/task-correlation-service.ts`
   - Property access errors on TaskMetadata type
   - Type mismatch between RuntimeConfig and ProjectConfig
   - Missing properties: tags, status, title, id, overview
 
-## Deliverable
-## Expected Deliverables
-
+## Expected deliverables
 ### Code Quality Improvements
 - All 8 functions reduced to complexity ≤ 15
 - Biome code quality checks passing without complexity violations
@@ -97,5 +100,3 @@ Refactor MCP handlers and core functions to resolve excessive cognitive complexi
 - All existing functionality preserved
 - No regressions in MCP filtering or CRUD operations
 - Code quality checks passing
-
-## Log

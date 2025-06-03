@@ -2,26 +2,16 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: general
-priority: Medium
+priority: medium
 ---
 
 
 ## Instruction
-
 Implement advanced task management UI features to enhance user experience and productivity. These are polish features that build on the core V2 functionality to provide a more sophisticated task management interface.
 
-## Acceptance Criteria
-
-- [ ] Drag-and-drop subtask reordering is functional
-- [ ] Parallel task management UI is intuitive and easy to use
-- [ ] Task conversion operations have proper confirmation flows
-- [ ] Sequence management is visual and user-friendly
-- [ ] All features have comprehensive Storybook documentation
-
 ## Tasks
-
 ### Drag-and-Drop Features
 - [ ] Add drag-and-drop subtask reordering with visual feedback
 - [ ] Implement Storybook interaction testing for drag-and-drop
@@ -50,7 +40,6 @@ Implement advanced task management UI features to enhance user experience and pr
 - [ ] User guide for task management workflows
 
 ## Deliverable
-
 Advanced task management interface with:
 - Intuitive drag-and-drop reordering
 - Visual parallel task management
@@ -58,3 +47,10 @@ Advanced task management interface with:
 - Comprehensive documentation and examples
 
 ## Log
+
+## Acceptance criteria
+- [ ] Drag-and-drop subtask reordering is functional
+- [ ] Parallel task management UI is intuitive and easy to use
+- [ ] Task conversion operations have proper confirmation flows
+- [ ] Sequence management is visual and user-friendly
+- [ ] All features have comprehensive Storybook documentation

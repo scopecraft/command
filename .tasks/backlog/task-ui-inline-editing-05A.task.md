@@ -2,16 +2,28 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: general
-priority: Medium
-tags: ["idea", "exploration", "ui", "ux", "productivity"]
+priority: medium
+tags:
+  - idea
+  - exploration
+  - ui
+  - ux
+  - productivity
 ---
 
-Enable inline editing for task fields (status, priority, assignee) directly in the task list and detail views to reduce navigation and improve efficiency.
+
+## Instruction
+
+## Tasks
+
+## Deliverable
+
+## Log
+- 2025-05-28: Recreated from v1 system for preservation in v2 backlog
 
 ## Overview
-
 Currently, editing tasks requires navigating to a separate edit page, which disrupts the user's workflow. This feature would allow users to edit common task fields directly in the task list view or detail view without leaving the current context.
 
 ## Benefits
@@ -20,7 +32,7 @@ Currently, editing tasks requires navigating to a separate edit page, which disr
 - Reduce clicks for common operations
 - Improve overall user productivity
 
-## Fields for Inline Editing
+## Fields for inline editing
 - Status (dropdown with emoji statuses)
 - Priority (dropdown)
 - Assignee (text input with autocomplete)
@@ -28,8 +40,7 @@ Currently, editing tasks requires navigating to a separate edit page, which disr
 - Tags (multi-select or chip input)
 - Title (in detail view only)
 
-## Implementation Approaches
-
+## Implementation approaches
 ### Option 1: Click-to-Edit
 - Fields appear as normal text
 - Single click transforms field into editable input
@@ -48,7 +59,7 @@ Currently, editing tasks requires navigating to a separate edit page, which disr
 - Save/Cancel buttons appear
 - Good for batch updates
 
-## Technical Considerations
+## Technical considerations
 - Use React Table's built-in inline editing support
 - Create reusable inline edit components (InlineSelect, InlineText, etc.)
 - Implement optimistic updates with rollback on error
@@ -56,18 +67,15 @@ Currently, editing tasks requires navigating to a separate edit page, which disr
 - Consider debouncing for text inputs
 - Ensure keyboard navigation works properly
 
-## Related Patterns in Codebase
+## Related patterns in codebase
 - TaskMoveDropdown shows custom dropdown implementation
 - PhaseSelector demonstrates button-based selection
 - Filter panel has reusable filter components
 - Task form has all the field editors already
 
-## Questions to Resolve
+## Questions to resolve
 1. Which fields should support inline editing?
 2. Which interaction pattern (click-to-edit vs always-editable)?
 3. How to handle validation errors inline?
 4. Should we show save/cancel buttons or auto-save?
 5. How to indicate which fields are editable?
-
-## Log
-- 2025-05-28: Recreated from v1 system for preservation in v2 backlog

@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: Done
+status: done
 area: core
 ---
 

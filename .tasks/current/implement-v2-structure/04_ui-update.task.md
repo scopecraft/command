@@ -2,7 +2,7 @@
 
 ---
 type: chore
-status: Done
+status: done
 area: ui
 assignee: null
 parent: implement-v2-structure

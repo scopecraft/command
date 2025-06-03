@@ -2,7 +2,7 @@
 
 ---
 type: chore
-status: In Progress
+status: in_progress
 area: core
 assignee: null
 ---

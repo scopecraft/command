@@ -18,29 +18,6 @@ Fix the buggy previous/next navigation in the subtask detail page by removing it
 
 The current implementation has a broken previous/next navigation in the top corner of subtask pages. This should be replaced with the proper sibling subtasks widget that's already been designed and showcased in Storybook.
 
-## Reference Implementation
-
-The correct implementation can be found in:
-- **Storybook Story**: `task-ui-2/src/components/v2/V2Showcase.stories.tsx` (SubtaskDetailPage story, lines 222-435)
-- **Working Example**: Shows sibling subtasks in a compact sidebar with:
-  - Progress indicator (e.g., "2/5")
-  - Highlighted current subtask
-  - Click navigation to siblings
-
-## Current Production Implementation
-
-The actual route that needs fixing:
-- **File**: `task-ui-2/src/routes/tasks/$parentId/$subtaskId.tsx`
-- **Current Issue**: Has buggy previous/next navigation that needs removal
-- **Good News**: Already has the sibling subtasks widget implemented (lines 266-290)
-
-## Technical Details
-
-The sibling widget uses:
-- `SubtaskList` component with `variant="compact"`
-- `highlightTaskId` prop to show current subtask
-- `onTaskClick` handler for navigation
-
 ## Tasks
 - [ ] Locate and remove the buggy previous/next navigation from subtask detail pages
 - [ ] Verify the sibling subtasks widget is properly implemented (it should already be there)
@@ -57,3 +34,23 @@ A fixed subtask detail page that:
 - Allows smooth navigation between sibling subtasks
 
 ## Log
+
+## Reference implementation
+The correct implementation can be found in:
+- **Storybook Story**: `task-ui-2/src/components/v2/V2Showcase.stories.tsx` (SubtaskDetailPage story, lines 222-435)
+- **Working Example**: Shows sibling subtasks in a compact sidebar with:
+  - Progress indicator (e.g., "2/5")
+  - Highlighted current subtask
+  - Click navigation to siblings
+
+## Current production implementation
+The actual route that needs fixing:
+- **File**: `task-ui-2/src/routes/tasks/$parentId/$subtaskId.tsx`
+- **Current Issue**: Has buggy previous/next navigation that needs removal
+- **Good News**: Already has the sibling subtasks widget implemented (lines 266-290)
+
+## Technical details
+The sibling widget uses:
+- `SubtaskList` component with `variant="compact"`
+- `highlightTaskId` prop to show current subtask
+- `onTaskClick` handler for navigation

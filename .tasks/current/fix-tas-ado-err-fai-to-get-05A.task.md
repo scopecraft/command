@@ -2,9 +2,9 @@
 
 ---
 type: bug
-status: Done
+status: done
 area: core
-priority: Medium
+priority: medium
 ---
 
 

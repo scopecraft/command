@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: ui
 tags:
   - autonomous
@@ -11,7 +11,7 @@ tags:
   - real-time
   - ux
   - notifications
-priority: Medium
+priority: medium
 ---
 
 
@@ -45,8 +45,10 @@ Key requirements:
 - [ ] Test on mobile/responsive layouts
 
 ## Deliverable
-## Design Approach
 
+## Log
+
+## Design approach
 ### Layout & Positioning:
 ```
 Screen Layout:
@@ -87,5 +89,3 @@ Screen Layout:
 - Quick access to progress without leaving current page
 - Leverages existing autonomous infrastructure
 - Consistent with current design patterns (similar to toasts)
-
-## Log

@@ -18,7 +18,7 @@ import {
   parseTaskLocation,
   resolveTaskId,
 } from './directory-utils.js';
-import { normalizePriority, normalizeTaskStatus } from './field-normalizers.js';
+import { normalizePriority, normalizeTaskStatus, normalizeTaskType } from './field-normalizers.js';
 import { generateSubtaskId, generateUniqueTaskId, parseTaskId } from './id-generator.js';
 import { getDefaultStatus } from './metadata/schema-service.js';
 import { getNextSequenceNumber } from './subtask-sequencing.js';
@@ -51,27 +51,22 @@ import type {
 
 /**
  * Normalize frontmatter values using schema service
- * Ensures consistent canonical storage format following Postel's Law
+ * The normalizers will throw errors for invalid values
  */
 function normalizeFrontmatter(frontmatter: Record<string, unknown>): TaskFrontmatter {
   const normalized = { ...frontmatter } as TaskFrontmatter;
 
-  // Normalize status to canonical name (e.g., "To Do" -> "todo")
+  // Normalize type - will throw if invalid
+  if (normalized.type) {
+    normalized.type = normalizeTaskType(normalized.type) as TaskType;
+  }
+
+  // Normalize status - will throw if invalid
   if (normalized.status) {
     normalized.status = normalizeTaskStatus(normalized.status) as TaskStatus;
   }
 
-  // Normalize type - ensure it's a valid canonical name
-  if (normalized.type) {
-    // Types should already be canonical names, but ensure they are valid
-    // TODO: Add a normalizeTaskType function similar to normalizeTaskStatus
-    const lowerType = normalized.type.toLowerCase();
-    if (['feature', 'bug', 'chore', 'documentation', 'test', 'spike', 'idea'].includes(lowerType)) {
-      normalized.type = lowerType as TaskType;
-    }
-  }
-
-  // Normalize priority to canonical name (e.g., "High" -> "high")
+  // Normalize priority - will throw if invalid
   if (normalized.priority) {
     normalized.priority = normalizePriority(normalized.priority) as TaskPriority;
   }

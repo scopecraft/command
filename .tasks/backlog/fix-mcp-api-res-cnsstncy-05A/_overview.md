@@ -4,7 +4,7 @@
 type: "\U0001F41E Bug"
 status: done
 area: mcp
-priority: High
+priority: high
 tags:
   - api-consistency
   - developer-experience

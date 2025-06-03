@@ -2,9 +2,9 @@
 
 ---
 type: bug
-status: To Do
+status: todo
 area: general
-priority: Medium
+priority: medium
 ---
 
 

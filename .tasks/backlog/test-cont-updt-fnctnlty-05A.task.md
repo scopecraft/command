@@ -2,24 +2,22 @@
 
 ---
 type: test
-status: To Do
+status: todo
 area: general
-priority: Medium
+priority: medium
 ---
 
 
 ## Instruction
-## Test content update functionality
-
-Task description goes here.
-
-## Acceptance Criteria
-
-- [ ] Criteria 1
-
 
 ## Tasks
 
 ## Deliverable
 
 ## Log
+
+## Test content update functionality
+Task description goes here.
+
+## Acceptance criteria
+- [ ] Criteria 1

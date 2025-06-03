@@ -2,9 +2,9 @@
 
 ---
 type: chore
-status: Progress
+status: in_progress
 area: core
-priority: Medium
+priority: medium
 tags:
   - documentation
   - 'execution:autonomous'

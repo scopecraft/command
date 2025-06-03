@@ -2,7 +2,7 @@
 
 ---
 type: bug
-status: To Do
+status: todo
 area: ui
 tags:
   - ui
@@ -10,7 +10,7 @@ tags:
   - workflow
   - filtering
   - bug-fix
-priority: Medium
+priority: medium
 ---
 
 

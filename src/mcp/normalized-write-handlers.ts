@@ -6,8 +6,13 @@
  */
 
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
+import {
+  normalizePriority,
+  normalizeTaskStatus,
+  normalizeTaskType,
+  normalizeWorkflowState,
+} from '../core/field-normalizers.js';
 import * as core from '../core/index.js';
-import { normalizeTaskType, normalizeTaskStatus, normalizePriority, normalizeWorkflowState } from '../core/field-normalizers.js';
 import {
   type ParentCreateInput,
   ParentCreateInputSchema,
@@ -39,7 +44,7 @@ import {
   type TaskUpdateOutput,
   TaskUpdateOutputSchema,
 } from './schemas.js';
-import { normalizeStatus, transformTaskToNormalized } from './transformers.js';
+import { transformTaskToNormalized } from './transformers.js';
 import type { McpResponse } from './types.js';
 
 /**
@@ -80,7 +85,7 @@ export async function handleTaskCreateNormalized(
         id: data.metadata.id,
         title: data.document.title,
         type: data.document.frontmatter.type,
-        status: normalizeStatus(data.document.frontmatter.status),
+        status: normalizeTaskStatus(data.document.frontmatter.status),
         workflowState: data.metadata.location.workflowState,
         area: data.document.frontmatter.area || 'general',
         path: data.metadata.path,
@@ -133,7 +138,7 @@ export async function handleTaskCreateNormalized(
       id: data.metadata.id,
       title: data.document.title,
       type: data.document.frontmatter.type,
-      status: normalizeStatus(data.document.frontmatter.status),
+      status: normalizeTaskStatus(data.document.frontmatter.status),
       priority: normalizePriority(data.document.frontmatter.priority),
       workflowState: data.metadata.location.workflowState,
       area: data.document.frontmatter.area || 'general',
@@ -367,7 +372,7 @@ export async function handleTaskMoveNormalized(
       statusUpdated: params.updateStatus,
       newStatus:
         params.updateStatus && data.document.frontmatter.status
-          ? normalizeStatus(data.document.frontmatter.status)
+          ? normalizeTaskStatus(data.document.frontmatter.status)
           : undefined,
     };
 

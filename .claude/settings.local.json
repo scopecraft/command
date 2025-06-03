@@ -24,7 +24,20 @@
       "Bash(hash:*)",
       "Bash(dirname:*)",
       "Bash(../scripts/test-claude-helper.ts init)",
-      "WebFetch(domain:bun-git-hooks.netlify.app)"
+      "WebFetch(domain:bun-git-hooks.netlify.app)",
+      "mcp__scopecraft__template_list",
+      "Bash(/Users/davidpaquet/Projects/roo-task-cli/fix-label-values.sh:*)",
+      "Bash(.tasks/archive/2025-06/v2-integration-test-task-06A.task.md )",
+      "Bash(.tasks/backlog/test-alias-normalization-06A.task.md )",
+      "Bash(.tasks/backlog/test-alias-without-defaults-06A.task.md )",
+      "Bash(.tasks/backlog/test-mcp-alias-support-06A.task.md )",
+      "Bash(.tasks/backlog/test-mcp-alias-support-06B.task.md )",
+      "Bash(.tasks/backlog/test-mcp-aliases-after-restart-06A.task.md )",
+      "Bash(.tasks/backlog/test-mcp-task-06A.task.md )",
+      "Bash(.tasks/backlog/test-to-see-tool-guidance-06A.task.md )",
+      "Bash(.tasks/current/implement-v2-structure/28_test-mcp-subtask-creation-06L.task.md )",
+      "Bash(.tasks/current/typescript-fix-test-06A.task.md)",
+      "Bash(true)"
     ],
     "deny": []
   }

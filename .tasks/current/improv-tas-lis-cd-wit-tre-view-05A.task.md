@@ -2,9 +2,9 @@
 
 ---
 type: feature
-status: Done
+status: done
 area: cli
-priority: High
+priority: high
 ---
 
 

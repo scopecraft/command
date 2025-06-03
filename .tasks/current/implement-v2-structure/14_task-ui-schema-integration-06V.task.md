@@ -43,6 +43,8 @@ Replace all hardcoded metadata values in Task UI with schema-driven lookups.
 - 2025-06-03: Fixed Vite import resolution: added @core alias to vite.config.js and updated imports to use @core/metadata/schema-service instead of relative paths
 - 2025-06-03: Fixed critical bugs: 1) TaskTable showing 'Task' for all simple tasks instead of actual type (bug/feature/etc) - now uses getTypeLabel(task.type), 2) Filter icons missing - fixed by using createStatusFilterOptions() etc from icons.tsx instead of schema-only functions, 3) MCP cleanTaskType incorrectly transforming canonical names through getTypeName - fixed to validate types without transformation
 - 2025-06-03: Completed successfully and committed. All UI components now use schema-driven metadata. Fixed critical bugs and verified everything works correctly.
+- 2025-06-03: 2025-06-03: Marked as completed - previous agent forgot to update status
+- 2025-06-03: Marked as completed - all UI components now use schema-driven metadata
 
 ## Current issues
 ### icons.tsx

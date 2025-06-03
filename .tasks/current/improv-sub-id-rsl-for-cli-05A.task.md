@@ -2,9 +2,9 @@
 
 ---
 type: chore
-status: Done
+status: done
 area: cli
-priority: Medium
+priority: medium
 ---
 
 

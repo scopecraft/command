@@ -3,10 +3,11 @@
  *
  * This module provides functions to normalize field values for tasks and phases.
  * It allows for more flexible input formats while ensuring standardized storage.
- * 
+ *
  * Uses schema-driven normalization with alias support for maximum flexibility.
  */
 
+import { buildNormalizerMap, createNormalizer } from './metadata/normalizer-builder.js';
 import {
   getPriorityEmoji,
   getPriorityLabel,
@@ -21,7 +22,6 @@ import {
   getTypeValues,
   getWorkflowStateValues,
 } from './metadata/schema-service.js';
-import { buildNormalizerMap, createNormalizer } from './metadata/normalizer-builder.js';
 
 /**
  * Lazy-loaded normalizer maps built from schema
@@ -49,7 +49,7 @@ export const PRIORITY_ORDER: Record<string, number> = {
  *
  * Accepts various input formats based on schema aliases:
  * - Canonical names: "highest", "high", "medium", "low"
- * - Labels: "Highest", "High", "Medium", "Low" 
+ * - Labels: "Highest", "High", "Medium", "Low"
  * - Emojis: "🔥", "🔼", "▶️", "🔽"
  * - Aliases: "critical", "urgent", "important", "normal", "minor", etc.
  *
@@ -65,13 +65,8 @@ export function normalizePriority(input: string | undefined | null): string {
 
   // Use the schema-driven normalizer
   const priorityValues = getPriorityValues();
-  const validOptions = priorityValues.map(p => p.name);
-  const normalizer = createNormalizer(
-    priorityNormalizer,
-    validOptions,
-    'medium',
-    'priority'
-  );
+  const validOptions = priorityValues.map((p) => p.name);
+  const normalizer = createNormalizer(priorityNormalizer, validOptions, 'medium', 'priority');
 
   return normalizer(input);
 }
@@ -97,13 +92,8 @@ export function normalizeTaskType(input: string | undefined | null): string {
 
   // Use the schema-driven normalizer
   const typeValues = getTypeValues();
-  const validOptions = typeValues.map(t => t.name);
-  const normalizer = createNormalizer(
-    typeNormalizer,
-    validOptions,
-    'chore',
-    'task type'
-  );
+  const validOptions = typeValues.map((t) => t.name);
+  const normalizer = createNormalizer(typeNormalizer, validOptions, 'chore', 'task type');
 
   return normalizer(input);
 }
@@ -129,13 +119,8 @@ export function normalizeTaskStatus(input: string | undefined | null): string {
 
   // Use the schema-driven normalizer
   const statusValues = getStatusValues();
-  const validOptions = statusValues.map(s => s.name);
-  const normalizer = createNormalizer(
-    statusNormalizer,
-    validOptions,
-    'todo',
-    'status'
-  );
+  const validOptions = statusValues.map((s) => s.name);
+  const normalizer = createNormalizer(statusNormalizer, validOptions, 'todo', 'status');
 
   return normalizer(input);
 }
@@ -160,7 +145,7 @@ export function normalizeWorkflowState(input: string | undefined | null): string
 
   // Use the schema-driven normalizer
   const workflowStateValues = getWorkflowStateValues();
-  const validOptions = workflowStateValues.map(w => w.name);
+  const validOptions = workflowStateValues.map((w) => w.name);
   const normalizer = createNormalizer(
     workflowStateNormalizer,
     validOptions,

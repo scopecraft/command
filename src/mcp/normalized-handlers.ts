@@ -78,7 +78,7 @@ function buildCoreListOptions(params: TaskListInput | ParentListInput): core.Tas
   // Map workflowState parameter to workflowStates with normalization
   if (params.workflowState) {
     const normalizedStates = Array.isArray(params.workflowState)
-      ? params.workflowState.map(s => normalizeWorkflowState(s))
+      ? params.workflowState.map((s) => normalizeWorkflowState(s))
       : [normalizeWorkflowState(params.workflowState)];
     listOptions.workflowStates = normalizedStates as core.WorkflowState[];
   }

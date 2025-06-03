@@ -1,10 +1,10 @@
 # Test typing improvements
 
 ---
-type: "\U0001F9EA Test"
-status: In Progress
+type: test
+status: in_progress
 area: general
-priority: High
+priority: high
 ---
 
 
@@ -16,5 +16,4 @@ Test that the typed McpTaskUpdateFields interface works correctly
 ## Deliverable
 
 ## Log
-
 - 2025-05-29: All explicit any types eliminated successfully

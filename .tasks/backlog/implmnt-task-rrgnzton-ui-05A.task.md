@@ -2,17 +2,25 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: general
-priority: Low
+priority: low
 ---
 
-## Description ✍️
 
+## Instruction
+
+## Tasks
+
+## Deliverable
+
+## Log
+- 2025-05-28: Recreated from v1 system for preservation in v2 backlog
+
+## Description ✍️
 This task focuses on building a simplified interface for reorganizing tasks between features and areas, improving user workflow when managing task organization.
 
 ## Requirements ✅
-
 - [ ] Develop a dropdown interface for moving tasks between features/areas
   - [ ] Add a "Move to" dropdown in the task detail view
   - [ ] Allow selection of target feature or area
@@ -31,20 +39,14 @@ This task focuses on building a simplified interface for reorganizing tasks betw
   - [ ] Add visual cues for "drag" destinations
 
 ## Dependencies 🔄
-
 - Depends on completed Feature and Area support in UI
 - Requires the task movement API endpoints to be fully functional
 
-## Implementation Approach 🛠️
-
+## Implementation approach 🛠️
 - Extend existing task detail view with move dropdown
 - Add batch selection mode to task list
 - Create a reusable MoveTaskDialog component
 - Integrate with existing task movement API
 
-## Related Work 🔗
-
+## Related work 🔗
 Continuation of "Add Feature and Area Support to Task UI" (TASK-20250513T134102)
-
-## Log
-- 2025-05-28: Recreated from v1 system for preservation in v2 backlog

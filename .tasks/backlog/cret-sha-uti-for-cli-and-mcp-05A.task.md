@@ -2,9 +2,9 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: core
-priority: Low
+priority: low
 tags:
   - enhancement
   - cli

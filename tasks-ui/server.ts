@@ -135,7 +135,21 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
   
   // Parse URL parameters for GET requests
   const url = new URL(req.url);
-  const urlParams = Object.fromEntries(url.searchParams);
+  const urlParams: Record<string, any> = {};
+  
+  // Handle multiple values for the same parameter
+  for (const [key, value] of url.searchParams) {
+    if (urlParams[key]) {
+      // If key already exists, convert to array or append to array
+      if (Array.isArray(urlParams[key])) {
+        urlParams[key].push(value);
+      } else {
+        urlParams[key] = [urlParams[key], value];
+      }
+    } else {
+      urlParams[key] = value;
+    }
+  }
   
   // Parse request body for POST/PUT/PATCH requests
   let body = {};
@@ -220,6 +234,12 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
         }
         if (params.include_subtasks) {
           params.include_subtasks = params.include_subtasks === 'true';
+        }
+        
+        // Transform location to workflowState for MCP compatibility
+        if (params.location) {
+          params.workflowState = params.location;
+          delete params.location;
         }
         
         const result = await methodRegistry[McpMethod.PARENT_LIST](params);

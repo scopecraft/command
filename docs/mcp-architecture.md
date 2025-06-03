@@ -64,6 +64,7 @@ The MCP implementation consists of several distinct layers:
 │                    Handler Layer                              │
 │      (normalized-handlers.ts, normalized-write-handlers.ts)  │
 │                  • Zod validation                             │
+│                  • Input normalization (aliases → canonical)  │
 │                  • Business logic                             │
 │                  • Response formatting                        │
 └─────────────────────────────────────────────────────────────┘
@@ -75,6 +76,18 @@ The MCP implementation consists of several distinct layers:
 │                  • Task operations                            │
 │                  • File system operations                     │
 │                  • Business rules                             │
+│                  • Stores canonical values only               │
+│                  • Handles validation & defaults              │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Transformer Layer                          │
+│                    (transformers.ts)                         │
+│            • Pure structural transformation                   │
+│            • core.Task → MCP.Task type conversion            │
+│            • NO normalization (data already canonical)        │
+│            • NO defaults (core handles all defaults)          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -206,7 +219,7 @@ src/mcp/
 ├── normalized-write-handlers.ts # Write operation handlers
 ├── schemas.ts              # Zod schemas for all operations
 ├── types.ts                # TypeScript type definitions
-├── transformers.ts         # Data transformation utilities
+├── transformers.ts         # Data structure transformation (NOT normalization)
 └── output-schemas.ts       # JSON schema generation for MCP
 ```
 
@@ -295,6 +308,34 @@ server.registerTool(
   }
 );
 ```
+
+### 5. Transformers (`transformers.ts`)
+
+**IMPORTANT**: Transformers do NOT normalize data. They only convert data structures.
+
+```typescript
+// CORRECT: Pure structural transformation
+function transformBaseTask(task: core.Task) {
+  return {
+    id: task.metadata.id,
+    title: task.document.title,
+    type: task.document.frontmatter.type as TaskType,  // Direct type assertion
+    status: task.document.frontmatter.status as TaskStatus,  // NO normalization
+    priority: task.document.frontmatter.priority as TaskPriority,  // NO defaults
+    // ... other fields
+  };
+}
+
+// WRONG: Do NOT do normalization in transformers
+// normalizeStatus(task.document.frontmatter.status) ❌
+// task.document.frontmatter.area || 'general' ❌
+```
+
+Key principles:
+- Core data is already canonical (validated, normalized, with defaults)
+- Transformers only reshape data structure (core.Task → MCP.Task)
+- Use direct type assertions, not normalization functions
+- Trust that core has already done its job
 
 ## Common Patterns
 

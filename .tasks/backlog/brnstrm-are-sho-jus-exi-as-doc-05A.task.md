@@ -2,23 +2,30 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: general
-priority: Medium
+priority: medium
 ---
 
-## Vision: AI-First Knowledge & Task Management System
 
-## Problem Statement
+## Instruction
 
+## Tasks
+
+## Deliverable
+
+## Log
+- 2025-05-28: Recreated from v1 system for preservation in v2 backlog
+
+## Vision: ai-first knowledge & task management system
+
+## Problem statement
 Current task management systems force artificial hierarchies between user-facing features and technical architecture, creating organizational friction. The system lacks rich context for AI assistance and conflates delivery phases with product milestones. Areas and features operate identically but serve different conceptual purposes.
 
-## Vision Summary
-
+## Vision summary
 Transform the current system into a dual-architecture approach with organic, AI-discoverable relationships between entities. Enable natural markdown-based entity linking while supporting progressive formalization of concepts as they prove valuable.
 
-## Core Architecture
-
+## Core architecture
 ### Two-System Separation
 
 **Long-Lived: Knowledge System (Archivist Role)**
@@ -65,8 +72,7 @@ Transform the current system into a dual-architecture approach with organic, AI-
 3. **Features**: Login Epic, Dashboard Epic - *user value groupings*
 4. **Modules**: API Layer, Auth Service - *architectural boundaries*
 
-## Natural Entity Linking System
-
+## Natural entity linking system
 ### Markdown-Native Syntax
 - `@entity:name` - Links to managed entities (tasks, features, milestones)
 - `#tag:name` - References conceptual entities (modules, patterns, decisions)
@@ -87,8 +93,7 @@ See `@doc:login/technical-approach` for implementation details.
 3. **Promote to entities**: When full CRUD management becomes valuable
 4. **Rich relationships emerge**: Without upfront over-engineering
 
-## AI-First Design Principles
-
+## Ai-first design principles
 ### Organic Relationship Discovery
 - **No forced relationship schemas** - AI infers from natural language
 - **Learning vocabulary** - System adapts to team's terminology
@@ -120,8 +125,7 @@ work_document_types:
 implements, uses, contributes_to, blocks, relates_to, supersedes, documents, specifies
 ```
 
-## User Experience
-
+## User experience
 ### Natural Writing Flow
 - Write markdown naturally with entity references
 - AI builds relationship graph automatically
@@ -147,8 +151,7 @@ implements, uses, contributes_to, blocks, relates_to, supersedes, documents, spe
 - Promote high-value tags to full entities with CRUD operations
 - Maintain backward compatibility with tag references
 
-## Success Criteria
-
+## Success criteria
 - AI can automatically load relevant context for any task
 - Natural markdown writing creates discoverable relationships
 - Multiple organizational dimensions coexist without conflict
@@ -157,8 +160,7 @@ implements, uses, contributes_to, blocks, relates_to, supersedes, documents, spe
 - Smooth transition from current system without data loss
 - Work documents provide rich feature context without cluttering task details
 
-## Implementation Strategy
-
+## Implementation strategy
 ### Phase 1: Foundation
 - Implement dual entity system (@entities vs #tags)
 - Add milestone dimension separate from phases
@@ -178,7 +180,6 @@ implements, uses, contributes_to, blocks, relates_to, supersedes, documents, spe
 - Work document templates and automation
 
 ## Benefits
-
 **For Developers:**
 - Natural writing experience with powerful linking
 - Rich context automatically available
@@ -197,8 +198,7 @@ implements, uses, contributes_to, blocks, relates_to, supersedes, documents, spe
 - Organic growth of formalized patterns as needed
 - Feature-scoped work documents for better organization
 
-## Original Brainstorm Context
-
+## Original brainstorm context
 Areas shouldnt exist as folder that can receive features underneath.
 
 Instead, they should be a a tag and an area could contain documents and general features inside this area (similar to module).
@@ -208,6 +208,3 @@ This way, it wouldnt be a OR. A feature is part of an area, and can be delivered
 ---
 
 *This vision enables AI-first task management while preserving natural human workflows and supporting organic evolution of organizational patterns.*
-
-## Log
-- 2025-05-28: Recreated from v1 system for preservation in v2 backlog

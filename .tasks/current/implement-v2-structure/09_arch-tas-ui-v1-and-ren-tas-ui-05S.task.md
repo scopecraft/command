@@ -2,17 +2,15 @@
 
 ---
 type: feature
-status: Done
+status: done
 area: core
 ---
 
 
 ## Instruction
-
 Archive the old tasks-ui V1 directory and rename task-ui-2 to tasks-ui to become the primary UI. Ensure all references are updated and no traces of V1 UI remain in the active codebase.
 
 ## Tasks
-
 ### Archive V1 UI
 - [x] Move `tasks-ui/` to `.archive-old-ui/` (made it hidden with dot prefix)
 - [x] Ensure V1 UI is completely disconnected from build/dev scripts
@@ -43,7 +41,6 @@ Archive the old tasks-ui V1 directory and rename task-ui-2 to tasks-ui to become
 - [x] Test MCP integration with renamed paths
 
 ## Deliverable
-
 Clean project structure with:
 - V1 UI safely archived
 - task-ui-2 renamed to tasks-ui as primary

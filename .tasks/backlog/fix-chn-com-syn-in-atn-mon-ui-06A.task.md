@@ -2,7 +2,7 @@
 
 ---
 type: bug
-status: To Do
+status: todo
 area: ui
 tags:
   - cli
@@ -10,7 +10,7 @@ tags:
   - autonomous
   - ui
   - documentation
-priority: Medium
+priority: medium
 ---
 
 

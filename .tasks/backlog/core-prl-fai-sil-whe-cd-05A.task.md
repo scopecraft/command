@@ -2,9 +2,9 @@
 
 ---
 type: bug
-status: To Do
+status: todo
 area: core
-priority: High
+priority: high
 tags:
   - core
   - subtasks
@@ -16,8 +16,20 @@ tags:
 ## Instruction
 The `parallelizeSubtasks` function in core fails silently when called immediately after creating subtasks during parent_create. This prevents the `parallel_with` feature from working in the MCP parent_create operation.
 
-## Research Summary
+## Tasks
+- [ ] Add logging to makeTasksParallel to debug file matching
+- [ ] Check if files exist and are readable when parallelizeSubtasks is called
+- [ ] Consider adding a small delay or file system sync before calling makeTasksParallel
+- [ ] Make makeTasksParallel return error when no files are renamed
+- [ ] Add integration test for parent_create with parallel subtasks
 
+## Deliverable
+Fixed `parallelizeSubtasks` function that correctly renames subtask files when called immediately after creation
+
+## Log
+- 2025-05-30: Created from MCP normalization testing - discovered during parallel_with implementation
+
+## Research summary
 ### The Issue
 When creating a parent task with subtasks that should be parallel (using `parallelWith` parameter), the subtasks are created with sequential numbers (01, 02, 03) instead of sharing the same sequence number.
 
@@ -59,17 +71,3 @@ Actual result: Subtasks have sequences "01", "02", "03"
 
 ### Workaround
 The `parent_operations` parallelize command works correctly when called separately after parent creation, suggesting the issue is timing-related.
-
-## Tasks
-- [ ] Add logging to makeTasksParallel to debug file matching
-- [ ] Check if files exist and are readable when parallelizeSubtasks is called
-- [ ] Consider adding a small delay or file system sync before calling makeTasksParallel
-- [ ] Make makeTasksParallel return error when no files are renamed
-- [ ] Add integration test for parent_create with parallel subtasks
-
-## Deliverable
-Fixed `parallelizeSubtasks` function that correctly renames subtask files when called immediately after creation
-
-## Log
-
-- 2025-05-30: Created from MCP normalization testing - discovered during parallel_with implementation

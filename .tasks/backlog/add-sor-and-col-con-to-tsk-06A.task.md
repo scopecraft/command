@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: To Do
+status: todo
 area: ui
 tags:
   - tanstack-table
@@ -10,40 +10,12 @@ tags:
   - sorting
   - ui-enhancement
   - refactor
-priority: Medium
+priority: medium
 ---
 
 
 ## Instruction
 The TaskTable component currently has a static column implementation without sorting or column configuration capabilities. This task involves refactoring the existing table to use TanStack Table and implementing sorting and column configuration features.
-
-## Requirements
-
-### 1. Sorting Capabilities
-- Click column headers to sort ascending/descending/unsorted
-- Visual indicators for sort direction (up/down arrows)
-- Support sorting by: title, status, priority, area, type, createdDate, updatedDate
-- Multi-column sorting with shift+click
-- Persist sort preferences in URL params (following existing pattern with Zod validation)
-
-### 2. Column Configuration
-- Allow users to show/hide columns via dropdown menu
-- Add date columns (createdDate, updatedDate) that are hidden by default
-- Save column visibility preferences to localStorage
-- Consider column reordering via drag and drop (stretch goal)
-
-### 3. Technical Implementation
-- Install and integrate @tanstack/react-table
-- Maintain backward compatibility with existing TaskTable props
-- Follow Storybook-first development approach
-- Ensure responsive behavior on mobile (horizontal scroll)
-- Use existing UI components (Button, DropdownMenu) for controls
-
-## Current State
-- TaskTable uses a custom implementation with hardcoded columns
-- No sorting functionality exists
-- Date fields are available in Task schema but not displayed
-- Column definitions are already structured in an array
 
 ## Tasks
 - [ ] Install @tanstack/react-table dependency
@@ -70,3 +42,30 @@ The TaskTable component currently has a static column implementation without sor
 - No breaking changes to parent components
 
 ## Log
+
+## Requirements
+### 1. Sorting Capabilities
+- Click column headers to sort ascending/descending/unsorted
+- Visual indicators for sort direction (up/down arrows)
+- Support sorting by: title, status, priority, area, type, createdDate, updatedDate
+- Multi-column sorting with shift+click
+- Persist sort preferences in URL params (following existing pattern with Zod validation)
+
+### 2. Column Configuration
+- Allow users to show/hide columns via dropdown menu
+- Add date columns (createdDate, updatedDate) that are hidden by default
+- Save column visibility preferences to localStorage
+- Consider column reordering via drag and drop (stretch goal)
+
+### 3. Technical Implementation
+- Install and integrate @tanstack/react-table
+- Maintain backward compatibility with existing TaskTable props
+- Follow Storybook-first development approach
+- Ensure responsive behavior on mobile (horizontal scroll)
+- Use existing UI components (Button, DropdownMenu) for controls
+
+## Current state
+- TaskTable uses a custom implementation with hardcoded columns
+- No sorting functionality exists
+- Date fields are available in Task schema but not displayed
+- Column definitions are already structured in an array
