@@ -1,6 +1,6 @@
 /**
  * UI Schema Client
- * 
+ *
  * Wrapper around core schema service to provide UI-specific helpers for metadata.
  * This bridges the core schema service with UI components that need icons and labels.
  */
@@ -12,39 +12,41 @@ type LucideIcon = typeof Icons.Circle;
 
 // Import core schema service functions
 import {
-  getStatusLabel,
-  getStatusIcon,
-  getStatusEmoji,
-  getStatusValues,
-  getTypeLabel,
-  getTypeIcon,
-  getTypeEmoji,
-  getTypeValues,
-  getPriorityLabel,
-  getPriorityIcon,
   getPriorityEmoji,
+  getPriorityIcon,
+  getPriorityLabel,
   getPriorityValues,
-  getWorkflowStateLabel,
-  getWorkflowStateIcon,
-  getWorkflowStateEmoji,
   getSchema,
+  getStatusEmoji,
+  getStatusIcon,
+  getStatusLabel,
+  getStatusValues,
+  getTypeEmoji,
+  getTypeIcon,
+  getTypeLabel,
+  getTypeValues,
+  getWorkflowStateEmoji,
+  getWorkflowStateIcon,
+  getWorkflowStateLabel,
 } from '@core/metadata/schema-service';
 
 import type { MetadataValue } from '@core/metadata/types';
 
 // Convert kebab-case icon names to PascalCase for Lucide components
 function kebabToPascalCase(str: string): string {
-  return str.split('-').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join('');
+  return str
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('');
 }
 
 // Get Lucide icon component from schema icon name
 function getLucideIcon(iconName: string | null | undefined): LucideIcon | null {
   if (!iconName) return null;
-  
+
   const componentName = kebabToPascalCase(iconName);
-  return (Icons as any)[componentName] || null;
+  // Type assertion needed because we're dynamically accessing icon components
+  return (Icons as Record<string, LucideIcon>)[componentName] || null;
 }
 
 // ============================================
@@ -93,11 +95,11 @@ export function getWorkflowStateLucideIcon(workflowName: string): LucideIcon | n
 export function generateStatusIconMapping(): Record<string, LucideIcon | null> {
   const statusValues = getStatusValues();
   const mapping: Record<string, LucideIcon | null> = {};
-  
+
   for (const status of statusValues) {
     mapping[status.name] = getLucideIcon(status.icon);
   }
-  
+
   return mapping;
 }
 
@@ -107,11 +109,11 @@ export function generateStatusIconMapping(): Record<string, LucideIcon | null> {
 export function generateTypeIconMapping(): Record<string, LucideIcon | null> {
   const typeValues = getTypeValues();
   const mapping: Record<string, LucideIcon | null> = {};
-  
+
   for (const type of typeValues) {
     mapping[type.name] = getLucideIcon(type.icon);
   }
-  
+
   return mapping;
 }
 
@@ -121,11 +123,11 @@ export function generateTypeIconMapping(): Record<string, LucideIcon | null> {
 export function generatePriorityIconMapping(): Record<string, LucideIcon | null> {
   const priorityValues = getPriorityValues();
   const mapping: Record<string, LucideIcon | null> = {};
-  
+
   for (const priority of priorityValues) {
     mapping[priority.name] = getLucideIcon(priority.icon);
   }
-  
+
   return mapping;
 }
 
@@ -136,11 +138,11 @@ export function generateWorkflowStateIconMapping(): Record<string, LucideIcon | 
   const schema = getSchema();
   const workflowValues = schema.metadata.enums.workflowState.values;
   const mapping: Record<string, LucideIcon | null> = {};
-  
+
   for (const workflow of workflowValues) {
     mapping[workflow.name] = getLucideIcon(workflow.icon);
   }
-  
+
   return mapping;
 }
 
@@ -159,7 +161,7 @@ export interface FilterOption {
  */
 export function createSchemaStatusFilterOptions(): FilterOption[] {
   const statusValues = getStatusValues();
-  return statusValues.map(status => ({
+  return statusValues.map((status) => ({
     value: status.name,
     label: status.label,
     // Note: Icons will be added by the consuming component using the icon mappings
@@ -171,7 +173,7 @@ export function createSchemaStatusFilterOptions(): FilterOption[] {
  */
 export function createSchemaTypeFilterOptions(): FilterOption[] {
   const typeValues = getTypeValues();
-  return typeValues.map(type => ({
+  return typeValues.map((type) => ({
     value: type.name,
     label: type.label,
   }));
@@ -182,7 +184,7 @@ export function createSchemaTypeFilterOptions(): FilterOption[] {
  */
 export function createSchemaPriorityFilterOptions(): FilterOption[] {
   const priorityValues = getPriorityValues();
-  return priorityValues.map(priority => ({
+  return priorityValues.map((priority) => ({
     value: priority.name,
     label: priority.label,
   }));
@@ -194,7 +196,7 @@ export function createSchemaPriorityFilterOptions(): FilterOption[] {
 export function createSchemaWorkflowFilterOptions(): FilterOption[] {
   const schema = getSchema();
   const workflowValues = schema.metadata.enums.workflowState.values;
-  return workflowValues.map(workflow => ({
+  return workflowValues.map((workflow) => ({
     value: workflow.name,
     label: workflow.label,
   }));
@@ -213,7 +215,7 @@ const UI_SPECIFIC_MAPPINGS = {
     task: { label: 'Task', icon: FileText },
     enhancement: { label: 'Enhancement', icon: Lightbulb },
     parent_task: { label: 'Parent Task', icon: Folder },
-  }
+  },
 };
 
 /**
@@ -223,7 +225,7 @@ export function getTypeIconWithFallback(typeName: string): LucideIcon | null {
   // First try schema
   const schemaIcon = getTypeLucideIcon(typeName);
   if (schemaIcon) return schemaIcon;
-  
+
   // Then try UI-specific mappings
   const uiMapping = UI_SPECIFIC_MAPPINGS.type[typeName as keyof typeof UI_SPECIFIC_MAPPINGS.type];
   return uiMapping?.icon || null;
@@ -236,7 +238,7 @@ export function getTypeLabelWithFallback(typeName: string): string {
   // First try schema
   const schemaLabel = getTypeLabel(typeName);
   if (schemaLabel !== typeName) return schemaLabel; // Found in schema
-  
+
   // Then try UI-specific mappings
   const uiMapping = UI_SPECIFIC_MAPPINGS.type[typeName as keyof typeof UI_SPECIFIC_MAPPINGS.type];
   return uiMapping?.label || typeName;

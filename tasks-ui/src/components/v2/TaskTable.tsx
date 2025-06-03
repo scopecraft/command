@@ -120,6 +120,14 @@ export function TaskTable({
                 key={task.id}
                 className="border-b hover:bg-muted/30 cursor-pointer"
                 onClick={(e) => handleRowClick(task, e)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleRowClick(task, e);
+                  }
+                }}
+                tabIndex={0}
+                role="button"
               >
                 {selectable && (
                   <td className="p-3">
@@ -181,10 +189,13 @@ export function TaskTable({
                       <span>
                         Parent:{' '}
                         <button
+                          type="button"
                           className="text-blue-500 hover:underline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onParentTaskClick?.(task.parentId!);
+                            if (task.parentId && onParentTaskClick) {
+                              onParentTaskClick(task.parentId);
+                            }
                           }}
                         >
                           {task.parentId}

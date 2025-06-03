@@ -24,7 +24,7 @@ interface ParentSearchParams {
 
 interface ParentTaskListViewProps {
   className?: string;
-  data?: ApiResponse<any[]>;
+  data?: ApiResponse<TableTask[]>;
   searchParams?: ParentSearchParams;
 }
 
@@ -155,7 +155,7 @@ export function ParentTaskListView({
   }, [allTasks, searchQuery, filters]);
 
   // Filter handlers
-  const handleFilterChange = (category: keyof TaskFilters, value: any) => {
+  const handleFilterChange = (category: keyof TaskFilters, value: string) => {
     const currentValues = filters[category];
     const newValues = currentValues.includes(value)
       ? currentValues.filter((item) => item !== value)

@@ -37,6 +37,7 @@ import type {
   Task,
   TaskCreateOptions,
   TaskDocument,
+  TaskFrontmatter,
   TaskListOptions,
   TaskLocation,
   TaskMetadata,
@@ -50,8 +51,8 @@ import type {
  * Normalize frontmatter values using schema service
  * Ensures consistent canonical storage format following Postel's Law
  */
-function normalizeFrontmatter(frontmatter: Record<string, any>): Record<string, any> {
-  const normalized = { ...frontmatter };
+function normalizeFrontmatter(frontmatter: Record<string, any>): TaskFrontmatter {
+  const normalized = { ...frontmatter } as TaskFrontmatter;
 
   // Normalize status to canonical name (e.g., "To Do" -> "todo")
   if (normalized.status) {

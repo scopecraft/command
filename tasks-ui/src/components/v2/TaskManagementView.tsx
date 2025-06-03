@@ -31,7 +31,7 @@ interface TaskSearchParams {
 
 interface TaskManagementViewProps {
   className?: string;
-  data?: ApiResponse<any[]>;
+  data?: ApiResponse<TableTask[]>;
   searchParams?: TaskSearchParams;
 }
 
@@ -176,7 +176,7 @@ export function TaskManagementView({
   }, [allTasks, searchQuery, filters]);
 
   // Filter handlers
-  const handleFilterChange = (category: keyof TaskFilters, value: any) => {
+  const handleFilterChange = (category: keyof TaskFilters, value: string) => {
     const currentValues = filters[category];
     const newValues = currentValues.includes(value)
       ? currentValues.filter((item) => item !== value)
