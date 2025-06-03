@@ -46,6 +46,11 @@ export function getWorkflowStateName(label: string): string {
   return state?.name || 'backlog';
 }
 
+export function getWorkflowStateValues(): MetadataValue[] {
+  const schema = getSchema();
+  return schema.metadata.enums.workflowState.values;
+}
+
 // ============================================
 // Status transformations
 // ============================================

@@ -3,6 +3,8 @@
  *
  * This module provides functions to normalize field values for tasks and phases.
  * It allows for more flexible input formats while ensuring standardized storage.
+ * 
+ * Uses schema-driven normalization with alias support for maximum flexibility.
  */
 
 import {
@@ -14,166 +16,162 @@ import {
   getStatusLabel,
   getStatusName,
   getStatusValues,
+  getTypeLabel,
+  getTypeName,
+  getTypeValues,
 } from './metadata/schema-service.js';
+import { buildNormalizerMap, createNormalizer } from './metadata/normalizer-builder.js';
+
+/**
+ * Lazy-loaded normalizer maps built from schema
+ * These are created once on first use for optimal performance
+ */
+let priorityNormalizer: Map<string, string> | null = null;
+let typeNormalizer: Map<string, string> | null = null;
+let statusNormalizer: Map<string, string> | null = null;
 
 /**
  * Priority order for sorting (highest to lowest)
+ * TODO: This should also come from schema eventually
  */
 export const PRIORITY_ORDER: Record<string, number> = {
-  Highest: 4,
-  High: 3,
-  Medium: 2,
-  Low: 1,
+  highest: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
   '': 0,
 };
 
 /**
  * Normalizes priority values to standard format
  *
- * Accepts various input formats:
- * - Full format with emoji: "🔥 Highest"
- * - Text only: "high", "Low", "MEDIUM"
- * - Emoji only: "🔼"
- * - Common synonyms: "critical", "important", etc.
+ * Accepts various input formats based on schema aliases:
+ * - Canonical names: "highest", "high", "medium", "low"
+ * - Labels: "Highest", "High", "Medium", "Low" 
+ * - Emojis: "🔥", "🔼", "▶️", "🔽"
+ * - Aliases: "critical", "urgent", "important", "normal", "minor", etc.
  *
  * @param input Priority value to normalize
- * @returns Standardized priority value
+ * @returns Standardized priority value (canonical name)
  */
 export function normalizePriority(input: string | undefined | null): string {
-  if (!input) return 'medium';
+  // Build normalizer map on first use
+  if (!priorityNormalizer) {
+    const priorityValues = getPriorityValues();
+    priorityNormalizer = buildNormalizerMap(priorityValues);
+  }
 
-  // Check if it's already a canonical name
+  // Use the schema-driven normalizer
   const priorityValues = getPriorityValues();
-  if (priorityValues.some((p) => p.name === input)) {
-    return input;
+  const validOptions = priorityValues.map(p => p.name);
+  const normalizer = createNormalizer(
+    priorityNormalizer,
+    validOptions,
+    'medium',
+    'priority'
+  );
+
+  return normalizer(input);
+}
+
+/**
+ * Normalizes task type values to standard format
+ *
+ * Accepts various input formats based on schema aliases:
+ * - Canonical names: "feature", "bug", "chore", etc.
+ * - Labels: "Feature", "Bug", "Chore", etc.
+ * - Emojis: "🌟", "🐛", "🔧", etc.
+ * - Aliases: "feat", "fix", "docs", "test", "research", etc.
+ *
+ * @param input Type value to normalize
+ * @returns Standardized type value (canonical name)
+ */
+export function normalizeTaskType(input: string | undefined | null): string {
+  // Build normalizer map on first use
+  if (!typeNormalizer) {
+    const typeValues = getTypeValues();
+    typeNormalizer = buildNormalizerMap(typeValues);
   }
 
-  // Check if it's a label, convert to canonical name
-  const byLabel = priorityValues.find((p) => p.label === input);
-  if (byLabel) {
-    return byLabel.name;
-  }
+  // Use the schema-driven normalizer
+  const typeValues = getTypeValues();
+  const validOptions = typeValues.map(t => t.name);
+  const normalizer = createNormalizer(
+    typeNormalizer,
+    validOptions,
+    'chore',
+    'task type'
+  );
 
-  const lowerInput = input.toLowerCase().trim();
-
-  // Check for emoji-only input by comparing against schema emojis
-  for (const priority of priorityValues) {
-    if (priority.emoji && lowerInput === priority.emoji) {
-      return priority.name;
-    }
-  }
-
-  // Check for text patterns (with or without emoji)
-  if (/highest|critical|urgent|blocker/.test(lowerInput)) {
-    return 'highest';
-  }
-
-  if (/high|important/.test(lowerInput)) {
-    return 'high';
-  }
-
-  if (/medium|normal|med|default|standard/.test(lowerInput)) {
-    return 'medium';
-  }
-
-  if (/low|minor|trivial/.test(lowerInput)) {
-    return 'low';
-  }
-
-  // Default fallback
-  return 'medium';
+  return normalizer(input);
 }
 
 /**
  * Normalizes task status values to standard format
  *
- * Accepts various input formats:
- * - Full format with emoji: "🟡 To Do"
- * - Text only: "in progress", "Done", "TO DO"
- * - Emoji only: "🔵"
- * - Common variations: "todo", "wip", "completed", etc.
+ * Accepts various input formats based on schema aliases:
+ * - Canonical names: "todo", "in_progress", "done", etc.
+ * - Labels: "To Do", "In Progress", "Done", etc.
+ * - Emojis: "🟡", "🔵", "🟢", etc.
+ * - Aliases: "wip", "complete", "blocked", "new", etc.
  *
  * @param input Status value to normalize
- * @returns Standardized status value
+ * @returns Standardized status value (canonical name)
  */
 export function normalizeTaskStatus(input: string | undefined | null): string {
-  if (!input) return 'todo';
+  // Build normalizer map on first use
+  if (!statusNormalizer) {
+    const statusValues = getStatusValues();
+    statusNormalizer = buildNormalizerMap(statusValues);
+  }
 
-  // Check if it's already a canonical name
+  // Use the schema-driven normalizer
   const statusValues = getStatusValues();
-  if (statusValues.some((s) => s.name === input)) {
-    return input;
-  }
+  const validOptions = statusValues.map(s => s.name);
+  const normalizer = createNormalizer(
+    statusNormalizer,
+    validOptions,
+    'todo',
+    'status'
+  );
 
-  // Check if it's a label, convert to canonical name
-  const byLabel = statusValues.find((s) => s.label === input);
-  if (byLabel) {
-    return byLabel.name;
-  }
-
-  const lowerInput = input.toLowerCase().trim();
-
-  // Check for emoji-only input by comparing against schema emojis
-  for (const status of statusValues) {
-    if (status.emoji && lowerInput === status.emoji) {
-      return status.name;
-    }
-  }
-
-  // Check for text patterns (with or without emoji)
-  if (/to[ -]?do|todo|pending|new|open|backlog/.test(lowerInput)) {
-    return 'todo';
-  }
-
-  if (/in[ -]?progress|started|ongoing|working|wip/.test(lowerInput)) {
-    return 'in_progress';
-  }
-
-  if (/done|complete|finished|completed|closed|resolved/.test(lowerInput)) {
-    return 'done';
-  }
-
-  if (/blocked|block|hold|on[ -]?hold|waiting/.test(lowerInput)) {
-    return 'blocked';
-  }
-
-  if (/archived|archive/.test(lowerInput)) {
-    return 'archived';
-  }
-
-  // Default fallback
-  return 'todo';
+  return normalizer(input);
 }
 
 /**
  * Detects if a task is considered complete based on its status
- * This matches the logic used in task-crud.ts for filtering completed tasks
+ * Uses schema-driven normalization to handle all possible input formats
  *
- * @param status Task status value
+ * @param status Task status value (any format)
  * @returns True if status indicates completion
  */
 export function isCompletedTaskStatus(status: string | undefined | null): boolean {
   if (!status) return false;
 
-  const normalizedStatus = status.toLowerCase();
-  return (
-    normalizedStatus.includes('done') ||
-    normalizedStatus.includes('🟢') ||
-    normalizedStatus.includes('completed') ||
-    normalizedStatus.includes('complete')
-  );
+  try {
+    const normalizedStatus = normalizeTaskStatus(status);
+    return normalizedStatus === 'done' || normalizedStatus === 'archived';
+  } catch {
+    // If normalization fails, fall back to simple check
+    return false;
+  }
 }
 
 /**
  * Gets the priority order value for a given priority
  * Used for sorting tasks by priority
  *
- * @param priority Priority value
+ * @param priority Priority value (any format)
  * @returns Numeric priority order (higher = more important)
  */
 export function getPriorityOrder(priority: string | undefined | null): number {
   if (!priority) return 0;
 
-  const normalizedPriority = normalizePriority(priority);
-  return PRIORITY_ORDER[normalizedPriority] || 0;
+  try {
+    const normalizedPriority = normalizePriority(priority);
+    return PRIORITY_ORDER[normalizedPriority] || 0;
+  } catch {
+    // If normalization fails, return lowest priority
+    return 0;
+  }
 }

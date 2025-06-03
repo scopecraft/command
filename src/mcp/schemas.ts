@@ -11,6 +11,7 @@ import { z } from 'zod';
 // Core Enums - Clean values without display formatting
 // =============================================================================
 
+// For output: strict canonical values only
 export const TaskTypeSchema = z.enum(['feature', 'bug', 'chore', 'documentation', 'test', 'spike']);
 
 export const TaskStatusSchema = z.enum(['todo', 'in_progress', 'done', 'blocked', 'archived']);
@@ -18,6 +19,28 @@ export const TaskStatusSchema = z.enum(['todo', 'in_progress', 'done', 'blocked'
 export const TaskPrioritySchema = z.enum(['highest', 'high', 'medium', 'low']);
 
 export const WorkflowStateSchema = z.enum(['backlog', 'current', 'archive']);
+
+// For input: accept any string and let core normalize
+// This follows Postel's Law: be liberal in what you accept, conservative in what you send
+// Descriptions are dynamically generated from schema registry for AI guidance
+
+import { getTypeValues, getStatusValues, getPriorityValues, getWorkflowStateValues } from '../core/metadata/schema-service.js';
+
+export const TaskTypeInputSchema = z.string().describe(
+  `Task type. Use: ${getTypeValues().map(t => `"${t.name}"`).join(', ')}`
+);
+
+export const TaskStatusInputSchema = z.string().describe(
+  `Task status. Use: ${getStatusValues().map(s => `"${s.name}"`).join(', ')}`
+);
+
+export const TaskPriorityInputSchema = z.string().describe(
+  `Task priority. Use: ${getPriorityValues().map(p => `"${p.name}"`).join(', ')}`
+);
+
+export const WorkflowStateInputSchema = z.string().describe(
+  `Workflow state. Use: ${getWorkflowStateValues().map(w => `"${w.name}"`).join(', ')}`
+);
 
 export const TaskStructureSchema = z.enum(['simple', 'subtask', 'parent']);
 
@@ -283,13 +306,13 @@ export const WriteOperationContextSchema = z.object({
 export const TaskCreateInputSchema = WriteOperationContextSchema.extend({
   // Required fields
   title: z.string().min(1).max(200),
-  type: TaskTypeSchema, // Uses existing clean enum
+  type: TaskTypeInputSchema, // Uses flexible input schema
 
   // Optional metadata - using normalized field names
   area: z.string().default('general'),
-  status: TaskStatusSchema.default('todo'),
-  priority: TaskPrioritySchema.default('medium'),
-  workflowState: WorkflowStateSchema.default('backlog'),
+  status: TaskStatusInputSchema.default('todo'),
+  priority: TaskPriorityInputSchema.default('medium'),
+  workflowState: WorkflowStateInputSchema.default('backlog'),
 
   // Relationships
   parentId: z.string().optional().describe('Parent task ID for creating subtasks'),
@@ -310,6 +333,7 @@ export const TaskCreateOutputSchema = createResponseSchema(
     title: z.string(),
     type: TaskTypeSchema,
     status: TaskStatusSchema,
+    priority: TaskPrioritySchema,
     workflowState: WorkflowStateSchema,
     area: z.string(),
     path: z.string(),
