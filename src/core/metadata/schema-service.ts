@@ -194,6 +194,26 @@ export function isValidWorkflowState(value: string): boolean {
 }
 
 // ============================================
+// Default value helpers
+// ============================================
+
+export function getDefaultStatus(): string {
+  return 'todo';
+}
+
+export function getDefaultPriority(): string {
+  return 'medium';
+}
+
+export function getDefaultType(): string {
+  return 'feature';
+}
+
+export function getDefaultWorkflowState(): string {
+  return 'backlog';
+}
+
+// ============================================
 // Export all available values for CLI help
 // ============================================
 

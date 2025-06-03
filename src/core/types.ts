@@ -8,16 +8,17 @@
 // Core Enums and Constants
 // ============================================
 
-// NOTE: These types are defined to match the labels in default-schema.json
-// In the future, we could generate these from the schema dynamically
+// TODO: These types should be generated from the schema dynamically
+// For now, they are hardcoded to match the canonical names (not labels) in default-schema.json
+// This follows Postel's Law: we store canonical names internally and display human-readable labels
 
 export type WorkflowState = 'backlog' | 'current' | 'archive';
 
 export type TaskType = 'feature' | 'bug' | 'chore' | 'documentation' | 'test' | 'spike' | 'idea';
 
-export type TaskStatus = 'To Do' | 'In Progress' | 'Done' | 'Blocked' | 'Archived';
+export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'blocked' | 'archived' | 'reviewing';
 
-export type TaskPriority = 'Highest' | 'High' | 'Medium' | 'Low';
+export type TaskPriority = 'highest' | 'high' | 'medium' | 'low';
 
 // Required sections in task documents
 export const REQUIRED_SECTIONS = ['instruction', 'tasks', 'deliverable', 'log'] as const;

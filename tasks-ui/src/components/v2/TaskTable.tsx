@@ -127,7 +127,6 @@ export function TaskTable({
                   }
                 }}
                 tabIndex={0}
-                role="button"
               >
                 {selectable && (
                   <td className="p-3">
@@ -266,8 +265,8 @@ export function TaskTable({
               )}
             </div>
             <div className="flex items-center gap-4">
-              <span>{tasks.filter((t) => t.task_type === 'parent').length} parent</span>
-              <span>{tasks.filter((t) => t.task_type === 'simple').length} simple</span>
+              <span>{tasks.filter((t) => t.taskStructure === 'parent').length} parent</span>
+              <span>{tasks.filter((t) => t.taskStructure === 'simple').length} simple</span>
             </div>
           </div>
         </div>

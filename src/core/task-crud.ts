@@ -20,7 +20,7 @@ import {
 } from './directory-utils.js';
 import { normalizePriority, normalizeTaskStatus } from './field-normalizers.js';
 import { generateSubtaskId, generateUniqueTaskId, parseTaskId } from './id-generator.js';
-import { getTypeName } from './metadata/schema-service.js';
+import { getDefaultStatus } from './metadata/schema-service.js';
 import { getNextSequenceNumber } from './subtask-sequencing.js';
 import {
   addLogEntry,
@@ -42,7 +42,9 @@ import type {
   TaskLocation,
   TaskMetadata,
   TaskMoveOptions,
+  TaskPriority,
   TaskStatus,
+  TaskType,
   TaskUpdateOptions,
   WorkflowState,
 } from './types.js';
@@ -51,22 +53,27 @@ import type {
  * Normalize frontmatter values using schema service
  * Ensures consistent canonical storage format following Postel's Law
  */
-function normalizeFrontmatter(frontmatter: Record<string, any>): TaskFrontmatter {
+function normalizeFrontmatter(frontmatter: Record<string, unknown>): TaskFrontmatter {
   const normalized = { ...frontmatter } as TaskFrontmatter;
 
   // Normalize status to canonical name (e.g., "To Do" -> "todo")
   if (normalized.status) {
-    normalized.status = normalizeTaskStatus(normalized.status);
+    normalized.status = normalizeTaskStatus(normalized.status) as TaskStatus;
   }
 
-  // Normalize type to canonical name (e.g., "Feature" -> "feature")
+  // Normalize type - ensure it's a valid canonical name
   if (normalized.type) {
-    normalized.type = getTypeName(normalized.type);
+    // Types should already be canonical names, but ensure they are valid
+    // TODO: Add a normalizeTaskType function similar to normalizeTaskStatus
+    const lowerType = normalized.type.toLowerCase();
+    if (['feature', 'bug', 'chore', 'documentation', 'test', 'spike', 'idea'].includes(lowerType)) {
+      normalized.type = lowerType as TaskType;
+    }
   }
 
   // Normalize priority to canonical name (e.g., "High" -> "high")
   if (normalized.priority) {
-    normalized.priority = normalizePriority(normalized.priority);
+    normalized.priority = normalizePriority(normalized.priority) as TaskPriority;
   }
 
   return normalized;
@@ -115,7 +122,7 @@ export async function create(
         title: options.title,
         frontmatter: normalizeFrontmatter({
           type: options.type,
-          status: options.status || 'To Do',
+          status: options.status || getDefaultStatus(),
           area: options.area,
           ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
           ...options.customMetadata,
@@ -333,13 +340,13 @@ function shouldAutoTransition(
     return null;
   }
 
-  // Main rule: backlog tasks that become "In Progress" should move to current
-  if (currentWorkflow === 'backlog' && newStatus === 'In Progress') {
+  // Main rule: backlog tasks that become "in_progress" should move to current
+  if (currentWorkflow === 'backlog' && newStatus === 'in_progress') {
     return 'current';
   }
 
   // Re-opening archived tasks: move to current when status changes from non-active to active
-  if (currentWorkflow === 'archive' && (newStatus === 'In Progress' || newStatus === 'To Do')) {
+  if (currentWorkflow === 'archive' && (newStatus === 'in_progress' || newStatus === 'todo')) {
     return 'current';
   }
 
@@ -853,7 +860,7 @@ export async function promoteToParent(
         title: task.document.title,
         frontmatter: {
           type: task.document.frontmatter.type,
-          status: 'To Do', // Reset status for subtask
+          status: getDefaultStatus() as TaskStatus, // Reset status for subtask
           area: task.document.frontmatter.area,
         },
         sections: {
@@ -880,7 +887,7 @@ export async function promoteToParent(
           title: subtaskTitle,
           frontmatter: {
             type: task.document.frontmatter.type,
-            status: 'To Do',
+            status: getDefaultStatus() as TaskStatus,
             area: task.document.frontmatter.area,
           },
           sections: ensureRequiredSections({
@@ -932,11 +939,11 @@ function formatTasksList(tasks: string[]): string {
 function getStatusForWorkflow(state: WorkflowState): TaskStatus | null {
   switch (state) {
     case 'backlog':
-      return 'To Do';
+      return 'todo';
     case 'current':
-      return 'In Progress';
+      return 'in_progress';
     case 'archive':
-      return 'Done';
+      return 'done';
     default:
       return null;
   }
