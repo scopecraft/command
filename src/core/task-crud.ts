@@ -75,7 +75,153 @@ function normalizeFrontmatter(frontmatter: Record<string, unknown>): TaskFrontma
 }
 
 /**
+ * Prepare task document from options
+ */
+function prepareTaskDocument(options: TaskCreateOptions): TaskDocument {
+  return {
+    title: options.title,
+    frontmatter: normalizeFrontmatter({
+      type: options.type,
+      status: options.status || 'To Do',
+      area: options.area,
+      ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
+      ...options.customMetadata,
+    }),
+    sections: ensureRequiredSections({
+      instruction: options.instruction || '',
+      tasks: options.tasks ? formatTasksList(options.tasks) : '',
+      deliverable: options.deliverable || '',
+      ...options.customSections,
+    }),
+  };
+}
+
+/**
+ * Create a subtask within a parent
+ */
+async function createSubtask(
+  parentPath: string,
+  options: TaskCreateOptions,
+  parentId: string,
+  projectRoot: string
+): Promise<OperationResult<Task>> {
+  // Verify it's a parent task
+  if (!parentPath.endsWith('_overview.md')) {
+    return {
+      success: false,
+      error: `Task ${parentId} is not a parent task`,
+    };
+  }
+
+  // Get parent folder - it's the directory containing _overview.md
+  const parentDir = dirname(parentPath);
+
+  // Generate subtask ID and sequence
+  const sequence = getNextSequenceNumber(parentDir);
+  const subtaskId = generateSubtaskId(options.title, sequence);
+  const filename = `${subtaskId}.task.md`;
+  const filepath = join(parentDir, filename);
+
+  // Create task document
+  const document = prepareTaskDocument({
+    ...options,
+    status: options.status || getDefaultStatus(),
+  });
+
+  // Write file
+  const content = serializeTaskDocument(document);
+  writeFileSync(filepath, content, 'utf-8');
+
+  // Create task object
+  const task: Task = {
+    metadata: {
+      id: subtaskId,
+      filename,
+      path: filepath,
+      location: parseTaskLocation(filepath, projectRoot) || { workflowState: 'current' },
+      isParentTask: false,
+      parentTask: parentId,
+      sequenceNumber: sequence,
+    },
+    document,
+  };
+
+  return {
+    success: true,
+    data: task,
+  };
+}
+
+/**
+ * Create a simple task
+ */
+async function createSimpleTask(
+  projectRoot: string,
+  options: TaskCreateOptions,
+  config?: ProjectConfig
+): Promise<OperationResult<Task>> {
+  // Generate unique ID
+  const taskId = generateUniqueTaskId(options.title, projectRoot, config);
+
+  // Determine workflow state (default to backlog)
+  const workflowState = options.workflowState || config?.defaultWorkflowState || 'backlog';
+
+  // Create task document
+  const document = prepareTaskDocument(options);
+
+  // Validate document
+  const errors = validateTaskDocument(document);
+  if (errors.length > 0) {
+    return {
+      success: false,
+      error: 'Invalid task document',
+      validationErrors: errors,
+    };
+  }
+
+  // Determine file path
+  const workflowDir = getWorkflowDirectory(projectRoot, workflowState, config);
+  const filename = `${taskId}.task.md`;
+  const filepath = join(workflowDir, filename);
+
+  // Ensure directory exists
+  if (!existsSync(workflowDir)) {
+    mkdirSync(workflowDir, { recursive: true });
+  }
+
+  // Check if file already exists
+  if (existsSync(filepath)) {
+    return {
+      success: false,
+      error: `Task file already exists: ${filename}`,
+    };
+  }
+
+  // Write file
+  const content = serializeTaskDocument(document);
+  writeFileSync(filepath, content, 'utf-8');
+
+  // Create task object
+  const task: Task = {
+    metadata: {
+      id: taskId,
+      filename,
+      path: filepath,
+      location: { workflowState },
+      isParentTask: false,
+    },
+    document,
+  };
+
+  return {
+    success: true,
+    data: task,
+  };
+}
+
+/**
  * Create a new task
+ * Complexity reduced from 24 to ~10
  */
 export async function create(
   projectRoot: string,
@@ -84,9 +230,8 @@ export async function create(
   parentId?: string
 ): Promise<OperationResult<Task>> {
   try {
-    // Check if this should be a subtask
+    // Handle subtask creation
     if (parentId) {
-      // Create as subtask
       const parentPath = resolveTaskId(parentId, projectRoot, config);
       if (!parentPath) {
         return {
@@ -94,138 +239,11 @@ export async function create(
           error: `Parent task not found: ${parentId}`,
         };
       }
-
-      // Verify it's a parent task
-      if (!parentPath.endsWith('_overview.md')) {
-        return {
-          success: false,
-          error: `Task ${parentId} is not a parent task`,
-        };
-      }
-
-      // Get parent folder - it's the directory containing _overview.md
-      const parentDir = dirname(parentPath);
-
-      // Generate subtask ID and sequence
-      const sequence = getNextSequenceNumber(parentDir);
-      const subtaskId = generateSubtaskId(options.title, sequence);
-      const filename = `${subtaskId}.task.md`;
-      const filepath = join(parentDir, filename);
-
-      // Create task document with normalized frontmatter
-      const document: TaskDocument = {
-        title: options.title,
-        frontmatter: normalizeFrontmatter({
-          type: options.type,
-          status: options.status || getDefaultStatus(),
-          area: options.area,
-          ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
-          ...options.customMetadata,
-        }),
-        sections: ensureRequiredSections({
-          instruction: options.instruction || '',
-          tasks: options.tasks ? formatTasksList(options.tasks) : '',
-          deliverable: options.deliverable || '',
-          ...options.customSections,
-        }),
-      };
-
-      // Write file
-      const content = serializeTaskDocument(document);
-      writeFileSync(filepath, content, 'utf-8');
-
-      // Create task object
-      const task: Task = {
-        metadata: {
-          id: subtaskId,
-          filename,
-          path: filepath,
-          location: parseTaskLocation(filepath, projectRoot) || { workflowState: 'current' },
-          isParentTask: false,
-          parentTask: parentId,
-          sequenceNumber: sequence,
-        },
-        document,
-      };
-
-      return {
-        success: true,
-        data: task,
-      };
+      return createSubtask(parentPath, options, parentId, projectRoot);
     }
 
-    // Generate unique ID for simple task
-    const taskId = generateUniqueTaskId(options.title, projectRoot, config);
-
-    // Determine workflow state (default to backlog)
-    const workflowState = options.workflowState || config?.defaultWorkflowState || 'backlog';
-
-    // Create task document with normalized frontmatter
-    const document: TaskDocument = {
-      title: options.title,
-      frontmatter: normalizeFrontmatter({
-        type: options.type,
-        status: options.status || 'To Do',
-        area: options.area,
-        ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
-        ...options.customMetadata,
-      }),
-      sections: ensureRequiredSections({
-        instruction: options.instruction || '',
-        tasks: options.tasks ? formatTasksList(options.tasks) : '',
-        deliverable: options.deliverable || '',
-        ...options.customSections,
-      }),
-    };
-
-    // Validate document
-    const errors = validateTaskDocument(document);
-    if (errors.length > 0) {
-      return {
-        success: false,
-        error: 'Invalid task document',
-        validationErrors: errors,
-      };
-    }
-
-    // Determine file path
-    const workflowDir = getWorkflowDirectory(projectRoot, workflowState, config);
-    const filename = `${taskId}.task.md`;
-    const filepath = join(workflowDir, filename);
-
-    // Ensure directory exists
-    if (!existsSync(workflowDir)) {
-      mkdirSync(workflowDir, { recursive: true });
-    }
-
-    // Check if file already exists (shouldn't happen with unique ID)
-    if (existsSync(filepath)) {
-      return {
-        success: false,
-        error: `Task file already exists: ${filename}`,
-      };
-    }
-
-    // Write file
-    const content = serializeTaskDocument(document);
-    writeFileSync(filepath, content, 'utf-8');
-
-    // Create task object
-    const task: Task = {
-      metadata: {
-        id: taskId,
-        filename,
-        path: filepath,
-        location: { workflowState },
-        isParentTask: false,
-      },
-      document,
-    };
-
-    return {
-      success: true,
-      data: task,
-    };
+    // Handle simple task creation
+    return createSimpleTask(projectRoot, options, config);
   } catch (error) {
     return {
       success: false,

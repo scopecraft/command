@@ -2,7 +2,7 @@
 
 ---
 type: bug
-status: todo
+status: done
 area: core
 priority: high
 tags:

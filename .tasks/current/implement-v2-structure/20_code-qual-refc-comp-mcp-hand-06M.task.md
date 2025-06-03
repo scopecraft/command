@@ -2,7 +2,7 @@
 
 ---
 type: chore
-status: todo
+status: in_progress
 area: mcp
 priority: high
 tags:
@@ -27,6 +27,8 @@ Refactor MCP handlers and core functions to resolve excessive cognitive complexi
 ## Deliverable
 
 ## Log
+- 2025-06-03: Started refactoring planning. Decisions made: 1) Drop 'Normalized' suffix from all 11 handler functions, 2) Use Option B file organization (handlers/ directory with subdirectories), 3) Create shared utilities to reduce duplication, 4) Keep 'legacy' handlers (template_list, config handlers) as-is since they're already simple
+- 2025-06-03: Completed major refactoring: 1) Created new handlers/ directory structure with shared utilities, 2) Refactored all 8 high-complexity functions (58→10, 28→10, 26→10, 24→10, 24→10, 21→8, 20→10, 17→12), 3) Dropped 'Normalized' suffix from all function names, 4) Fixed most TypeScript errors. Still need to address core/task-crud.ts complexity issues.
 
 ## Critical priority (complexity 50+)
 - [ ] **handleParentCreateNormalized** (58→15) - `src/mcp/normalized-write-handlers.ts:519`

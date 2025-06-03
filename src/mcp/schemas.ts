@@ -12,9 +12,24 @@ import { z } from 'zod';
 // =============================================================================
 
 // For output: strict canonical values only
-export const TaskTypeSchema = z.enum(['feature', 'bug', 'chore', 'documentation', 'test', 'spike']);
+export const TaskTypeSchema = z.enum([
+  'feature',
+  'bug',
+  'chore',
+  'documentation',
+  'test',
+  'spike',
+  'idea',
+]);
 
-export const TaskStatusSchema = z.enum(['todo', 'in_progress', 'done', 'blocked', 'archived']);
+export const TaskStatusSchema = z.enum([
+  'todo',
+  'in_progress',
+  'done',
+  'blocked',
+  'archived',
+  'reviewing',
+]);
 
 export const TaskPrioritySchema = z.enum(['highest', 'high', 'medium', 'low']);
 
