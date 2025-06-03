@@ -7,8 +7,15 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { getTemplatesDirectory } from './directory-utils.js';
+import { getDefaultStatus } from './metadata/schema-service.js';
 import { ensureRequiredSections, parseTaskDocument, serializeTaskDocument } from './task-parser.js';
-import type { TaskCreateOptions, TaskDocument, TaskType, ProjectConfig } from './types.js';
+import type {
+  ProjectConfig,
+  TaskCreateOptions,
+  TaskDocument,
+  TaskStatus,
+  TaskType,
+} from './types.js';
 
 /**
  * Template info
@@ -105,7 +112,7 @@ export function applyTemplate(templateContent: string, options: TaskCreateOption
     title: options.title,
     frontmatter: {
       type: options.type,
-      status: options.status || 'To Do',
+      status: options.status || (getDefaultStatus() as TaskStatus),
       area: options.area,
       ...options.customMetadata,
     },

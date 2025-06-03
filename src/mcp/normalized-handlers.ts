@@ -135,7 +135,7 @@ export async function handleTaskListNormalized(rawParams: unknown): Promise<McpR
 
     // Token efficiency: exclude completed tasks by default
     if (!params.includeCompleted) {
-      listOptions.excludeStatuses = ['Done', 'Archived'];
+      listOptions.excludeStatuses = ['done', 'archived'];
     }
 
     // Handle include_archived separately from include_completed

@@ -1,3 +1,4 @@
+import { normalizePriority, normalizeTaskStatus } from '../core/field-normalizers.js';
 import {
   getPriorityEmoji,
   getPriorityLabel,
@@ -189,13 +190,16 @@ function formatTreeView(tasks: Task[]): string {
       // Add progress for parent tasks
       const parentSubtasks = subtasksByParent.get(parent.metadata.id) || [];
       if (parentSubtasks.length > 0) {
-        const done = parentSubtasks.filter((t) => t.document.frontmatter.status === 'Done').length;
+        const done = parentSubtasks.filter(
+          (t) => normalizeTaskStatus(t.document.frontmatter.status) === 'done'
+        ).length;
         line += ` • ${done}/${parentSubtasks.length} done`;
       }
 
       // Add metadata
-      if (meta.priority && meta.priority !== 'Medium') {
-        line += ` • ${meta.priority === 'High' ? '↑' : '↓'} ${meta.priority}`;
+      if (meta.priority && normalizePriority(meta.priority) !== 'medium') {
+        const normalizedPriority = normalizePriority(meta.priority);
+        line += ` • ${normalizedPriority === 'high' || normalizedPriority === 'highest' ? '↑' : '↓'} ${getPriorityLabel(meta.priority)}`;
       }
       if (meta.assignee) line += ` • @${meta.assignee}`;
       if (meta.tags && meta.tags.length > 0) {
@@ -243,8 +247,9 @@ function formatTreeView(tasks: Task[]): string {
             taskLine += ` • ${getStatusLabel(task.document.frontmatter.status)}`;
 
             // Add metadata
-            if (taskMeta.priority && taskMeta.priority !== 'Medium') {
-              taskLine += ` • ${taskMeta.priority === 'High' ? '↑' : '↓'} ${taskMeta.priority}`;
+            if (taskMeta.priority && normalizePriority(taskMeta.priority) !== 'medium') {
+              const normalizedPriority = normalizePriority(taskMeta.priority);
+              taskLine += ` • ${normalizedPriority === 'high' || normalizedPriority === 'highest' ? '↑' : '↓'} ${getPriorityLabel(taskMeta.priority)}`;
             }
             if (taskMeta.assignee) taskLine += ` • @${taskMeta.assignee}`;
             if (taskMeta.tags && taskMeta.tags.length > 0) {
@@ -265,8 +270,9 @@ function formatTreeView(tasks: Task[]): string {
               taskLine += ` • ${getStatusLabel(task.document.frontmatter.status)}`;
 
               // Add metadata
-              if (taskMeta.priority && taskMeta.priority !== 'Medium') {
-                taskLine += ` • ${taskMeta.priority === 'High' ? '↑' : '↓'} ${taskMeta.priority}`;
+              if (taskMeta.priority && normalizePriority(taskMeta.priority) !== 'medium') {
+                const normalizedPriority = normalizePriority(taskMeta.priority);
+                taskLine += ` • ${normalizedPriority === 'high' || normalizedPriority === 'highest' ? '↑' : '↓'} ${getPriorityLabel(taskMeta.priority)}`;
               }
               if (taskMeta.assignee) taskLine += ` • @${taskMeta.assignee}`;
               if (taskMeta.tags && taskMeta.tags.length > 0) {
@@ -291,8 +297,9 @@ function formatTreeView(tasks: Task[]): string {
       line += ` • ${getStatusLabel(task.document.frontmatter.status)}`;
 
       // Add metadata
-      if (meta.priority && meta.priority !== 'Medium') {
-        line += ` • ${meta.priority === 'High' ? '↑' : '↓'} ${meta.priority}`;
+      if (meta.priority && normalizePriority(meta.priority) !== 'medium') {
+        const normalizedPriority = normalizePriority(meta.priority);
+        line += ` • ${normalizedPriority === 'high' || normalizedPriority === 'highest' ? '↑' : '↓'} ${getPriorityLabel(meta.priority)}`;
       }
       if (meta.assignee) line += ` • @${meta.assignee}`;
       if (meta.tags && meta.tags.length > 0) {
@@ -321,16 +328,19 @@ function formatTreeView(tasks: Task[]): string {
  * Get status symbol for tree view
  */
 function getStatusSymbol(status: TaskStatus): string {
-  switch (status) {
-    case 'Done':
+  // Status should already be canonical, but normalize just in case
+  const normalizedStatus = normalizeTaskStatus(status);
+
+  switch (normalizedStatus) {
+    case 'done':
       return '✓';
-    case 'In Progress':
+    case 'in_progress':
       return '→';
-    case 'Blocked':
+    case 'blocked':
       return '⊗';
-    case 'To Do':
+    case 'todo':
       return '○';
-    case 'Archived':
+    case 'archived':
       return '⊙';
     default:
       return '○';
@@ -378,9 +388,7 @@ export function formatTaskDetail(task: Task, format: OutputFormat): string {
   // Type is stored as canonical names ("feature"), look up emoji directly
   const typeEmoji = getTypeEmoji(task.document.frontmatter.type) || '';
   // Priority is stored as canonical names ("high"), look up emoji directly
-  const priorityEmoji = meta.priority
-    ? getPriorityEmoji(meta.priority as string) || ''
-    : '';
+  const priorityEmoji = meta.priority ? getPriorityEmoji(meta.priority as string) || '' : '';
 
   let output = `\n${task.document.title}\n${'='.repeat(task.document.title.length)}\n\n`;
   output += `ID:       ${task.metadata.id}\n`;

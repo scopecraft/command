@@ -468,7 +468,7 @@ export async function handleNextTaskCommand(
     // List current tasks with "To Do" status
     const result = await core.list(projectRoot, {
       workflowStates: ['current'],
-      status: 'To Do',
+      status: 'todo',
     });
 
     if (!result.success) {
@@ -482,7 +482,7 @@ export async function handleNextTaskCommand(
       // Check backlog
       const backlogResult = await core.list(projectRoot, {
         workflowStates: ['backlog'],
-        status: 'To Do',
+        status: 'todo',
       });
 
       if (backlogResult.success && backlogResult.data && backlogResult.data.length > 0) {
@@ -526,7 +526,7 @@ export async function handleCurrentTaskCommand(options: {
 
     // List tasks in progress
     const result = await core.list(projectRoot, {
-      status: 'In Progress',
+      status: 'in_progress',
     });
 
     if (!result.success) {

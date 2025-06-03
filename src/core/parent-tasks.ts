@@ -14,6 +14,7 @@ import {
   parseTaskLocation,
 } from './directory-utils.js';
 import { generateSubtaskId, generateUniqueTaskId } from './id-generator.js';
+import { getDefaultStatus } from './metadata/schema-service.js';
 import { type TaskOrder, makeTasksParallel, reorderSubtasks } from './subtask-sequencing.js';
 import { create, del, get, move, update } from './task-crud.js';
 import { parseTaskDocument } from './task-parser.js';
@@ -52,7 +53,7 @@ export function parent(projectRoot: string, parentId: string, config?: ProjectCo
         title,
         type: options.type || 'feature',
         area: options.area || 'general',
-        status: options.status || 'To Do',
+        status: options.status || (getDefaultStatus() as TaskStatus),
         workflowState: options.workflowState,
         instruction: options.instruction,
         tasks: options.tasks,
@@ -120,32 +121,31 @@ export function parent(projectRoot: string, parentId: string, config?: ProjectCo
 
         // Build new order based on sequence map
         const newOrder: TaskOrder[] = [];
-        
+
         // First, handle all explicitly mapped tasks
         for (const mapping of sequenceMap) {
           // Find the subtask by ID (check both full ID and partial match)
-          const subtask = subtasks.find(st => 
-            st.metadata.id === mapping.id || 
-            st.metadata.filename.includes(mapping.id)
+          const subtask = subtasks.find(
+            (st) => st.metadata.id === mapping.id || st.metadata.filename.includes(mapping.id)
           );
-          
+
           if (!subtask) {
             return {
               success: false,
               error: `Subtask not found: ${mapping.id}`,
             };
           }
-          
+
           // Extract task name from filename (remove sequence prefix and .task.md)
           const filename = basename(subtask.metadata.filename);
           const taskName = filename.replace(/^\d{2}_/, '').replace(/\.task\.md$/, '');
-          
+
           newOrder.push({
             taskId: taskName,
             newSequence: mapping.sequence,
           });
         }
-        
+
         // Apply reordering
         const result = reorderSubtasks(parentFolder, newOrder);
         if (!result.success) {
