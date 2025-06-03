@@ -4,6 +4,16 @@
 
 import * as core from '../core/index.js';
 import {
+  getPriorityLabel,
+  getPriorityName,
+  getStatusLabel,
+  getStatusName,
+  getTypeLabel,
+  getTypeName,
+  getWorkflowStateLabel,
+  getWorkflowStateName,
+} from '../core/metadata/schema-service.js';
+import {
   type ParentTask,
   type ParentTaskDetail,
   ParentTaskDetailSchema,
@@ -25,141 +35,72 @@ import {
 // =============================================================================
 
 /**
- * Clean task type by removing emoji prefixes and normalizing to enum values
+ * Normalize task type to enum values
  */
 export function cleanTaskType(rawType: string): TaskType {
-  // Remove emoji prefixes and normalize to lowercase
-  const cleanType = rawType
-    .replace(/^[\uD83C-\uDBFF\uDC00-\uDFFF\u2600-\u27FF]\s*/gu, '') // Remove emojis
-    .replace(/^\W+\s*/, '') // Remove any remaining special chars at start
-    .toLowerCase()
-    .trim();
-
-  switch (cleanType) {
-    case 'feature':
-      return 'feature';
-    case 'bug':
-      return 'bug';
-    case 'chore':
-      return 'chore';
-    case 'documentation':
-      return 'documentation';
-    case 'test':
-      return 'test';
-    case 'spike':
-    case 'spike/research':
-      return 'spike';
-    default:
-      console.warn(`Unknown task type: "${rawType}" -> "${cleanType}", defaulting to 'chore'`);
-      return 'chore';
-  }
+  // Use schema service to get the normalized name
+  const normalizedName = getTypeName(rawType);
+  return normalizedName as TaskType;
 }
 
 /**
  * Normalize task status to clean enum values
+ * Converts from core format (e.g., "In Progress") to MCP format (e.g., "in_progress")
  */
 export function normalizeStatus(rawStatus: string): TaskStatus {
-  const cleanStatus = rawStatus.toLowerCase().replace(/\s+/g, '_');
-
-  switch (cleanStatus) {
-    case 'to_do':
-    case 'todo':
-      return 'todo';
-    case 'in_progress':
-    case 'progress':
-      return 'in_progress';
-    case 'done':
-      return 'done';
-    case 'blocked':
-      return 'blocked';
-    case 'archived':
-      return 'archived';
-    default:
-      console.warn(`Unknown task status: ${rawStatus}, defaulting to 'todo'`);
-      return 'todo';
-  }
+  // Use schema service to get the normalized name
+  const normalizedName = getStatusName(rawStatus);
+  return normalizedName as TaskStatus;
 }
 
 /**
  * Denormalize status from MCP format to core format
+ * Converts from MCP format (e.g., "in_progress") to core format (e.g., "In Progress")
  */
 export function denormalizeStatus(mcpStatus?: TaskStatus): string {
-  if (!mcpStatus) return 'To Do';
+  if (!mcpStatus) return getStatusLabel('todo'); // Default to "To Do"
 
-  switch (mcpStatus) {
-    case 'todo':
-      return 'To Do';
-    case 'in_progress':
-      return 'In Progress';
-    case 'done':
-      return 'Done';
-    case 'blocked':
-      return 'Blocked';
-    case 'archived':
-      return 'Archived';
-    default:
-      return 'To Do';
-  }
+  // Use schema service to get the label
+  return getStatusLabel(mcpStatus);
 }
 
 /**
  * Denormalize priority from MCP format to core format
+ * Converts from MCP format (e.g., "high") to core format (e.g., "High")
  */
 export function denormalizePriority(mcpPriority?: TaskPriority): string {
-  if (!mcpPriority) return 'Medium';
+  if (!mcpPriority) return getPriorityLabel('medium'); // Default to "Medium"
 
-  switch (mcpPriority) {
-    case 'highest':
-      return 'Highest';
-    case 'high':
-      return 'High';
-    case 'medium':
-      return 'Medium';
-    case 'low':
-      return 'Low';
-    default:
-      return 'Medium';
-  }
+  // Use schema service to get the label
+  return getPriorityLabel(mcpPriority);
 }
 
 /**
  * Normalize task priority to clean enum values
+ * Converts from core format (e.g., "High") to MCP format (e.g., "high")
  */
 export function normalizePriority(rawPriority?: string): TaskPriority {
   if (!rawPriority) return 'medium';
 
-  const cleanPriority = rawPriority.toLowerCase();
-
-  switch (cleanPriority) {
-    case 'highest':
-      return 'highest';
-    case 'high':
-      return 'high';
-    case 'medium':
-      return 'medium';
-    case 'low':
-      return 'low';
-    default:
-      console.warn(`Unknown task priority: ${rawPriority}, defaulting to 'medium'`);
-      return 'medium';
-  }
+  // Use schema service to get the normalized name
+  const normalizedName = getPriorityName(rawPriority);
+  return normalizedName as TaskPriority;
 }
 
 /**
  * Map core workflow state to normalized enum
+ * In this case, core and MCP both use lowercase names, so this is mostly for validation
  */
 export function normalizeWorkflowState(workflowState: string): WorkflowState {
-  switch (workflowState) {
-    case 'backlog':
-      return 'backlog';
-    case 'current':
-      return 'current';
-    case 'archive':
-      return 'archive';
-    default:
-      console.warn(`Unknown workflow state: ${workflowState}, defaulting to 'backlog'`);
-      return 'backlog';
+  // Validate that it's a known workflow state
+  const validStates = ['backlog', 'current', 'archive'];
+  if (validStates.includes(workflowState)) {
+    return workflowState as WorkflowState;
   }
+
+  // Try to get by label (in case someone passes "Backlog" instead of "backlog")
+  const normalizedName = getWorkflowStateName(workflowState);
+  return normalizedName as WorkflowState;
 }
 
 // =============================================================================
@@ -345,7 +286,8 @@ export async function transformTask(
 ): Promise<Task> {
   if (task.metadata.isParentTask) {
     return await transformParentTask(projectRoot, task, includeSubtasks, includeContent);
-  } else if (task.metadata.parentTask) {
+  }
+  if (task.metadata.parentTask) {
     return transformSubTask(task, includeContent);
   }
   return transformSimpleTask(task, includeContent);

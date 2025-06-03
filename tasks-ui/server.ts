@@ -158,13 +158,12 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
     // Route API requests to the appropriate handler
     if (path === '/tasks') {
       if (req.method === 'GET') {
-        // Convert include_content to a boolean if it exists as a string
-        if (params.include_content) {
-          params.include_content = params.include_content === 'true';
-        }
-        // Convert include_completed to a boolean if it exists as a string
-        if (params.include_completed) {
-          params.include_completed = params.include_completed === 'true';
+        // Convert boolean string parameters to actual booleans
+        const booleanParams = ['include_content', 'include_completed', 'include_archived', 'include_parent_tasks', 'includeContent', 'includeCompleted', 'includeArchived', 'includeParentTasks'];
+        for (const param of booleanParams) {
+          if (params[param] === 'true' || params[param] === 'false') {
+            params[param] = params[param] === 'true';
+          }
         }
         
         const result = await methodRegistry[McpMethod.TASK_LIST](params);

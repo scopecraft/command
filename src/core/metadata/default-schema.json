@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "enums": {
+      "workflowState": {
+        "values": [
+          { "name": "backlog", "label": "Backlog", "emoji": "📋", "icon": "inbox" },
+          { "name": "current", "label": "Current", "emoji": "🎯", "icon": "play" },
+          { "name": "archive", "label": "Archive", "emoji": "📦", "icon": "folder-archive" }
+        ]
+      },
+      "status": {
+        "values": [
+          { "name": "todo", "label": "To Do", "emoji": "🟡", "icon": "circle" },
+          { "name": "in_progress", "label": "In Progress", "emoji": "🔵", "icon": "clock" },
+          { "name": "done", "label": "Done", "emoji": "🟢", "icon": "check-circle" },
+          { "name": "blocked", "label": "Blocked", "emoji": "🔴", "icon": "alert-circle" },
+          { "name": "archived", "label": "Archived", "emoji": "⚪", "icon": "archive" }
+        ]
+      },
+      "type": {
+        "values": [
+          { "name": "feature", "label": "Feature", "emoji": "🌟", "icon": "star", "template": "01_feature.md" },
+          { "name": "bug", "label": "Bug", "emoji": "🐛", "icon": "bug", "template": "02_bug.md" },
+          { "name": "chore", "label": "Chore", "emoji": "🔧", "icon": "wrench", "template": "03_chore.md" },
+          { "name": "documentation", "label": "Documentation", "emoji": "📚", "icon": "book-open", "template": "04_documentation.md" },
+          { "name": "test", "label": "Test", "emoji": "🧪", "icon": "test-tube", "template": "05_test.md" },
+          { "name": "spike", "label": "Spike", "emoji": "🔍", "icon": "search", "template": "06_spike.md" },
+          { "name": "idea", "label": "Idea", "emoji": "💡", "icon": "lightbulb", "template": "07_idea.md" }
+        ]
+      },
+      "priority": {
+        "values": [
+          { "name": "highest", "label": "Highest", "emoji": "🔥", "icon": "flame" },
+          { "name": "high", "label": "High", "emoji": "🔼", "icon": "chevron-up" },
+          { "name": "medium", "label": "Medium", "emoji": "▶️", "icon": null },
+          { "name": "low", "label": "Low", "emoji": "🔽", "icon": "chevron-down" }
+        ]
+      }
+    }
+  }
+}

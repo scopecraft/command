@@ -13,43 +13,46 @@ export function transformMcpParams(params: unknown): unknown {
   if (!params || typeof params !== 'object' || Array.isArray(params)) {
     return params;
   }
-  
-  const transformed = camelcaseKeys(params as Record<string, unknown>, { deep: true }) as any;
-  
+
+  const transformed = camelcaseKeys(params as Record<string, unknown>, { deep: true });
+
   // Special handling for parent_operations which needs restructuring
-  if (transformed?.operation && (transformed.sequenceMap || transformed.subtaskIds || transformed.subtask)) {
+  if (
+    transformed?.operation &&
+    (transformed.sequenceMap || transformed.subtaskIds || transformed.subtask)
+  ) {
     // Restructure flat parent_operations params into nested operationData
-    const operationData: any = { operation: transformed.operation };
-    
+    const operationData: Record<string, unknown> = { operation: transformed.operation };
+
     switch (transformed.operation) {
       case 'resequence':
         if (transformed.sequenceMap) {
           operationData.sequenceMap = transformed.sequenceMap;
-          delete transformed.sequenceMap;
+          transformed.sequenceMap = undefined;
         }
         break;
-        
+
       case 'parallelize':
         if (transformed.subtaskIds) {
           operationData.subtaskIds = transformed.subtaskIds;
-          delete transformed.subtaskIds;
+          transformed.subtaskIds = undefined;
         }
         if (transformed.targetSequence) {
           operationData.targetSequence = transformed.targetSequence;
-          delete transformed.targetSequence;
+          transformed.targetSequence = undefined;
         }
         break;
-        
+
       case 'add_subtask':
         if (transformed.subtask) {
           operationData.subtask = transformed.subtask;
-          delete transformed.subtask;
+          transformed.subtask = undefined;
         }
         break;
     }
-    
+
     transformed.operationData = operationData;
   }
-  
+
   return transformed;
 }

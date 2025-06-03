@@ -22,7 +22,9 @@
       "mcp__scopecraft__task_transform",
       "Bash(chmod:*)",
       "Bash(hash:*)",
-      "Bash(dirname:*)"
+      "Bash(dirname:*)",
+      "Bash(../scripts/test-claude-helper.ts init)",
+      "WebFetch(domain:bun-git-hooks.netlify.app)"
     ],
     "deny": []
   }

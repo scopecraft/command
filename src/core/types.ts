@@ -8,6 +8,9 @@
 // Core Enums and Constants
 // ============================================
 
+// NOTE: These types are defined to match the labels in default-schema.json
+// In the future, we could generate these from the schema dynamically
+
 export type WorkflowState = 'backlog' | 'current' | 'archive';
 
 export type TaskType = 'feature' | 'bug' | 'chore' | 'documentation' | 'test' | 'spike' | 'idea';

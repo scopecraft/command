@@ -77,18 +77,26 @@ async function getFilesToCheck(): Promise<{ files: string[], mode: string, base?
   }
   
   if (values.staged) {
-    const stagedFiles = await git.diff(['--staged', '--name-only']);
+    const stagedFiles = await git.diff(['--staged', '--name-status']);
+    const files = stagedFiles.split('\n')
+      .filter(line => line.trim() && !line.startsWith('D\t'))
+      .map(line => line.split('\t')[1])
+      .filter(f => f);
     return { 
-      files: stagedFiles.split('\n').filter(f => f.trim()), 
+      files, 
       mode: 'staged' 
     };
   }
   
   if (values.base) {
     try {
-      const diffFiles = await git.diff(['--name-only', `${values.base}...HEAD`]);
+      const diffFiles = await git.diff(['--name-status', `${values.base}...HEAD`]);
+      const files = diffFiles.split('\n')
+        .filter(line => line.trim() && !line.startsWith('D\t'))
+        .map(line => line.split('\t')[1])
+        .filter(f => f);
       return { 
-        files: diffFiles.split('\n').filter(f => f.trim()), 
+        files, 
         mode: 'base-comparison',
         base: values.base 
       };
@@ -100,16 +108,24 @@ async function getFilesToCheck(): Promise<{ files: string[], mode: string, base?
   
   // Default: files changed since last commit
   try {
-    const changedFiles = await git.diff(['--name-only', 'HEAD~1']);
+    const changedFiles = await git.diff(['--name-status', 'HEAD~1']);
+    const files = changedFiles.split('\n')
+      .filter(line => line.trim() && !line.startsWith('D\t'))
+      .map(line => line.split('\t')[1])
+      .filter(f => f);
     return { 
-      files: changedFiles.split('\n').filter(f => f.trim()), 
+      files, 
       mode: 'since-last-commit' 
     };
   } catch (error) {
     // Fallback to staged files if no previous commit
-    const stagedFiles = await git.diff(['--staged', '--name-only']);
+    const stagedFiles = await git.diff(['--staged', '--name-status']);
+    const files = stagedFiles.split('\n')
+      .filter(line => line.trim() && !line.startsWith('D\t'))
+      .map(line => line.split('\t')[1])
+      .filter(f => f);
     return { 
-      files: stagedFiles.split('\n').filter(f => f.trim()), 
+      files, 
       mode: 'staged-fallback' 
     };
   }

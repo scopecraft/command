@@ -48,16 +48,6 @@ import {
 import type { McpResponse } from './types.js';
 
 /**
- * Create consistent response metadata
- */
-function createResponseMetadata() {
-  return {
-    timestamp: new Date().toISOString(),
-    version: '2.0',
-  };
-}
-
-/**
  * Handler for task_create method
  */
 export async function handleTaskCreateNormalized(
@@ -119,14 +109,17 @@ export async function handleTaskCreateNormalized(
       status: (params.status ? denormalizeStatus(params.status) : 'To Do') as core.TaskStatus,
       workflowState: params.workflowState,
       instruction: params.instruction,
-      tasks: params.tasks ? core.parseTasksSection(params.tasks).map(t => t.text) : undefined,
+      tasks: params.tasks ? core.parseTasksSection(params.tasks).map((t) => t.text) : undefined,
       customMetadata: {},
     };
 
     // Add optional metadata
-    if (params.priority)
-      createOptions.customMetadata!.priority = denormalizePriority(params.priority);
-    if (params.assignee) createOptions.customMetadata!.assignee = params.assignee;
+    if (params.priority && createOptions.customMetadata) {
+      createOptions.customMetadata.priority = denormalizePriority(params.priority);
+    }
+    if (params.assignee && createOptions.customMetadata) {
+      createOptions.customMetadata.assignee = params.assignee;
+    }
     if (params.tags) createOptions.tags = params.tags;
 
     const result = await core.create(projectRoot, createOptions);
@@ -214,8 +207,7 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
       if (currentTask.success && currentTask.data) {
         const currentLog = currentTask.data.document.sections.log || '';
         const timestamp = new Date().toISOString().split('T')[0];
-        sections.log =
-          currentLog + (currentLog ? '\n' : '') + `- ${timestamp}: ${params.updates.addLogEntry}`;
+        sections.log = `${currentLog}${currentLog ? '\n' : ''}- ${timestamp}: ${params.updates.addLogEntry}`;
       }
     }
 
@@ -223,7 +215,13 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
       updateOptions.sections = sections;
     }
 
-    const result = await core.update(projectRoot, params.id, updateOptions, undefined, params.parentId);
+    const result = await core.update(
+      projectRoot,
+      params.id,
+      updateOptions,
+      undefined,
+      params.parentId
+    );
 
     if (!result.success || !result.data) {
       return {
@@ -539,9 +537,12 @@ export async function handleParentCreateNormalized(
       customMetadata: {},
     };
 
-    if (params.priority)
-      createOptions.customMetadata!.priority = denormalizePriority(params.priority);
-    if (params.assignee) createOptions.customMetadata!.assignee = params.assignee;
+    if (params.priority && createOptions.customMetadata) {
+      createOptions.customMetadata.priority = denormalizePriority(params.priority);
+    }
+    if (params.assignee && createOptions.customMetadata) {
+      createOptions.customMetadata.assignee = params.assignee;
+    }
     if (params.tags) createOptions.tags = params.tags;
 
     const result = await core.createParent(projectRoot, createOptions);
@@ -609,7 +610,7 @@ export async function handleParentCreateNormalized(
         }
 
         // Parallelize each group
-        for (const [baseTaskId, allIds] of Object.entries(parallelGroups)) {
+        for (const [_baseTaskId, allIds] of Object.entries(parallelGroups)) {
           // Remove duplicates and parallelize
           const uniqueIds = [...new Set(allIds)];
           if (uniqueIds.length > 1) {
@@ -672,8 +673,10 @@ export async function handleParentOperationsNormalized(
     switch (params.operationData.operation) {
       case 'resequence': {
         // Call the resequence method with the sequence map
-        const result = await core.parent(projectRoot, params.parentId).resequence(params.operationData.sequenceMap);
-        
+        const result = await core
+          .parent(projectRoot, params.parentId)
+          .resequence(params.operationData.sequenceMap);
+
         if (!result.success) {
           return {
             success: false,

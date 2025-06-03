@@ -32,19 +32,6 @@ import {
   handleTaskUpdateNormalized,
 } from './normalized-write-handlers.js';
 
-/**
- * Format operation result for MCP response
- */
-function formatOperationResponse<T>(result: core.OperationResult<T>) {
-  return {
-    success: result.success,
-    data: result.data,
-    error: result.error,
-    message:
-      result.error || (result.success ? 'Operation completed successfully' : 'Operation failed'),
-  };
-}
-
 // ============================================================================
 // Legacy handlers - These haven't been normalized yet
 // ============================================================================
@@ -72,10 +59,10 @@ export async function handleTemplateList(params: TemplateListParams) {
 export async function handleInitRoot(params: ConfigInitRootParams) {
   try {
     const configManager = ConfigurationManager.getInstance();
-    
+
     // Initialize the project structure
     const projectRoot = params.path;
-    
+
     // Check if init is needed
     const initNeeded = core.needsInit(projectRoot);
     if (initNeeded) {
@@ -157,7 +144,7 @@ export async function handleDebugCodePath(_params: DebugCodePathParams) {
       timestamp: new Date().toISOString(),
       implemented_features: {
         task_system: true,
-        task_system_v2: true,  // Keeping for backwards compatibility
+        task_system_v2: true, // Keeping for backwards compatibility
         workflow_states: true,
         parent_tasks: true,
         task_transformations: true,

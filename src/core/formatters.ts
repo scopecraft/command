@@ -1,15 +1,15 @@
+import type { TemplateInfo } from './template-manager.js';
 /**
  * Formatters for displaying tasks in various formats
  */
 import type {
+  ParentTask,
   Task,
+  TaskPriority,
   TaskStatus,
   TaskType,
-  TaskPriority,
   WorkflowState,
-  ParentTask
 } from './types.js';
-import type { TemplateInfo } from './template-manager.js';
 
 export type OutputFormat =
   | 'tree'
@@ -82,7 +82,9 @@ export function formatTasksList(tasks: Task[], format: OutputFormat): string {
  */
 function formatWorkflowView(tasks: Task[]): string {
   const taskMap = new Map<string, Task>();
-  tasks.forEach((task) => taskMap.set(task.metadata.id, task));
+  for (const task of tasks) {
+    taskMap.set(task.metadata.id, task);
+  }
 
   let output = '\nTask Workflow:\n';
 
@@ -93,16 +95,16 @@ function formatWorkflowView(tasks: Task[]): string {
     archive: [],
   };
 
-  tasks.forEach((task) => {
+  for (const task of tasks) {
     byState[task.metadata.location.workflowState].push(task);
-  });
+  }
 
   // Show each workflow state
-  (['current', 'backlog', 'archive'] as WorkflowState[]).forEach((state) => {
+  for (const state of ['current', 'backlog', 'archive'] as WorkflowState[]) {
     if (byState[state].length > 0) {
       output += `\n${state.toUpperCase()}:\n`;
 
-      byState[state].forEach((task) => {
+      for (const task of byState[state]) {
         const statusEmoji = STATUS_EMOJIS[task.document.frontmatter.status];
         const typeEmoji = TYPE_EMOJIS[task.document.frontmatter.type];
         const isParent = task.metadata.isParentTask ? '📁 ' : '';
@@ -110,19 +112,19 @@ function formatWorkflowView(tasks: Task[]): string {
         output += `  ${statusEmoji} ${typeEmoji} ${isParent}${task.metadata.id}: ${task.document.title}\n`;
 
         // Show relationships
-        const meta = task.document.frontmatter as any;
+        const meta = task.document.frontmatter;
         if (meta.parent) {
           output += `     └─ Parent: ${meta.parent}\n`;
         }
-        if (meta.depends) {
+        if (meta.depends && Array.isArray(meta.depends)) {
           output += `     └─ Depends on: ${meta.depends.join(', ')}\n`;
         }
         if (meta.next) {
           output += `     └─ Next: ${meta.next}\n`;
         }
-      });
+      }
     }
-  });
+  }
 
   return output;
 }
@@ -142,17 +144,19 @@ function formatTreeView(tasks: Task[]): string {
     archive: [],
   };
 
-  tasks.forEach((task) => {
+  for (const task of tasks) {
     byState[task.metadata.location.workflowState].push(task);
-  });
+  }
 
   let output = '\n';
   let hasContent = false;
 
   // Show each workflow state
-  (['current', 'backlog', 'archive'] as WorkflowState[]).forEach((state) => {
+  for (const state of ['current', 'backlog', 'archive'] as WorkflowState[]) {
     const stateTasks = byState[state];
-    if (stateTasks.length === 0) return;
+    if (stateTasks.length === 0) {
+      continue;
+    }
 
     hasContent = true;
     output += `${state.toUpperCase()}:\n`;
@@ -166,26 +170,31 @@ function formatTreeView(tasks: Task[]): string {
 
     // Create a map of parent ID to subtasks
     const subtasksByParent = new Map<string, Task[]>();
-    subtasks.forEach((task) => {
-      const parentId = task.metadata.parentTask!;
-      if (!subtasksByParent.has(parentId)) {
-        subtasksByParent.set(parentId, []);
+    for (const task of subtasks) {
+      const parentId = task.metadata.parentTask;
+      if (parentId) {
+        if (!subtasksByParent.has(parentId)) {
+          subtasksByParent.set(parentId, []);
+        }
+        const parentSubtasks = subtasksByParent.get(parentId);
+        if (parentSubtasks) {
+          parentSubtasks.push(task);
+        }
       }
-      subtasksByParent.get(parentId)!.push(task);
-    });
+    }
 
     // Handle empty state
     if (parentTasks.length === 0 && standaloneTasks.length === 0 && subtasks.length === 0) {
       output += `  (No tasks in ${state} workflow)\n`;
-      return;
+      continue;
     }
 
     // Display parent tasks with their subtasks
-    parentTasks.forEach((parent, index) => {
+    for (const [index, parent] of parentTasks.entries()) {
       const isLastParent = index === parentTasks.length - 1 && standaloneTasks.length === 0;
       const prefix = isLastParent ? '└── ' : '├── ';
       const statusSymbol = getStatusSymbol(parent.document.frontmatter.status);
-      const meta = parent.document.frontmatter as any;
+      const meta = parent.document.frontmatter;
 
       // Build parent line
       let line = `${prefix}📁 ${statusSymbol} ${parent.document.title} [${parent.metadata.id}]`;
@@ -207,7 +216,7 @@ function formatTreeView(tasks: Task[]): string {
         line += ` • ${meta.tags.map((t: string) => `#${t}`).join(' ')}`;
       }
 
-      output += line + '\n';
+      output += `${line}\n`;
 
       // Show subtasks of this parent
       if (parentSubtasks.length > 0) {
@@ -220,17 +229,20 @@ function formatTreeView(tasks: Task[]): string {
 
         // Group by sequence for parallel tasks
         const bySequence = new Map<string, Task[]>();
-        sortedSubtasks.forEach((task) => {
+        for (const task of sortedSubtasks) {
           const seq = task.metadata.sequenceNumber || '99';
           if (!bySequence.has(seq)) {
             bySequence.set(seq, []);
           }
-          bySequence.get(seq)!.push(task);
-        });
+          const seqTasks = bySequence.get(seq);
+          if (seqTasks) {
+            seqTasks.push(task);
+          }
+        }
 
         const sequences = Array.from(bySequence.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
-        sequences.forEach(([seq, seqTasks], seqIndex) => {
+        for (const [seqIndex, [seq, seqTasks]] of sequences.entries()) {
           const isLastSeq = seqIndex === sequences.length - 1;
           const seqPrefix = isLastParent ? '    ' : '│   ';
 
@@ -239,7 +251,7 @@ function formatTreeView(tasks: Task[]): string {
             const task = seqTasks[0];
             const taskPrefix = isLastSeq ? '└── ' : '├── ';
             const statusSymbol = getStatusSymbol(task.document.frontmatter.status);
-            const taskMeta = task.document.frontmatter as any;
+            const taskMeta = task.document.frontmatter;
 
             let taskLine = `${seqPrefix}${taskPrefix}${statusSymbol} ${task.document.title} [${task.metadata.id}]`;
             taskLine += ` • ${task.document.frontmatter.status}`;
@@ -253,15 +265,15 @@ function formatTreeView(tasks: Task[]): string {
               taskLine += ` • ${taskMeta.tags.map((t: string) => `#${t}`).join(' ')}`;
             }
 
-            output += taskLine + '\n';
+            output += `${taskLine}\n`;
           } else {
             // Parallel tasks
             output += `${seqPrefix}├─┬ [Parallel execution - ${seq}]\n`;
-            seqTasks.forEach((task, taskIndex) => {
+            for (const [taskIndex, task] of seqTasks.entries()) {
               const isLastTask = taskIndex === seqTasks.length - 1;
               const taskPrefix = isLastTask ? '└─ ' : '├─ ';
               const statusSymbol = getStatusSymbol(task.document.frontmatter.status);
-              const taskMeta = task.document.frontmatter as any;
+              const taskMeta = task.document.frontmatter;
 
               let taskLine = `${seqPrefix}│ ${taskPrefix}${statusSymbol} ${task.document.title} [${task.metadata.id}]`;
               taskLine += ` • ${task.document.frontmatter.status}`;
@@ -275,19 +287,19 @@ function formatTreeView(tasks: Task[]): string {
                 taskLine += ` • ${taskMeta.tags.map((t: string) => `#${t}`).join(' ')}`;
               }
 
-              output += taskLine + '\n';
-            });
+              output += `${taskLine}\n`;
+            }
           }
-        });
+        }
       }
-    });
+    }
 
     // Display standalone tasks
-    standaloneTasks.forEach((task, index) => {
+    for (const [index, task] of standaloneTasks.entries()) {
       const isLast = index === standaloneTasks.length - 1;
       const prefix = isLast ? '└── ' : '├── ';
       const statusSymbol = getStatusSymbol(task.document.frontmatter.status);
-      const meta = task.document.frontmatter as any;
+      const meta = task.document.frontmatter;
 
       let line = `${prefix}${statusSymbol} ${task.document.title} [${task.metadata.id}]`;
       line += ` • ${task.document.frontmatter.status}`;
@@ -306,11 +318,11 @@ function formatTreeView(tasks: Task[]): string {
         line += ' (⚠️ no parent)';
       }
 
-      output += line + '\n';
-    });
+      output += `${line}\n`;
+    }
 
     output += '\n';
-  });
+  }
 
   if (hasContent) {
     output += 'Legend: ✓ Done  → In Progress  ○ To Do  ⊗ Blocked  • High ↑  Low ↓\n';
@@ -376,12 +388,10 @@ export function formatTaskDetail(task: Task, format: OutputFormat): string {
   }
 
   // Default format
-  const meta = task.document.frontmatter as any;
+  const meta = task.document.frontmatter;
   const statusEmoji = STATUS_EMOJIS[task.document.frontmatter.status];
   const typeEmoji = TYPE_EMOJIS[task.document.frontmatter.type];
-  const priorityEmoji = meta.priority
-    ? PRIORITY_EMOJIS[meta.priority as keyof typeof PRIORITY_EMOJIS] || ''
-    : '';
+  const priorityEmoji = meta.priority ? PRIORITY_EMOJIS[meta.priority as TaskPriority] || '' : '';
 
   let output = `\n${task.document.title}\n${'='.repeat(task.document.title.length)}\n\n`;
   output += `ID:       ${task.metadata.id}\n`;
@@ -445,8 +455,8 @@ function formatTaskAsMarkdown(task: Task): string {
   output += `area: ${task.document.frontmatter.area}\n`;
 
   // Add custom metadata
-  const meta = task.document.frontmatter as any;
-  Object.entries(meta).forEach(([key, value]) => {
+  const meta = task.document.frontmatter;
+  for (const [key, value] of Object.entries(meta)) {
     if (!['type', 'status', 'area'].includes(key)) {
       if (Array.isArray(value)) {
         output += `${key}: [${value.join(', ')}]\n`;
@@ -454,7 +464,7 @@ function formatTaskAsMarkdown(task: Task): string {
         output += `${key}: ${value}\n`;
       }
     }
-  });
+  }
 
   output += '---\n\n';
 
@@ -484,14 +494,14 @@ function formatTaskAsMarkdown(task: Task): string {
 export function formatTemplatesList(templates: TemplateInfo[]): string {
   let output = '\nAvailable Templates:\n';
   output += 'ID                  Title                                   Description\n';
-  output += '─'.repeat(80) + '\n';
+  output += `${'─'.repeat(80)}\n`;
 
-  templates.forEach((template) => {
+  for (const template of templates) {
     const id = template.id.padEnd(20);
     const title = template.name.substring(0, 40).padEnd(40);
     const description = template.type.substring(0, 20);
     output += `${id}${title}${description}\n`;
-  });
+  }
 
   return output;
 }
