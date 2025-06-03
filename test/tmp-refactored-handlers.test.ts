@@ -3,13 +3,13 @@
  * Tests handlers through the MCP method registry as they would be called in production
  */
 
-import { expect, test, describe, beforeAll, afterAll } from 'bun:test';
-import { mkdirSync, rmSync, existsSync } from 'fs';
-import { join } from 'path';
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { ConfigurationManager } from '../src/core/config/configuration-manager.js';
+import * as core from '../src/core/index.js';
 import { methodRegistry } from '../src/mcp/handlers/index.js';
 import { McpMethod } from '../src/mcp/types.js';
-import * as core from '../src/core/index.js';
 
 // Test constants
 const TEST_ROOT = join(process.cwd(), '.test-tmp-refactored-handlers');
@@ -25,10 +25,10 @@ describe('Refactored MCP Handlers Integration Tests', () => {
     // Create test directory structure
     mkdirSync(TEST_ROOT, { recursive: true });
     mkdirSync(TASKS_DIR, { recursive: true });
-    
+
     // Initialize project structure
     core.initializeProjectStructure(TEST_ROOT);
-    
+
     // Set up configuration
     const configManager = ConfigurationManager.getInstance();
     configManager.setRootFromCLI(TEST_ROOT);
@@ -126,7 +126,7 @@ describe('Refactored MCP Handlers Integration Tests', () => {
     test('should list tasks with filters', async () => {
       // Create some test tasks
       const createHandler = methodRegistry[McpMethod.TASK_CREATE];
-      
+
       await createHandler({
         title: 'Feature task',
         type: 'feature',
@@ -152,7 +152,7 @@ describe('Refactored MCP Handlers Integration Tests', () => {
 
       // Test listing with filters
       const listHandler = methodRegistry[McpMethod.TASK_LIST];
-      
+
       // List all tasks (excluding completed by default)
       const allResult = await listHandler({});
       expect(allResult.success).toBe(true);
@@ -161,22 +161,22 @@ describe('Refactored MCP Handlers Integration Tests', () => {
       // List by type
       const featureResult = await listHandler({ type: 'feature' });
       expect(featureResult.success).toBe(true);
-      expect(featureResult.data.every(t => t.type === 'feature')).toBe(true);
+      expect(featureResult.data.every((t) => t.type === 'feature')).toBe(true);
 
       // List by area
       const backendResult = await listHandler({ area: 'backend' });
       expect(backendResult.success).toBe(true);
-      expect(backendResult.data.every(t => t.area === 'backend')).toBe(true);
+      expect(backendResult.data.every((t) => t.area === 'backend')).toBe(true);
 
       // List including completed
       const withCompletedResult = await listHandler({ includeCompleted: true });
       expect(withCompletedResult.success).toBe(true);
-      expect(withCompletedResult.data.some(t => t.status === 'done')).toBe(true);
+      expect(withCompletedResult.data.some((t) => t.status === 'done')).toBe(true);
 
       // List by structure type
       const simpleOnlyResult = await listHandler({ taskType: 'simple' });
       expect(simpleOnlyResult.success).toBe(true);
-      expect(simpleOnlyResult.data.every(t => t.taskStructure === 'simple')).toBe(true);
+      expect(simpleOnlyResult.data.every((t) => t.taskStructure === 'simple')).toBe(true);
     });
   });
 
@@ -226,11 +226,11 @@ describe('Refactored MCP Handlers Integration Tests', () => {
       expect(result.data.id).toBeDefined();
       expect(result.data.subtaskCount).toBe(4);
       expect(result.data.createdSubtasks).toHaveLength(4);
-      
+
       // Check that subtasks were created
       const subtasks = result.data.createdSubtasks;
-      const backend = subtasks.find(st => st.title === 'Implement backend');
-      const ui = subtasks.find(st => st.title === 'Build UI');
+      const backend = subtasks.find((st) => st.title === 'Implement backend');
+      const ui = subtasks.find((st) => st.title === 'Build UI');
       expect(backend).toBeDefined();
       expect(ui).toBeDefined();
       // Note: Parallelization might not be reflected in the initial creation response
@@ -244,11 +244,7 @@ describe('Refactored MCP Handlers Integration Tests', () => {
       const parentResult = await createHandler({
         title: 'Parent for operations',
         type: 'feature',
-        subtasks: [
-          { title: 'First task' },
-          { title: 'Second task' },
-          { title: 'Third task' },
-        ],
+        subtasks: [{ title: 'First task' }, { title: 'Second task' }, { title: 'Third task' }],
       });
 
       const parentId = parentResult.data.id;
@@ -378,10 +374,7 @@ describe('Refactored MCP Handlers Integration Tests', () => {
       const parentResult = await createHandler({
         title: 'Parent with subtask',
         type: 'feature',
-        subtasks: [
-          { title: 'Subtask to extract' },
-          { title: 'Other subtask' },
-        ],
+        subtasks: [{ title: 'Subtask to extract' }, { title: 'Other subtask' }],
       });
 
       const parentId = parentResult.data.id;
@@ -465,10 +458,7 @@ describe('Refactored MCP Handlers Integration Tests', () => {
       const parentResult = await createHandler({
         title: 'Parent to delete',
         type: 'feature',
-        subtasks: [
-          { title: 'Child 1' },
-          { title: 'Child 2' },
-        ],
+        subtasks: [{ title: 'Child 1' }, { title: 'Child 2' }],
       });
 
       const parentId = parentResult.data.id;
@@ -489,7 +479,7 @@ describe('Refactored MCP Handlers Integration Tests', () => {
     test('should list parent tasks with filters', async () => {
       // Create some parent tasks
       const createHandler = methodRegistry[McpMethod.PARENT_CREATE];
-      
+
       await createHandler({
         title: 'Backend parent',
         type: 'feature',
@@ -510,12 +500,12 @@ describe('Refactored MCP Handlers Integration Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.length).toBeGreaterThanOrEqual(2);
-      expect(result.data.every(p => p.taskStructure === 'parent')).toBe(true);
+      expect(result.data.every((p) => p.taskStructure === 'parent')).toBe(true);
 
       // List by area
       const backendResult = await listHandler({ area: 'backend' });
       expect(backendResult.success).toBe(true);
-      expect(backendResult.data.every(p => p.area === 'backend')).toBe(true);
+      expect(backendResult.data.every((p) => p.area === 'backend')).toBe(true);
     });
   });
 
@@ -527,10 +517,7 @@ describe('Refactored MCP Handlers Integration Tests', () => {
         title: 'Detailed parent',
         type: 'feature',
         overviewContent: 'This is the overview',
-        subtasks: [
-          { title: 'First subtask' },
-          { title: 'Second subtask' },
-        ],
+        subtasks: [{ title: 'First subtask' }, { title: 'Second subtask' }],
       });
 
       const parentId = createResult.data.id;
@@ -552,7 +539,7 @@ describe('Refactored MCP Handlers Integration Tests', () => {
     test('parameter transformation is applied correctly', async () => {
       // Test that snake_case params are transformed to camelCase
       const handler = methodRegistry[McpMethod.TASK_CREATE];
-      
+
       // This would normally come in as snake_case from MCP protocol
       const result = await handler({
         title: 'Test param transform',

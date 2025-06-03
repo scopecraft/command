@@ -9,14 +9,15 @@ import {
   ParentCreateInputSchema,
   type ParentCreateOutput,
   ParentCreateOutputSchema,
+  type ParentOperationsInput,
+  ParentOperationsInputSchema,
+  type ParentOperationsOutput,
+  ParentOperationsOutputSchema,
+  type Task,
   type TaskCreateInput,
   TaskCreateInputSchema,
   type TaskCreateOutput,
   TaskCreateOutputSchema,
-  type TaskUpdateInput,
-  TaskUpdateInputSchema,
-  TaskUpdateOutputSchema,
-  type Task,
   type TaskDeleteInput,
   TaskDeleteInputSchema,
   type TaskDeleteOutput,
@@ -29,21 +30,17 @@ import {
   TaskTransformInputSchema,
   type TaskTransformOutput,
   TaskTransformOutputSchema,
-  type ParentOperationsInput,
-  ParentOperationsInputSchema,
-  type ParentOperationsOutput,
-  ParentOperationsOutputSchema,
+  type TaskUpdateInput,
+  TaskUpdateInputSchema,
+  TaskUpdateOutputSchema,
 } from '../schemas.js';
-import { type McpResponse } from '../types.js';
 import { transformTask } from '../transformers.js';
+import type { McpResponse } from '../types.js';
 
 // Type aliases for inline schemas
-type SubtaskDefinition = ParentCreateInput['subtasks'][number];
-import { 
-  createErrorResponse, 
-  createSuccessResponse,
-  createTaskResponse,
-} from './shared/response-utils.js';
+type SubtaskDefinition = NonNullable<ParentCreateInput['subtasks']>[number];
+import { getProjectRoot } from './shared/config-utils.js';
+import { appendTimestampedLogEntry } from './shared/log-utils.js';
 import {
   buildCommonMetadata,
   buildTaskCreateOptionsBase,
@@ -51,18 +48,18 @@ import {
   parseTasksList,
 } from './shared/options-builders.js';
 import {
-  validateParentTask,
-  validateTaskExists,
-} from './shared/validation-utils.js';
+  createErrorResponse,
+  createSuccessResponse,
+  createTaskResponse,
+} from './shared/response-utils.js';
 import {
   type CreatedSubtask,
-  createSubtaskWithDefaults,
-  buildSubtaskResponse,
-  groupParallelSubtasks,
   applyParallelizations,
+  buildSubtaskResponse,
+  createSubtaskWithDefaults,
+  groupParallelSubtasks,
 } from './shared/subtask-utils.js';
-import { getProjectRoot } from './shared/config-utils.js';
-import { appendTimestampedLogEntry } from './shared/log-utils.js';
+import { validateParentTask, validateTaskExists } from './shared/validation-utils.js';
 
 // =============================================================================
 // Parent Create Handler (Refactored from complexity 58 to ~10)
@@ -76,7 +73,7 @@ function buildParentCreateOptions(params: ParentCreateInput): core.TaskCreateOpt
     title: params.title,
     type: params.type,
     area: params.area,
-    status: params.status || 'To Do',
+    status: params.status,
     workflowState: params.workflowState,
     instruction: params.overviewContent,
   });
@@ -89,9 +86,10 @@ function buildParentCreateOptions(params: ParentCreateInput): core.TaskCreateOpt
 
   return {
     ...baseOptions,
+    title: params.title, // Ensure title is always present
     customMetadata: metadata,
     tags: params.tags,
-  };
+  } as core.TaskCreateOptions;
 }
 
 /**
@@ -107,16 +105,11 @@ async function createInitialSubtasks(
   const createdSubtasks: CreatedSubtask[] = [];
 
   for (const subtaskDef of subtasks) {
-    const result = await createSubtaskWithDefaults(
-      projectRoot,
-      parentId,
-      subtaskDef.title,
-      {
-        type: subtaskDef.type,
-        parentType,
-        parentArea,
-      }
-    );
+    const result = await createSubtaskWithDefaults(projectRoot, parentId, subtaskDef.title, {
+      type: subtaskDef.type,
+      parentType,
+      parentArea,
+    });
 
     if (result.success && result.subtask) {
       createdSubtasks.push(buildSubtaskResponse(result.subtask));
@@ -189,7 +182,7 @@ export async function handleParentCreate(
     const response = ParentCreateOutputSchema.parse({
       success: true,
       data: responseData,
-      message: `Parent task ${responseData.id} created successfully`,
+      message: `Parent task ${responseData?.id} created successfully`,
     });
 
     return response;
@@ -224,15 +217,10 @@ async function handleSubtaskCreation(
   }
 
   // Create subtask
-  const result = await createSubtaskWithDefaults(
-    projectRoot,
-    params.parentId,
-    params.title,
-    {
-      type: params.type,
-      area: params.area,
-    }
-  );
+  const result = await createSubtaskWithDefaults(projectRoot, params.parentId, params.title, {
+    type: params.type,
+    area: params.area,
+  });
 
   if (!result.success || !result.subtask) {
     return createErrorResponse(
@@ -292,6 +280,9 @@ export async function handleTaskCreate(
         workflowState: params.workflowState,
         instruction: params.instruction,
       }),
+      title: params.title, // Ensure title is always present
+      type: params.type as core.TaskType, // Ensure type is always present
+      area: params.area || 'general', // Ensure area is always present
       tasks: parseTasksList(params.tasks),
       customMetadata: buildCommonMetadata({
         priority: params.priority,
@@ -305,10 +296,7 @@ export async function handleTaskCreate(
     const result = await core.create(projectRoot, createOptions);
 
     if (!result.success || !result.data) {
-      return createErrorResponse(
-        result.error || 'Failed to create task',
-        'Task creation failed'
-      );
+      return createErrorResponse(result.error || 'Failed to create task', 'Task creation failed');
     }
 
     // Build and validate response
@@ -316,7 +304,7 @@ export async function handleTaskCreate(
     const response = TaskCreateOutputSchema.parse({
       success: true,
       data: responseData,
-      message: `Task ${responseData.id} created successfully`,
+      message: `Task ${responseData?.id} created successfully`,
     });
 
     return response;
@@ -375,9 +363,7 @@ async function createUpdateResponse(
  * Handler for task_update method
  * Complexity reduced from 28 to ~10
  */
-export async function handleTaskUpdate(
-  rawParams: unknown
-): Promise<McpResponse<Task>> {
+export async function handleTaskUpdate(rawParams: unknown): Promise<McpResponse<Task>> {
   try {
     // Validate input
     const params = TaskUpdateInputSchema.parse(rawParams);
@@ -394,7 +380,7 @@ export async function handleTaskUpdate(
         params.updates.addLogEntry,
         params.parentId
       );
-      
+
       if (!updateOptions.sections) {
         updateOptions.sections = {};
       }
@@ -411,10 +397,7 @@ export async function handleTaskUpdate(
     );
 
     if (!result.success || !result.data) {
-      return createErrorResponse(
-        result.error || 'Failed to update task',
-        'Task update failed'
-      );
+      return createErrorResponse(result.error || 'Failed to update task', 'Task update failed');
     }
 
     // Create response with normalized data
@@ -462,10 +445,7 @@ export async function handleTaskDelete(
     }
 
     if (!result.success) {
-      return createErrorResponse(
-        result.error || 'Failed to delete task',
-        'Task deletion failed'
-      );
+      return createErrorResponse(result.error || 'Failed to delete task', 'Task deletion failed');
     }
 
     const outputData = {
@@ -507,12 +487,9 @@ export async function handleTaskMove(
     // Get the task's current state before moving
     const beforeMove = await core.get(projectRoot, params.id, undefined, params.parentId);
     if (!beforeMove.success || !beforeMove.data) {
-      return createErrorResponse(
-        beforeMove.error || 'Task not found',
-        'Failed to get task'
-      );
+      return createErrorResponse(beforeMove.error || 'Task not found', 'Failed to get task');
     }
-    
+
     const previousState = beforeMove.data.metadata.location.workflowState;
     const previousStatus = beforeMove.data.document.frontmatter.status;
 
@@ -530,10 +507,7 @@ export async function handleTaskMove(
     );
 
     if (!result.success || !result.data) {
-      return createErrorResponse(
-        result.error || 'Failed to move task',
-        'Task move failed'
-      );
+      return createErrorResponse(result.error || 'Failed to move task', 'Task move failed');
     }
 
     // Build response
@@ -581,9 +555,8 @@ async function handlePromoteOperation(
     keepOriginal: false,
   });
 
-  const affectedTasks = promoteResult.success && promoteResult.data
-    ? [promoteResult.data.metadata.id]
-    : [];
+  const affectedTasks =
+    promoteResult.success && promoteResult.data ? [promoteResult.data.metadata.id] : [];
 
   return { result: promoteResult, affectedTasks };
 }
@@ -641,11 +614,7 @@ export async function handleTaskTransform(
             'Missing required field for extract operation'
           );
         }
-        const extractOp = await handleExtractOperation(
-          projectRoot,
-          params.id,
-          params.parentId
-        );
+        const extractOp = await handleExtractOperation(projectRoot, params.id, params.parentId);
         result = extractOp.result;
         affectedTasks = extractOp.affectedTasks;
         break;
@@ -674,12 +643,7 @@ export async function handleTaskTransform(
     }
 
     // Transform to normalized format
-    const normalizedTask = await transformTask(
-      projectRoot,
-      result.data as core.Task,
-      false,
-      true
-    );
+    const normalizedTask = await transformTask(projectRoot, result.data as core.Task, false, true);
 
     const outputData = {
       operation: params.operation,
@@ -805,10 +769,12 @@ async function handleAddSubtaskOperation(
   // Transform new subtask to normalized format
   const normalizedSubtask = await transformTask(projectRoot, result.data, false, true);
 
-  const affectedSubtasks = [{
-    id: result.data.metadata.id,
-    currentSequence: result.data.metadata.sequenceNumber || '01',
-  }];
+  const affectedSubtasks = [
+    {
+      id: result.data.metadata.id,
+      currentSequence: result.data.metadata.sequenceNumber || '01',
+    },
+  ];
 
   return {
     success: true,
@@ -845,7 +811,10 @@ export async function handleParentOperations(
           params.operationData.sequenceMap
         );
         if (!result.success) {
-          return createErrorResponse(result.error!, 'Resequence operation failed');
+          return createErrorResponse(
+            result.error || 'Unknown error',
+            'Resequence operation failed'
+          );
         }
         affectedSubtasks = result.affectedSubtasks;
         break;
@@ -859,7 +828,10 @@ export async function handleParentOperations(
           params.operationData.targetSequence
         );
         if (!result.success) {
-          return createErrorResponse(result.error!, 'Parallelize operation failed');
+          return createErrorResponse(
+            result.error || 'Unknown error',
+            'Parallelize operation failed'
+          );
         }
         affectedSubtasks = result.affectedSubtasks;
         break;
@@ -872,7 +844,10 @@ export async function handleParentOperations(
           params.operationData.subtask
         );
         if (!result.success) {
-          return createErrorResponse(result.error!, 'Add subtask operation failed');
+          return createErrorResponse(
+            result.error || 'Unknown error',
+            'Add subtask operation failed'
+          );
         }
         affectedSubtasks = result.affectedSubtasks;
         newSubtask = result.newSubtask;

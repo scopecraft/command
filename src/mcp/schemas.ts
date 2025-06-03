@@ -361,7 +361,7 @@ export const TaskCreateOutputSchema = createResponseSchema(
     title: z.string(),
     type: TaskTypeSchema,
     status: TaskStatusSchema,
-    priority: TaskPrioritySchema,
+    priority: TaskPrioritySchema.optional(),
     workflowState: WorkflowStateSchema,
     area: z.string(),
     path: z.string(),

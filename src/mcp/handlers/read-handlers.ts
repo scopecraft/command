@@ -5,25 +5,22 @@
 
 import * as core from '../../core/index.js';
 import {
-  type McpResponse,
-  type Task,
-  type TaskListInput,
-  TaskListInputSchema,
-  type TaskGetInput,
-  TaskGetInputSchema,
-  type ParentTaskList,
-  type ParentListInput,
-  ParentListInputSchema,
-  type ParentTaskDetail,
   type ParentGetInput,
   ParentGetInputSchema,
+  type ParentListInput,
+  ParentListInputSchema,
+  type ParentTask,
+  type ParentTaskDetail,
+  type Task,
+  type TaskGetInput,
+  TaskGetInputSchema,
+  type TaskListInput,
+  TaskListInputSchema,
 } from '../schemas.js';
-import { transformTask, transformParentTaskDetail } from '../transformers.js';
-import { 
-  createErrorResponse,
-  batchTransformTasks,
-} from './shared/response-utils.js';
+import { transformParentTaskDetail, transformTask } from '../transformers.js';
+import type { McpResponse } from '../types.js';
 import { getProjectRoot } from './shared/config-utils.js';
+import { batchTransformTasks, createErrorResponse } from './shared/response-utils.js';
 
 // =============================================================================
 // Task List Handler (Refactored from complexity 17 to ~12)
@@ -32,17 +29,17 @@ import { getProjectRoot } from './shared/config-utils.js';
 /**
  * Build core list options from input parameters
  */
-function buildListFilters(params: TaskListInput): core.ListOptions {
-  const listOptions: core.ListOptions = {};
+function buildListFilters(params: TaskListInput): core.TaskListOptions {
+  const listOptions: core.TaskListOptions = {};
 
   // Basic filters
   if (params.workflowState) listOptions.workflowState = params.workflowState;
   if (params.area) listOptions.area = params.area;
-  if (params.type) listOptions.type = params.type;
-  if (params.status) listOptions.status = params.status;
-  if (params.priority) listOptions.priority = params.priority;
+  if (params.type) listOptions.type = params.type as core.TaskType;
+  if (params.status) listOptions.status = params.status as core.TaskStatus;
   if (params.assignee) listOptions.assignee = params.assignee;
   if (params.tags) listOptions.tags = params.tags;
+  // Note: priority is only available in advancedFilter
 
   // Token efficiency: exclude completed tasks by default
   if (!params.includeCompleted) {
@@ -78,17 +75,16 @@ function applyStructureFilter(
   switch (taskType) {
     case 'simple':
       return tasks.filter((t) => !t.metadata.isParentTask && !t.metadata.parentTask);
-    
+
     case 'parent':
       return tasks.filter((t) => t.metadata.isParentTask);
-    
+
     case 'subtask':
       return tasks.filter((t) => t.metadata.parentTask);
-    
+
     case 'top-level':
       return tasks.filter((t) => !t.metadata.parentTask);
-    
-    case 'all':
+
     default:
       return tasks;
   }
@@ -98,13 +94,11 @@ function applyStructureFilter(
  * Handler for task_list method
  * Complexity reduced from 17 to ~12
  */
-export async function handleTaskList(
-  rawParams: unknown
-): Promise<McpResponse<Task[]>> {
+export async function handleTaskList(rawParams: unknown): Promise<McpResponse<Task[]>> {
   try {
     // Validate input
     const params = TaskListInputSchema.parse(rawParams);
-    
+
     // Check for advanced filter usage
     if (params.advancedFilter) {
       console.warn('advancedFilter not yet implemented - ignoring');
@@ -152,9 +146,7 @@ export async function handleTaskList(
 /**
  * Handler for task_get method
  */
-export async function handleTaskGet(
-  rawParams: unknown
-): Promise<McpResponse<Task>> {
+export async function handleTaskGet(rawParams: unknown): Promise<McpResponse<Task>> {
   try {
     // Validate input
     const params = TaskGetInputSchema.parse(rawParams);
@@ -202,16 +194,14 @@ export async function handleTaskGet(
 /**
  * Handler for parent_list method
  */
-export async function handleParentList(
-  rawParams: unknown
-): Promise<McpResponse<ParentTaskList[]>> {
+export async function handleParentList(rawParams: unknown): Promise<McpResponse<ParentTask[]>> {
   try {
     // Validate input
     const params = ParentListInputSchema.parse(rawParams);
     const projectRoot = getProjectRoot(params);
 
     // Build filter options for listing
-    const listOptions: core.ListOptions = {
+    const listOptions: core.TaskListOptions = {
       area: params.area,
       includeParentTasks: true,
       workflowState: params.workflowState,
@@ -225,11 +215,11 @@ export async function handleParentList(
     }
 
     // Filter to only parent tasks
-    const parentTasks = result.data.filter(t => t.metadata.isParentTask);
+    const parentTasks = result.data.filter((t) => t.metadata.isParentTask);
 
     // Transform to normalized format
-    const transformedParents: ParentTaskList[] = [];
-    
+    const transformedParents: ParentTask[] = [];
+
     for (const task of parentTasks) {
       try {
         const normalizedParent = await transformTask(
@@ -239,9 +229,9 @@ export async function handleParentList(
           params.includeSubtasks || false
         );
 
-        // For now, cast to ParentTaskList as we know these are parent tasks
+        // For now, cast to ParentTask as we know these are parent tasks
         // Progress info would need to be loaded separately if needed
-        transformedParents.push(normalizedParent as ParentTaskList);
+        transformedParents.push(normalizedParent as ParentTask);
       } catch (error) {
         console.error(`Failed to transform parent ${task.metadata.id}:`, error);
         // Continue with other parents
@@ -270,9 +260,7 @@ export async function handleParentList(
 /**
  * Handler for parent_get method
  */
-export async function handleParentGet(
-  rawParams: unknown
-): Promise<McpResponse<ParentTaskDetail>> {
+export async function handleParentGet(rawParams: unknown): Promise<McpResponse<ParentTaskDetail>> {
   try {
     // Validate input
     const params = ParentGetInputSchema.parse(rawParams);
@@ -282,7 +270,7 @@ export async function handleParentGet(
     const parentDetail = await transformParentTaskDetail(
       projectRoot,
       params.id,
-      params.format !== 'summary' // Include content unless summary format
+      true // Always include content for parent_get
     );
 
     // Return response
@@ -293,7 +281,7 @@ export async function handleParentGet(
     };
   } catch (error) {
     console.error('Error in handleParentGet:', error);
-    
+
     // Handle specific error cases
     if (error instanceof Error && error.message.includes('not found')) {
       return createErrorResponse('Parent task not found', 'Parent task not found');

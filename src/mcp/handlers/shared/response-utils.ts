@@ -3,18 +3,15 @@
  * Provides consistent response formatting across all handlers
  */
 
-import * as core from '../../../core/index.js';
-import { type Task } from '../../schemas.js';
-import { type McpResponse } from '../../types.js';
+import type * as core from '../../../core/index.js';
+import type { Task } from '../../schemas.js';
 import { transformTask } from '../../transformers.js';
+import type { McpResponse } from '../../types.js';
 
 /**
  * Create a standardized success response
  */
-export function createSuccessResponse<T>(
-  data: T,
-  message: string
-): McpResponse<T> {
+export function createSuccessResponse<T>(data: T, message: string): McpResponse<T> {
   return {
     success: true,
     data,
@@ -25,10 +22,7 @@ export function createSuccessResponse<T>(
 /**
  * Create a standardized error response
  */
-export function createErrorResponse<T>(
-  error: string,
-  message?: string
-): McpResponse<T> {
+export function createErrorResponse<T>(error: string, message?: string): McpResponse<T> {
   return {
     success: false,
     error,
@@ -44,7 +38,7 @@ export async function createTaskResponse<T>(
   projectRoot: string,
   task: core.Task,
   message: string,
-  includeContent: boolean = true
+  includeContent = true
 ): Promise<McpResponse<T>> {
   try {
     const normalizedTask = await transformTask(
@@ -74,10 +68,10 @@ export async function createTaskResponse<T>(
 export async function batchTransformTasks(
   projectRoot: string,
   tasks: core.Task[],
-  includeContent: boolean = false
+  includeContent = false
 ): Promise<Task[]> {
   const transformedTasks: Task[] = [];
-  
+
   for (const task of tasks) {
     try {
       const normalizedTask = await transformTask(
@@ -92,6 +86,6 @@ export async function batchTransformTasks(
       // Continue with other tasks
     }
   }
-  
+
   return transformedTasks;
 }

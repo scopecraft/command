@@ -20,10 +20,10 @@ import { createMcpHandler } from '../handler-wrapper.js';
 
 // Import refactored handlers for read operations
 import {
-  handleTaskList,
-  handleTaskGet,
-  handleParentList,
   handleParentGet,
+  handleParentList,
+  handleTaskGet,
+  handleTaskList,
 } from './read-handlers.js';
 
 // Import refactored handlers for write operations
@@ -31,10 +31,10 @@ import {
   handleParentCreate,
   handleParentOperations,
   handleTaskCreate,
-  handleTaskUpdate,
   handleTaskDelete,
   handleTaskMove,
   handleTaskTransform,
+  handleTaskUpdate,
 } from './write-handlers.js';
 
 // ============================================================================

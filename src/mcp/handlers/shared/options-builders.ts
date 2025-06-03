@@ -4,7 +4,7 @@
  */
 
 import * as core from '../../../core/index.js';
-import { type TaskCreateInput, type TaskUpdateInput } from '../../schemas.js';
+import type { TaskCreateInput, TaskUpdateInput } from '../../schemas.js';
 
 /**
  * Build common metadata fields for task creation
@@ -14,16 +14,16 @@ export function buildCommonMetadata(params: {
   priority?: string;
   assignee?: string;
   tags?: string[];
-}): Record<string, any> {
-  const metadata: Record<string, any> = {};
-  
+}): Record<string, string | string[] | undefined> {
+  const metadata: Record<string, string | string[] | undefined> = {};
+
   if (params.priority) {
     metadata.priority = params.priority; // Core will normalize
   }
   if (params.assignee) {
     metadata.assignee = params.assignee;
   }
-  
+
   return metadata;
 }
 
@@ -91,11 +91,11 @@ export function buildTaskUpdateOptions(
  */
 export function parseTasksList(tasksInput?: string | string[]): string[] | undefined {
   if (!tasksInput) return undefined;
-  
+
   if (Array.isArray(tasksInput)) {
     return tasksInput;
   }
-  
+
   // Parse markdown task list format
   return core.parseTasksSection(tasksInput).map((t) => t.text);
 }

@@ -3,9 +3,9 @@
  * Provides consistent validation across operations
  */
 
+import { existsSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import * as core from '../../../core/index.js';
-import { existsSync } from 'fs';
-import { join, dirname } from 'path';
 
 /**
  * Validate that a parent task exists and is valid
@@ -62,7 +62,7 @@ export async function validateTaskExists(
 ): Promise<{ exists: boolean; task?: core.Task; error?: string }> {
   try {
     const result = await core.get(projectRoot, taskId, undefined, parentId);
-    
+
     if (!result.success || !result.data) {
       return {
         exists: false,
@@ -85,9 +85,7 @@ export async function validateTaskExists(
 /**
  * Validate workflow state
  */
-export function validateWorkflowState(
-  state?: string
-): state is core.WorkflowState {
+export function validateWorkflowState(state?: string): state is core.WorkflowState {
   if (!state) return true; // Optional, so undefined is valid
   return ['backlog', 'current', 'archive'].includes(state);
 }
@@ -103,26 +101,22 @@ export function validateTaskType(type: string): type is core.TaskType {
  * Validate and parse subtask ID within a parent
  * Returns the full subtask path if valid
  */
-export function resolveSubtaskPath(
-  parentDir: string,
-  subtaskId: string
-): string | null {
+export function resolveSubtaskPath(parentDir: string, subtaskId: string): string | null {
   // Handle different subtask ID formats
   // Could be: "01_task-name", "task-name", or full ID
-  
+
   // If it looks like a sequence_name format
   if (/^\d{2}_/.test(subtaskId)) {
     const filename = `${subtaskId}.task.md`;
     const path = join(parentDir, filename);
     return existsSync(path) ? path : null;
   }
-  
-  // Try to find by partial match
-  const files = core.listDirectory(parentDir);
-  const match = files.find(f => 
-    f.endsWith('.task.md') && 
-    (f.includes(subtaskId) || f.endsWith(`${subtaskId}.task.md`))
+
+  // Try to find by partial match using fs
+  const files = existsSync(parentDir) ? readdirSync(parentDir) : [];
+  const match = files.find(
+    (f) => f.endsWith('.task.md') && (f.includes(subtaskId) || f.endsWith(`${subtaskId}.task.md`))
   );
-  
+
   return match ? join(parentDir, match) : null;
 }

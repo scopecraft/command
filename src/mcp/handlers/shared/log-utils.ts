@@ -6,25 +6,17 @@
 /**
  * Append a timestamped log entry to existing log content
  */
-export function appendTimestampedLogEntry(
-  currentLog: string,
-  entry: string
-): string {
+export function appendTimestampedLogEntry(currentLog: string, entry: string): string {
   const timestamp = new Date().toISOString().split('T')[0];
   const formattedEntry = `- ${timestamp}: ${entry}`;
-  
-  return currentLog 
-    ? `${currentLog}\n${formattedEntry}`
-    : formattedEntry;
+
+  return currentLog ? `${currentLog}\n${formattedEntry}` : formattedEntry;
 }
 
 /**
  * Create a formatted log entry with timestamp
  */
-export function createLogEntry(
-  action: string,
-  details?: string
-): string {
+export function createLogEntry(action: string, details?: string): string {
   const timestamp = new Date().toISOString().split('T')[0];
   const entry = details ? `${action} - ${details}` : action;
   return `- ${timestamp}: ${entry}`;
@@ -38,9 +30,9 @@ export function parseLogEntries(log: string): Array<{
   date: string;
   entry: string;
 }> {
-  const lines = log.split('\n').filter(line => line.trim());
+  const lines = log.split('\n').filter((line) => line.trim());
   const entries: Array<{ date: string; entry: string }> = [];
-  
+
   for (const line of lines) {
     const match = line.match(/^-\s*(\d{4}-\d{2}-\d{2}):\s*(.+)$/);
     if (match) {
@@ -50,6 +42,6 @@ export function parseLogEntries(log: string): Array<{
       });
     }
   }
-  
+
   return entries;
 }

@@ -125,7 +125,7 @@ async function createSubtask(
   // Create task document
   const document = prepareTaskDocument({
     ...options,
-    status: options.status || getDefaultStatus(),
+    status: options.status || (getDefaultStatus() as TaskStatus),
   });
 
   // Write file
@@ -614,7 +614,7 @@ export async function list(
   projectRoot: string,
   options: TaskListOptions = {},
   config?: ProjectConfig,
-  parentId?: string // TODO: Filter by parent when implemented
+  _parentId?: string // TODO: Filter by parent when implemented
 ): Promise<OperationResult<Task[]>> {
   try {
     // Note: parentId filtering not implemented yet
@@ -652,10 +652,7 @@ export async function list(
             continue;
           }
 
-          if (
-            options.excludeStatuses &&
-            options.excludeStatuses.includes(document.frontmatter.status)
-          ) {
+          if (options.excludeStatuses?.includes(document.frontmatter.status)) {
             continue;
           }
 

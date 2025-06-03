@@ -33,12 +33,10 @@ export async function createSubtaskWithDefaults(
     const subtaskType = options.type || options.parentType || 'feature';
     const subtaskArea = options.area || options.parentArea || 'general';
 
-    const result = await core
-      .parent(projectRoot, parentId)
-      .create(title, {
-        type: subtaskType as core.TaskType,
-        area: subtaskArea,
-      });
+    const result = await core.parent(projectRoot, parentId).create(title, {
+      type: subtaskType as core.TaskType,
+      area: subtaskArea,
+    });
 
     if (!result.success || !result.data) {
       return {
@@ -111,9 +109,7 @@ function findTargetSubtask(
 ): CreatedSubtask | undefined {
   return createdSubtasks.find(
     (st) =>
-      st.title === identifier ||
-      st.id === identifier ||
-      (identifier && st.id.endsWith(identifier)) // Handle partial ID match
+      st.title === identifier || st.id === identifier || (identifier && st.id.endsWith(identifier)) // Handle partial ID match
   );
 }
 
