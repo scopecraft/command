@@ -1,7 +1,7 @@
 # MCP handleTaskList not returning parent tasks with task_type='top-level'
 
 ---
-type: "\U0001F41E Bug"
+type: bug
 status: Done
 area: mcp
 priority: High

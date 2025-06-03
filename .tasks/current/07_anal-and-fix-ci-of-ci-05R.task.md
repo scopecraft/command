@@ -1,7 +1,7 @@
 # Analyze and fix CLI impact of core inconsistencies
 
 ---
-type: "\U0001F41E Bug"
+type: bug
 status: Done
 area: cli
 tags:

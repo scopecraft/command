@@ -4,12 +4,8 @@
 
 import { describe, expect, it } from '@jest/globals';
 import {
-  PHASE_STATUS_VALUES,
-  PRIORITY_VALUES,
-  TASK_STATUS_VALUES,
   getPriorityOrder,
   isCompletedTaskStatus,
-  normalizePhaseStatus,
   normalizePriority,
   normalizeTaskStatus,
 } from '../src/core/field-normalizers.js';
@@ -17,144 +13,96 @@ import {
 describe('Field Normalizers', () => {
   describe('normalizePriority', () => {
     it('should return default value for null or undefined input', () => {
-      expect(normalizePriority(null)).toBe(PRIORITY_VALUES.DEFAULT);
-      expect(normalizePriority(undefined)).toBe(PRIORITY_VALUES.DEFAULT);
-      expect(normalizePriority('')).toBe(PRIORITY_VALUES.DEFAULT);
+      expect(normalizePriority(null)).toBe('Medium');
+      expect(normalizePriority(undefined)).toBe('Medium');
+      expect(normalizePriority('')).toBe('Medium');
     });
 
     it('should accept standard values exactly as they are', () => {
-      expect(normalizePriority('🔥 Highest')).toBe(PRIORITY_VALUES.HIGHEST);
-      expect(normalizePriority('🔼 High')).toBe(PRIORITY_VALUES.HIGH);
-      expect(normalizePriority('▶️ Medium')).toBe(PRIORITY_VALUES.MEDIUM);
-      expect(normalizePriority('🔽 Low')).toBe(PRIORITY_VALUES.LOW);
+      expect(normalizePriority('Highest')).toBe('Highest');
+      expect(normalizePriority('High')).toBe('High');
+      expect(normalizePriority('Medium')).toBe('Medium');
+      expect(normalizePriority('Low')).toBe('Low');
     });
 
     it('should handle emoji-only input', () => {
-      expect(normalizePriority('🔥')).toBe(PRIORITY_VALUES.HIGHEST);
-      expect(normalizePriority('🔼')).toBe(PRIORITY_VALUES.HIGH);
-      expect(normalizePriority('▶️')).toBe(PRIORITY_VALUES.MEDIUM);
-      expect(normalizePriority('🔽')).toBe(PRIORITY_VALUES.LOW);
+      expect(normalizePriority('🔥')).toBe('Highest');
+      expect(normalizePriority('🔼')).toBe('High');
+      expect(normalizePriority('▶️')).toBe('Medium');
+      expect(normalizePriority('🔽')).toBe('Low');
     });
 
     it('should handle text-only input (case-insensitive)', () => {
-      expect(normalizePriority('highest')).toBe(PRIORITY_VALUES.HIGHEST);
-      expect(normalizePriority('High')).toBe(PRIORITY_VALUES.HIGH);
-      expect(normalizePriority('MEDIUM')).toBe(PRIORITY_VALUES.MEDIUM);
-      expect(normalizePriority('low')).toBe(PRIORITY_VALUES.LOW);
+      expect(normalizePriority('highest')).toBe('Highest');
+      expect(normalizePriority('High')).toBe('High');
+      expect(normalizePriority('MEDIUM')).toBe('Medium');
+      expect(normalizePriority('low')).toBe('Low');
     });
 
     it('should handle common synonyms', () => {
-      expect(normalizePriority('critical')).toBe(PRIORITY_VALUES.HIGHEST);
-      expect(normalizePriority('urgent')).toBe(PRIORITY_VALUES.HIGHEST);
-      expect(normalizePriority('important')).toBe(PRIORITY_VALUES.HIGH);
-      expect(normalizePriority('normal')).toBe(PRIORITY_VALUES.MEDIUM);
-      expect(normalizePriority('minor')).toBe(PRIORITY_VALUES.LOW);
-      expect(normalizePriority('trivial')).toBe(PRIORITY_VALUES.LOW);
+      expect(normalizePriority('critical')).toBe('Highest');
+      expect(normalizePriority('urgent')).toBe('Highest');
+      expect(normalizePriority('important')).toBe('High');
+      expect(normalizePriority('normal')).toBe('Medium');
+      expect(normalizePriority('minor')).toBe('Low');
+      expect(normalizePriority('trivial')).toBe('Low');
     });
 
     it('should handle partial matches in text', () => {
-      expect(normalizePriority('This is a highest priority task')).toBe(PRIORITY_VALUES.HIGHEST);
-      expect(normalizePriority('Set to high importance')).toBe(PRIORITY_VALUES.HIGH);
-      expect(normalizePriority('Just medium for now')).toBe(PRIORITY_VALUES.MEDIUM);
-      expect(normalizePriority('This is low priority')).toBe(PRIORITY_VALUES.LOW);
+      expect(normalizePriority('This is a highest priority task')).toBe('Highest');
+      expect(normalizePriority('Set to high importance')).toBe('High');
+      expect(normalizePriority('Just medium for now')).toBe('Medium');
+      expect(normalizePriority('This is low priority')).toBe('Low');
     });
   });
 
   describe('normalizeTaskStatus', () => {
     it('should return default value for null or undefined input', () => {
-      expect(normalizeTaskStatus(null)).toBe(TASK_STATUS_VALUES.DEFAULT);
-      expect(normalizeTaskStatus(undefined)).toBe(TASK_STATUS_VALUES.DEFAULT);
-      expect(normalizeTaskStatus('')).toBe(TASK_STATUS_VALUES.DEFAULT);
+      expect(normalizeTaskStatus(null)).toBe('To Do');
+      expect(normalizeTaskStatus(undefined)).toBe('To Do');
+      expect(normalizeTaskStatus('')).toBe('To Do');
     });
 
     it('should accept standard values exactly as they are', () => {
-      expect(normalizeTaskStatus('🟡 To Do')).toBe(TASK_STATUS_VALUES.TODO);
-      expect(normalizeTaskStatus('🔵 In Progress')).toBe(TASK_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizeTaskStatus('🟢 Done')).toBe(TASK_STATUS_VALUES.DONE);
-      expect(normalizeTaskStatus('⚪ Blocked')).toBe(TASK_STATUS_VALUES.BLOCKED);
-      expect(normalizeTaskStatus('🟣 Review')).toBe(TASK_STATUS_VALUES.REVIEW);
+      expect(normalizeTaskStatus('To Do')).toBe('To Do');
+      expect(normalizeTaskStatus('In Progress')).toBe('In Progress');
+      expect(normalizeTaskStatus('Done')).toBe('Done');
+      expect(normalizeTaskStatus('Blocked')).toBe('Blocked');
+      expect(normalizeTaskStatus('Archived')).toBe('Archived');
     });
 
     it('should handle emoji-only input', () => {
-      expect(normalizeTaskStatus('🟡')).toBe(TASK_STATUS_VALUES.TODO);
-      expect(normalizeTaskStatus('🔵')).toBe(TASK_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizeTaskStatus('🟢')).toBe(TASK_STATUS_VALUES.DONE);
-      expect(normalizeTaskStatus('⚪')).toBe(TASK_STATUS_VALUES.BLOCKED);
-      expect(normalizeTaskStatus('🟣')).toBe(TASK_STATUS_VALUES.REVIEW);
+      expect(normalizeTaskStatus('🟡')).toBe('To Do');
+      expect(normalizeTaskStatus('🔵')).toBe('In Progress');
+      expect(normalizeTaskStatus('🟢')).toBe('Done');
+      expect(normalizeTaskStatus('🔴')).toBe('Blocked');
+      expect(normalizeTaskStatus('⚪')).toBe('Archived');
     });
 
     it('should handle text-only input (case-insensitive)', () => {
-      expect(normalizeTaskStatus('to do')).toBe(TASK_STATUS_VALUES.TODO);
-      expect(normalizeTaskStatus('In Progress')).toBe(TASK_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizeTaskStatus('DONE')).toBe(TASK_STATUS_VALUES.DONE);
-      expect(normalizeTaskStatus('blocked')).toBe(TASK_STATUS_VALUES.BLOCKED);
-      expect(normalizeTaskStatus('review')).toBe(TASK_STATUS_VALUES.REVIEW);
+      expect(normalizeTaskStatus('to do')).toBe('To Do');
+      expect(normalizeTaskStatus('In Progress')).toBe('In Progress');
+      expect(normalizeTaskStatus('DONE')).toBe('Done');
+      expect(normalizeTaskStatus('blocked')).toBe('Blocked');
+      expect(normalizeTaskStatus('archived')).toBe('Archived');
     });
 
     it('should handle common variations', () => {
-      expect(normalizeTaskStatus('todo')).toBe(TASK_STATUS_VALUES.TODO);
-      expect(normalizeTaskStatus('pending')).toBe(TASK_STATUS_VALUES.TODO);
-      expect(normalizeTaskStatus('wip')).toBe(TASK_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizeTaskStatus('started')).toBe(TASK_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizeTaskStatus('completed')).toBe(TASK_STATUS_VALUES.DONE);
-      expect(normalizeTaskStatus('finished')).toBe(TASK_STATUS_VALUES.DONE);
-      expect(normalizeTaskStatus('on hold')).toBe(TASK_STATUS_VALUES.BLOCKED);
-      expect(normalizeTaskStatus('waiting')).toBe(TASK_STATUS_VALUES.BLOCKED);
-      expect(normalizeTaskStatus('in review')).toBe(TASK_STATUS_VALUES.REVIEW);
-      expect(normalizeTaskStatus('validating')).toBe(TASK_STATUS_VALUES.REVIEW);
+      expect(normalizeTaskStatus('todo')).toBe('To Do');
+      expect(normalizeTaskStatus('pending')).toBe('To Do');
+      expect(normalizeTaskStatus('wip')).toBe('In Progress');
+      expect(normalizeTaskStatus('started')).toBe('In Progress');
+      expect(normalizeTaskStatus('completed')).toBe('Done');
+      expect(normalizeTaskStatus('finished')).toBe('Done');
+      expect(normalizeTaskStatus('on hold')).toBe('Blocked');
+      expect(normalizeTaskStatus('waiting')).toBe('Blocked');
+      expect(normalizeTaskStatus('archive')).toBe('Archived');
     });
 
     it('should handle text with hyphenation or spacing variations', () => {
-      expect(normalizeTaskStatus('to-do')).toBe(TASK_STATUS_VALUES.TODO);
-      expect(normalizeTaskStatus('in-progress')).toBe(TASK_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizeTaskStatus('on-hold')).toBe(TASK_STATUS_VALUES.BLOCKED);
-      expect(normalizeTaskStatus('in-review')).toBe(TASK_STATUS_VALUES.REVIEW);
-    });
-  });
-
-  describe('normalizePhaseStatus', () => {
-    it('should return default value for null or undefined input', () => {
-      expect(normalizePhaseStatus(null)).toBe(PHASE_STATUS_VALUES.DEFAULT);
-      expect(normalizePhaseStatus(undefined)).toBe(PHASE_STATUS_VALUES.DEFAULT);
-      expect(normalizePhaseStatus('')).toBe(PHASE_STATUS_VALUES.DEFAULT);
-    });
-
-    it('should accept standard values exactly as they are', () => {
-      expect(normalizePhaseStatus('🟡 Pending')).toBe(PHASE_STATUS_VALUES.PENDING);
-      expect(normalizePhaseStatus('🔵 In Progress')).toBe(PHASE_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizePhaseStatus('🟢 Completed')).toBe(PHASE_STATUS_VALUES.COMPLETED);
-      expect(normalizePhaseStatus('⚪ Blocked')).toBe(PHASE_STATUS_VALUES.BLOCKED);
-      expect(normalizePhaseStatus('🗄️ Archived')).toBe(PHASE_STATUS_VALUES.ARCHIVED);
-    });
-
-    it('should handle emoji-only input', () => {
-      expect(normalizePhaseStatus('🟡')).toBe(PHASE_STATUS_VALUES.PENDING);
-      expect(normalizePhaseStatus('🔵')).toBe(PHASE_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizePhaseStatus('🟢')).toBe(PHASE_STATUS_VALUES.COMPLETED);
-      expect(normalizePhaseStatus('⚪')).toBe(PHASE_STATUS_VALUES.BLOCKED);
-      expect(normalizePhaseStatus('🗄️')).toBe(PHASE_STATUS_VALUES.ARCHIVED);
-    });
-
-    it('should handle text-only input (case-insensitive)', () => {
-      expect(normalizePhaseStatus('pending')).toBe(PHASE_STATUS_VALUES.PENDING);
-      expect(normalizePhaseStatus('In Progress')).toBe(PHASE_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizePhaseStatus('COMPLETED')).toBe(PHASE_STATUS_VALUES.COMPLETED);
-      expect(normalizePhaseStatus('blocked')).toBe(PHASE_STATUS_VALUES.BLOCKED);
-      expect(normalizePhaseStatus('archived')).toBe(PHASE_STATUS_VALUES.ARCHIVED);
-    });
-
-    it('should handle common variations', () => {
-      expect(normalizePhaseStatus('planned')).toBe(PHASE_STATUS_VALUES.PENDING);
-      expect(normalizePhaseStatus('to do')).toBe(PHASE_STATUS_VALUES.PENDING);
-      expect(normalizePhaseStatus('backlog')).toBe(PHASE_STATUS_VALUES.PENDING);
-      expect(normalizePhaseStatus('active')).toBe(PHASE_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizePhaseStatus('current')).toBe(PHASE_STATUS_VALUES.IN_PROGRESS);
-      expect(normalizePhaseStatus('done')).toBe(PHASE_STATUS_VALUES.COMPLETED);
-      expect(normalizePhaseStatus('finish')).toBe(PHASE_STATUS_VALUES.COMPLETED);
-      expect(normalizePhaseStatus('on hold')).toBe(PHASE_STATUS_VALUES.BLOCKED);
-      expect(normalizePhaseStatus('waiting')).toBe(PHASE_STATUS_VALUES.BLOCKED);
-      expect(normalizePhaseStatus('inactive')).toBe(PHASE_STATUS_VALUES.ARCHIVED);
-      expect(normalizePhaseStatus('retired')).toBe(PHASE_STATUS_VALUES.ARCHIVED);
+      expect(normalizeTaskStatus('to-do')).toBe('To Do');
+      expect(normalizeTaskStatus('in-progress')).toBe('In Progress');
+      expect(normalizeTaskStatus('on-hold')).toBe('Blocked');
     });
   });
 
@@ -183,7 +131,7 @@ describe('Field Normalizers', () => {
       expect(isCompletedTaskStatus('🟡 To Do')).toBe(false);
       expect(isCompletedTaskStatus('🔵 In Progress')).toBe(false);
       expect(isCompletedTaskStatus('⚪ Blocked')).toBe(false);
-      expect(isCompletedTaskStatus('🟣 Review')).toBe(false);
+      expect(isCompletedTaskStatus('To Do')).toBe(false);
     });
   });
 

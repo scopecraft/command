@@ -1,7 +1,7 @@
 # Investigate current MCP write operation formats
 
 ---
-type: "\U0001F41E Bug"
+type: bug
 status: Done
 area: mcp
 tags:

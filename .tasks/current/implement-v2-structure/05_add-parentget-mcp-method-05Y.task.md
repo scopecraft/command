@@ -1,7 +1,7 @@
 # Add parent_get MCP method
 
 ---
-type: "\U0001F31F Feature"
+type: feature
 status: Done
 area: mcp
 ---

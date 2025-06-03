@@ -1,7 +1,7 @@
 # Create shared utilities for CLI and MCP
 
 ---
-type: "\U0001F31F Feature"
+type: feature
 status: To Do
 area: core
 priority: Low

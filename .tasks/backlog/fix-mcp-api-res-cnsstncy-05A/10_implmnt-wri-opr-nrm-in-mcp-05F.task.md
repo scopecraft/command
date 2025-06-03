@@ -1,7 +1,7 @@
 # Implement write operation normalization in MCP handlers
 
 ---
-type: "\U0001F41E Bug"
+type: bug
 status: Done
 area: mcp
 tags:

@@ -1,4 +1,16 @@
-import type { TemplateInfo } from './template-manager.js';
+import {
+  getPriorityEmoji,
+  getPriorityLabel,
+  getPriorityName,
+  getStatusEmoji,
+  getStatusLabel,
+  getStatusName,
+  getTypeEmoji,
+  getTypeLabel,
+  getTypeName,
+  getWorkflowStateLabel,
+} from '../core/metadata/schema-service.js';
+import type { TemplateInfo } from '../core/template-manager.js';
 /**
  * Formatters for displaying tasks in various formats
  */
@@ -9,7 +21,7 @@ import type {
   TaskStatus,
   TaskType,
   WorkflowState,
-} from './types.js';
+} from '../core/types.js';
 
 export type OutputFormat =
   | 'tree'
@@ -20,32 +32,6 @@ export type OutputFormat =
   | 'default'
   | 'markdown'
   | 'full';
-
-// Emoji mappings for presentation layer
-export const STATUS_EMOJIS: Record<TaskStatus, string> = {
-  'To Do': '🟡',
-  'In Progress': '🔵',
-  Done: '🟢',
-  Blocked: '🔴',
-  Archived: '⚪',
-};
-
-const TYPE_EMOJIS: Record<TaskType, string> = {
-  feature: '🌟',
-  bug: '🐛',
-  chore: '🔧',
-  documentation: '📚',
-  test: '🧪',
-  spike: '🔍',
-  idea: '💡',
-};
-
-const PRIORITY_EMOJIS: Record<TaskPriority, string> = {
-  Highest: '🔥',
-  High: '🔼',
-  Medium: '▶️',
-  Low: '🔽',
-};
 
 /**
  * Format a list of tasks for display
@@ -102,11 +88,11 @@ function formatWorkflowView(tasks: Task[]): string {
   // Show each workflow state
   for (const state of ['current', 'backlog', 'archive'] as WorkflowState[]) {
     if (byState[state].length > 0) {
-      output += `\n${state.toUpperCase()}:\n`;
+      output += `\n${getWorkflowStateLabel(state).toUpperCase()}:\n`;
 
       for (const task of byState[state]) {
-        const statusEmoji = STATUS_EMOJIS[task.document.frontmatter.status];
-        const typeEmoji = TYPE_EMOJIS[task.document.frontmatter.type];
+        const statusEmoji = getStatusEmoji(getStatusName(task.document.frontmatter.status)) || '';
+        const typeEmoji = getTypeEmoji(task.document.frontmatter.type) || '';
         const isParent = task.metadata.isParentTask ? '📁 ' : '';
 
         output += `  ${statusEmoji} ${typeEmoji} ${isParent}${task.metadata.id}: ${task.document.title}\n`;
@@ -159,7 +145,7 @@ function formatTreeView(tasks: Task[]): string {
     }
 
     hasContent = true;
-    output += `${state.toUpperCase()}:\n`;
+    output += `${getWorkflowStateLabel(state).toUpperCase()}:\n`;
 
     // Separate parent tasks and standalone tasks
     const parentTasks = stateTasks.filter((t) => t.metadata.isParentTask);
@@ -254,7 +240,7 @@ function formatTreeView(tasks: Task[]): string {
             const taskMeta = task.document.frontmatter;
 
             let taskLine = `${seqPrefix}${taskPrefix}${statusSymbol} ${task.document.title} [${task.metadata.id}]`;
-            taskLine += ` • ${task.document.frontmatter.status}`;
+            taskLine += ` • ${getStatusLabel(task.document.frontmatter.status)}`;
 
             // Add metadata
             if (taskMeta.priority && taskMeta.priority !== 'Medium') {
@@ -276,7 +262,7 @@ function formatTreeView(tasks: Task[]): string {
               const taskMeta = task.document.frontmatter;
 
               let taskLine = `${seqPrefix}│ ${taskPrefix}${statusSymbol} ${task.document.title} [${task.metadata.id}]`;
-              taskLine += ` • ${task.document.frontmatter.status}`;
+              taskLine += ` • ${getStatusLabel(task.document.frontmatter.status)}`;
 
               // Add metadata
               if (taskMeta.priority && taskMeta.priority !== 'Medium') {
@@ -302,7 +288,7 @@ function formatTreeView(tasks: Task[]): string {
       const meta = task.document.frontmatter;
 
       let line = `${prefix}${statusSymbol} ${task.document.title} [${task.metadata.id}]`;
-      line += ` • ${task.document.frontmatter.status}`;
+      line += ` • ${getStatusLabel(task.document.frontmatter.status)}`;
 
       // Add metadata
       if (meta.priority && meta.priority !== 'Medium') {
@@ -361,13 +347,11 @@ function formatTableView(tasks: Task[]): string {
   const rows = tasks.map((task) => {
     const id = task.metadata.id.substring(0, 26).padEnd(26);
     const title = task.document.title.substring(0, 50).padEnd(50);
-    const status =
-      `${STATUS_EMOJIS[task.document.frontmatter.status]} ${task.document.frontmatter.status}`.padEnd(
-        16
-      );
+    const statusEmoji = getStatusEmoji(task.document.frontmatter.status) || '';
+    const status = `${statusEmoji} ${getStatusLabel(task.document.frontmatter.status)}`.padEnd(16);
     const location = task.metadata.location.workflowState.padEnd(14);
-    const type =
-      `${TYPE_EMOJIS[task.document.frontmatter.type]} ${task.document.frontmatter.type}`.padEnd(12);
+    const typeEmoji = getTypeEmoji(task.document.frontmatter.type) || '';
+    const type = `${typeEmoji} ${getTypeLabel(task.document.frontmatter.type)}`.padEnd(12);
 
     return `${id}${title}${status}${location}${type}`;
   });
@@ -389,14 +373,19 @@ export function formatTaskDetail(task: Task, format: OutputFormat): string {
 
   // Default format
   const meta = task.document.frontmatter;
-  const statusEmoji = STATUS_EMOJIS[task.document.frontmatter.status];
-  const typeEmoji = TYPE_EMOJIS[task.document.frontmatter.type];
-  const priorityEmoji = meta.priority ? PRIORITY_EMOJIS[meta.priority as TaskPriority] || '' : '';
+  // Status is stored as canonical names ("todo"), look up emoji directly
+  const statusEmoji = getStatusEmoji(task.document.frontmatter.status) || '';
+  // Type is stored as canonical names ("feature"), look up emoji directly
+  const typeEmoji = getTypeEmoji(task.document.frontmatter.type) || '';
+  // Priority is stored as canonical names ("high"), look up emoji directly
+  const priorityEmoji = meta.priority
+    ? getPriorityEmoji(meta.priority as string) || ''
+    : '';
 
   let output = `\n${task.document.title}\n${'='.repeat(task.document.title.length)}\n\n`;
   output += `ID:       ${task.metadata.id}\n`;
-  output += `Type:     ${typeEmoji} ${task.document.frontmatter.type}\n`;
-  output += `Status:   ${statusEmoji} ${task.document.frontmatter.status}\n`;
+  output += `Type:     ${typeEmoji} ${getTypeLabel(task.document.frontmatter.type)}\n`;
+  output += `Status:   ${statusEmoji} ${getStatusLabel(task.document.frontmatter.status)}\n`;
   output += `Location: ${task.metadata.location.workflowState}`;
 
   if (task.metadata.location.archiveDate) {
@@ -405,7 +394,7 @@ export function formatTaskDetail(task: Task, format: OutputFormat): string {
   output += '\n';
 
   if (meta.priority) {
-    output += `Priority: ${priorityEmoji} ${meta.priority}\n`;
+    output += `Priority: ${priorityEmoji} ${getPriorityLabel(meta.priority as string)}\n`;
   }
   if (meta.assignee) {
     output += `Assignee: ${meta.assignee}\n`;

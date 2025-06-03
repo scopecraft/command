@@ -1,7 +1,7 @@
 # Design consistent API write operation schema
 
 ---
-type: "\U0001F41E Bug"
+type: bug
 status: Done
 area: mcp
 tags:

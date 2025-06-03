@@ -1,13 +1,13 @@
 /**
  * Metadata Schema Types
- * 
+ *
  * Core type definitions for the metadata schema registry
  */
 
 export interface MetadataValue {
-  name: string;      // e.g., "in_progress"
-  label: string;     // e.g., "In Progress"
-  emoji?: string;    // Optional emoji for display
+  name: string; // e.g., "in_progress"
+  label: string; // e.g., "In Progress"
+  emoji?: string; // Optional emoji for display
   icon?: string | null; // Optional Lucide icon name (null = no icon)
   template?: string; // Optional template file (for task types)
   aliases?: string[]; // TODO: Add support for input aliases

@@ -1,7 +1,7 @@
 # Parent task deletion with cascade=true fails with misleading error
 
 ---
-type: "\U0001F41E Bug"
+type: bug
 status: To Do
 area: mcp
 priority: Medium

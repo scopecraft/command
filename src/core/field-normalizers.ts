@@ -5,49 +5,25 @@
  * It allows for more flexible input formats while ensuring standardized storage.
  */
 
-/**
- * Standard priority values (clean text only - emojis added by formatters)
- */
-export const PRIORITY_VALUES = {
-  HIGHEST: 'Highest',
-  HIGH: 'High',
-  MEDIUM: 'Medium',
-  LOW: 'Low',
-  DEFAULT: 'Medium',
-};
-
-/**
- * Standard task status values (clean text only - emojis added by formatters)
- */
-export const TASK_STATUS_VALUES = {
-  TODO: 'To Do',
-  IN_PROGRESS: 'In Progress',
-  DONE: 'Done',
-  BLOCKED: 'Blocked',
-  REVIEW: 'Review',
-  DEFAULT: 'To Do',
-};
-
-/**
- * Standard phase status values (clean text only - emojis added by formatters)
- */
-export const PHASE_STATUS_VALUES = {
-  PENDING: 'Pending',
-  IN_PROGRESS: 'In Progress',
-  COMPLETED: 'Completed',
-  BLOCKED: 'Blocked',
-  ARCHIVED: 'Archived',
-  DEFAULT: 'Pending',
-};
+import {
+  getPriorityEmoji,
+  getPriorityLabel,
+  getPriorityName,
+  getPriorityValues,
+  getStatusEmoji,
+  getStatusLabel,
+  getStatusName,
+  getStatusValues,
+} from './metadata/schema-service.js';
 
 /**
  * Priority order for sorting (highest to lowest)
  */
 export const PRIORITY_ORDER: Record<string, number> = {
-  [PRIORITY_VALUES.HIGHEST]: 4,
-  [PRIORITY_VALUES.HIGH]: 3,
-  [PRIORITY_VALUES.MEDIUM]: 2,
-  [PRIORITY_VALUES.LOW]: 1,
+  Highest: 4,
+  High: 3,
+  Medium: 2,
+  Low: 1,
   '': 0,
 };
 
@@ -64,40 +40,48 @@ export const PRIORITY_ORDER: Record<string, number> = {
  * @returns Standardized priority value
  */
 export function normalizePriority(input: string | undefined | null): string {
-  if (!input) return PRIORITY_VALUES.DEFAULT;
+  if (!input) return 'medium';
 
-  // If it's already a standard value, return it
-  if (Object.values(PRIORITY_VALUES).includes(input)) {
+  // Check if it's already a canonical name
+  const priorityValues = getPriorityValues();
+  if (priorityValues.some((p) => p.name === input)) {
     return input;
+  }
+
+  // Check if it's a label, convert to canonical name
+  const byLabel = priorityValues.find((p) => p.label === input);
+  if (byLabel) {
+    return byLabel.name;
   }
 
   const lowerInput = input.toLowerCase().trim();
 
-  // Check for emoji-only input
-  if (lowerInput === '🔥') return PRIORITY_VALUES.HIGHEST;
-  if (lowerInput === '🔼') return PRIORITY_VALUES.HIGH;
-  if (lowerInput === '▶️') return PRIORITY_VALUES.MEDIUM;
-  if (lowerInput === '🔽') return PRIORITY_VALUES.LOW;
+  // Check for emoji-only input by comparing against schema emojis
+  for (const priority of priorityValues) {
+    if (priority.emoji && lowerInput === priority.emoji) {
+      return priority.name;
+    }
+  }
 
   // Check for text patterns (with or without emoji)
   if (/highest|critical|urgent|blocker/.test(lowerInput)) {
-    return PRIORITY_VALUES.HIGHEST;
+    return 'highest';
   }
 
   if (/high|important/.test(lowerInput)) {
-    return PRIORITY_VALUES.HIGH;
+    return 'high';
   }
 
   if (/medium|normal|med|default|standard/.test(lowerInput)) {
-    return PRIORITY_VALUES.MEDIUM;
+    return 'medium';
   }
 
   if (/low|minor|trivial/.test(lowerInput)) {
-    return PRIORITY_VALUES.LOW;
+    return 'low';
   }
 
   // Default fallback
-  return PRIORITY_VALUES.DEFAULT;
+  return 'medium';
 }
 
 /**
@@ -113,99 +97,52 @@ export function normalizePriority(input: string | undefined | null): string {
  * @returns Standardized status value
  */
 export function normalizeTaskStatus(input: string | undefined | null): string {
-  if (!input) return TASK_STATUS_VALUES.DEFAULT;
+  if (!input) return 'todo';
 
-  // If it's already a standard value, return it
-  if (Object.values(TASK_STATUS_VALUES).includes(input)) {
+  // Check if it's already a canonical name
+  const statusValues = getStatusValues();
+  if (statusValues.some((s) => s.name === input)) {
     return input;
+  }
+
+  // Check if it's a label, convert to canonical name
+  const byLabel = statusValues.find((s) => s.label === input);
+  if (byLabel) {
+    return byLabel.name;
   }
 
   const lowerInput = input.toLowerCase().trim();
 
-  // Check for emoji-only input
-  if (lowerInput === '🟡') return TASK_STATUS_VALUES.TODO;
-  if (lowerInput === '🔵') return TASK_STATUS_VALUES.IN_PROGRESS;
-  if (lowerInput === '🟢') return TASK_STATUS_VALUES.DONE;
-  if (lowerInput === '⚪') return TASK_STATUS_VALUES.BLOCKED;
-  if (lowerInput === '🟣') return TASK_STATUS_VALUES.REVIEW;
+  // Check for emoji-only input by comparing against schema emojis
+  for (const status of statusValues) {
+    if (status.emoji && lowerInput === status.emoji) {
+      return status.name;
+    }
+  }
 
   // Check for text patterns (with or without emoji)
   if (/to[ -]?do|todo|pending|new|open|backlog/.test(lowerInput)) {
-    return TASK_STATUS_VALUES.TODO;
+    return 'todo';
   }
 
   if (/in[ -]?progress|started|ongoing|working|wip/.test(lowerInput)) {
-    return TASK_STATUS_VALUES.IN_PROGRESS;
+    return 'in_progress';
   }
 
   if (/done|complete|finished|completed|closed|resolved/.test(lowerInput)) {
-    return TASK_STATUS_VALUES.DONE;
+    return 'done';
   }
 
   if (/blocked|block|hold|on[ -]?hold|waiting/.test(lowerInput)) {
-    return TASK_STATUS_VALUES.BLOCKED;
+    return 'blocked';
   }
 
-  if (/review|reviewing|in[ -]?review|validate|validating/.test(lowerInput)) {
-    return TASK_STATUS_VALUES.REVIEW;
-  }
-
-  // Default fallback
-  return TASK_STATUS_VALUES.DEFAULT;
-}
-
-/**
- * Normalizes phase status values to standard format
- *
- * Accepts various input formats:
- * - Full format with emoji: "🟡 Pending"
- * - Text only: "in progress", "Completed", etc.
- * - Emoji only: "🔵"
- * - Common variations: "planned", "active", "finished", etc.
- *
- * @param input Status value to normalize
- * @returns Standardized status value
- */
-export function normalizePhaseStatus(input: string | undefined | null): string {
-  if (!input) return PHASE_STATUS_VALUES.DEFAULT;
-
-  // If it's already a standard value, return it
-  if (Object.values(PHASE_STATUS_VALUES).includes(input)) {
-    return input;
-  }
-
-  const lowerInput = input.toLowerCase().trim();
-
-  // Check for emoji-only input
-  if (lowerInput === '🟡') return PHASE_STATUS_VALUES.PENDING;
-  if (lowerInput === '🔵') return PHASE_STATUS_VALUES.IN_PROGRESS;
-  if (lowerInput === '🟢') return PHASE_STATUS_VALUES.COMPLETED;
-  if (lowerInput === '⚪') return PHASE_STATUS_VALUES.BLOCKED;
-  if (lowerInput === '🗄️') return PHASE_STATUS_VALUES.ARCHIVED;
-
-  // Check for text patterns (with or without emoji)
-  if (/pending|planned|to[ -]?do|backlog|upcoming/.test(lowerInput)) {
-    return PHASE_STATUS_VALUES.PENDING;
-  }
-
-  if (/in[ -]?progress|started|ongoing|working|current|(\b|^)active(\b|$)/.test(lowerInput)) {
-    return PHASE_STATUS_VALUES.IN_PROGRESS;
-  }
-
-  if (/completed|done|finish|closed|complete/.test(lowerInput)) {
-    return PHASE_STATUS_VALUES.COMPLETED;
-  }
-
-  if (/blocked|block|hold|on[ -]?hold|waiting/.test(lowerInput)) {
-    return PHASE_STATUS_VALUES.BLOCKED;
-  }
-
-  if (/archived|archive|retired|inactive/.test(lowerInput)) {
-    return PHASE_STATUS_VALUES.ARCHIVED;
+  if (/archived|archive/.test(lowerInput)) {
+    return 'archived';
   }
 
   // Default fallback
-  return PHASE_STATUS_VALUES.DEFAULT;
+  return 'todo';
 }
 
 /**

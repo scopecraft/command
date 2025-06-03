@@ -109,10 +109,10 @@ Every task document MUST follow this structure:
 # {Human Readable Title}
 
 ---
-type: {task-type}
-status: {status-text}
-area: {product-area}
-{additional-metadata}
+type: feature
+status: todo
+area: auth
+priority: high
 ---
 
 ## Instruction
@@ -134,25 +134,44 @@ area: {product-area}
 ### 3.3 Frontmatter Fields
 
 #### 3.3.1 Required Fields
-- `type`: One of: feature, bug, chore, spike, idea
-- `status`: Status text without emoji (see section 3.4)
+- `type`: Canonical name from schema (e.g., feature, bug, chore, spike, idea)
+- `status`: Canonical name from schema (see section 3.4)
 - `area`: Product area (e.g., auth, billing, ui)
 
 #### 3.3.2 Optional Fields
 Teams may add custom fields:
 - `sprint`: Current sprint identifier
 - `version`: Target version
-- `priority`: One of: Low, Medium, High, Critical
+- `priority`: Canonical name from schema (e.g., low, medium, high, highest)
 - `assignee`: Assigned person
 - Custom fields as needed
 
-### 3.4 Status Values
-Standard status values (without emoji prefixes):
-- `To Do`: Not started
-- `In Progress`: Currently being worked on
-- `Done`: Completed
-- `Blocked`: Cannot proceed
-- `Archived`: No longer relevant
+### 3.4 Storage Format and Postel's Law
+
+Following **Postel's Law** ("be conservative in what you send, liberal in what you accept"), Scopecraft:
+
+**WRITES (Storage)**: Always uses canonical machine-readable names:
+- `status: todo` (not "To Do" or "TODO")
+- `priority: high` (not "High" or "HIGH") 
+- `type: feature` (not "Feature" or "🌟 Feature")
+
+**READS (Input)**: Accepts any valid format and normalizes to canonical:
+- User input: "To Do", "TODO", "to-do", "🟡 To Do" → stored as: `todo`
+- User input: "High", "high", "🔼 High" → stored as: `high`
+- User input: "Feature", "🌟 Feature" → stored as: `feature`
+
+This approach ensures:
+- **Consistency**: All files use the same format regardless of input method
+- **Robustness**: System handles varied user input gracefully  
+- **Maintainability**: No ambiguity about storage format
+- **Extensibility**: New values can be added to schema without breaking existing files
+
+#### 3.4.1 Standard Status Values (Canonical Names)
+- `todo`: Not started
+- `in_progress`: Currently being worked on
+- `done`: Completed
+- `blocked`: Cannot proceed
+- `archived`: No longer relevant
 
 ## 4. Section Specifications
 

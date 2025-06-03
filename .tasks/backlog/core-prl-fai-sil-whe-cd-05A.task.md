@@ -1,7 +1,7 @@
 # Core: parallelizeSubtasks fails silently when called during parent_create
 
 ---
-type: "\U0001F41E Bug"
+type: bug
 status: To Do
 area: core
 priority: High
@@ -34,7 +34,7 @@ Test case that demonstrates the issue:
 // Create parent with parallel subtasks
 await mcp.parent_create({
   title: "TEST: Fixed parallel subtask creation",
-  type: "🌟 Feature",
+  type: feature,
   subtasks: [
     {title: "First subtask"}, 
     {title: "Second subtask", parallelWith: "First subtask"}, 

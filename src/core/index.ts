@@ -9,7 +9,6 @@ export * from './types.js';
 
 // Legacy exports for compatibility
 export * from './project-config.js';
-export * from './formatters.js';
 export * from './field-normalizers.js';
 export * from './worktree/index.js';
 

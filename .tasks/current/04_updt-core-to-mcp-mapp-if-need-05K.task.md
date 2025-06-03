@@ -1,7 +1,7 @@
 # Update core-to-MCP mappings if needed
 
 ---
-type: "\U0001F41E Bug"
+type: bug
 status: Done
 area: core
 tags:

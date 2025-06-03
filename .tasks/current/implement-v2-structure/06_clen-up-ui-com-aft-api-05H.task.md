@@ -125,7 +125,7 @@ The MCP API response consistency issues have been fully resolved. All 4 core end
 // task_list returned nested structure
 {
   metadata: { id: "...", isParentTask: true },
-  document: { frontmatter: { type: "🌟 Feature", status: "To Do" } }
+  document: { frontmatter: { type: feature, status: "To Do" } }
 }
 
 // parent_list returned flat structure  

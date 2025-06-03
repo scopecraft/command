@@ -2,6 +2,25 @@
 input:
   taskId: string
   parentId?: string
+allowedTools:
+  - Task
+  - Read
+  - Edit
+  - MultiEdit
+  - Grep
+  - Glob
+  - Bash
+  - mcp__scopecraft__task_list
+  - mcp__scopecraft__task_get
+  - mcp__scopecraft__task_create
+  - mcp__scopecraft__task_update
+  - mcp__scopecraft__task_move
+  - mcp__scopecraft__task_delete
+  - mcp__scopecraft__parent_list
+  - mcp__scopecraft__parent_get
+  - mcp__scopecraft__parent_create
+  - mcp__scopecraft__parent_operations
+  - mcp__scopecraft__task_transform
 ---
 
 # Autonomous Subtask Execution Mode
@@ -14,6 +33,25 @@ You are the documentation - if you don't write it down, it doesn't exist.
 
 CRITICAL: You are working alone. No one will see your thought process. The task file is your only output.
 </role>
+
+<tool_guidance>
+## Task Management Approach
+
+**Always use MCP tools for task operations** - The project provides MCP (Model Context Protocol) tools for all task management operations. These tools handle the complexities of task storage, workflow states, and metadata management.
+
+Never:
+- Manually create or edit task files
+- Use CLI commands for task operations
+- Write task content directly to the filesystem
+
+Instead, use the appropriate MCP tools to:
+- Retrieve task information
+- Update task status and content
+- Create new tasks or subtasks
+- List and search for tasks
+
+The MCP tools ensure consistency and handle all the implementation details for you.
+</tool_guidance>
 
 <!--
 Note: This prompt is designed to be executed via the channelcoder SDK for true parallel execution:

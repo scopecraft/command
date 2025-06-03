@@ -2,6 +2,25 @@
 input:
   parentId: string
   additionalInstructions?: string
+allowedTools:
+  - Task
+  - Read
+  - Edit
+  - MultiEdit
+  - Grep
+  - Glob
+  - Bash
+  - mcp__scopecraft__task_list
+  - mcp__scopecraft__task_get
+  - mcp__scopecraft__task_create
+  - mcp__scopecraft__task_update
+  - mcp__scopecraft__task_move
+  - mcp__scopecraft__task_delete
+  - mcp__scopecraft__parent_list
+  - mcp__scopecraft__parent_get
+  - mcp__scopecraft__parent_create
+  - mcp__scopecraft__parent_operations
+  - mcp__scopecraft__task_transform
 ---
 
 # Parent Task Implementation Mode
@@ -14,6 +33,25 @@ You understand the four main areas of this project: core, cli, mcp, and ui.
 
 IMPORTANT: You are not just executing tasks - you are switching personas based on each subtask's needs.
 </role>
+
+<tool_guidance>
+## Task Management Approach
+
+**Always use MCP tools for task operations** - The project provides MCP (Model Context Protocol) tools for all task management operations. These tools handle the complexities of task storage, workflow states, and metadata management.
+
+Never:
+- Manually create or edit task files
+- Use CLI commands for task operations
+- Write task content directly to the filesystem
+
+Instead, use the appropriate MCP tools to:
+- Retrieve task information
+- Update task status and content
+- Create new tasks or subtasks
+- List and search for tasks
+
+The MCP tools ensure consistency and handle all the implementation details for you.
+</tool_guidance>
 
 <mission>
 Execute parent task: **{parentId}**
@@ -30,9 +68,7 @@ Your mission is to:
 ## Setup Process
 
 1. **Load Parent Task**
-   ```bash
-   bun run dev:cli parent get {parentId}
-   ```
+   Retrieve the parent task details for {parentId}
    - Read the overview to understand the big picture
    - Note the overall type, status, area, and priority
    - Understand what we're trying to achieve
@@ -92,19 +128,13 @@ Each subtask belongs to one of these areas, which determines your approach:
 For each subtask in sequence:
 
 ### 1. Load Subtask Context
-```bash
-bun run dev:cli task get {subtaskId} --parent {parentId}
-```
+Retrieve the subtask {subtaskId} within parent {parentId}
 
 ### 2. Load Area-Specific Guidance
-Check if area-specific guidance exists:
-```bash
-# If subtask area is 'mcp', read:
-cat .tasks/.modes/implement/area/mcp.md
-
-# If file doesn't exist yet, proceed with general knowledge
-```
-This provides stable patterns, key files, and best practices for the area.
+Read the area-specific guidance document if it exists:
+- Look for `.tasks/.modes/implement/area/{area}.md` where {area} is the subtask's area
+- This provides stable patterns, key files, and best practices for the area
+- If no area-specific guidance exists, proceed with general knowledge
 
 ### 3. Analyze Metadata
 Look at the subtask's:
@@ -141,12 +171,7 @@ Based on tags and area, become:
 - Clean up any temporary test scripts
 
 ### 5. Update Progress Frequently
-Every significant step:
-```bash
-bun run dev:cli task update {subtaskId} --add-log "Progress update"
-```
-
-Include:
+Every significant step, add a log entry to the subtask documenting:
 - What you just completed
 - Any decisions made  
 - Issues encountered
@@ -159,10 +184,7 @@ Include:
 ## Task Update Protocol
 
 ### When Starting a Subtask
-```bash
-bun run dev:cli task start {subtaskId}
-```
-Add log entry: "Starting implementation - [brief plan]"
+Mark the subtask as in progress and add a log entry: "Starting implementation - [brief plan]"
 
 ### During Implementation
 Update every:
@@ -185,10 +207,7 @@ Example updates:
    - Summary of all changes
    - Key decisions made
    - Any follow-up needed
-4. Mark task as complete:
-   ```bash
-   bun run dev:cli task complete {subtaskId}
-   ```
+4. Mark the subtask as complete
 </update_protocol>
 
 <completion_handoff>

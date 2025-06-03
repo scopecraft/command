@@ -7,6 +7,8 @@
 import { readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { existsSync, mkdirSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import { normalizePriority, normalizeTaskStatus } from './field-normalizers.js';
+import { getTypeName } from './metadata/schema-service.js';
 import {
   createArchiveDate,
   getArchiveDirectory,
@@ -43,6 +45,31 @@ import type {
   TaskUpdateOptions,
   WorkflowState,
 } from './types.js';
+
+/**
+ * Normalize frontmatter values using schema service
+ * Ensures consistent canonical storage format following Postel's Law
+ */
+function normalizeFrontmatter(frontmatter: Record<string, any>): Record<string, any> {
+  const normalized = { ...frontmatter };
+  
+  // Normalize status to canonical name (e.g., "To Do" -> "todo")
+  if (normalized.status) {
+    normalized.status = normalizeTaskStatus(normalized.status);
+  }
+  
+  // Normalize type to canonical name (e.g., "Feature" -> "feature") 
+  if (normalized.type) {
+    normalized.type = getTypeName(normalized.type);
+  }
+  
+  // Normalize priority to canonical name (e.g., "High" -> "high")
+  if (normalized.priority) {
+    normalized.priority = normalizePriority(normalized.priority);
+  }
+  
+  return normalized;
+}
 
 /**
  * Create a new task
@@ -82,16 +109,16 @@ export async function create(
       const filename = `${subtaskId}.task.md`;
       const filepath = join(parentDir, filename);
 
-      // Create task document
+      // Create task document with normalized frontmatter
       const document: TaskDocument = {
         title: options.title,
-        frontmatter: {
+        frontmatter: normalizeFrontmatter({
           type: options.type,
           status: options.status || 'To Do',
           area: options.area,
           ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
           ...options.customMetadata,
-        },
+        }),
         sections: ensureRequiredSections({
           instruction: options.instruction || '',
           tasks: options.tasks ? formatTasksList(options.tasks) : '',
@@ -130,16 +157,16 @@ export async function create(
     // Determine workflow state (default to backlog)
     const workflowState = options.workflowState || config?.defaultWorkflowState || 'backlog';
 
-    // Create task document
+    // Create task document with normalized frontmatter
     const document: TaskDocument = {
       title: options.title,
-      frontmatter: {
+      frontmatter: normalizeFrontmatter({
         type: options.type,
         status: options.status || 'To Do',
         area: options.area,
         ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
         ...options.customMetadata,
-      },
+      }),
       sections: ensureRequiredSections({
         instruction: options.instruction || '',
         tasks: options.tasks ? formatTasksList(options.tasks) : '',
@@ -356,10 +383,10 @@ export async function update(
     }
 
     if (updates.frontmatter) {
-      task.document.frontmatter = {
+      task.document.frontmatter = normalizeFrontmatter({
         ...task.document.frontmatter,
         ...updates.frontmatter,
-      };
+      });
     }
 
     if (updates.sections) {

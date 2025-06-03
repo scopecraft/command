@@ -4,13 +4,13 @@
  */
 
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import type { OutputFormat } from '../core/formatters.js';
+import type { OutputFormat } from './formatters.js';
 import {
   formatProgress,
   formatTaskDetail,
   formatTasksList,
   formatTemplatesList,
-} from '../core/formatters.js';
+} from './formatters.js';
 import * as core from '../core/index.js';
 
 /**
@@ -206,7 +206,11 @@ export async function handleCreateCommand(options: {
     };
 
     // Add optional metadata
-    if (options.priority) createOptions.customMetadata!.priority = options.priority;
+    if (options.priority) {
+      // Normalize priority - CLI accepts lowercase but core stores capitalized
+      const normalizedPriority = core.normalizePriority(options.priority);
+      createOptions.customMetadata!.priority = normalizedPriority;
+    }
     if (options.assignee) createOptions.customMetadata!.assignee = options.assignee;
     if (options.tags) createOptions.customMetadata!.tags = options.tags;
     if (options.parent) createOptions.customMetadata!.parent = options.parent;
@@ -287,7 +291,7 @@ export async function handleUpdateCommand(
     if (options.type) frontmatter.type = options.type;
     if (options.status) frontmatter.status = options.status;
     if (options.subdirectory) frontmatter.area = options.subdirectory;
-    if (options.priority) frontmatter.priority = options.priority;
+    if (options.priority) frontmatter.priority = core.normalizePriority(options.priority);
     if (options.assignee) frontmatter.assignee = options.assignee;
     if (options.tags) frontmatter.tags = options.tags;
     if (options.parent) frontmatter.parent = options.parent;
