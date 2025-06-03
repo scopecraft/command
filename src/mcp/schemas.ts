@@ -161,7 +161,7 @@ export const SessionContextSchema = z.object({
 // Shared filtering options for list endpoints
 export const ListFilterSchema = z.object({
   // Top-level filters (commonly used, AI-friendly)
-  workflowState: z.union([WorkflowStateSchema, z.array(WorkflowStateSchema)]).optional(),
+  workflowState: z.union([WorkflowStateInputSchema, z.array(WorkflowStateInputSchema)]).optional(),
   area: z.string().optional(),
   assignee: z.string().optional(),
   tags: z.array(z.string()).optional(),
@@ -171,9 +171,9 @@ export const ListFilterSchema = z.object({
   advancedFilter: z
     .object({
       // Multi-value filters
-      status: z.union([TaskStatusSchema, z.array(TaskStatusSchema)]).optional(),
-      type: z.union([TaskTypeSchema, z.array(TaskTypeSchema)]).optional(),
-      priority: z.union([TaskPrioritySchema, z.array(TaskPrioritySchema)]).optional(),
+      status: z.union([TaskStatusInputSchema, z.array(TaskStatusInputSchema)]).optional(),
+      type: z.union([TaskTypeInputSchema, z.array(TaskTypeInputSchema)]).optional(),
+      priority: z.union([TaskPriorityInputSchema, z.array(TaskPriorityInputSchema)]).optional(),
 
       // Complex tag filtering
       tagFilter: z
@@ -204,10 +204,10 @@ export const ListFilterSchema = z.object({
 // task_list input
 export const TaskListInputSchema = ListFilterSchema.merge(SessionContextSchema).extend({
   // Simple filters for common cases (AI-friendly)
-  type: TaskTypeSchema.optional().describe(
+  type: TaskTypeInputSchema.optional().describe(
     'Filter by single task type - use advancedFilter.type for multiple types'
   ),
-  status: TaskStatusSchema.optional().describe(
+  status: TaskStatusInputSchema.optional().describe(
     'Filter by single status - use advancedFilter.status for multiple statuses'
   ),
 

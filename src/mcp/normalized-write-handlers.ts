@@ -7,6 +7,7 @@
 
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
 import * as core from '../core/index.js';
+import { normalizeTaskType, normalizeTaskStatus, normalizePriority, normalizeWorkflowState } from '../core/field-normalizers.js';
 import {
   type ParentCreateInput,
   ParentCreateInputSchema,
@@ -38,13 +39,7 @@ import {
   type TaskUpdateOutput,
   TaskUpdateOutputSchema,
 } from './schemas.js';
-import {
-  denormalizePriority,
-  denormalizeStatus,
-  normalizePriority,
-  normalizeStatus,
-  transformTaskToNormalized,
-} from './transformers.js';
+import { normalizeStatus, transformTaskToNormalized } from './transformers.js';
 import type { McpResponse } from './types.js';
 
 /**
@@ -64,9 +59,9 @@ export async function handleTaskCreateNormalized(
     if (params.parentId) {
       // Create subtask using parent builder
       const result = await core.parent(projectRoot, params.parentId).create(params.title, {
-        type: params.type,
+        type: normalizeTaskType(params.type) as core.TaskType,
         area: params.area,
-        status: params.status ? (denormalizeStatus(params.status) as core.TaskStatus) : undefined,
+        status: normalizeTaskStatus(params.status) as core.TaskStatus,
         tags: params.tags,
         customMetadata: params.assignee ? { assignee: params.assignee } : undefined,
       });
@@ -104,10 +99,10 @@ export async function handleTaskCreateNormalized(
     // Build create options with normalized field names
     const createOptions: core.TaskCreateOptions = {
       title: params.title,
-      type: params.type,
+      type: normalizeTaskType(params.type) as core.TaskType,
       area: params.area || 'general',
-      status: (params.status ? denormalizeStatus(params.status) : 'To Do') as core.TaskStatus,
-      workflowState: params.workflowState,
+      status: normalizeTaskStatus(params.status || 'todo') as core.TaskStatus,
+      workflowState: normalizeWorkflowState(params.workflowState) as core.WorkflowState,
       instruction: params.instruction,
       tasks: params.tasks ? core.parseTasksSection(params.tasks).map((t) => t.text) : undefined,
       customMetadata: {},
@@ -115,7 +110,7 @@ export async function handleTaskCreateNormalized(
 
     // Add optional metadata
     if (params.priority && createOptions.customMetadata) {
-      createOptions.customMetadata.priority = denormalizePriority(params.priority);
+      createOptions.customMetadata.priority = params.priority; // Pass directly - core will normalize
     }
     if (params.assignee && createOptions.customMetadata) {
       createOptions.customMetadata.assignee = params.assignee;
@@ -139,6 +134,7 @@ export async function handleTaskCreateNormalized(
       title: data.document.title,
       type: data.document.frontmatter.type,
       status: normalizeStatus(data.document.frontmatter.status),
+      priority: normalizePriority(data.document.frontmatter.priority),
       workflowState: data.metadata.location.workflowState,
       area: data.document.frontmatter.area || 'general',
       path: data.metadata.path,
@@ -182,10 +178,9 @@ export async function handleTaskUpdateNormalized(rawParams: unknown): Promise<Mc
     if (params.updates.title) updateOptions.title = params.updates.title;
 
     const frontmatter: Partial<core.TaskFrontmatter> = {};
-    if (params.updates.status)
-      frontmatter.status = denormalizeStatus(params.updates.status) as core.TaskStatus;
+    if (params.updates.status) frontmatter.status = params.updates.status as core.TaskStatus; // Pass directly - core will normalize
     if (params.updates.priority)
-      frontmatter.priority = denormalizePriority(params.updates.priority) as core.TaskPriority;
+      frontmatter.priority = params.updates.priority as core.TaskPriority; // Pass directly - core will normalize
     if (params.updates.area) frontmatter.area = params.updates.area;
     if (params.updates.assignee) frontmatter.assignee = params.updates.assignee;
     if (params.updates.tags) frontmatter.tags = params.updates.tags;
@@ -531,14 +526,14 @@ export async function handleParentCreateNormalized(
       title: params.title,
       type: params.type,
       area: params.area || 'general',
-      status: (params.status ? denormalizeStatus(params.status) : 'To Do') as core.TaskStatus,
+      status: params.status || 'To Do', // Pass directly - core will normalize
       workflowState: params.workflowState,
       instruction: params.overviewContent,
       customMetadata: {},
     };
 
     if (params.priority && createOptions.customMetadata) {
-      createOptions.customMetadata.priority = denormalizePriority(params.priority);
+      createOptions.customMetadata.priority = params.priority; // Pass directly - core will normalize
     }
     if (params.assignee && createOptions.customMetadata) {
       createOptions.customMetadata.assignee = params.assignee;

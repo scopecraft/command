@@ -5,6 +5,12 @@
  */
 
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
+import {
+  normalizePriority,
+  normalizeTaskStatus,
+  normalizeTaskType,
+  normalizeWorkflowState,
+} from '../core/field-normalizers.js';
 import * as core from '../core/index.js';
 import {
   type ParentGetInput,
@@ -69,38 +75,23 @@ function filterTasksByStructure(tasks: core.Task[], taskType: string): core.Task
 function buildCoreListOptions(params: TaskListInput | ParentListInput): core.TaskListOptions {
   const listOptions: core.TaskListOptions = {};
 
-  // Map workflowState parameter to workflowStates
+  // Map workflowState parameter to workflowStates with normalization
   if (params.workflowState) {
-    listOptions.workflowStates = Array.isArray(params.workflowState)
-      ? params.workflowState
-      : [params.workflowState];
+    const normalizedStates = Array.isArray(params.workflowState)
+      ? params.workflowState.map(s => normalizeWorkflowState(s))
+      : [normalizeWorkflowState(params.workflowState)];
+    listOptions.workflowStates = normalizedStates as core.WorkflowState[];
   }
 
-  // Add other basic filters
+  // Add other basic filters with normalization
   if ('type' in params && params.type) {
-    // Convert clean enum back to core format (with emoji)
-    // TODO: This is temporary - core should store clean enums
-    const typeMap: Record<string, string> = {
-      feature: '🌟 Feature',
-      bug: '🐞 Bug',
-      chore: '🧹 Chore',
-      documentation: '📖 Documentation',
-      test: '🧪 Test',
-      spike: '💡 Spike/Research',
-    };
-    listOptions.type = typeMap[params.type] as core.TaskType;
+    // Normalize type input (handles emojis, aliases, etc.) before passing to core
+    listOptions.type = normalizeTaskType(params.type) as core.TaskType;
   }
 
   if ('status' in params && params.status) {
-    // Convert clean enum back to core format
-    const statusMap: Record<string, string> = {
-      todo: 'To Do',
-      in_progress: 'In Progress',
-      done: 'Done',
-      blocked: 'Blocked',
-      archived: 'Archived',
-    };
-    listOptions.status = statusMap[params.status] as core.TaskStatus;
+    // Normalize status input (handles emojis, aliases, etc.) before passing to core
+    listOptions.status = normalizeTaskStatus(params.status) as core.TaskStatus;
   }
 
   if (params.area) listOptions.area = params.area;

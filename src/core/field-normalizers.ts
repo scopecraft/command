@@ -19,6 +19,7 @@ import {
   getTypeLabel,
   getTypeName,
   getTypeValues,
+  getWorkflowStateValues,
 } from './metadata/schema-service.js';
 import { buildNormalizerMap, createNormalizer } from './metadata/normalizer-builder.js';
 
@@ -29,6 +30,7 @@ import { buildNormalizerMap, createNormalizer } from './metadata/normalizer-buil
 let priorityNormalizer: Map<string, string> | null = null;
 let typeNormalizer: Map<string, string> | null = null;
 let statusNormalizer: Map<string, string> | null = null;
+let workflowStateNormalizer: Map<string, string> | null = null;
 
 /**
  * Priority order for sorting (highest to lowest)
@@ -133,6 +135,37 @@ export function normalizeTaskStatus(input: string | undefined | null): string {
     validOptions,
     'todo',
     'status'
+  );
+
+  return normalizer(input);
+}
+
+/**
+ * Normalizes workflow state values to standard format
+ *
+ * Accepts various input formats based on schema aliases:
+ * - Canonical names: "backlog", "current", "archive"
+ * - Labels: "Backlog", "Current", "Archive"
+ * - Aliases: "todo", "active", "done", etc.
+ *
+ * @param input Workflow state value to normalize
+ * @returns Standardized workflow state value (canonical name)
+ */
+export function normalizeWorkflowState(input: string | undefined | null): string {
+  // Build normalizer map on first use
+  if (!workflowStateNormalizer) {
+    const workflowStateValues = getWorkflowStateValues();
+    workflowStateNormalizer = buildNormalizerMap(workflowStateValues);
+  }
+
+  // Use the schema-driven normalizer
+  const workflowStateValues = getWorkflowStateValues();
+  const validOptions = workflowStateValues.map(w => w.name);
+  const normalizer = createNormalizer(
+    workflowStateNormalizer,
+    validOptions,
+    'backlog',
+    'workflow state'
   );
 
   return normalizer(input);
