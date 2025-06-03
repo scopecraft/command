@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import type React from 'react';
+import { getTypeLabel } from '../../lib/schema-client';
 import { getTaskUrl } from '../../lib/task-routing';
 import type { TableTask } from '../../lib/types';
 import { Button } from '../ui/button';
@@ -140,7 +141,7 @@ export function TaskTable({
                         ? 'Parent'
                         : task.taskStructure === 'subtask'
                           ? 'Subtask'
-                          : 'Task'}
+                          : getTypeLabel(task.type)}
                     </span>
                   </div>
                 </td>

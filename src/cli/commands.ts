@@ -4,6 +4,7 @@
  */
 
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
+import * as core from '../core/index.js';
 import type { OutputFormat } from './formatters.js';
 import {
   formatProgress,
@@ -11,7 +12,6 @@ import {
   formatTasksList,
   formatTemplatesList,
 } from './formatters.js';
-import * as core from '../core/index.js';
 
 /**
  * Handle init command with project structure

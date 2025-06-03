@@ -12,6 +12,7 @@ import {
   getTypeName,
   getWorkflowStateLabel,
   getWorkflowStateName,
+  isValidType,
 } from '../core/metadata/schema-service.js';
 import {
   type ParentTask,
@@ -38,9 +39,13 @@ import {
  * Normalize task type to enum values
  */
 export function cleanTaskType(rawType: string): TaskType {
-  // Use schema service to get the normalized name
-  const normalizedName = getTypeName(rawType);
-  return normalizedName as TaskType;
+  // Core already stores canonical names (e.g., "bug", "feature")
+  // Just validate it's a valid type, don't transform it
+  if (isValidType(rawType)) {
+    return rawType as TaskType;
+  }
+  // If invalid, default to feature
+  return 'feature' as TaskType;
 }
 
 /**

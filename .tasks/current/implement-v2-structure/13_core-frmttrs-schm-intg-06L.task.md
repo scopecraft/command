@@ -84,6 +84,7 @@ Remove hardcoded emojis/labels from core display logic so adding new metadata va
 - Applied normalization in both create() and update() functions
 - Updated formatters to display human-readable labels
 - Tested end-to-end: stores 'todo'/'high' but displays 'To Do'/'High'
+- 2025-06-03: 2025-06-02: Task completed and committed. Schema service integration with core formatters is now complete with proper normalization in core layer following Postel's Law.
 
 ## Current issues
 ### formatters.ts

@@ -2,7 +2,7 @@
 
 ---
 type: chore
-status: done
+status: Done
 area: core
 ---
 

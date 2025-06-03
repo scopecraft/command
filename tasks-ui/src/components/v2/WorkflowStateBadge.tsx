@@ -1,5 +1,6 @@
 import React from 'react';
 import { PriorityIcon, StatusIcon, WorkflowStateIcon } from '../../lib/icons';
+import { getPriorityLabel, getStatusLabel, getWorkflowStateLabel } from '../../lib/schema-client';
 import type { TaskStatus, WorkflowState } from '../../lib/types';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -27,16 +28,12 @@ export function WorkflowStateBadge({
   interactive = false,
   onClick,
 }: WorkflowStateBadgeProps) {
-  const workflowLabels = {
-    backlog: 'Backlog',
-    current: 'Current',
-    archive: 'Archive',
-  };
+  const label = getWorkflowStateLabel(workflow);
 
   const content = (
     <>
       <WorkflowStateIcon workflow={workflow} size="sm" />
-      {workflowLabels[workflow]}
+      {label}
     </>
   );
 
@@ -72,15 +69,7 @@ export function StatusBadge({
   interactive = false,
   onClick,
 }: StatusBadgeProps) {
-  const statusLabels = {
-    todo: 'To Do',
-    in_progress: 'In Progress',
-    done: 'Done',
-    blocked: 'Blocked',
-    archived: 'Archived',
-  };
-
-  const label = statusLabels[status] || statusLabels.todo;
+  const label = getStatusLabel(status);
   const content = (
     <>
       <StatusIcon status={status} size="sm" />
@@ -136,15 +125,9 @@ export function PriorityIndicator({
     return null;
   }
 
-  const priorityLabels = {
-    highest: 'Highest',
-    high: 'High',
-    low: 'Low',
-  };
-
-  const normalizedPriority = priority.toLowerCase() as keyof typeof priorityLabels;
-  const label = priorityLabels[normalizedPriority];
-  if (!label) return null;
+  const normalizedPriority = priority.toLowerCase();
+  const label = getPriorityLabel(normalizedPriority);
+  if (!label || label === normalizedPriority) return null; // No valid label found
 
   const content = (
     <>

@@ -7,8 +7,6 @@
 import { readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { existsSync, mkdirSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { normalizePriority, normalizeTaskStatus } from './field-normalizers.js';
-import { getTypeName } from './metadata/schema-service.js';
 import {
   createArchiveDate,
   getArchiveDirectory,
@@ -20,7 +18,9 @@ import {
   parseTaskLocation,
   resolveTaskId,
 } from './directory-utils.js';
+import { normalizePriority, normalizeTaskStatus } from './field-normalizers.js';
 import { generateSubtaskId, generateUniqueTaskId, parseTaskId } from './id-generator.js';
+import { getTypeName } from './metadata/schema-service.js';
 import { getNextSequenceNumber } from './subtask-sequencing.js';
 import {
   addLogEntry,
@@ -52,22 +52,22 @@ import type {
  */
 function normalizeFrontmatter(frontmatter: Record<string, any>): Record<string, any> {
   const normalized = { ...frontmatter };
-  
+
   // Normalize status to canonical name (e.g., "To Do" -> "todo")
   if (normalized.status) {
     normalized.status = normalizeTaskStatus(normalized.status);
   }
-  
-  // Normalize type to canonical name (e.g., "Feature" -> "feature") 
+
+  // Normalize type to canonical name (e.g., "Feature" -> "feature")
   if (normalized.type) {
     normalized.type = getTypeName(normalized.type);
   }
-  
+
   // Normalize priority to canonical name (e.g., "High" -> "high")
   if (normalized.priority) {
     normalized.priority = normalizePriority(normalized.priority);
   }
-  
+
   return normalized;
 }
 

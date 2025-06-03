@@ -1,6 +1,11 @@
 import { useNavigate } from '@tanstack/react-router';
 import React from 'react';
 import type { ApiResponse } from '../../lib/api/client';
+import {
+  createStatusFilterOptions,
+  createTaskTypeFilterOptions,
+  createWorkflowFilterOptions,
+} from '../../lib/icons';
 import type { TaskStatus, TaskType, WorkflowState } from '../../lib/types';
 import { Button } from '../ui/button';
 import { FilterCategory, FilterPanel } from '../ui/filter-panel';
@@ -124,25 +129,9 @@ export function TaskManagementView({
     ) as string[];
 
     return {
-      status: [
-        { value: 'todo' as TaskStatus, label: 'To Do' },
-        { value: 'in_progress' as TaskStatus, label: 'In Progress' },
-        { value: 'done' as TaskStatus, label: 'Done' },
-        { value: 'blocked' as TaskStatus, label: 'Blocked' },
-      ],
-      type: [
-        { value: 'feature' as TaskType, label: 'Feature' },
-        { value: 'bug' as TaskType, label: 'Bug' },
-        { value: 'chore' as TaskType, label: 'Chore' },
-        { value: 'documentation' as TaskType, label: 'Documentation' },
-        { value: 'test' as TaskType, label: 'Test' },
-        { value: 'spike' as TaskType, label: 'Spike/Research' },
-      ],
-      workflow: [
-        { value: 'backlog' as WorkflowState, label: 'Backlog' },
-        { value: 'current' as WorkflowState, label: 'Current' },
-        { value: 'archive' as WorkflowState, label: 'Archive' },
-      ],
+      status: createStatusFilterOptions(),
+      type: createTaskTypeFilterOptions(),
+      workflow: createWorkflowFilterOptions(),
       area: uniqueAreas.map((area) => ({ value: area, label: area })),
     };
   }, [allTasks]);
