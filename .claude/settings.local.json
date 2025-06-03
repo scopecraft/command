@@ -37,7 +37,10 @@
       "Bash(.tasks/backlog/test-to-see-tool-guidance-06A.task.md )",
       "Bash(.tasks/current/implement-v2-structure/28_test-mcp-subtask-creation-06L.task.md )",
       "Bash(.tasks/current/typescript-fix-test-06A.task.md)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)"
     ],
     "deny": []
   }

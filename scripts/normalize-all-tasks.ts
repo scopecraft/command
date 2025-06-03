@@ -55,7 +55,27 @@ async function normalizeAllTasks() {
     try {
       // Extract task ID from filename
       const filename = path.basename(filePath);
-      const taskId = filename.replace(/\.(task\.md|_overview\.md)$/, '');
+      
+      // Handle overview files differently
+      if (filename === '_overview.md') {
+        // For overview files, the task ID is the parent directory name
+        const taskId = path.basename(path.dirname(filePath));
+        
+        // Get the parent task using core
+        const result = await core.getParent(projectRoot, taskId);
+        
+        if (!result.success || !result.data) {
+          throw new Error(result.error || 'Failed to read parent task');
+        }
+        
+        // For parent tasks, we need to update the overview directly
+        // Since core.update works on tasks, not parent overviews
+        // We'll skip these for now and handle them separately
+        console.log(`⏭️  Skipping parent overview: ${relativePath} (needs special handling)`);
+        continue;
+      }
+      
+      const taskId = filename.replace(/\.task\.md$/, '');
       
       // Determine if it's a subtask by checking parent directory
       const parentDir = path.basename(path.dirname(filePath));

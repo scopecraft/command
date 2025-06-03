@@ -1,7 +1,7 @@
 # Fix MCP API Response Consistency
 
 ---
-type: "\U0001F41E Bug"
+type: bug
 status: done
 area: mcp
 priority: high

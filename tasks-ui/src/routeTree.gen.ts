@@ -17,6 +17,7 @@ import { Route as IndexImport } from './routes/index'
 import { Route as WorkflowIndexImport } from './routes/workflow/index'
 import { Route as TasksIndexImport } from './routes/tasks/index'
 import { Route as ParentsIndexImport } from './routes/parents/index'
+import { Route as WorkflowStateImport } from './routes/workflow/$state'
 import { Route as TasksTaskIdImport } from './routes/tasks/$taskId'
 import { Route as ParentsParentIdImport } from './routes/parents/$parentId'
 import { Route as TasksParentIdSubtaskIdImport } from './routes/tasks/$parentId/$subtaskId'
@@ -57,6 +58,12 @@ const TasksIndexRoute = TasksIndexImport.update({
 const ParentsIndexRoute = ParentsIndexImport.update({
   id: '/parents/',
   path: '/parents/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const WorkflowStateRoute = WorkflowStateImport.update({
+  id: '/workflow/$state',
+  path: '/workflow/$state',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -123,6 +130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TasksTaskIdImport
       parentRoute: typeof rootRoute
     }
+    '/workflow/$state': {
+      id: '/workflow/$state'
+      path: '/workflow/$state'
+      fullPath: '/workflow/$state'
+      preLoaderRoute: typeof WorkflowStateImport
+      parentRoute: typeof rootRoute
+    }
     '/parents/': {
       id: '/parents/'
       path: '/parents'
@@ -181,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/autonomous': typeof AutonomousRoute
   '/parents/$parentId': typeof ParentsParentIdRouteWithChildren
   '/tasks/$taskId': typeof TasksTaskIdRoute
+  '/workflow/$state': typeof WorkflowStateRoute
   '/parents': typeof ParentsIndexRoute
   '/tasks': typeof TasksIndexRoute
   '/workflow': typeof WorkflowIndexRoute
@@ -194,6 +209,7 @@ export interface FileRoutesByTo {
   '/autonomous': typeof AutonomousRoute
   '/parents/$parentId': typeof ParentsParentIdRouteWithChildren
   '/tasks/$taskId': typeof TasksTaskIdRoute
+  '/workflow/$state': typeof WorkflowStateRoute
   '/parents': typeof ParentsIndexRoute
   '/tasks': typeof TasksIndexRoute
   '/workflow': typeof WorkflowIndexRoute
@@ -208,6 +224,7 @@ export interface FileRoutesById {
   '/autonomous': typeof AutonomousRoute
   '/parents/$parentId': typeof ParentsParentIdRouteWithChildren
   '/tasks/$taskId': typeof TasksTaskIdRoute
+  '/workflow/$state': typeof WorkflowStateRoute
   '/parents/': typeof ParentsIndexRoute
   '/tasks/': typeof TasksIndexRoute
   '/workflow/': typeof WorkflowIndexRoute
@@ -223,6 +240,7 @@ export interface FileRouteTypes {
     | '/autonomous'
     | '/parents/$parentId'
     | '/tasks/$taskId'
+    | '/workflow/$state'
     | '/parents'
     | '/tasks'
     | '/workflow'
@@ -235,6 +253,7 @@ export interface FileRouteTypes {
     | '/autonomous'
     | '/parents/$parentId'
     | '/tasks/$taskId'
+    | '/workflow/$state'
     | '/parents'
     | '/tasks'
     | '/workflow'
@@ -247,6 +266,7 @@ export interface FileRouteTypes {
     | '/autonomous'
     | '/parents/$parentId'
     | '/tasks/$taskId'
+    | '/workflow/$state'
     | '/parents/'
     | '/tasks/'
     | '/workflow/'
@@ -261,6 +281,7 @@ export interface RootRouteChildren {
   AutonomousRoute: typeof AutonomousRoute
   ParentsParentIdRoute: typeof ParentsParentIdRouteWithChildren
   TasksTaskIdRoute: typeof TasksTaskIdRoute
+  WorkflowStateRoute: typeof WorkflowStateRoute
   ParentsIndexRoute: typeof ParentsIndexRoute
   TasksIndexRoute: typeof TasksIndexRoute
   WorkflowIndexRoute: typeof WorkflowIndexRoute
@@ -273,6 +294,7 @@ const rootRouteChildren: RootRouteChildren = {
   AutonomousRoute: AutonomousRoute,
   ParentsParentIdRoute: ParentsParentIdRouteWithChildren,
   TasksTaskIdRoute: TasksTaskIdRoute,
+  WorkflowStateRoute: WorkflowStateRoute,
   ParentsIndexRoute: ParentsIndexRoute,
   TasksIndexRoute: TasksIndexRoute,
   WorkflowIndexRoute: WorkflowIndexRoute,
@@ -294,6 +316,7 @@ export const routeTree = rootRoute
         "/autonomous",
         "/parents/$parentId",
         "/tasks/$taskId",
+        "/workflow/$state",
         "/parents/",
         "/tasks/",
         "/workflow/",
@@ -317,6 +340,9 @@ export const routeTree = rootRoute
     },
     "/tasks/$taskId": {
       "filePath": "tasks/$taskId.tsx"
+    },
+    "/workflow/$state": {
+      "filePath": "workflow/$state.tsx"
     },
     "/parents/": {
       "filePath": "parents/index.tsx"
