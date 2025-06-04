@@ -23,34 +23,6 @@ The documents widget in the parent task view (ParentTaskView component) is not d
 - [x] Verify the documents widget displays the files correctly in the UI
 
 ## Deliverable
-## Implementation Summary
-
-Successfully fixed the supportingFiles implementation in parent-tasks.ts:
-
-### Changes Made:
-1. **Modified getParentTaskWithSubtasks function** (line 578):
-   - Replaced hardcoded empty array with call to getSupportingFilesForParent
-   - Now properly populates supportingFiles field in ParentTask object
-
-2. **Created getSupportingFilesForParent function** (lines 662-697):
-   - Scans parent task folder for all files
-   - Filters to include only markdown files (*.md)
-   - Excludes task files (*.task.md) and overview file (_overview.md)
-   - Returns alphabetically sorted array of relative filenames
-   - Includes error handling to prevent crashes
-
-### Technical Details:
-- Function uses synchronous file system operations for consistency with existing code
-- Returns string array matching ParentTask type definition
-- Maintains same error handling pattern as getSubtasksForParent
-
-### Verification:
-- Build passes with no TypeScript errors
-- Implementation matches UI expectations (ParentTaskView expects string array)
-- Tested with implement-v2-structure parent task containing 14 supporting files
-
-### Result:
-Documents widget in parent task view will now display all supporting markdown files in the parent task folder, resolving the regression from the core/MCP refactoring.
 
 ## Log
 - 2025-06-04: 2025-06-04 14:32: === AUTONOMOUS EXECUTION STARTED ===
@@ -95,6 +67,40 @@ Documents widget in parent task view will now display all supporting markdown fi
 
   Modified files:
   1. src/core/parent-tasks.ts - Added getSupportingFilesForParent function and integrated it
+- 2025-06-04: Architecture review and refactoring completed
+  - Moved getSupportingFilesForParent function to directory-utils.ts for better isolation
+  - Updated parent-tasks.ts to use centralized getSupportingFiles function
+  - Verified end-to-end flow: Core → MCP → UI works correctly
+  - UI verification confirmed - documents widget displays supporting files properly
+  - Task completed with improved architecture and full functionality
+
+## Implementation summary
+Successfully fixed the supportingFiles implementation in parent-tasks.ts:
+
+### Changes Made:
+1. **Modified getParentTaskWithSubtasks function** (line 578):
+   - Replaced hardcoded empty array with call to getSupportingFilesForParent
+   - Now properly populates supportingFiles field in ParentTask object
+
+2. **Created getSupportingFilesForParent function** (lines 662-697):
+   - Scans parent task folder for all files
+   - Filters to include only markdown files (*.md)
+   - Excludes task files (*.task.md) and overview file (_overview.md)
+   - Returns alphabetically sorted array of relative filenames
+   - Includes error handling to prevent crashes
+
+### Technical Details:
+- Function uses synchronous file system operations for consistency with existing code
+- Returns string array matching ParentTask type definition
+- Maintains same error handling pattern as getSubtasksForParent
+
+### Verification:
+- Build passes with no TypeScript errors
+- Implementation matches UI expectations (ParentTaskView expects string array)
+- Tested with implement-v2-structure parent task containing 14 supporting files
+
+### Result:
+Documents widget in parent task view will now display all supporting markdown files in the parent task folder, resolving the regression from the core/MCP refactoring.
 
 ## Root cause
 In the `getParentTaskWithSubtasks` function in `src/core/parent-tasks.ts`, the supportingFiles array is hardcoded:
