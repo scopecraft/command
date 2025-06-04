@@ -1,14 +1,19 @@
-import React from 'react';
+import { useDeleteTask } from '@/lib/api/hooks';
+import type { Task } from '@/lib/types';
+import { useNavigate } from '@tanstack/react-router';
+import { Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import { Button } from '../ui/button';
+import { ConfirmationDialog } from '../ui/confirmation-dialog';
 import { ClaudeAgentButton } from './ClaudeAgentButton';
 import { TaskTypeIcon } from './TaskTypeIcon';
 import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 interface SimpleTaskViewProps {
-  task: any;
+  task: Task;
   content: string;
   isEditing: boolean;
   onEdit: () => void;
@@ -29,6 +34,20 @@ export function SimpleTaskView({
   isUpdating = false,
 }: SimpleTaskViewProps) {
   const metadata = task.metadata || task;
+  const navigate = useNavigate();
+  const deleteTask = useDeleteTask();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      await deleteTask.mutateAsync({ id: task.id });
+      // Navigate back to the workflow list
+      navigate({ to: `/workflow/${metadata.workflowState || 'current'}` });
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      // Error handling will be improved in a later step
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -69,6 +88,15 @@ export function SimpleTaskView({
               </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
               <Button variant="ghost" size="sm">
                 Convert to Parent
               </Button>
@@ -120,14 +148,15 @@ export function SimpleTaskView({
                 >
                   Edit
                 </Button>
-                <div
-                  className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                <button
+                  type="button"
+                  className="prose prose-sm dark:prose-invert max-w-none cursor-text text-left w-full"
                   onClick={onEdit}
                 >
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {content || '*No content yet. Click Edit to add details.*'}
                   </ReactMarkdown>
-                </div>
+                </button>
               </div>
             )}
           </div>
@@ -147,6 +176,18 @@ export function SimpleTaskView({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Task"
+        description={`Are you sure you want to delete "${metadata.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        confirmVariant="destructive"
+        onConfirm={handleDelete}
+        isLoading={deleteTask.isPending}
+      />
     </div>
   );
 }

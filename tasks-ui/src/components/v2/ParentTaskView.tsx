@@ -1,20 +1,24 @@
+import { useDeleteTask } from '@/lib/api/hooks';
+import type { ParentTask, SubTask } from '@/lib/types';
 import { useNavigate } from '@tanstack/react-router';
-import React from 'react';
+import { Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import { DocumentsIcon, SubtasksIcon } from '../../lib/icons';
 import { getTaskUrl } from '../../lib/task-routing';
 import { Button } from '../ui/button';
+import { ConfirmationDialog } from '../ui/confirmation-dialog';
 import { ClaudeAgentButton } from './ClaudeAgentButton';
 import { SubtaskList } from './SubtaskList';
 import { TaskTypeIcon } from './TaskTypeIcon';
 import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 interface ParentTaskViewProps {
-  task: any;
-  subtasks: any[];
-  documents?: any[];
+  task: ParentTask;
+  subtasks: SubTask[];
+  documents?: string[];
   content: string;
   isEditing: boolean;
   onEdit: () => void;
@@ -38,6 +42,20 @@ export function ParentTaskView({
 }: ParentTaskViewProps) {
   const navigate = useNavigate();
   const metadata = task.metadata || task;
+  const deleteTask = useDeleteTask();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [cascadeDelete, setCascadeDelete] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      await deleteTask.mutateAsync({ id: task.id, cascade: cascadeDelete });
+      // Navigate back to the workflow list
+      navigate({ to: `/workflow/${metadata.workflowState || 'current'}` });
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      // Error handling will be improved in a later step
+    }
+  };
 
   // Ensure subtasks have parent context for proper URL generation
   const subtasksWithParent = subtasks.map((subtask) => ({
@@ -75,6 +93,15 @@ export function ParentTaskView({
               </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
               <ClaudeAgentButton />
             </div>
           </div>
@@ -123,14 +150,15 @@ export function ParentTaskView({
                 >
                   Edit
                 </Button>
-                <div
-                  className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                <button
+                  type="button"
+                  className="prose prose-sm dark:prose-invert max-w-none cursor-text text-left w-full"
                   onClick={onEdit}
                 >
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {content || '*No overview yet. Click Edit to add details.*'}
                   </ReactMarkdown>
-                </div>
+                </button>
               </div>
             )}
           </div>
@@ -145,8 +173,7 @@ export function ParentTaskView({
                   <h3 className="font-semibold text-foreground">Subtasks</h3>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {task.progress?.completed || 0}/
-                  {task.progress?.total || 0}
+                  {task.progress?.completed || 0}/{task.progress?.total || 0}
                 </div>
               </div>
 
@@ -227,6 +254,7 @@ export function ParentTaskView({
                     return (
                       <button
                         key={doc}
+                        type="button"
                         className="w-full flex items-center gap-2 p-2 rounded hover:bg-accent/50 text-left transition-colors"
                         onClick={() => {
                           // Navigate to document or open in modal
@@ -265,6 +293,37 @@ export function ParentTaskView({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Parent Task"
+        description={`Are you sure you want to delete "${metadata.title}"?`}
+        confirmText="Delete"
+        confirmVariant="destructive"
+        onConfirm={handleDelete}
+        isLoading={deleteTask.isPending}
+      >
+        {subtasks.length > 0 && (
+          <div className="rounded-lg border p-3">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={cascadeDelete}
+                onChange={(e) => setCascadeDelete(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm font-medium">Delete all subtasks</span>
+            </label>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {cascadeDelete
+                ? `This will permanently delete all ${subtasks.length} subtask${subtasks.length > 1 ? 's' : ''}.`
+                : 'Subtasks will be preserved and converted to standalone tasks.'}
+            </p>
+          </div>
+        )}
+      </ConfirmationDialog>
     </div>
   );
 }
