@@ -209,14 +209,13 @@ export async function handleCreateCommand(options: {
       customMetadata: {},
     };
 
-    // Add optional metadata
+    // Add optional metadata (but not parent, which is handled separately)
     if (options.priority) {
       // Pass raw priority - core will normalize it
       createOptions.customMetadata!.priority = options.priority;
     }
     if (options.assignee) createOptions.customMetadata!.assignee = options.assignee;
     if (options.tags) createOptions.tags = options.tags; // Pass directly to core
-    if (options.parent) createOptions.customMetadata!.parent = options.parent;
     if (options.depends) createOptions.customMetadata!.depends = options.depends;
     if (options.previous) createOptions.customMetadata!.previous = options.previous;
     if (options.next) createOptions.customMetadata!.next = options.next;
@@ -228,8 +227,15 @@ export async function handleCreateCommand(options: {
       process.exit(1);
     }
 
-    // Create task
-    const result = await core.create(projectRoot, createOptions);
+    // Create task - use parent builder if parent is specified
+    let result;
+    if (options.parent) {
+      // Use parent builder for subtask creation
+      result = await core.parent(projectRoot, options.parent).create(options.title, createOptions);
+    } else {
+      // Regular task creation
+      result = await core.create(projectRoot, createOptions);
+    }
 
     if (!result.success) {
       console.error(`Error: ${result.error}`);
@@ -241,16 +247,16 @@ export async function handleCreateCommand(options: {
       process.exit(1);
     }
 
-    console.log(`✓ Created task: ${result.data!.metadata.id}`);
+    console.log(`✓ Created task: ${result.data?.metadata.id}`);
     console.log(
-      `  Location: ${result.data!.metadata.location.workflowState}/${result.data!.metadata.filename}`
+      `  Location: ${result.data?.metadata.location.workflowState}/${result.data?.metadata.filename}`
     );
 
     // Show next steps
-    if (result.data!.metadata.location.workflowState === 'backlog') {
+    if (result.data?.metadata.location.workflowState === 'backlog') {
       console.log('\nNext steps:');
-      console.log(`  sc workflow promote ${result.data!.metadata.id}  # Move to current`);
-      console.log(`  sc task start ${result.data!.metadata.id}        # Mark as in progress`);
+      console.log(`  sc workflow promote ${result.data?.metadata.id}  # Move to current`);
+      console.log(`  sc task start ${result.data?.metadata.id}        # Mark as in progress`);
     }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -333,7 +339,7 @@ export async function handleUpdateCommand(
       process.exit(1);
     }
 
-    console.log(`✓ Updated task: ${result.data!.metadata.id}`);
+    console.log(`✓ Updated task: ${result.data?.metadata.id}`);
 
     // Handle location moves
     if (options.location) {
@@ -459,7 +465,7 @@ export async function handleTaskMoveCommand(
  * Handle workflow next command with v2
  */
 export async function handleNextTaskCommand(
-  id?: string,
+  _id?: string,
   options: {
     format?: string;
   } = {}
@@ -610,34 +616,34 @@ export async function handleListTemplatesCommand(): Promise<void> {
 }
 
 // Feature/Area commands will be implemented when we add parent task support
-export async function handleFeatureListCommand(options: any): Promise<void> {
+export async function handleFeatureListCommand(_options: any): Promise<void> {
   console.log('Parent task listing not yet implemented in v2');
 }
 
-export async function handleFeatureGetCommand(id: string, options: any): Promise<void> {
+export async function handleFeatureGetCommand(_id: string, _options: any): Promise<void> {
   console.log('Parent task get not yet implemented in v2');
 }
 
-export async function handleFeatureUpdateCommand(id: string, options: any): Promise<void> {
+export async function handleFeatureUpdateCommand(_id: string, _options: any): Promise<void> {
   console.log('Parent task update not yet implemented in v2');
 }
 
-export async function handleFeatureDeleteCommand(id: string, options: any): Promise<void> {
+export async function handleFeatureDeleteCommand(_id: string, _options: any): Promise<void> {
   console.log('Parent task delete not yet implemented in v2');
 }
 
-export async function handleAreaListCommand(options: any): Promise<void> {
+export async function handleAreaListCommand(_options: any): Promise<void> {
   console.log('Area listing will use parent tasks in v2');
 }
 
-export async function handleAreaGetCommand(id: string, options: any): Promise<void> {
+export async function handleAreaGetCommand(_id: string, _options: any): Promise<void> {
   console.log('Area get will use parent tasks in v2');
 }
 
-export async function handleAreaUpdateCommand(id: string, options: any): Promise<void> {
+export async function handleAreaUpdateCommand(_id: string, _options: any): Promise<void> {
   console.log('Area update will use parent tasks in v2');
 }
 
-export async function handleAreaDeleteCommand(id: string, options: any): Promise<void> {
+export async function handleAreaDeleteCommand(_id: string, _options: any): Promise<void> {
   console.log('Area delete will use parent tasks in v2');
 }
