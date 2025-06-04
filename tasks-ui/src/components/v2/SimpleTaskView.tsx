@@ -1,4 +1,5 @@
 import { useDeleteTask } from '@/lib/api/hooks';
+import type { Task } from '@/lib/types';
 import { useNavigate } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -12,7 +13,7 @@ import { TaskTypeIcon } from './TaskTypeIcon';
 import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 interface SimpleTaskViewProps {
-  task: any;
+  task: Task;
   content: string;
   isEditing: boolean;
   onEdit: () => void;
@@ -147,22 +148,15 @@ export function SimpleTaskView({
                 >
                   Edit
                 </Button>
-                <div
-                  className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                <button
+                  type="button"
+                  className="prose prose-sm dark:prose-invert max-w-none cursor-text text-left w-full"
                   onClick={onEdit}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onEdit();
-                    }
-                  }}
-                  role="button"
-                  tabIndex={0}
                 >
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {content || '*No content yet. Click Edit to add details.*'}
                   </ReactMarkdown>
-                </div>
+                </button>
               </div>
             )}
           </div>

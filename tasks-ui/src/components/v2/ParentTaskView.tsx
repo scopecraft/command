@@ -1,4 +1,5 @@
 import { useDeleteTask } from '@/lib/api/hooks';
+import type { ParentTask, SubTask } from '@/lib/types';
 import { useNavigate } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -15,9 +16,9 @@ import { TaskTypeIcon } from './TaskTypeIcon';
 import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 interface ParentTaskViewProps {
-  task: any;
-  subtasks: any[];
-  documents?: any[];
+  task: ParentTask;
+  subtasks: SubTask[];
+  documents?: string[];
   content: string;
   isEditing: boolean;
   onEdit: () => void;
@@ -149,22 +150,15 @@ export function ParentTaskView({
                 >
                   Edit
                 </Button>
-                <div
-                  className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                <button
+                  type="button"
+                  className="prose prose-sm dark:prose-invert max-w-none cursor-text text-left w-full"
                   onClick={onEdit}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onEdit();
-                    }
-                  }}
-                  role="button"
-                  tabIndex={0}
                 >
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {content || '*No overview yet. Click Edit to add details.*'}
                   </ReactMarkdown>
-                </div>
+                </button>
               </div>
             )}
           </div>
