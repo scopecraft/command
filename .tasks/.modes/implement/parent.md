@@ -69,9 +69,10 @@ Your mission is to:
 
 1. **Load Parent Task**
    Retrieve the parent task details for {parentId}
-   - Read the overview to understand the big picture
+   - Read the overview to understand the big picture and vision
    - Note the overall type, status, area, and priority
    - Understand what we're trying to achieve
+   - NOTE: The Tasks section may show orchestration phases/gates - these are for the orchestrator, not you
 
 2. **Analyze Execution Plan**
    - List all subtasks and their sequence numbers
@@ -372,9 +373,10 @@ If you make significant design choices not explicitly required:
 
 Throughout execution:
 1. **Keep parent task updated** 
-   - Update parent's Deliverable section after each subtask
+   - Add key decisions or pivots to parent's Log section
    - Track overall progress percentage
    - Note any scope changes or discoveries
+   - NOTE: Don't update orchestration details in Tasks section - that's for the orchestrator
    
 2. **Maintain context** 
    - Remember the big picture goal
