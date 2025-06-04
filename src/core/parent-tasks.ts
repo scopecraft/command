@@ -8,6 +8,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import {
+  getSupportingFiles,
   getTaskIdFromFilename,
   getWorkflowDirectory,
   isParentTaskFolder,
@@ -574,12 +575,15 @@ async function getParentTaskWithSubtasks(
     // Get subtasks
     const subtasks = await getSubtasksForParent(projectRoot, task.metadata.path);
 
+    // Get supporting files
+    const supportingFiles = getSupportingFiles(dirname(task.metadata.path));
+
     // Create parent task object
     const parentTask: ParentTask = {
       metadata: task.metadata,
       overview: task.document,
       subtasks,
-      supportingFiles: [], // TODO: Implement supporting files detection
+      supportingFiles,
     };
 
     return {

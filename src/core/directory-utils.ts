@@ -6,7 +6,7 @@
 
 import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
-import type { StructureVersion, TaskLocation, ProjectConfig, WorkflowState } from './types.js';
+import type { ProjectConfig, StructureVersion, TaskLocation, WorkflowState } from './types.js';
 
 // Default workflow folder names
 const DEFAULT_WORKFLOW_FOLDERS = {
@@ -38,7 +38,11 @@ export function getWorkflowDirectory(
 /**
  * Get archive directory with optional date
  */
-export function getArchiveDirectory(projectRoot: string, date?: string, config?: ProjectConfig): string {
+export function getArchiveDirectory(
+  projectRoot: string,
+  date?: string,
+  config?: ProjectConfig
+): string {
   const archiveDir = getWorkflowDirectory(projectRoot, 'archive', config);
 
   if (date) {
@@ -281,6 +285,35 @@ export function getSubtaskSequence(filename: string): string | null {
 }
 
 /**
+ * Get supporting documentation files in a parent task folder
+ * Returns markdown files that are not task files or overview files
+ */
+export function getSupportingFiles(parentTaskDir: string): string[] {
+  if (!existsSync(parentTaskDir) || !statSync(parentTaskDir).isDirectory()) {
+    return [];
+  }
+
+  try {
+    const files = readdirSync(parentTaskDir);
+
+    return files
+      .filter((file) => {
+        // Only include markdown files
+        if (!file.endsWith('.md')) return false;
+
+        // Exclude task files and overview file
+        if (file.endsWith('.task.md') || file === '_overview.md') return false;
+
+        return true;
+      })
+      .sort(); // Sort alphabetically for consistent ordering
+  } catch (error) {
+    console.error(`Failed to read supporting files from ${parentTaskDir}:`, error);
+    return [];
+  }
+}
+
+/**
  * Create archive date string
  */
 export function createArchiveDate(date: Date = new Date()): string {
@@ -318,7 +351,10 @@ export function isValidTaskFilename(filename: string): boolean {
 /**
  * Get all workflow directories that exist
  */
-export function getExistingWorkflowStates(projectRoot: string, config?: ProjectConfig): WorkflowState[] {
+export function getExistingWorkflowStates(
+  projectRoot: string,
+  config?: ProjectConfig
+): WorkflowState[] {
   const states: WorkflowState[] = [];
 
   for (const state of ['backlog', 'current', 'archive'] as const) {

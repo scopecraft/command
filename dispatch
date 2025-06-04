@@ -225,6 +225,58 @@ interactive_dispatch() {
     fi
 }
 
+# Dispatch autonomous task
+dispatch_autonomous() {
+    gum style --border double --padding 1 --width 50 \
+        "Autonomous Task Execution"
+    
+    local task_id=$(get_task_id)
+    [ -z "$task_id" ] && return 0
+    
+    # Get optional user prompt (without mode context)
+    gum style --foreground 245 "Optional: Add additional instructions for the autonomous task"
+    local user_prompt=$(gum input --placeholder "Press Enter to skip or type additional instructions" \
+        --prompt "Instructions: " \
+        --width 80)
+    
+    # Setup worktree
+    gum style --foreground 245 "Setting up task worktree for $task_id..."
+    local worktree_output=$(bun run tw-start "$task_id" 2>/dev/null | tail -n 1)
+    
+    # Check if the output contains a valid path
+    if [[ -d "$worktree_output" ]]; then
+        local worktree_path="$worktree_output"
+        gum style --foreground 82 "✓ Using worktree: $worktree_path"
+    else
+        gum style --foreground 196 "Error: Failed to create/find worktree for $task_id"
+        gum style --foreground 245 "Make sure ID exists and is not already started in another worktree"
+        return 1
+    fi
+    
+    # Show summary
+    gum style --border normal --padding 1 \
+        "$(echo -e "Task: $task_id\nWorktree: $worktree_path\nInstructions: ${user_prompt:-[none]}")"
+    
+    if gum confirm "Start autonomous execution?"; then
+        gum style --foreground 245 "Starting autonomous task..."
+        
+        # Change to worktree and run implement-auto
+        cd "$worktree_path"
+        if [ -n "$user_prompt" ]; then
+            implement-auto "$task_id" "$user_prompt"
+        else
+            implement-auto "$task_id"
+        fi
+        
+        # Show monitoring hint
+        gum style --foreground 82 "✓ Autonomous task started"
+        gum style --foreground 245 "Monitor with: monitor-auto"
+        gum style --foreground 245 "Continue with: implement-auto --continue $task_id"
+        
+        gum input --placeholder "Press Enter to continue"
+    fi
+}
+
 # Quick status check
 quick_status() {
     local task_id=$(get_task_id)
@@ -248,6 +300,7 @@ main_menu() {
     while true; do
         local action=$(gum choose --header "What would you like to do?" \
             "Dispatch new session" \
+            "Dispatch autonomous task" \
             "Start from existing worktree" \
             "List active sessions" \
             "Check task status" \
@@ -258,6 +311,9 @@ main_menu() {
         case "$action" in
             "Dispatch new session")
                 interactive_dispatch
+                ;;
+            "Dispatch autonomous task")
+                dispatch_autonomous
                 ;;
             "Start from existing worktree")
                 start_from_worktree
