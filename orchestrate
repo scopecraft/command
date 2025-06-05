@@ -1,7 +1,20 @@
 #!/bin/bash
 
-# Wrapper script for task orchestration
-# This delegates to the TypeScript implementation
+# Usage: ./orchestrate <parentId> [additional instructions]
+# Example: ./orchestrate ui-redesign-06A
+# Example: ./orchestrate ui-redesign-06A "Focus on phase 1 tasks only"
 
-# Pass all arguments to the TypeScript implementation
-exec bun run scripts/orchestrate.ts "$@"
+PARENT_ID=$1
+ADDITIONAL_INSTRUCTIONS="${*:2}"
+
+if [ -z "$PARENT_ID" ]; then
+    echo "Usage: $0 <parentId> [additional instructions]"
+    echo "Example: $0 ui-redesign-06A"
+    echo "Example: $0 ui-redesign-06A \"Focus on phase 1 tasks only\""
+    exit 1
+fi
+
+# Run channelcoder with the orchestration prompt
+channelcoder .tasks/.modes/orchestration/base.md \
+    -d parentId="$PARENT_ID" \
+    -d additionalInstructions="$ADDITIONAL_INSTRUCTIONS"

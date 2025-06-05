@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Wrapper script for task orchestration
+# This delegates to the TypeScript implementation
+
+# Pass all arguments to the TypeScript implementation
+exec bun run scripts/orchestrate-auto.ts "$@"

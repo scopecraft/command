@@ -1,6 +1,4 @@
 ---
-name: orchestration
-description: Execute parent task orchestration flows
 input:
   parentId: string
 allowedTools:
