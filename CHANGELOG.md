@@ -5,6 +5,30 @@ All notable changes to Scopecraft Command will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2025-06-05
+
+### Added
+- **Mode System V2**: AI-driven guidance composition for intelligent workflow orchestration
+- **Task Orchestration**: Autonomous dispatch infrastructure for parallel task execution
+- **Delete Functionality**: Delete buttons with confirmation dialogs in task views
+- **Parent Task API**: New `parent_get` MCP method for enhanced parent task operations
+- **Schema-driven Validation**: Metadata validation with type aliases and normalization
+- **Autonomous Execution**: SDK-based autonomous task execution with parallel support
+- **UI Enhancements**: Improved parent task list views and dedicated routing architecture
+
+### Changed
+- **CLI Improvements**: Subtask creation now uses parent builder pattern for consistency
+- **MCP Refactoring**: Reduced handler complexity from 58 to ≤15 for better maintainability
+- **API Normalization**: Consistent MCP write operations with Zod schemas
+- **Content Handling**: Enhanced content serialization and display across UI/API
+
+### Fixed
+- **Parent Task Progress**: Fixed progress showing 0% on individual parent pages
+- **Workflow Routing**: Added workflow state redirect routes and metadata normalization
+- **Type Filtering**: Implemented MCP type filtering with alias normalization
+- **Token Limits**: Resolved parent_get token limit failures for large task sets
+- **UI Routing**: Fixed parent/subtask routing issues and document display
+
 ## [0.14.0] - 2025-05-23
 
 ### Added
