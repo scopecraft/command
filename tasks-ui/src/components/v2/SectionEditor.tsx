@@ -115,7 +115,7 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
       ref={cardRef}
       className={cn(
         "relative rounded-lg border transition-all duration-200",
-        "bg-[var(--terminal-dark)] border-white/10",
+        "[background-color:hsl(var(--background))] border-border",
         isHovering && !readOnly && "border-[var(--atlas-light)] transform -translate-y-0.5",
         isEditing && "border-[var(--atlas-light)]"
       )}
@@ -124,8 +124,8 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
     >
       {/* Section Header */}
       <div className={cn(
-        "flex items-center justify-between px-4 py-2 border-b border-white/10",
-        "font-mono text-sm uppercase text-[var(--cream)]/60"
+        "flex items-center justify-between px-4 py-2 border-b border-border",
+        "font-mono text-sm uppercase text-muted-foreground"
       )}>
         <span>## {sectionTitles[section]}</span>
         {!readOnly && !isEditing && isHovering && (
@@ -147,8 +147,8 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
               onKeyDown={handleKeyDown}
               className={cn(
                 "w-full resize-none outline-none",
-                "bg-transparent text-[var(--cream)] font-mono text-sm",
-                "placeholder-[var(--cream)]/30"
+                "bg-transparent text-foreground font-mono text-sm",
+                "placeholder-muted-foreground"
               )}
               placeholder={`Enter ${section} content...`}
             />
@@ -159,8 +159,8 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
                   disabled={isSaving}
                   className={cn(
                     "px-3 py-1 rounded text-xs font-mono uppercase",
-                    "bg-[var(--atlas-navy)] text-[var(--cream)]",
-                    "hover:bg-[var(--atlas-light)] transition-colors",
+                    "bg-[var(--atlas-navy)] text-[var(--cream)] shadow-xs",
+                    "hover:bg-[var(--atlas-navy)]/90 hover:translate-y-[-1px] transition-all",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
                     "flex items-center gap-2"
                   )}
@@ -179,15 +179,15 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
                   disabled={isSaving}
                   className={cn(
                     "px-3 py-1 rounded text-xs font-mono uppercase",
-                    "bg-transparent text-[var(--cream)]/60",
-                    "hover:text-[var(--cream)] hover:bg-white/5 transition-colors",
+                    "bg-transparent text-muted-foreground",
+                    "hover:text-foreground hover:bg-muted/20 transition-colors",
                     "disabled:opacity-50 disabled:cursor-not-allowed"
                   )}
                 >
                   ✕ Cancel
                 </button>
               </div>
-              <span className="text-xs font-mono text-[var(--cream)]/40">
+              <span className="text-xs font-mono text-muted-foreground">
                 Shift+Enter
               </span>
             </div>
@@ -199,7 +199,7 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
               "prose-headings:font-mono prose-headings:uppercase",
               "prose-code:text-[var(--atlas-light)]",
               "prose-a:text-[var(--connection-teal)]",
-              !localContent && "text-[var(--cream)]/30 italic"
+              !localContent && "text-muted-foreground italic"
             )}
             onClick={handleEdit}
           >
