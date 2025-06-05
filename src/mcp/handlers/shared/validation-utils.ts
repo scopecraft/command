@@ -6,6 +6,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import * as core from '../../../core/index.js';
+import { loadProjectConfig } from './config-utils.js';
 
 /**
  * Validate that a parent task exists and is valid
@@ -16,7 +17,8 @@ export async function validateParentTask(
 ): Promise<{ isValid: boolean; error?: string; path?: string }> {
   try {
     // Try to resolve the parent task
-    const parentPath = core.resolveTaskId(parentId, projectRoot);
+    const projectConfig = loadProjectConfig(projectRoot);
+    const parentPath = core.resolveTaskId(parentId, projectRoot, projectConfig);
     if (!parentPath) {
       return {
         isValid: false,
@@ -61,7 +63,8 @@ export async function validateTaskExists(
   parentId?: string
 ): Promise<{ exists: boolean; task?: core.Task; error?: string }> {
   try {
-    const result = await core.get(projectRoot, taskId, undefined, parentId);
+    const projectConfig = loadProjectConfig(projectRoot);
+    const result = await core.get(projectRoot, taskId, projectConfig, parentId);
 
     if (!result.success || !result.data) {
       return {

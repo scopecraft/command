@@ -19,7 +19,7 @@ import {
 } from '../schemas.js';
 import { transformParentTaskDetail, transformTask } from '../transformers.js';
 import type { McpResponse } from '../types.js';
-import { getProjectRoot } from './shared/config-utils.js';
+import { getProjectRoot, loadProjectConfig } from './shared/config-utils.js';
 import { batchTransformTasks, createErrorResponse } from './shared/response-utils.js';
 
 // =============================================================================
@@ -105,10 +105,11 @@ export async function handleTaskList(rawParams: unknown): Promise<McpResponse<Ta
     }
 
     const projectRoot = getProjectRoot(params);
+    const projectConfig = loadProjectConfig(projectRoot);
 
     // Build filters and get tasks
     const listOptions = buildListFilters(params);
-    const result = await core.list(projectRoot, listOptions);
+    const result = await core.list(projectRoot, listOptions, projectConfig);
 
     if (!result.success || !result.data) {
       return createErrorResponse(result.error || 'Failed to list tasks');
@@ -152,13 +153,11 @@ export async function handleTaskGet(rawParams: unknown): Promise<McpResponse<Tas
     const params = TaskGetInputSchema.parse(rawParams);
     const projectRoot = getProjectRoot(params);
 
+    // Load project config
+    const projectConfig = loadProjectConfig(projectRoot);
+
     // Get task with parent context if available
-    const result = await core.get(
-      projectRoot,
-      params.id,
-      undefined, // config
-      params.parentId
-    );
+    const result = await core.get(projectRoot, params.id, projectConfig, params.parentId);
 
     if (!result.success || !result.data) {
       return createErrorResponse(result.error || 'Task not found');
@@ -199,6 +198,7 @@ export async function handleParentList(rawParams: unknown): Promise<McpResponse<
     // Validate input
     const params = ParentListInputSchema.parse(rawParams);
     const projectRoot = getProjectRoot(params);
+    const projectConfig = loadProjectConfig(projectRoot);
 
     // Build filter options for listing
     const listOptions: core.TaskListOptions = {
@@ -208,7 +208,7 @@ export async function handleParentList(rawParams: unknown): Promise<McpResponse<
     };
 
     // List tasks filtered to parent tasks only
-    const result = await core.list(projectRoot, listOptions);
+    const result = await core.list(projectRoot, listOptions, projectConfig);
 
     if (!result.success || !result.data) {
       return createErrorResponse(result.error || 'Failed to list parent tasks');

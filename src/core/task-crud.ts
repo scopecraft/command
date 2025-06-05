@@ -2,6 +2,18 @@
  * Task CRUD Operations
  *
  * Create, Read, Update, Delete operations for tasks
+ *
+ * IMPORTANT ARCHITECTURE RULE:
+ * This file is like a lightweight ORM layer on top of directory-utils.ts (which acts like a SQL library).
+ *
+ * ALL directory/filesystem manipulation MUST go through directory-utils.ts functions.
+ * DO NOT add new existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, etc. operations here.
+ * Instead, create utility functions in directory-utils.ts and call them from here.
+ *
+ * This separation ensures:
+ * - Consistent filesystem operations across the codebase
+ * - Proper abstraction of directory structure logic
+ * - Easier testing and maintenance of file operations
  */
 
 import { readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
@@ -9,6 +21,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import {
   createArchiveDate,
+  ensureParentTaskDirectory,
   getArchiveDirectory,
   getExistingWorkflowStates,
   getTaskFilesInWorkflow,
@@ -345,7 +358,9 @@ function shouldAutoTransition(
   config?: ProjectConfig
 ): WorkflowState | null {
   // Only transition if auto-transitions are enabled (default: true)
-  const autoTransitionsEnabled = config?.autoWorkflowTransitions !== false;
+  // TEMPORARY FIX: Force auto-transitions to false to prevent subtask corruption
+  // TODO: Remove this override when implementing 2-state architecture (current + archive only)
+  const autoTransitionsEnabled = false; // config?.autoWorkflowTransitions !== false;
   if (!autoTransitionsEnabled) {
     return null;
   }
@@ -521,7 +536,7 @@ export async function del(
 }
 
 /**
- * Move a simple task file
+ * Move a simple task file or subtask
  */
 async function moveSimpleTask(
   task: Task,
@@ -529,7 +544,17 @@ async function moveSimpleTask(
   options: TaskMoveOptions,
   config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
-  const newPath = join(targetDir, task.metadata.filename);
+  let newPath: string;
+
+  // Check if this is a subtask - if so, preserve parent folder structure
+  if (task.metadata.parentTask) {
+    // For subtasks, ensure parent folder exists in target directory
+    const parentFolderInTarget = ensureParentTaskDirectory(task.metadata.parentTask, targetDir);
+    newPath = join(parentFolderInTarget, task.metadata.filename);
+  } else {
+    // For simple tasks, use the workflow root
+    newPath = join(targetDir, task.metadata.filename);
+  }
 
   // Check if target exists
   if (existsSync(newPath)) {
