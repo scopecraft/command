@@ -1,20 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { TaskManagementView } from './TaskManagementView';
 import { mockV2SimpleTasks, mockV2Subtasks } from '../../lib/api/mock-data-v2';
+import { TaskManagementView } from './TaskManagementView';
 
 // Generate mock data using existing mock tasks
 const mockData = {
   success: true as const,
   data: [
-    ...mockV2SimpleTasks.map(task => ({
+    ...mockV2SimpleTasks.map((task) => ({
       ...task,
       // Add required fields for TaskTable compatibility
       workflow: task.workflowState,
       created_date: task.createdDate,
       updated_date: task.updatedDate,
     })),
-    ...mockV2Subtasks.map(task => ({
+    ...mockV2Subtasks.map((task) => ({
       ...task,
       // Add required fields for TaskTable compatibility
       workflow: task.workflowState,
@@ -33,7 +33,8 @@ const meta: Meta<typeof TaskManagementView> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'Complete task management interface with search, filtering, and table view. Demonstrates the full V2 task management workflow.',
+        component:
+          'Complete task management interface with search, filtering, and table view. Demonstrates the full V2 task management workflow.',
       },
     },
   },
@@ -51,7 +52,8 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Complete task management interface showcasing search, filters, bulk actions, and the task table working together seamlessly.',
+        story:
+          'Complete task management interface showcasing search, filters, bulk actions, and the task table working together seamlessly.',
       },
     },
   },
@@ -94,7 +96,7 @@ export const CompactLayout: Story = {
 export const WithFilters: Story = {
   render: () => (
     <div className="min-h-screen bg-background p-6">
-      <TaskManagementView 
+      <TaskManagementView
         data={mockData}
         searchParams={{
           status: ['in_progress'],
@@ -115,7 +117,7 @@ export const WithFilters: Story = {
 export const EmptyState: Story = {
   render: () => (
     <div className="min-h-screen bg-background p-6">
-      <TaskManagementView 
+      <TaskManagementView
         data={{
           success: true,
           data: [],
