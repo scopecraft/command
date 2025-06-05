@@ -33,6 +33,151 @@ Enable efficient task creation and editing in the V2 UI by moving beyond auto-ge
 - [x] Research UI patterns → @research-agent
 - [x] Analyze document-editor → @research-agent
 
+### Gate: Synthesis Review ✓ [Automated]
+Decision: Use DualUseMarkdown as base pattern, hybrid approach for creation
+
+### Phase 2: Design
+- [ ] Design UI approach → @design-agent
+
+### Gate: Human Design Review (Pending) [Human Required]
+Approval required for mockups and UX approach before implementation
+
+### Phase 3: Implementation (To be planned after design)
+Tasks will be created dynamically based on design decisions
+
+### Gate: Technical Validation [Automated]
+All component tests must pass
+
+### Gate: Stakeholder Acceptance [Human Required]
+Final sign-off on implementation
+
+### Phase 4: Deployment
+Merge and release
+
+## Deliverable
+## Orchestration Flow
+
+```
+                    ┌─────────────────────────┐
+                    │ Start: UI Redesign Task │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │   PHASE 1: RESEARCH     │
+                    │      (Parallel)         │
+                    └───────────┬─────────────┘
+                                │
+                ┌───────────────┴───────────────┐
+                │                               │
+    ┌───────────▼──────────┐       ┌──────────▼────────────┐
+    │ Research UI Patterns │       │ Analyze Document      │
+    │   @research-agent    │       │   Editor Prototype    │
+    │                      │       │   @research-agent     │
+    └───────────┬──────────┘       └──────────┬────────────┘
+                │                               │
+                └───────────────┬───────────────┘
+                                │
+                    ╔═══════════▼═════════════╗
+                    ║   SYNTHESIS GATE       ║
+                    ║   Findings Review       ║
+                    ║ @orchestrator-agent    ║
+                    ║ (Automated synthesis)  ║
+                    ╚═══════════╤═════════════╝
+                                │
+                    ┌───────────▼─────────────┐
+                    │   PHASE 2: DESIGN       │
+                    │  (Task created here)    │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │   Design UI Approach    │
+                    │    @design-agent        │
+                    └───────────┬─────────────┘
+                                │
+                    ╔═══════════▼═════════════╗
+                    ║ HUMAN DESIGN REVIEW    ║
+                    ║ Approve mockups & UX   ║
+                    ║ @human-reviewer        ║
+                    ╚═══╤═══════════════╤═══╝
+                        │ Approved      │ Revisions
+                        │               └────┐
+                        ▼                    │
+            ┌───────────────────────┐        │
+            │  PHASE 3: PLANNING    │        │
+            │  @orchestrator-agent  │◄───────┘
+            │ (Creates impl tasks)  │
+            └───────────┬───────────┘
+                        │
+        ┌───────────────┼───────────────┐
+        │               │               │
+        ▼               ▼               ▼
+   [Modal Path]   [Inline Path]   [Hybrid Path]
+        │               │               │
+   ┌────▼─────┐   ┌────▼──────┐   ┌───▼────┐
+   │  Create  │   │  Create   │   │ Create │
+   │  Modal   │   │  Inline   │   │  Both  │
+   │Component │   │  Editor   │   │ Comps  │
+   └────┬─────┘   └────┬──────┘   └───┬────┘
+        │               │               │
+        └───────────────┼───────────────┘
+                        │
+                    ┌───▼─────────────────┐
+                    │ Implement Validation│
+                    │   @frontend-agent   │
+                    └───┬─────────────────┘
+                        │
+                    ╔═══▼═════════════════╗
+                    ║ TECHNICAL GATE      ║
+                    ║ All tests passing   ║
+                    ║ @test-runner        ║
+                    ║ (Automated check)   ║
+                    ╚═══╤═════════════════╝
+                        │
+                    ╔═══▼═════════════════╗
+                    ║ STAKEHOLDER GATE    ║
+                    ║ Final acceptance     ║
+                    ║ @product-owner      ║
+                    ╚═══╤═════════════════╝
+                        │
+                    ┌───▼─────────────────┐
+                    │   Task Complete     │
+                    └─────────────────────┘
+
+Legend:
+┌─────┐ = Task (created dynamically)
+╔═════╗ = Gate (decision/review point)
+──────  = Sequential flow
+  │
+──┼──   = Parallel paths
+  │
+
+Gate Types:
+- Synthesis Gate: Automated (AI can synthesize research)
+- Design Review: Human Required (subjective UX decisions)
+- Technical Gate: Automated (tests run automatically)
+- Stakeholder Gate: Human Required (final sign-off)
+```
+
+### Final Deliverable (Upon Completion)
+- New create/edit UI components that fit V2 design system
+- Seamless integration with existing TaskTable and detail views
+- Improved UX over V1 form-based approach
+- Support for all task types and fields
+- Proper error handling and validation
+
+## Log
+- 2025-05-30: Task created to track V2 create/edit UI redesign work
+- 2025-05-30: MCP API has been normalized! See docs/mcp-api-consumer-guide.md for complete API reference
+- 2025-06-03: Research phase completed - identified document-editor prototype as key reference
+- 2025-06-03: Synthesis gate passed - decision to use DualUseMarkdown pattern with hybrid approach
+- 2025-06-03: Design task created based on research findings
+- 2025-06-03: Updated parent task to use orchestration-focused structure
+
+## Orchestration plan
+### Phase 1: Research (Parallel) ✓
+- [x] Research UI patterns → @research-agent
+- [x] Analyze document-editor → @research-agent
+
 ### Gate: Synthesis Review ✓
 Decision: Use DualUseMarkdown as base pattern, hybrid approach for creation
 
@@ -48,9 +193,7 @@ Tasks will be created dynamically based on design decisions
 ### Phase 4: Testing & Integration
 Testing begins as components become available
 
-## Deliverable
-## Orchestration Flow
-
+## Orchestration flow
 ```
                     ┌─────────────────────────┐
                     │ Start: UI Redesign Task │
@@ -142,11 +285,3 @@ Legend:
 - Improved UX over V1 form-based approach
 - Support for all task types and fields
 - Proper error handling and validation
-
-## Log
-- 2025-05-30: Task created to track V2 create/edit UI redesign work
-- 2025-05-30: MCP API has been normalized! See docs/mcp-api-consumer-guide.md for complete API reference
-- 2025-06-03: Research phase completed - identified document-editor prototype as key reference
-- 2025-06-03: Synthesis gate passed - decision to use DualUseMarkdown pattern with hybrid approach
-- 2025-06-03: Design task created based on research findings
-- 2025-06-03: Updated parent task to use orchestration-focused structure
