@@ -29,6 +29,10 @@ const { values, positionals } = parseArgs({
       type: 'string',
       short: 'c',
     },
+    'interactive': {
+      type: 'boolean',
+      short: 'i',
+    },
   },
   strict: true,
   allowPositionals: true,
@@ -49,6 +53,7 @@ if (values.help || positionals.length === 0) {
   console.log('  auto --continue implement-auth-05A');
   console.log('\nOptions:');
   console.log('  -c, --continue <taskId>    Continue existing execution');
+  console.log('  -i, --interactive          Run in interactive mode (monitor and steer)');
   console.log('  -h, --help                 Show this help message');
   process.exit(0);
 }
@@ -111,11 +116,11 @@ async function loadSessionInfo(taskId: string): Promise<any | null> {
 }
 
 // Execute autonomous task
-async function executeTask(taskId: string, parentId?: string) {
+async function executeTask(taskId: string, parentId?: string, interactive: boolean = false) {
   const sessionName = getSessionName(taskId);
   const logFile = path.join(LOG_DIR, `${sessionName}.log`);
   
-  console.log(`\n${colors.cyan}Starting autonomous task execution:${colors.reset}`);
+  console.log(`\n${colors.cyan}Starting ${interactive ? 'interactive' : 'autonomous'} task execution:${colors.reset}`);
   console.log(`  Task: ${colors.bright}${taskId}${colors.reset}`);
   if (parentId) {
     console.log(`  Parent: ${colors.dim}${parentId}${colors.reset}`);
@@ -138,36 +143,57 @@ async function executeTask(taskId: string, parentId?: string) {
     // Build the prompt with task context
     const promptFile = '.tasks/.modes/orchestration/autonomous.md';
     
-    // Start detached process
-    const result = await s.detached(promptFile, {
-      data: {
-        taskId,
-        parentId,
-      },
-      logFile,
-      stream: true,
-      outputFormat: 'stream-json',
-    });
-    
-    if (result.success) {
-      console.log(`${colors.green}✅ Task execution started successfully${colors.reset}`);
-      if (result.pid) {
-        console.log(`  PID: ${result.pid}`);
-        
-        // Update session info with PID
-        const info = await loadSessionInfo(taskId);
-        if (info) {
-          info.pid = result.pid;
-          await fs.writeFile(getSessionInfoPath(sessionName), JSON.stringify(info, null, 2));
-        }
-      }
-      console.log(`  Monitor with: ${colors.cyan}monitor-auto${colors.reset}`);
-      console.log(`  Continue with: ${colors.cyan}auto --continue ${taskId}${colors.reset}`);
+    if (interactive) {
+      // Run in interactive mode
+      const result = await s.interactive(promptFile, {
+        data: {
+          taskId,
+          parentId,
+        },
+        logFile,
+        stream: true,
+        outputFormat: 'stream-json',
+      });
       
-      return { success: true, taskId, parentId, sessionName, logFile };
+      if (result.success) {
+        console.log(`${colors.green}✅ Interactive session completed${colors.reset}`);
+        return { success: true, taskId, parentId, sessionName, logFile };
+      } else {
+        console.error(`${colors.red}❌ Interactive session failed: ${result.error}${colors.reset}`);
+        return { success: false, taskId, error: result.error };
+      }
     } else {
-      console.error(`${colors.red}❌ Failed to start task execution: ${result.error}${colors.reset}`);
-      return { success: false, taskId, error: result.error };
+      // Start detached process
+      const result = await s.detached(promptFile, {
+        data: {
+          taskId,
+          parentId,
+        },
+        logFile,
+        stream: true,
+        outputFormat: 'stream-json',
+      });
+      
+      if (result.success) {
+        console.log(`${colors.green}✅ Task execution started successfully${colors.reset}`);
+        if (result.pid) {
+          console.log(`  PID: ${result.pid}`);
+          
+          // Update session info with PID
+          const info = await loadSessionInfo(taskId);
+          if (info) {
+            info.pid = result.pid;
+            await fs.writeFile(getSessionInfoPath(sessionName), JSON.stringify(info, null, 2));
+          }
+        }
+        console.log(`  Monitor with: ${colors.cyan}monitor-auto${colors.reset}`);
+        console.log(`  Continue with: ${colors.cyan}auto --continue ${taskId}${colors.reset}`);
+        
+        return { success: true, taskId, parentId, sessionName, logFile };
+      } else {
+        console.error(`${colors.red}❌ Failed to start task execution: ${result.error}${colors.reset}`);
+        return { success: false, taskId, error: result.error };
+      }
     }
   } catch (error) {
     console.error(`\n${colors.red}❌ Task execution failed:${colors.reset}`, error);
@@ -241,10 +267,13 @@ async function main() {
   // Normal execution mode
   const taskId = positionals[0];
   const parentId = positionals[1];
+  const interactive = values.interactive as boolean;
   
-  console.log(`${colors.dim}Execution runs in background - check task for updates${colors.reset}`);
+  if (!interactive) {
+    console.log(`${colors.dim}Execution runs in background - check task for updates${colors.reset}`);
+  }
   
-  await executeTask(taskId, parentId);
+  await executeTask(taskId, parentId, interactive);
 }
 
 // Run
