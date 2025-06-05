@@ -10,6 +10,8 @@ export { TaskManagementView } from './TaskManagementView';
 export { ParentTaskListView } from './ParentTaskListView';
 export { ClaudeAgentButton } from './ClaudeAgentButton';
 export { Sidebar } from './Sidebar';
+export { SectionEditor } from './SectionEditor';
+export { MetadataEditor, type MetadataEditorProps, type TaskMetadata } from './MetadataEditor';
 
 // Re-export types for convenience
 export type { Task, ParentTask, WorkflowState, TaskStatus, TaskType } from '../../lib/types';
