@@ -88,7 +88,7 @@ Key patterns:
    ```
 
 5. **Dispatch Tasks**
-   Actually dispatch the ready tasks:
+   For tasks ready to execute, dispatch them using the ./auto script:
    ```markdown
    ## Log
    - YYYY-MM-DD HH:MM: Dispatching autonomous task:
@@ -98,6 +98,11 @@ Key patterns:
    ```
    
    Use the Bash tool to execute the dispatch command above.
+   
+   NOTE: The ./auto script will:
+   - Read the task metadata (tags, type, area)
+   - Auto-select the appropriate mode (exploration, design, implementation, etc.)
+   - Execute with full autonomous documentation
 
 6. **Update Orchestration Status**
    Mark what's been dispatched:
