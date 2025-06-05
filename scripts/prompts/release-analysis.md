@@ -8,9 +8,9 @@ allowedTools:
   - "Write"
 ---
 
-# URGENT: Complete Release Analysis Task
+# Complete Release Analysis Task
 
-**YOUR TASK**: Analyze git changes since v$LAST_TAG and create THREE FILES immediately.
+**YOUR TASK**: Analyze git changes since v$LAST_TAG and create THREE FILES.
 
 ## Context
 - Current Version: $CURRENT_VERSION
@@ -25,7 +25,7 @@ git log $LAST_TAG..HEAD --oneline
 git diff $LAST_TAG..HEAD --stat
 ```
 
-## Step 2: Create Files IMMEDIATELY
+## Step 2: Create Files
 
 You MUST create these three files:
 
@@ -73,7 +73,7 @@ Standard changelog format focusing on USER-FACING changes only:
 
 ## CRITICAL INSTRUCTIONS
 
-1. **START IMMEDIATELY** - Do not ask questions or seek clarification
+1. **ANALYZE THOROUGHLY** - Examine commit messages and code changes for breaking changes
 2. **CREATE ALL THREE FILES** - Use the Write tool to create each file
 3. **FOCUS ON USER IMPACT** - Changes to these paths ARE user-facing:
    - `src/` - Core CLI and MCP server functionality
@@ -82,4 +82,4 @@ Standard changelog format focusing on USER-FACING changes only:
    - Changes to scripts/, docs/, tests/ are NOT user-facing unless they fix bugs
 4. **USE SEMANTIC VERSIONING** - Major (breaking), Minor (features), Patch (fixes)
 
-**BEGIN NOW** - Create the three files based on your git analysis.
+**BEGIN ANALYSIS** - Create the three files based on your git analysis.
