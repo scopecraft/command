@@ -27,33 +27,23 @@ Enable efficient task creation and editing in the V2 UI by moving beyond auto-ge
 - Supports both simple tasks and parent task creation
 
 ## Tasks
+### Phase 1: Research
+- [ ] 01_expl-mod-ui-pat-for-cru-oprtns-06Q: Explore modern UI patterns → @research-agent
 
-## Deliverable
+### Gate: Synthesis Review
+- [ ] 02_synthsis-rev-cho-ui-app-for-06F: Choose UI approach → @human-reviewer
 
-## Log
-- 2025-06-05: Planned the orchestration flow and created 01_expl-mod-ui-pat-for-cru-oprtns-06Q
+### Phase 2: Design (To be created after gate)
+Design tasks will be created based on synthesis decisions
 
-## Orchestration plan
-### Phase 1: Research (Parallel)
-- [ ] Research UI patterns → @research-agent
-- [ ] Analyze document-editor → @research-agent
-
-### Gate: Synthesis Review (Pending)
-Decision: TBD - awaiting research completion
-
-### Phase 2: Design
-- [ ] Design UI approach → @design-agent
-
-### Gate: Design Review (Pending)
-Approval required before implementation planning
-
-### Phase 3: Implementation (To be planned after design)
-Tasks will be created dynamically based on design decisions
+### Phase 3: Implementation (To be created after design)
+Implementation tasks will be created based on approved design
 
 ### Phase 4: Testing & Integration
 Testing begins as components become available
 
-## Orchestration flow
+## Deliverable
+## Orchestration Flow
 ```
                     ┌─────────────────────────┐
                     │ Start: UI Redesign Task │
@@ -61,23 +51,19 @@ Testing begins as components become available
                                 │
                     ┌───────────▼─────────────┐
                     │   PHASE 1: RESEARCH     │
-                    │      (Parallel)         │
+                    │      (Single Task)      │
                     └───────────┬─────────────┘
                                 │
-                ┌───────────────┴───────────────┐
-                │                               │
-    ┌───────────▼──────────┐       ┌──────────▼────────────┐
-    │ Research UI Patterns │       │ Analyze Document      │
-    │   @research-agent    │       │   Editor Prototype    │
-    │                      │       │   @research-agent     │
-    └───────────┬──────────┘       └──────────┬────────────┘
-                │                               │
-                └───────────────┬───────────────┘
+                    ┌───────────▼─────────────┐
+                    │ 01: Explore UI Patterns │
+                    │  (includes doc-editor)  │
+                    │   @research-agent       │
+                    └───────────┬─────────────┘
                                 │
                     ╔═══════════▼═════════════╗
                     ║   SYNTHESIS GATE       ║
-                    ║   Findings Review       ║
-                    ║ @orchestrator-agent    ║
+                    ║ 02: Choose UI Approach ║
+                    ║   @human-reviewer      ║
                     ╚═══════════╤═════════════╝
                                 │
                     ┌───────────▼─────────────┐
@@ -92,7 +78,7 @@ Testing begins as components become available
                                 │
                     ╔═══════════▼═════════════╗
                     ║   DESIGN REVIEW GATE   ║
-                    ║   @reviewer-agent      ║
+                    ║   @human-reviewer      ║
                     ╚═══╤═══════════════╤═══╝
                         │ Approved      │ Revisions
                         │               └────┐
@@ -145,3 +131,7 @@ Legend:
 - Improved UX over V1 form-based approach
 - Support for all task types and fields
 - Proper error handling and validation
+
+## Log
+- 2025-06-05: Planned the orchestration flow and created 01_expl-mod-ui-pat-for-cru-oprtns-06Q
+- 2025-06-05: Simplified orchestration to single research task followed by human review gate
