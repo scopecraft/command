@@ -23,7 +23,7 @@ Research modern UI patterns for CRUD operations to identify best practices for t
 - @docs/specs/scopecraft-vision.md - Unix philosophy and overall system architecture
 - @docs/specs/metadata-architecture.md - Schema-driven metadata and configuration system
 - @docs/specs/ai-first-knowledge-system-vision.md - Task structure and section-based documents
-- @reference/document-editor-analysis.md - Analysis of existing prototype with recommendations
+- @docs/brainstorming/document-editor-analysis.md - Analysis of existing prototype with recommendations
 
 ### Document Editor Prototype:
 A prototype exists in the `reference/document-editor/` folder that demonstrates:
@@ -65,3 +65,4 @@ UI patterns research document with:
 
 ## Log
 - 2025-06-05: 2025-06-04: Updated to reference document-editor in reference/ folder
+- 2025-06-05: 2025-06-05: Updated document-editor-analysis path to docs/brainstorming/

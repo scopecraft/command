@@ -36,17 +36,19 @@ const { values, positionals } = parseArgs({
 
 // Show help
 if (values.help || positionals.length === 0) {
-  console.log(`${colors.cyan}${colors.bright}Autonomous Orchestration Executor${colors.reset}`);
+  console.log(`${colors.cyan}${colors.bright}Autonomous Task Executor${colors.reset}`);
   console.log('\nUsage:');
-  console.log('  orchestrate-auto <parentId>           Start orchestration');
-  console.log('  orchestrate-auto --continue <parentId> Continue orchestration');
+  console.log('  auto <taskId> [parentId]           Execute a task autonomously');
+  console.log('  auto --continue <taskId>           Continue task execution');
   console.log('\nExamples:');
-  console.log('  # Start orchestrating a parent task');
-  console.log('  orchestrate-auto ui-redesign-06A');
-  console.log('\n  # Continue orchestration after manual intervention');
-  console.log('  orchestrate-auto --continue ui-redesign-06A');
+  console.log('  # Execute a standalone task');
+  console.log('  auto implement-auth-05A');
+  console.log('\n  # Execute a subtask with parent context');
+  console.log('  auto 02_desg-ui-appr-06E ui-redesign-06A');
+  console.log('\n  # Continue execution after manual intervention');
+  console.log('  auto --continue implement-auth-05A');
   console.log('\nOptions:');
-  console.log('  -c, --continue <parentId>  Continue existing orchestration');
+  console.log('  -c, --continue <taskId>    Continue existing execution');
   console.log('  -h, --help                 Show this help message');
   process.exit(0);
 }
@@ -61,9 +63,9 @@ async function ensureDirectories() {
   await fs.mkdir(LOG_DIR, { recursive: true });
 }
 
-// Generate session name from parent ID
-function getSessionName(parentId: string): string {
-  return `orchestrate-${parentId}-${Date.now()}`;
+// Generate session name from task ID
+function getSessionName(taskId: string): string {
+  return `auto-${taskId}-${Date.now()}`;
 }
 
 // Get session info path
@@ -72,27 +74,28 @@ function getSessionInfoPath(sessionName: string): string {
 }
 
 // Save session info for monitor
-async function saveSessionInfo(sessionName: string, parentId: string, logFile?: string) {
+async function saveSessionInfo(sessionName: string, taskId: string, parentId: string | undefined, logFile?: string) {
   const info = {
     sessionName,
+    taskId,
     parentId,
     logFile,
     startTime: new Date().toISOString(),
     status: 'running',
     pid: process.pid,
-    type: 'orchestration',
+    type: 'autonomous-task',
   };
   
   await fs.writeFile(getSessionInfoPath(sessionName), JSON.stringify(info, null, 2));
 }
 
 // Load session info
-async function loadSessionInfo(parentId: string): Promise<any | null> {
+async function loadSessionInfo(taskId: string): Promise<any | null> {
   try {
-    // Find the most recent orchestration session for this parent
+    // Find the most recent autonomous session for this task
     const files = await fs.readdir(AUTONOMOUS_BASE_DIR);
     const infoFiles = files.filter(f => 
-      f.includes(`orchestrate-${parentId}`) && f.endsWith('.info.json')
+      f.includes(`auto-${taskId}`) && f.endsWith('.info.json')
     );
     
     if (infoFiles.length === 0) return null;
@@ -107,13 +110,16 @@ async function loadSessionInfo(parentId: string): Promise<any | null> {
   }
 }
 
-// Execute orchestration
-async function executeOrchestration(parentId: string) {
-  const sessionName = getSessionName(parentId);
+// Execute autonomous task
+async function executeTask(taskId: string, parentId?: string) {
+  const sessionName = getSessionName(taskId);
   const logFile = path.join(LOG_DIR, `${sessionName}.log`);
   
-  console.log(`\n${colors.cyan}Starting autonomous orchestration:${colors.reset}`);
-  console.log(`  Parent: ${colors.bright}${parentId}${colors.reset}`);
+  console.log(`\n${colors.cyan}Starting autonomous task execution:${colors.reset}`);
+  console.log(`  Task: ${colors.bright}${taskId}${colors.reset}`);
+  if (parentId) {
+    console.log(`  Parent: ${colors.dim}${parentId}${colors.reset}`);
+  }
   console.log(`  Session: ${colors.dim}${sessionName}${colors.reset}`);
   console.log(`  Log: ${colors.dim}${logFile}${colors.reset}`);
   
@@ -125,16 +131,17 @@ async function executeOrchestration(parentId: string) {
     });
     
     // Save session info for monitor
-    await saveSessionInfo(sessionName, parentId, logFile);
+    await saveSessionInfo(sessionName, taskId, parentId, logFile);
     
-    console.log(`${colors.yellow}Starting orchestration process...${colors.reset}`);
+    console.log(`${colors.yellow}Starting task execution...${colors.reset}`);
     
-    // Build the prompt with parent context
+    // Build the prompt with task context
     const promptFile = '.tasks/.modes/orchestration/autonomous.md';
     
     // Start detached process
     const result = await s.detached(promptFile, {
       data: {
+        taskId,
         parentId,
       },
       logFile,
@@ -143,43 +150,43 @@ async function executeOrchestration(parentId: string) {
     });
     
     if (result.success) {
-      console.log(`${colors.green}✅ Orchestration started successfully${colors.reset}`);
+      console.log(`${colors.green}✅ Task execution started successfully${colors.reset}`);
       if (result.pid) {
         console.log(`  PID: ${result.pid}`);
         
         // Update session info with PID
-        const info = await loadSessionInfo(parentId);
+        const info = await loadSessionInfo(taskId);
         if (info) {
           info.pid = result.pid;
           await fs.writeFile(getSessionInfoPath(sessionName), JSON.stringify(info, null, 2));
         }
       }
       console.log(`  Monitor with: ${colors.cyan}monitor-auto${colors.reset}`);
-      console.log(`  Continue with: ${colors.cyan}orchestrate-auto --continue ${parentId}${colors.reset}`);
+      console.log(`  Continue with: ${colors.cyan}auto --continue ${taskId}${colors.reset}`);
       
-      return { success: true, parentId, sessionName, logFile };
+      return { success: true, taskId, parentId, sessionName, logFile };
     } else {
-      console.error(`${colors.red}❌ Failed to start orchestration: ${result.error}${colors.reset}`);
-      return { success: false, parentId, error: result.error };
+      console.error(`${colors.red}❌ Failed to start task execution: ${result.error}${colors.reset}`);
+      return { success: false, taskId, error: result.error };
     }
   } catch (error) {
-    console.error(`\n${colors.red}❌ Orchestration execution failed:${colors.reset}`, error);
-    return { success: false, parentId, error };
+    console.error(`\n${colors.red}❌ Task execution failed:${colors.reset}`, error);
+    return { success: false, taskId, error };
   }
 }
 
-// Continue orchestration
-async function continueOrchestration(parentId: string) {
-  console.log(`\n${colors.cyan}Continuing orchestration:${colors.reset}`);
-  console.log(`  Parent: ${colors.bright}${parentId}${colors.reset}`);
+// Continue task execution
+async function continueTask(taskId: string) {
+  console.log(`\n${colors.cyan}Continuing task execution:${colors.reset}`);
+  console.log(`  Task: ${colors.bright}${taskId}${colors.reset}`);
   
   try {
     // Load session info
-    const info = await loadSessionInfo(parentId);
+    const info = await loadSessionInfo(taskId);
     if (!info) {
-      console.error(`${colors.red}❌ No orchestration session found for parent: ${parentId}${colors.reset}`);
+      console.error(`${colors.red}❌ No execution session found for task: ${taskId}${colors.reset}`);
       console.log(`\nHint: Use ${colors.cyan}monitor-auto${colors.reset} to see running sessions`);
-      return { success: false, parentId };
+      return { success: false, taskId };
     }
     
     console.log(`  Session: ${colors.dim}${info.sessionName}${colors.reset}`);
@@ -190,30 +197,30 @@ async function continueOrchestration(parentId: string) {
     // Create new log file for continuation
     const logFile = path.join(LOG_DIR, `${info.sessionName}-continue-${Date.now()}.log`);
     
-    console.log(`${colors.yellow}Continuing orchestration...${colors.reset}`);
+    console.log(`${colors.yellow}Continuing task execution...${colors.reset}`);
     
-    // Continue orchestration
-    const result = await s.detached("Continue orchestration from where you left off", {
+    // Continue execution
+    const result = await s.detached("Continue task execution from where you left off", {
       logFile,
       stream: true,
       outputFormat: 'stream-json',
     });
     
     if (result.success) {
-      console.log(`${colors.green}✅ Orchestration continued successfully${colors.reset}`);
+      console.log(`${colors.green}✅ Execution continued successfully${colors.reset}`);
       if (result.pid) {
         console.log(`  PID: ${result.pid}`);
       }
       console.log(`  Monitor with: ${colors.cyan}monitor-auto${colors.reset}`);
       
-      return { success: true, parentId, sessionName: info.sessionName };
+      return { success: true, taskId, sessionName: info.sessionName };
     } else {
-      console.error(`${colors.red}❌ Failed to continue orchestration: ${result.error}${colors.reset}`);
-      return { success: false, parentId, error: result.error };
+      console.error(`${colors.red}❌ Failed to continue execution: ${result.error}${colors.reset}`);
+      return { success: false, taskId, error: result.error };
     }
   } catch (error) {
-    console.error(`${colors.red}❌ Error continuing orchestration:${colors.reset}`, error);
-    return { success: false, parentId, error };
+    console.error(`${colors.red}❌ Error continuing execution:${colors.reset}`, error);
+    return { success: false, taskId, error };
   }
 }
 
@@ -222,21 +229,22 @@ async function main() {
   // Ensure directories exist
   await ensureDirectories();
   
-  console.log(`${colors.cyan}${colors.bright}Autonomous Orchestration Executor${colors.reset}`);
+  console.log(`${colors.cyan}${colors.bright}Autonomous Task Executor${colors.reset}`);
   
   // Handle continue mode
   if (values.continue) {
-    const parentId = values.continue as string;
-    await continueOrchestration(parentId);
+    const taskId = values.continue as string;
+    await continueTask(taskId);
     return;
   }
   
   // Normal execution mode
-  const parentId = positionals[0];
+  const taskId = positionals[0];
+  const parentId = positionals[1];
   
-  console.log(`${colors.dim}Orchestration runs in background - check parent task for updates${colors.reset}`);
+  console.log(`${colors.dim}Execution runs in background - check task for updates${colors.reset}`);
   
-  await executeOrchestration(parentId);
+  await executeTask(taskId, parentId);
 }
 
 // Run
