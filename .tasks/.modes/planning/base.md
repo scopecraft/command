@@ -145,7 +145,7 @@ Based on your assessment, I'll select one of these patterns:
 **Creates**: Parent task with phased approach, initial research tasks only
 **Structure**: 
 - Phase 1: Research (parallel tasks) → Gate: Synthesis
-- Phase 2: Design (task created after synthesis) → Gate: Review
+- Phase 2: Design (task created after synthesis) → Gate: Human Review
 - Phase 3: Implementation (tasks created after design approval)
 - Phase 4: Testing & Integration (continuous as components ready)
 
@@ -308,6 +308,32 @@ Gates should:
 - Make explicit decisions
 - Define criteria for next phase
 - Update parent task orchestration plan
+
+## Types of Gates
+
+### 1. Human Review Gates
+For decisions requiring human judgment:
+```yaml
+title: "Design Review: Approve UI mockups"
+type: chore
+tags: ["review-gate", "execution:interactive", "team:lead", "human-required"]
+```
+
+### 2. Technical Gates
+For automated validation:
+```yaml
+title: "Integration Gate: All tests passing"
+type: chore
+tags: ["review-gate", "execution:autonomous", "team:qa", "automated-check"]
+```
+
+### 3. Stakeholder Gates
+For external approvals:
+```yaml
+title: "Product Review: Feature sign-off"
+type: chore
+tags: ["review-gate", "execution:interactive", "team:product", "stakeholder-approval"]
+```
 </gate_tasks>
 
 <area_guidance>
