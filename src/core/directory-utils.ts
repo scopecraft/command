@@ -4,7 +4,16 @@
  * Manages workflow-based directory structure for task system
  */
 
-import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import type { ProjectConfig, StructureVersion, TaskLocation, WorkflowState } from './types.js';
 
@@ -131,9 +140,11 @@ export function detectStructureVersion(projectRoot: string): StructureVersion {
 
   if (hasWorkflow && hasPhases) {
     return 'mixed';
-  } else if (hasWorkflow) {
+  }
+  if (hasWorkflow) {
     return 'v2';
-  } else if (hasPhases) {
+  }
+  if (hasPhases) {
     return 'v1';
   }
 
@@ -208,9 +219,11 @@ export function parseTaskLocation(taskPath: string, projectRoot: string): TaskLo
   // Check if it's a workflow directory
   if (firstDir === 'backlog') {
     return { workflowState: 'backlog' };
-  } else if (firstDir === 'current') {
+  }
+  if (firstDir === 'current') {
     return { workflowState: 'current' };
-  } else if (firstDir === 'archive') {
+  }
+  if (firstDir === 'archive') {
     // Check for archive date
     if (parts.length > 1 && /^\d{4}-\d{2}$/.test(parts[1])) {
       return {
@@ -401,7 +414,7 @@ export function resolveTaskId(
   // If parent context is provided, search within parent first
   if (parentId) {
     const parentPath = resolveTaskId(parentId, projectRoot, config);
-    if (parentPath && parentPath.endsWith('_overview.md')) {
+    if (parentPath?.endsWith('_overview.md')) {
       const parentDir = dirname(parentPath);
       const subtaskPath = join(parentDir, `${taskId}.task.md`);
       if (existsSync(subtaskPath)) {
@@ -536,4 +549,22 @@ function searchArchive(taskId: string, archiveDir: string): string | null {
  */
 export function taskIdExists(taskId: string, projectRoot: string, config?: ProjectConfig): boolean {
   return resolveTaskId(taskId, projectRoot, config) !== null;
+}
+
+/**
+ * Move a file using safe write-then-delete approach
+ * This ensures the file is successfully written before deleting the original
+ */
+export function moveFile(src: string, dest: string): void {
+  const content = readFileSync(src);
+  writeFileSync(dest, content);
+  unlinkSync(src);
+}
+
+/**
+ * Move a directory using rename (same filesystem only)
+ * For cross-filesystem moves, this will throw an error
+ */
+export function moveDirectory(src: string, dest: string): void {
+  renameSync(src, dest);
 }

@@ -27,6 +27,7 @@ import type {
   Task,
   TaskCreateOptions,
   TaskMetadata,
+  TaskMoveOptions,
   TaskStatus,
   TaskType,
   TaskUpdateOptions,
@@ -330,6 +331,21 @@ export function parent(projectRoot: string, parentId: string, config?: ProjectCo
           error: error instanceof Error ? error.message : 'Failed to extract subtask',
         };
       }
+    },
+
+    async move(
+      targetState: WorkflowState,
+      options: Omit<TaskMoveOptions, 'targetState'> = {}
+    ): Promise<OperationResult<Task>> {
+      return move(
+        projectRoot,
+        parentId,
+        {
+          ...options,
+          targetState,
+        },
+        config
+      );
     },
 
     async adoptTask(

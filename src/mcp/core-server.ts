@@ -267,7 +267,11 @@ function registerTools(server: McpServer, verbose = false): McpServer {
 
   // Task create tool - use handler schema for validation
   const taskCreateRawShape = {
-    title: z.string().describe('Task title/summary. Should be clear and actionable.').min(3).max(200),
+    title: z
+      .string()
+      .describe('Task title/summary. Should be clear and actionable.')
+      .min(3)
+      .max(200),
     type: TaskTypeInputSchema,
     area: z.string().describe('Functional area/component').optional(),
     status: TaskStatusInputSchema.default('todo').optional(),
@@ -312,10 +316,8 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .object({
         // Metadata updates
         title: z.string().describe('New task title (Note: does not change task ID)').optional(),
-        status: TaskStatusInputSchema
-          .optional(),
-        priority: TaskPriorityInputSchema
-          .optional(),
+        status: TaskStatusInputSchema.optional(),
+        priority: TaskPriorityInputSchema.optional(),
         area: z.string().describe('New area').optional(),
         assignee: z.string().describe('New assignee').optional(),
         tags: z.array(z.string()).describe('New tags (replaces existing)').optional(),
@@ -379,7 +381,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     archive_date: z
       .string()
       .regex(/^\d{4}-\d{2}$/)
-      .describe('Archive month in YYYY-MM format (required when moving to archive)')
+      .describe('Archive month in YYYY-MM format (auto-generated to current month if not provided)')
       .optional(),
     update_status: z
       .boolean()
@@ -664,15 +666,9 @@ function registerTools(server: McpServer, verbose = false): McpServer {
       .max(200),
     type: TaskTypeInputSchema,
     area: z.string().describe('Task area').default('general').optional(),
-    status: TaskStatusInputSchema
-      .default('todo')
-      .optional(),
-    priority: TaskPriorityInputSchema
-      .default('medium')
-      .optional(),
-    location: WorkflowStateInputSchema
-      .default('backlog')
-      .optional(),
+    status: TaskStatusInputSchema.default('todo').optional(),
+    priority: TaskPriorityInputSchema.default('medium').optional(),
+    location: WorkflowStateInputSchema.default('backlog').optional(),
     overview_content: z
       .string()
       .describe('Initial content for _overview.md instruction section')
@@ -755,8 +751,7 @@ function registerTools(server: McpServer, verbose = false): McpServer {
     subtask: z
       .object({
         title: z.string().describe('New subtask title'),
-        type: TaskTypeInputSchema
-          .optional(),
+        type: TaskTypeInputSchema.optional(),
         after: z
           .string()
           .describe('Insert after this subtask ID (e.g., "02_design-api")')

@@ -15,6 +15,8 @@ import {
   getTaskIdFromFilename,
   getWorkflowDirectory,
   isParentTaskFolder,
+  moveDirectory,
+  moveFile,
   parseTaskLocation,
   resolveTaskId,
 } from './directory-utils.js';
@@ -519,7 +521,97 @@ export async function del(
 }
 
 /**
+ * Move a simple task file
+ */
+async function moveSimpleTask(
+  task: Task,
+  targetDir: string,
+  options: TaskMoveOptions,
+  config?: ProjectConfig
+): Promise<OperationResult<Task>> {
+  const newPath = join(targetDir, task.metadata.filename);
+
+  // Check if target exists
+  if (existsSync(newPath)) {
+    return {
+      success: false,
+      error: `Target file already exists: ${newPath}`,
+    };
+  }
+
+  // Update status if requested
+  if (options.updateStatus || config?.autoStatusUpdate) {
+    const newStatus = getStatusForWorkflow(options.targetState);
+    if (newStatus && newStatus !== task.document.frontmatter.status) {
+      task.document.frontmatter.status = newStatus;
+    }
+  }
+
+  // Write updated content and move file
+  const updatedContent = serializeTaskDocument(task.document);
+  writeFileSync(task.metadata.path, updatedContent, 'utf-8');
+
+  // Use moveFile from directory-utils
+  moveFile(task.metadata.path, newPath);
+
+  // Update metadata
+  task.metadata.path = newPath;
+  task.metadata.location = {
+    workflowState: options.targetState,
+    archiveDate:
+      options.targetState === 'archive' ? options.archiveDate || createArchiveDate() : undefined,
+  };
+
+  return {
+    success: true,
+    data: task,
+  };
+}
+
+/**
+ * Move a parent task folder
+ */
+async function moveParentTask(
+  task: Task,
+  targetDir: string,
+  options: TaskMoveOptions,
+  projectRoot: string,
+  config?: ProjectConfig
+): Promise<OperationResult<Task>> {
+  const currentFolder = dirname(task.metadata.path);
+  const folderName = basename(currentFolder);
+  const newFolder = join(targetDir, folderName);
+
+  // Check if target folder exists
+  if (existsSync(newFolder)) {
+    return {
+      success: false,
+      error: `Target folder already exists: ${newFolder}`,
+    };
+  }
+
+  // Update status if requested
+  if (options.updateStatus || config?.autoStatusUpdate) {
+    const newStatus = getStatusForWorkflow(options.targetState);
+    if (newStatus && newStatus !== task.document.frontmatter.status) {
+      task.document.frontmatter.status = newStatus;
+
+      // Write updated overview with new status
+      const updatedContent = serializeTaskDocument(task.document);
+      writeFileSync(task.metadata.path, updatedContent, 'utf-8');
+    }
+  }
+
+  // Move the entire folder
+  moveDirectory(currentFolder, newFolder);
+
+  // Return the parent task from new location
+  return get(projectRoot, task.metadata.id, config);
+}
+
+/**
  * Move a task between workflow states
+ * Auto-detects parent tasks and moves the entire folder
  */
 export async function move(
   projectRoot: string,
@@ -561,44 +653,11 @@ export async function move(
       mkdirSync(targetDir, { recursive: true });
     }
 
-    // Build new path
-    const newPath = join(targetDir, task.metadata.filename);
-
-    // Check if target exists
-    if (existsSync(newPath)) {
-      return {
-        success: false,
-        error: `Target file already exists: ${newPath}`,
-      };
+    // Delegate to appropriate move function
+    if (task.metadata.isParentTask) {
+      return moveParentTask(task, targetDir, options, projectRoot, config);
     }
-
-    // Update status if requested
-    if (options.updateStatus || config?.autoStatusUpdate) {
-      const newStatus = getStatusForWorkflow(options.targetState);
-      if (newStatus && newStatus !== task.document.frontmatter.status) {
-        task.document.frontmatter.status = newStatus;
-      }
-    }
-
-    // Write to new location first (safer)
-    const updatedContent = serializeTaskDocument(task.document);
-    writeFileSync(newPath, updatedContent, 'utf-8');
-
-    // Delete from old location
-    unlinkSync(task.metadata.path);
-
-    // Update metadata
-    task.metadata.path = newPath;
-    task.metadata.location = {
-      workflowState: options.targetState,
-      archiveDate:
-        options.targetState === 'archive' ? options.archiveDate || createArchiveDate() : undefined,
-    };
-
-    return {
-      success: true,
-      data: task,
-    };
+    return moveSimpleTask(task, targetDir, options, config);
   } catch (error) {
     return {
       success: false,
