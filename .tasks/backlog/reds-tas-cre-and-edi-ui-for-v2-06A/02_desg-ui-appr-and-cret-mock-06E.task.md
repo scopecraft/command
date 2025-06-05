@@ -11,7 +11,7 @@ tags:
   - mockups
   - 'team:ux'
   - 'execution:interactive'
-  - design-phase
+  - 'mode:design'
 ---
 
 
