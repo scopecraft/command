@@ -37,6 +37,10 @@ IMPORTANT: If this is an existing parent task with orchestration already laid ou
 3. Check the Log for decisions made
 4. Create only the next phase's tasks based on decisions
 5. Update the parent task's orchestration status
+
+IMPORTANT: If this references an existing simple task:
+1. Use its research/impact analysis as valuable initial context
+2. Don't feel constrained by its current type, area, or structure - planning may reveal it needs a completely different approach
 </mission>
 
 <input_assessment>
