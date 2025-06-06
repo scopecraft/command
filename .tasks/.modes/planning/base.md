@@ -383,16 +383,24 @@ Phase 1: Research (Parallel)
 └────────┬────────┘  └────────┬────────┘  └────────┬────────┘
          └───────────────────┴───────────────────┘
                              │
-                    ┌────────▼────────┐
-                    │ Gate: Synthesis │
-                    │ Review findings │
-                    └────────┬────────┘
+                    ╔════════▼════════╗
+                    ║ Gate: Synthesis ║
+                    ║ Review findings ║
+                    ╚════════╤════════╝
                              │
 Phase 2: Design              ▼
 ┌─────────────────────────────────────┐
 │ To be created after synthesis gate │
 │ (Design tasks based on approach)   │
 └─────────────────────────────────────┘
+
+Legend:
+┌─────┐ = Task (created dynamically)
+╔═════╗ = Gate (decision/review point)
+──────  = Sequential flow
+  │
+──┼──   = Parallel paths
+  │
 ```
 
 This diagram is as important as the task list itself - it helps visualize the work flow!
