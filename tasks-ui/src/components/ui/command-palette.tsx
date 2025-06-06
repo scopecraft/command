@@ -1,5 +1,7 @@
-import { Bug, FileText, Hammer, Lightbulb, Loader2, TestTube2, Zap } from 'lucide-react';
+import { getTypeValues } from '@core/metadata/schema-service';
+import { Loader2 } from 'lucide-react';
 import * as React from 'react';
+import { generateTypeIconMapping } from '../../lib/schema-client';
 import { cn } from '../../lib/utils';
 import {
   CommandDialog,
@@ -11,7 +13,7 @@ import {
   CommandShortcut,
 } from './command';
 
-export type TaskType = 'feature' | 'bug' | 'chore' | 'documentation' | 'test' | 'spike';
+export type TaskType = 'feature' | 'bug' | 'chore' | 'documentation' | 'test' | 'spike' | 'idea';
 
 export interface NewTaskData {
   title: string;
@@ -28,50 +30,48 @@ export interface CommandPaletteProps {
   error?: string;
 }
 
-const taskTypes = [
-  {
-    type: 'feature' as TaskType,
-    label: 'Feature',
-    icon: Zap,
-    shortcut: 'F',
-    description: 'New functionality or enhancement',
-  },
-  {
-    type: 'bug' as TaskType,
-    label: 'Bug',
-    icon: Bug,
-    shortcut: 'B',
-    description: "Something isn't working",
-  },
-  {
-    type: 'chore' as TaskType,
-    label: 'Chore',
-    icon: Hammer,
-    shortcut: 'C',
-    description: 'Maintenance or refactoring',
-  },
-  {
-    type: 'documentation' as TaskType,
-    label: 'Documentation',
-    icon: FileText,
-    shortcut: 'D',
-    description: 'Documentation improvements',
-  },
-  {
-    type: 'test' as TaskType,
-    label: 'Test',
-    icon: TestTube2,
-    shortcut: 'T',
-    description: 'Test coverage improvements',
-  },
-  {
-    type: 'spike' as TaskType,
-    label: 'Spike',
-    icon: Lightbulb,
-    shortcut: 'S',
-    description: 'Research or investigation',
-  },
-];
+// Generate keyboard shortcuts for each type (first letter of label)
+function generateShortcuts(types: ReturnType<typeof getTypeValues>) {
+  const shortcuts = new Map<string, string>();
+  const used = new Set<string>();
+
+  // First pass: try first letter of label
+  for (const type of types) {
+    const firstLetter = type.label.charAt(0).toUpperCase();
+    if (!used.has(firstLetter)) {
+      shortcuts.set(type.name, firstLetter);
+      used.add(firstLetter);
+    }
+  }
+
+  // Second pass: try first letter of name for remaining types
+  for (const type of types) {
+    if (!shortcuts.has(type.name)) {
+      const firstLetter = type.name.charAt(0).toUpperCase();
+      if (!used.has(firstLetter)) {
+        shortcuts.set(type.name, firstLetter);
+        used.add(firstLetter);
+      }
+    }
+  }
+
+  return shortcuts;
+}
+
+// Generate task types from schema
+function getTaskTypesFromSchema() {
+  const typeValues = getTypeValues();
+  const iconMapping = generateTypeIconMapping();
+  const shortcuts = generateShortcuts(typeValues);
+
+  return typeValues.map((type) => ({
+    type: type.name as TaskType,
+    label: type.label,
+    icon: iconMapping[type.name],
+    shortcut: shortcuts.get(type.name) || type.name.charAt(0).toUpperCase(),
+    description: `${type.label} task`, // Could be enhanced with description from schema
+  }));
+}
 
 export function CommandPalette({
   open,
@@ -85,6 +85,12 @@ export function CommandPalette({
   const [title, setTitle] = React.useState('');
   const [isParent, setIsParent] = React.useState(false);
 
+  // Get task types from schema (computed once)
+  const taskTypes = React.useMemo(() => getTaskTypesFromSchema(), []);
+
+  // Ref for auto-focusing the title input
+  const titleInputRef = React.useRef<HTMLInputElement>(null);
+
   // Reset state when dialog closes
   React.useEffect(() => {
     if (!open) {
@@ -94,6 +100,16 @@ export function CommandPalette({
       setIsParent(false);
     }
   }, [open]);
+
+  // Auto-focus title input when moving to title step
+  React.useEffect(() => {
+    if (step === 'title' && titleInputRef.current) {
+      // Small delay to ensure the input is rendered
+      setTimeout(() => {
+        titleInputRef.current?.focus();
+      }, 100);
+    }
+  }, [step]);
 
   // Handle keyboard shortcuts
   React.useEffect(() => {
@@ -112,7 +128,7 @@ export function CommandPalette({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [open, step]);
+  }, [open, step, taskTypes]);
 
   const handleTypeSelect = (type: TaskType) => {
     setSelectedType(type);
@@ -136,24 +152,27 @@ export function CommandPalette({
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       {step === 'type' ? (
         <>
-          <CommandInput placeholder="Select task type..." />
+          <CommandInput placeholder="Create a new task - select type..." />
           <CommandList>
             <CommandEmpty>No task types found.</CommandEmpty>
-            <CommandGroup heading="Task Types">
-              {taskTypes.map((taskType) => (
-                <CommandItem
-                  key={taskType.type}
-                  onSelect={() => handleTypeSelect(taskType.type)}
-                  className="flex items-center gap-3"
-                >
-                  <taskType.icon className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex-1">
-                    <div className="font-medium">{taskType.label}</div>
-                    <div className="text-xs text-muted-foreground">{taskType.description}</div>
-                  </div>
-                  <CommandShortcut>{taskType.shortcut}</CommandShortcut>
-                </CommandItem>
-              ))}
+            <CommandGroup heading="Create New Task">
+              {taskTypes.map((taskType) => {
+                const IconComponent = taskType.icon;
+                return (
+                  <CommandItem
+                    key={taskType.type}
+                    onSelect={() => handleTypeSelect(taskType.type)}
+                    className="flex items-center gap-3"
+                  >
+                    {IconComponent && <IconComponent className="h-4 w-4 text-muted-foreground" />}
+                    <div className="flex-1">
+                      <div className="font-medium">{taskType.label}</div>
+                      <div className="text-xs text-muted-foreground">{taskType.description}</div>
+                    </div>
+                    <CommandShortcut>{taskType.shortcut}</CommandShortcut>
+                  </CommandItem>
+                );
+              })}
             </CommandGroup>
           </CommandList>
         </>
@@ -162,17 +181,20 @@ export function CommandPalette({
           <div className="flex items-center gap-3 mb-4">
             {selectedTaskType && (
               <>
-                <selectedTaskType.icon className="h-5 w-5 text-muted-foreground" />
+                {selectedTaskType.icon && (
+                  <selectedTaskType.icon className="h-5 w-5 text-muted-foreground" />
+                )}
                 <span className="font-medium">{selectedTaskType.label}</span>
               </>
             )}
           </div>
 
           <input
+            ref={titleInputRef}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter task title..."
+            placeholder="Enter new task title..."
             className={cn(
               'w-full px-3 py-2 text-sm rounded-md',
               'bg-background border border-input',
@@ -223,7 +245,7 @@ export function CommandPalette({
               )}
             >
               {isLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-              Create Task
+              {isLoading ? 'Creating...' : 'Create Task'}
             </button>
           </div>
         </form>

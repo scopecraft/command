@@ -1,0 +1,18 @@
+import { CommandPalette } from './ui/command-palette';
+import { useCommandPalette } from '../context/CommandPaletteProvider';
+
+export function CommandPaletteWrapper() {
+  const { isOpen, closeCommandPalette, createTask, isCreating, error } = useCommandPalette();
+
+  return (
+    <CommandPalette
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) closeCommandPalette();
+      }}
+      onTaskCreate={createTask}
+      isLoading={isCreating}
+      error={error}
+    />
+  );
+}

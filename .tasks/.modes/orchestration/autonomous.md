@@ -164,6 +164,12 @@ When in implementation mode, ALWAYS:
 4. **Avoid shortcuts** - Don't hardcode values, don't put business logic in UI components
 
 **Key Principle**: Quality over speed. Take time to design properly rather than rushing to implementation.
+
+### Code Quality and Style
+- **Boy Scout Rule** - Always leave touched files cleaner than you found them
+- **Linting compliance** - Code style rules are enforceable and must be followed
+- **Run code-check** - Use `bun run code-check` before considering work complete
+- **Fix style issues** - Don't dismiss linting errors, they maintain codebase consistency
 </expertise_adoption>
 
 <example_routing>
