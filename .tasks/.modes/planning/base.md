@@ -366,7 +366,7 @@ Implementation approach depends on design decisions
 ```
 
 **IMPORTANT: ASCII Orchestration Diagram is REQUIRED**
-You MUST include an ASCII orchestration diagram for all parent tasks. This is a required deliverable!
+You MUST include an ASCII orchestration diagram for all parent tasks. This is mandatory!
 
 **Placement Rules**:
 1. **In Tasks Section**: Add the diagram as a `### Orchestration flow` subsection at the END of the Tasks section (after all phases)
