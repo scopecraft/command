@@ -1,32 +1,28 @@
 import React from 'react';
-import { Archive, Clock, FolderOpen } from 'lucide-react';
+import { getWorkflowStateValues } from '@core/metadata/schema-service';
+import { getWorkflowStateLucideIcon } from '../../../lib/schema-client';
 import { Select } from '../../ui/select';
 import { useOptimisticUpdate } from './useOptimisticUpdate';
 
 export interface WorkflowStateDropdownProps {
-  value: 'backlog' | 'current' | 'archive';
-  onChange: (value: 'backlog' | 'current' | 'archive') => Promise<void>;
+  value: string;
+  onChange: (value: string) => Promise<void>;
   disabled?: boolean;
   className?: string;
 }
 
-const WORKFLOW_STATE_OPTIONS = [
-  { 
-    value: 'backlog' as const, 
-    label: 'Backlog',
-    icon: <Clock className="w-3 h-3" />
-  },
-  { 
-    value: 'current' as const, 
-    label: 'Current',
-    icon: <FolderOpen className="w-3 h-3" />
-  },
-  { 
-    value: 'archive' as const, 
-    label: 'Archive',
-    icon: <Archive className="w-3 h-3" />
-  },
-];
+// Get workflow state options dynamically from schema
+const getWorkflowStateOptions = () => {
+  const workflowStateValues = getWorkflowStateValues();
+  return workflowStateValues.map((state) => {
+    const IconComponent = getWorkflowStateLucideIcon(state.name);
+    return {
+      value: state.name,
+      label: state.label,
+      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined
+    };
+  });
+};
 
 export const WorkflowStateDropdown: React.FC<WorkflowStateDropdownProps> = ({
   value,
@@ -35,18 +31,18 @@ export const WorkflowStateDropdown: React.FC<WorkflowStateDropdownProps> = ({
   className
 }) => {
   const { value: currentValue, isUpdating, update } = useOptimisticUpdate(value);
+  const workflowStateOptions = React.useMemo(() => getWorkflowStateOptions(), []);
 
   const handleSelect = async (newValue: string) => {
-    const typedValue = newValue as typeof value;
-    if (typedValue !== currentValue) {
-      await update(typedValue, onChange);
+    if (newValue !== currentValue) {
+      await update(newValue, onChange);
     }
   };
 
   return (
     <Select
       value={currentValue}
-      options={WORKFLOW_STATE_OPTIONS}
+      options={workflowStateOptions}
       onChange={handleSelect}
       disabled={disabled}
       isLoading={isUpdating}

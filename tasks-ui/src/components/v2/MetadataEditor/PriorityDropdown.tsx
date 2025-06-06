@@ -1,31 +1,21 @@
 import React from 'react';
-import { PriorityIcon } from '../../../lib/icons';
+import { getPriorityValues } from '@core/metadata/schema-service';
+import { getPriorityLucideIcon } from '../../../lib/schema-client';
 import { Select } from '../../ui/select';
 import { useOptimisticUpdate } from './useOptimisticUpdate';
 
-// Priority options with proper icons
-const priorityOptions = [
-  { 
-    value: 'highest', 
-    label: 'Highest',
-    icon: <PriorityIcon priority="highest" size="sm" />
-  },
-  { 
-    value: 'high', 
-    label: 'High',
-    icon: <PriorityIcon priority="high" size="sm" />
-  },
-  { 
-    value: 'medium', 
-    label: 'Medium',
-    icon: <PriorityIcon priority="medium" size="sm" />
-  },
-  { 
-    value: 'low', 
-    label: 'Low',
-    icon: <PriorityIcon priority="low" size="sm" />
-  }
-];
+// Get priority options dynamically from schema
+const getPriorityOptions = () => {
+  const priorityValues = getPriorityValues();
+  return priorityValues.map((priority) => {
+    const IconComponent = getPriorityLucideIcon(priority.name);
+    return {
+      value: priority.name,
+      label: priority.label,
+      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined
+    };
+  });
+};
 
 export interface PriorityDropdownProps {
   value: string;
@@ -41,6 +31,7 @@ export const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
   className
 }) => {
   const { value, isUpdating, update } = useOptimisticUpdate(initialValue);
+  const priorityOptions = React.useMemo(() => getPriorityOptions(), []);
   
   const handleSelect = async (newValue: string) => {
     if (newValue !== value) {

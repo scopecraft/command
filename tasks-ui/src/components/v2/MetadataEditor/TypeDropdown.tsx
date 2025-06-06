@@ -1,52 +1,28 @@
 import React from 'react';
+import { getTypeValues } from '@core/metadata/schema-service';
+import { getTypeLucideIcon } from '../../../lib/schema-client';
 import { Select } from '../../ui/select';
-import { TaskTypeIcon } from '../TaskTypeIcon';
 import { useOptimisticUpdate } from './useOptimisticUpdate';
 
 export interface TypeDropdownProps {
-  value: 'feature' | 'bug' | 'chore' | 'documentation' | 'test' | 'spike' | 'idea';
-  onChange: (value: 'feature' | 'bug' | 'chore' | 'documentation' | 'test' | 'spike' | 'idea') => Promise<void>;
+  value: string;
+  onChange: (value: string) => Promise<void>;
   disabled?: boolean;
   className?: string;
 }
 
-const TYPE_OPTIONS = [
-  { 
-    value: 'feature' as const, 
-    label: 'Feature',
-    icon: <TaskTypeIcon type="feature" size="sm" />
-  },
-  { 
-    value: 'bug' as const, 
-    label: 'Bug',
-    icon: <TaskTypeIcon type="bug" size="sm" />
-  },
-  { 
-    value: 'chore' as const, 
-    label: 'Chore',
-    icon: <TaskTypeIcon type="chore" size="sm" />
-  },
-  { 
-    value: 'documentation' as const, 
-    label: 'Documentation',
-    icon: <TaskTypeIcon type="documentation" size="sm" />
-  },
-  { 
-    value: 'test' as const, 
-    label: 'Test',
-    icon: <TaskTypeIcon type="test" size="sm" />
-  },
-  { 
-    value: 'spike' as const, 
-    label: 'Spike',
-    icon: <TaskTypeIcon type="spike" size="sm" />
-  },
-  { 
-    value: 'idea' as const, 
-    label: 'Idea',
-    icon: <TaskTypeIcon type="idea" size="sm" />
-  },
-];
+// Get type options dynamically from schema
+const getTypeOptions = () => {
+  const typeValues = getTypeValues();
+  return typeValues.map((type) => {
+    const IconComponent = getTypeLucideIcon(type.name);
+    return {
+      value: type.name,
+      label: type.label,
+      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined
+    };
+  });
+};
 
 export const TypeDropdown: React.FC<TypeDropdownProps> = ({
   value,
@@ -55,18 +31,18 @@ export const TypeDropdown: React.FC<TypeDropdownProps> = ({
   className
 }) => {
   const { value: currentValue, isUpdating, update } = useOptimisticUpdate(value);
+  const typeOptions = React.useMemo(() => getTypeOptions(), []);
 
   const handleSelect = async (newValue: string) => {
-    const typedValue = newValue as typeof value;
-    if (typedValue !== currentValue) {
-      await update(typedValue, onChange);
+    if (newValue !== currentValue) {
+      await update(newValue, onChange);
     }
   };
 
   return (
     <Select
       value={currentValue}
-      options={TYPE_OPTIONS}
+      options={typeOptions}
       onChange={handleSelect}
       disabled={disabled}
       isLoading={isUpdating}
