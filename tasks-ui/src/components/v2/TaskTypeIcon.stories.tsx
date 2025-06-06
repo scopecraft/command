@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import type { ParentTask, Task } from '../../lib/types';
 import { TaskTypeIcon } from './TaskTypeIcon';
-import type { Task, ParentTask } from '../../lib/types';
 
 const meta: Meta<typeof TaskTypeIcon> = {
   title: 'V2 Components/TaskTypeIcon',
@@ -9,7 +9,8 @@ const meta: Meta<typeof TaskTypeIcon> = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'Icon component that distinguishes between parent tasks (📁) and simple tasks with type-specific icons.',
+        component:
+          'Icon component that distinguishes between parent tasks (📁) and simple tasks with type-specific icons.',
       },
     },
   },
@@ -93,7 +94,7 @@ export const AllTypesShowcase: Story = {
   render: () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mb-4">Task Type Icons</h3>
-      
+
       {/* Parent Task */}
       <div className="flex items-center gap-3 p-3 border rounded">
         <TaskTypeIcon task={mockParentTask} />
@@ -126,7 +127,7 @@ export const SizesShowcase: Story = {
   render: () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mb-4">Icon Sizes</h3>
-      
+
       {(['sm', 'md', 'lg'] as const).map((size) => (
         <div key={size} className="flex items-center gap-4 p-3 border rounded">
           <span className="w-12 text-sm font-medium capitalize">{size}</span>
@@ -144,20 +145,20 @@ export const InlineUsage: Story = {
   render: () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold mb-4">Inline Usage Examples</h3>
-      
+
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <TaskTypeIcon task={mockParentTask} size="sm" />
           <span className="font-medium">User Authentication System</span>
           <span className="text-gray-500">• 3/7 subtasks completed</span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <TaskTypeIcon task={{ ...mockSimpleTask, type: 'bug' }} size="sm" />
           <span className="font-medium">Fix login redirect bug</span>
           <span className="text-gray-500">• High priority</span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <TaskTypeIcon task={{ ...mockSimpleTask, type: 'feature' }} size="sm" />
           <span className="font-medium">Add dark mode toggle</span>

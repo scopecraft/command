@@ -47,7 +47,8 @@
       "mcp__playwright__browser_snapshot",
       "mcp__playwright__browser_take_screenshot",
       "Bash(git restore:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(npm run code-check:*)"
     ],
     "deny": []
   }

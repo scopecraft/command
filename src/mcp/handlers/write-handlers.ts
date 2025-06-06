@@ -39,7 +39,7 @@ import type { McpResponse } from '../types.js';
 
 // Type aliases for inline schemas
 type SubtaskDefinition = NonNullable<ParentCreateInput['subtasks']>[number];
-import { getProjectRoot } from './shared/config-utils.js';
+import { getProjectRoot, loadProjectConfig } from './shared/config-utils.js';
 import { appendTimestampedLogEntry } from './shared/log-utils.js';
 import {
   buildCommonMetadata,
@@ -148,10 +148,11 @@ export async function handleParentCreate(
     // Validate input
     const params = ParentCreateInputSchema.parse(rawParams);
     const projectRoot = getProjectRoot(params);
+    const projectConfig = loadProjectConfig(projectRoot);
 
     // Create parent with options
     const createOptions = buildParentCreateOptions(params);
-    const result = await core.createParent(projectRoot, createOptions);
+    const result = await core.createParent(projectRoot, createOptions, projectConfig);
 
     if (!result.success || !result.data) {
       return createErrorResponse(
@@ -292,8 +293,11 @@ export async function handleTaskCreate(
       tags: params.tags,
     };
 
+    // Load project config
+    const projectConfig = loadProjectConfig(projectRoot);
+
     // Create task
-    const result = await core.create(projectRoot, createOptions);
+    const result = await core.create(projectRoot, createOptions, projectConfig);
 
     if (!result.success || !result.data) {
       return createErrorResponse(result.error || 'Failed to create task', 'Task creation failed');
@@ -329,7 +333,8 @@ async function appendLogEntry(
   logEntry: string,
   parentId?: string
 ): Promise<string> {
-  const currentTask = await core.get(projectRoot, taskId, undefined, parentId);
+  const projectConfig = loadProjectConfig(projectRoot);
+  const currentTask = await core.get(projectRoot, taskId, projectConfig, parentId);
   if (currentTask.success && currentTask.data) {
     const currentLog = currentTask.data.document.sections.log || '';
     return appendTimestampedLogEntry(currentLog, logEntry);
@@ -387,12 +392,15 @@ export async function handleTaskUpdate(rawParams: unknown): Promise<McpResponse<
       updateOptions.sections.log = newLog;
     }
 
+    // Load project config to respect autoWorkflowTransitions setting
+    const projectConfig = loadProjectConfig(projectRoot);
+
     // Perform update
     const result = await core.update(
       projectRoot,
       params.id,
       updateOptions,
-      undefined,
+      projectConfig,
       params.parentId
     );
 
@@ -425,6 +433,9 @@ export async function handleTaskDelete(
     const params = TaskDeleteInputSchema.parse(rawParams);
     const projectRoot = getProjectRoot(params);
 
+    // Load project config
+    const projectConfig = loadProjectConfig(projectRoot);
+
     let result: core.OperationResult<void>;
     const cascadeCount = 0;
 
@@ -437,11 +448,11 @@ export async function handleTaskDelete(
         // TODO: Get cascade count from parent deletion
       } else {
         // Not a parent task, just delete normally
-        result = await core.del(projectRoot, params.id, undefined, params.parentId);
+        result = await core.del(projectRoot, params.id, projectConfig, params.parentId);
       }
     } else {
       // Normal delete
-      result = await core.del(projectRoot, params.id, undefined, params.parentId);
+      result = await core.del(projectRoot, params.id, projectConfig, params.parentId);
     }
 
     if (!result.success) {
@@ -484,8 +495,11 @@ export async function handleTaskMove(
     const params = TaskMoveInputSchema.parse(rawParams);
     const projectRoot = getProjectRoot(params);
 
+    // Load project config
+    const projectConfig = loadProjectConfig(projectRoot);
+
     // Get the task's current state before moving
-    const beforeMove = await core.get(projectRoot, params.id, undefined, params.parentId);
+    const beforeMove = await core.get(projectRoot, params.id, projectConfig, params.parentId);
     if (!beforeMove.success || !beforeMove.data) {
       return createErrorResponse(beforeMove.error || 'Task not found', 'Failed to get task');
     }
@@ -502,7 +516,7 @@ export async function handleTaskMove(
         updateStatus: params.updateStatus !== false, // Default true
         archiveDate: params.archiveDate,
       },
-      undefined, // config
+      projectConfig,
       params.parentId
     );
 

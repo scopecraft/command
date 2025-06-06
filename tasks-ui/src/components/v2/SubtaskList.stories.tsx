@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { SubtaskList } from './SubtaskList';
 import { mockV2Subtasks } from '../../lib/api/mock-data-v2';
 import type { Task } from '../../lib/types';
+import { SubtaskList } from './SubtaskList';
 
 const meta: Meta<typeof SubtaskList> = {
   title: 'V2 Components/SubtaskList',
@@ -10,7 +10,8 @@ const meta: Meta<typeof SubtaskList> = {
     layout: 'padded',
     docs: {
       description: {
-        component: 'Tree-style list component for displaying subtasks with sequence numbers, parallel execution indicators, and CLI-inspired formatting.',
+        component:
+          'Tree-style list component for displaying subtasks with sequence numbers, parallel execution indicators, and CLI-inspired formatting.',
       },
     },
   },
@@ -35,7 +36,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Filter subtasks that belong to parent-001 (User Authentication System)
-const authSubtasks = mockV2Subtasks.filter(task => task.parent_task === 'parent-001');
+const authSubtasks = mockV2Subtasks.filter((task) => task.parent_task === 'parent-001');
 
 export const TreeView: Story = {
   args: {
@@ -83,8 +84,8 @@ export const AllVariants: Story = {
           Full tree structure with visual hierarchy, perfect for detailed parent task pages
         </p>
         <div className="border rounded-lg p-4">
-          <SubtaskList 
-            subtasks={authSubtasks} 
+          <SubtaskList
+            subtasks={authSubtasks}
             variant="tree"
             onTaskClick={(task) => console.log('Clicked:', task.title)}
           />
@@ -97,8 +98,8 @@ export const AllVariants: Story = {
           CLI-inspired compact tree, great for sidebars and overview sections
         </p>
         <div className="border rounded-lg p-4 bg-gray-50">
-          <SubtaskList 
-            subtasks={authSubtasks} 
+          <SubtaskList
+            subtasks={authSubtasks}
             variant="compact"
             onTaskClick={(task) => console.log('Clicked:', task.title)}
           />
@@ -107,12 +108,10 @@ export const AllVariants: Story = {
 
       <div>
         <h3 className="text-lg font-semibold mb-3">Flat View</h3>
-        <p className="text-gray-600 text-sm mb-4">
-          Simple list format when hierarchy isn't needed
-        </p>
+        <p className="text-gray-600 text-sm mb-4">Simple list format when hierarchy isn't needed</p>
         <div className="border rounded-lg p-4">
-          <SubtaskList 
-            subtasks={authSubtasks} 
+          <SubtaskList
+            subtasks={authSubtasks}
             variant="flat"
             onTaskClick={(task) => console.log('Clicked:', task.title)}
           />
@@ -126,11 +125,11 @@ export const ParallelTasksShowcase: Story = {
   render: () => {
     // Create a focused example with parallel tasks
     const parallelExample: Task[] = [
-      mockV2Subtasks.find(t => t.sequence === '01')!, // Database schema
-      mockV2Subtasks.find(t => t.sequence === '02')!, // Password hashing
-      mockV2Subtasks.find(t => t.sequence === '04a')!, // Login endpoint
-      mockV2Subtasks.find(t => t.sequence === '04b')!, // Logout endpoint
-      mockV2Subtasks.find(t => t.sequence === '05')!, // Session management
+      mockV2Subtasks.find((t) => t.sequence === '01')!, // Database schema
+      mockV2Subtasks.find((t) => t.sequence === '02')!, // Password hashing
+      mockV2Subtasks.find((t) => t.sequence === '04a')!, // Login endpoint
+      mockV2Subtasks.find((t) => t.sequence === '04b')!, // Logout endpoint
+      mockV2Subtasks.find((t) => t.sequence === '05')!, // Session management
     ];
 
     return (
@@ -138,7 +137,8 @@ export const ParallelTasksShowcase: Story = {
         <div>
           <h3 className="text-lg font-semibold mb-3">Parallel Execution Visualization</h3>
           <p className="text-gray-600 text-sm mb-4">
-            Tasks 04a and 04b can be worked on in parallel (same sequence number with letter suffixes)
+            Tasks 04a and 04b can be worked on in parallel (same sequence number with letter
+            suffixes)
           </p>
         </div>
 
@@ -159,8 +159,8 @@ export const ParallelTasksShowcase: Story = {
         <div>
           <h4 className="font-medium mb-2">UI Component:</h4>
           <div className="border rounded-lg p-4">
-            <SubtaskList 
-              subtasks={parallelExample} 
+            <SubtaskList
+              subtasks={parallelExample}
               variant="tree"
               showParallel={true}
               onTaskClick={(task) => console.log('Clicked:', task.title)}
@@ -254,9 +254,9 @@ export const SequenceOrdering: Story = {
         <p className="text-gray-600 text-sm mb-4">
           Demonstrates how different sequence patterns are handled: 01 → 02a/02b/02c (parallel) → 03
         </p>
-        
+
         <div className="border rounded-lg p-4">
-          <SubtaskList 
+          <SubtaskList
             subtasks={sequenceExample}
             variant="tree"
             onTaskClick={(task) => console.log('Sequence:', task.sequence, 'Task:', task.title)}
@@ -266,9 +266,15 @@ export const SequenceOrdering: Story = {
         <div className="mt-4 p-4 bg-blue-50 rounded-lg">
           <h4 className="font-medium text-blue-900 mb-2">Sequence Logic:</h4>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li><strong>01:</strong> Single sequential task</li>
-            <li><strong>02a, 02b, 02c:</strong> Three parallel tasks (same base sequence "02")</li>
-            <li><strong>03:</strong> Final task that can only start after sequence 02 is complete</li>
+            <li>
+              <strong>01:</strong> Single sequential task
+            </li>
+            <li>
+              <strong>02a, 02b, 02c:</strong> Three parallel tasks (same base sequence "02")
+            </li>
+            <li>
+              <strong>03:</strong> Final task that can only start after sequence 02 is complete
+            </li>
           </ul>
         </div>
       </div>
@@ -343,9 +349,9 @@ export const DifferentTaskTypes: Story = {
         <p className="text-gray-600 text-sm mb-4">
           Different task types with their corresponding icons and priority levels
         </p>
-        
+
         <div className="border rounded-lg p-4">
-          <SubtaskList 
+          <SubtaskList
             subtasks={mixedTypes}
             variant="tree"
             onTaskClick={(task) => console.log('Type:', task.type, 'Task:', task.title)}
@@ -360,45 +366,33 @@ export const ConfigurableOptions: Story = {
   render: () => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold mb-4">Configurable Display Options</h3>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <h4 className="font-medium mb-2">Without Sequence Numbers</h4>
           <div className="border rounded-lg p-3">
-            <SubtaskList 
-              subtasks={authSubtasks.slice(0, 3)}
-              variant="tree"
-              showSequence={false}
-            />
+            <SubtaskList subtasks={authSubtasks.slice(0, 3)} variant="tree" showSequence={false} />
           </div>
         </div>
 
         <div>
           <h4 className="font-medium mb-2">Without Parallel Grouping</h4>
           <div className="border rounded-lg p-3">
-            <SubtaskList 
-              subtasks={authSubtasks.slice(0, 3)}
-              variant="tree"
-              showParallel={false}
-            />
+            <SubtaskList subtasks={authSubtasks.slice(0, 3)} variant="tree" showParallel={false} />
           </div>
         </div>
 
         <div>
           <h4 className="font-medium mb-2">Without Metadata</h4>
           <div className="border rounded-lg p-3">
-            <SubtaskList 
-              subtasks={authSubtasks.slice(0, 3)}
-              variant="tree"
-              showMetadata={false}
-            />
+            <SubtaskList subtasks={authSubtasks.slice(0, 3)} variant="tree" showMetadata={false} />
           </div>
         </div>
 
         <div>
           <h4 className="font-medium mb-2">Minimal View</h4>
           <div className="border rounded-lg p-3">
-            <SubtaskList 
+            <SubtaskList
               subtasks={authSubtasks.slice(0, 3)}
               variant="tree"
               showSequence={false}
@@ -421,16 +415,10 @@ export const InteractiveDemo: Story = {
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold mb-3">Interactive Subtask List</h3>
-        <p className="text-gray-600 text-sm mb-4">
-          Click on any subtask to see the interaction
-        </p>
-        
+        <p className="text-gray-600 text-sm mb-4">Click on any subtask to see the interaction</p>
+
         <div className="border rounded-lg p-4">
-          <SubtaskList 
-            subtasks={authSubtasks}
-            variant="tree"
-            onTaskClick={handleTaskClick}
-          />
+          <SubtaskList subtasks={authSubtasks} variant="tree" onTaskClick={handleTaskClick} />
         </div>
       </div>
     );

@@ -568,3 +568,17 @@ export function moveFile(src: string, dest: string): void {
 export function moveDirectory(src: string, dest: string): void {
   renameSync(src, dest);
 }
+
+/**
+ * Ensure a parent task directory exists in the target workflow directory
+ * Used when moving subtasks to preserve parent folder structure
+ */
+export function ensureParentTaskDirectory(parentTaskId: string, targetWorkflowDir: string): string {
+  const parentFolderPath = join(targetWorkflowDir, parentTaskId);
+
+  if (!existsSync(parentFolderPath)) {
+    mkdirSync(parentFolderPath, { recursive: true });
+  }
+
+  return parentFolderPath;
+}

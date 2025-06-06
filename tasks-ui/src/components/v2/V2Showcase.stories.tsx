@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import { mockV2ParentTasks, mockV2SimpleTasks, mockV2Subtasks } from '../../lib/api/mock-data-v2';
-import { SubtasksIcon, DocumentsIcon } from '../../lib/icons';
+import { DocumentsIcon, SubtasksIcon } from '../../lib/icons';
 import { Button } from '../ui/button';
 import { ClaudeAgentButton } from './ClaudeAgentButton';
 import { ParentTaskCard } from './ParentTaskCard';
@@ -122,7 +122,6 @@ Found that the auth service is making synchronous calls to the user profile serv
           </div>
         </div>
 
-
         {/* Main Content */}
         <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -134,18 +133,10 @@ Found that the auth service is making synchronous calls to the user profile serv
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-foreground">Edit Task</h2>
                     <div className="flex items-center gap-2">
-                      <Button 
-                        onClick={handleCancel}
-                        variant="ghost"
-                        size="sm"
-                      >
+                      <Button onClick={handleCancel} variant="ghost" size="sm">
                         Cancel
                       </Button>
-                      <Button 
-                        onClick={handleSave}
-                        variant="atlas"
-                        size="sm"
-                      >
+                      <Button onClick={handleSave} variant="atlas" size="sm">
                         Save
                       </Button>
                     </div>
@@ -173,11 +164,11 @@ Found that the auth service is making synchronous calls to the user profile serv
                   >
                     Edit
                   </Button>
-                  <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={handleEdit}>
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                    >
+                  <div
+                    className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                    onClick={handleEdit}
+                  >
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                       {content}
                     </ReactMarkdown>
                   </div>
@@ -210,7 +201,6 @@ Found that the auth service is making synchronous calls to the user profile serv
                   Link Task
                 </Button>
               </div>
-
             </div>
           </div>
         </div>
@@ -223,9 +213,9 @@ export const SubtaskDetailPage: Story = {
   render: () => {
     const subtask = mockV2Subtasks[0]; // API endpoint design
     const parentTask = mockV2ParentTasks[0]; // User Authentication System
-    const siblingSubtasks = mockV2Subtasks.filter(t => t.parent_task === subtask.parent_task);
-    const currentIndex = siblingSubtasks.findIndex(t => t.id === subtask.id);
-    
+    const siblingSubtasks = mockV2Subtasks.filter((t) => t.parent_task === subtask.parent_task);
+    const currentIndex = siblingSubtasks.findIndex((t) => t.id === subtask.id);
+
     const [isEditing, setIsEditing] = React.useState(false);
     const [content, setContent] = React.useState(`## Instruction
 Design RESTful API endpoints for user authentication including login, logout, registration, and password reset. Follow OAuth2 standards where applicable.
@@ -289,13 +279,11 @@ Response:
             {/* Parent Task Context */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               <TaskTypeIcon task={parentTask} />
-              <button className="hover:text-foreground hover:underline">
-                {parentTask.title}
-              </button>
+              <button className="hover:text-foreground hover:underline">{parentTask.title}</button>
               <span>/</span>
               <span className="font-mono">{subtask.sequence_number}</span>
             </div>
-            
+
             {/* Subtask Header */}
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -342,7 +330,6 @@ Response:
           </div>
         </div>
 
-
         {/* Main Content */}
         <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -354,18 +341,10 @@ Response:
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-foreground">Edit Subtask</h2>
                     <div className="flex items-center gap-2">
-                      <Button 
-                        onClick={handleCancel}
-                        variant="ghost"
-                        size="sm"
-                      >
+                      <Button onClick={handleCancel} variant="ghost" size="sm">
                         Cancel
                       </Button>
-                      <Button 
-                        onClick={handleSave}
-                        variant="atlas"
-                        size="sm"
-                      >
+                      <Button onClick={handleSave} variant="atlas" size="sm">
                         Save
                       </Button>
                     </div>
@@ -393,11 +372,11 @@ Response:
                   >
                     Edit
                   </Button>
-                  <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={handleEdit}>
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                    >
+                  <div
+                    className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                    onClick={handleEdit}
+                  >
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                       {content}
                     </ReactMarkdown>
                   </div>
@@ -415,7 +394,8 @@ Response:
                     <h3 className="font-semibold text-foreground">Sibling Subtasks</h3>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {siblingSubtasks.filter(t => t.status === 'done').length}/{siblingSubtasks.length}
+                    {siblingSubtasks.filter((t) => t.status === 'done').length}/
+                    {siblingSubtasks.length}
                   </div>
                 </div>
                 <SubtaskList
@@ -425,7 +405,6 @@ Response:
                   onTaskClick={(task) => console.log('Navigate to subtask:', task.title)}
                 />
               </div>
-
             </div>
           </div>
         </div>
@@ -501,18 +480,10 @@ export const ParentTaskDetailPage: Story = {
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-foreground">Edit Overview</h2>
                     <div className="flex items-center gap-2">
-                      <Button 
-                        onClick={handleCancel}
-                        variant="ghost"
-                        size="sm"
-                      >
+                      <Button onClick={handleCancel} variant="ghost" size="sm">
                         Cancel
                       </Button>
-                      <Button 
-                        onClick={handleSave}
-                        variant="atlas"
-                        size="sm"
-                      >
+                      <Button onClick={handleSave} variant="atlas" size="sm">
                         Save
                       </Button>
                     </div>
@@ -540,11 +511,11 @@ export const ParentTaskDetailPage: Story = {
                   >
                     Edit
                   </Button>
-                  <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={handleEdit}>
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                    >
+                  <div
+                    className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                    onClick={handleEdit}
+                  >
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                       {content}
                     </ReactMarkdown>
                   </div>
@@ -565,19 +536,22 @@ export const ParentTaskDetailPage: Story = {
                     {subtasks.filter((t) => t.status === 'done').length}/{subtasks.length}
                   </div>
                 </div>
-                
+
                 {/* Progress Bar */}
                 <div className="mb-4">
                   <div className="w-full bg-muted rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-primary h-2 rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${Math.round((subtasks.filter(t => t.status === 'done').length / subtasks.length) * 100)}%` 
+                      style={{
+                        width: `${Math.round((subtasks.filter((t) => t.status === 'done').length / subtasks.length) * 100)}%`,
                       }}
                     />
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {Math.round((subtasks.filter(t => t.status === 'done').length / subtasks.length) * 100)}% complete
+                    {Math.round(
+                      (subtasks.filter((t) => t.status === 'done').length / subtasks.length) * 100
+                    )}
+                    % complete
                   </div>
                 </div>
 
@@ -611,14 +585,12 @@ export const ParentTaskDetailPage: Story = {
                     <DocumentsIcon size="md" className="text-muted-foreground" />
                     <h3 className="font-semibold text-foreground">Documents</h3>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    3
-                  </div>
+                  <div className="text-sm text-muted-foreground">3</div>
                 </div>
 
                 {/* Document List */}
                 <div className="space-y-2">
-                  <div 
+                  <div
                     className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
                     onClick={() => console.log('Open PRD document')}
                   >
@@ -626,13 +598,11 @@ export const ParentTaskDetailPage: Story = {
                       <div className="text-sm font-medium text-foreground truncate">
                         Product Requirements
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        PRD • Updated 2 days ago
-                      </div>
+                      <div className="text-xs text-muted-foreground">PRD • Updated 2 days ago</div>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-xs px-2"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -643,7 +613,7 @@ export const ParentTaskDetailPage: Story = {
                     </Button>
                   </div>
 
-                  <div 
+                  <div
                     className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
                     onClick={() => console.log('Open Technical Spec')}
                   >
@@ -655,9 +625,9 @@ export const ParentTaskDetailPage: Story = {
                         Specification • Updated 1 week ago
                       </div>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-xs px-2"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -668,7 +638,7 @@ export const ParentTaskDetailPage: Story = {
                     </Button>
                   </div>
 
-                  <div 
+                  <div
                     className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
                     onClick={() => console.log('Open Research Notes')}
                   >
@@ -680,9 +650,9 @@ export const ParentTaskDetailPage: Story = {
                         Research • Updated 3 days ago
                       </div>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-xs px-2"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -807,12 +777,8 @@ So that I can regain access if I forget my credentials
                     <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
                       #authentication
                     </span>
-                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                      #oauth2
-                    </span>
-                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                      #security
-                    </span>
+                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded">#oauth2</span>
+                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded">#security</span>
                   </div>
                 </div>
               </div>
@@ -834,18 +800,10 @@ So that I can regain access if I forget my credentials
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-foreground">Edit Document</h2>
                     <div className="flex items-center gap-2">
-                      <Button 
-                        onClick={handleCancel}
-                        variant="ghost"
-                        size="sm"
-                      >
+                      <Button onClick={handleCancel} variant="ghost" size="sm">
                         Cancel
                       </Button>
-                      <Button 
-                        onClick={handleSave}
-                        variant="atlas"
-                        size="sm"
-                      >
+                      <Button onClick={handleSave} variant="atlas" size="sm">
                         Save
                       </Button>
                     </div>
@@ -873,11 +831,11 @@ So that I can regain access if I forget my credentials
                   >
                     Edit
                   </Button>
-                  <div className="prose prose-sm dark:prose-invert max-w-none cursor-text" onClick={handleEdit}>
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                    >
+                  <div
+                    className="prose prose-sm dark:prose-invert max-w-none cursor-text"
+                    onClick={handleEdit}
+                  >
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                       {content}
                     </ReactMarkdown>
                   </div>
@@ -894,27 +852,21 @@ So that I can regain access if I forget my credentials
                     <DocumentsIcon size="md" className="text-muted-foreground" />
                     <h3 className="font-semibold text-foreground">Other Documents</h3>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    3
-                  </div>
+                  <div className="text-sm text-muted-foreground">3</div>
                 </div>
 
                 {/* Document List */}
                 <div className="space-y-2">
-                  <div 
-                    className="flex items-center gap-2 p-2 rounded bg-muted/50 cursor-pointer group"
-                  >
+                  <div className="flex items-center gap-2 p-2 rounded bg-muted/50 cursor-pointer group">
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate">
                         Product Requirements
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        PRD • Current
-                      </div>
+                      <div className="text-xs text-muted-foreground">PRD • Current</div>
                     </div>
                   </div>
 
-                  <div 
+                  <div
                     className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
                     onClick={() => console.log('Open Technical Spec')}
                   >
@@ -928,7 +880,7 @@ So that I can regain access if I forget my credentials
                     </div>
                   </div>
 
-                  <div 
+                  <div
                     className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer group"
                     onClick={() => console.log('Open Research Notes')}
                   >
@@ -1151,7 +1103,6 @@ export const MixedTaskList: Story = {
     );
   },
 };
-
 
 export const ComponentShowcase: Story = {
   render: () => (

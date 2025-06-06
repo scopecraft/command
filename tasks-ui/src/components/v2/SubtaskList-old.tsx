@@ -1,7 +1,7 @@
 import React from 'react';
-import { TaskTypeIcon } from './TaskTypeIcon';
-import { StatusBadge, PriorityIndicator } from './WorkflowStateBadge';
 import type { Task } from '../../lib/types';
+import { TaskTypeIcon } from './TaskTypeIcon';
+import { PriorityIndicator, StatusBadge } from './WorkflowStateBadge';
 
 interface SubtaskListProps {
   subtasks: Task[];
@@ -31,11 +31,11 @@ export function SubtaskList({
   // Group subtasks by sequence number
   const groupedSubtasks = React.useMemo(() => {
     const groups: Record<string, Task[]> = {};
-    
+
     subtasks.forEach((task) => {
       const sequence = task.sequence || '99'; // Default for tasks without sequence
       const baseSequence = sequence.replace(/[a-z]$/, ''); // Remove letter suffix (04a → 04)
-      
+
       if (!groups[baseSequence]) {
         groups[baseSequence] = [];
       }
@@ -45,11 +45,13 @@ export function SubtaskList({
     // Sort groups by sequence number and convert to array
     return Object.entries(groups)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([sequence, tasks]): GroupedSubtasks => ({
-        sequence,
-        tasks: tasks.sort((a, b) => (a.sequence || '').localeCompare(b.sequence || '')),
-        isParallel: tasks.length > 1,
-      }));
+      .map(
+        ([sequence, tasks]): GroupedSubtasks => ({
+          sequence,
+          tasks: tasks.sort((a, b) => (a.sequence || '').localeCompare(b.sequence || '')),
+          isParallel: tasks.length > 1,
+        })
+      );
   }, [subtasks]);
 
   if (subtasks.length === 0) {
@@ -87,7 +89,10 @@ export function SubtaskList({
                   {task.tags && task.tags.length > 0 && (
                     <div className="flex gap-1">
                       {task.tags.slice(0, 2).map((tag) => (
-                        <span key={tag} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                        <span
+                          key={tag}
+                          className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded"
+                        >
                           #{tag}
                         </span>
                       ))}
@@ -113,9 +118,7 @@ export function SubtaskList({
               <div key={sequence}>
                 {/* Parallel group header */}
                 <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                  <span className="font-mono text-gray-400">
-                    {isLastGroup ? '└─┬' : '├─┬'}
-                  </span>
+                  <span className="font-mono text-gray-400">{isLastGroup ? '└─┬' : '├─┬'}</span>
                   <span className="font-medium">Parallel execution - sequence {sequence}</span>
                   <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
                     {tasks.length} tasks
@@ -134,7 +137,8 @@ export function SubtaskList({
                       onClick={() => onTaskClick?.(task)}
                     >
                       <span className="font-mono text-gray-400 w-6">
-                        {isLastGroup ? '  ' : '│ '}{isLastTask ? '└─' : '├─'}
+                        {isLastGroup ? '  ' : '│ '}
+                        {isLastTask ? '└─' : '├─'}
                       </span>
                       <span className="font-mono text-blue-600">{statusSymbol}</span>
                       <span className="font-medium truncate">{task.title}</span>
@@ -155,9 +159,7 @@ export function SubtaskList({
                 className="flex items-center gap-2 text-sm hover:bg-gray-50 cursor-pointer py-1"
                 onClick={() => onTaskClick?.(task)}
               >
-                <span className="font-mono text-gray-400">
-                  {isLastGroup ? '└──' : '├──'}
-                </span>
+                <span className="font-mono text-gray-400">{isLastGroup ? '└──' : '├──'}</span>
                 <span className="font-mono text-blue-600">{statusSymbol}</span>
                 <span className="font-medium truncate">{task.title}</span>
                 <span className="text-gray-500 text-xs">[{task.sequence}]</span>
@@ -180,9 +182,7 @@ export function SubtaskList({
             <div key={sequence}>
               {/* Parallel group header */}
               <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <span className="font-mono text-gray-500">
-                  {isLastGroup ? '└─┬' : '├─┬'}
-                </span>
+                <span className="font-mono text-gray-500">{isLastGroup ? '└─┬' : '├─┬'}</span>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-blue-800">
                     Parallel execution - sequence {sequence}
@@ -206,11 +206,12 @@ export function SubtaskList({
                     >
                       <div className="flex items-center gap-2 mt-1">
                         <span className="font-mono text-gray-400 text-sm">
-                          {isLastGroup ? '  ' : '│ '}{isLastTask ? '└─' : '├─'}
+                          {isLastGroup ? '  ' : '│ '}
+                          {isLastTask ? '└─' : '├─'}
                         </span>
                         <TaskTypeIcon task={task} size="sm" />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           {showSequence && (
@@ -220,7 +221,7 @@ export function SubtaskList({
                           )}
                           <h4 className="font-medium text-gray-900 truncate">{task.title}</h4>
                         </div>
-                        
+
                         {showMetadata && (
                           <div className="flex items-center gap-2">
                             <StatusBadge status={task.status} size="sm" />
@@ -228,7 +229,10 @@ export function SubtaskList({
                             {task.tags && task.tags.length > 0 && (
                               <div className="flex gap-1">
                                 {task.tags.slice(0, 2).map((tag) => (
-                                  <span key={tag} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                                  <span
+                                    key={tag}
+                                    className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
+                                  >
                                     #{tag}
                                   </span>
                                 ))}
@@ -259,7 +263,7 @@ export function SubtaskList({
                 </span>
                 <TaskTypeIcon task={task} size="sm" />
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   {showSequence && task.sequence && (
@@ -269,7 +273,7 @@ export function SubtaskList({
                   )}
                   <h4 className="font-medium text-gray-900 truncate">{task.title}</h4>
                 </div>
-                
+
                 {showMetadata && (
                   <div className="flex items-center gap-2">
                     <StatusBadge status={task.status} size="sm" />
@@ -277,7 +281,10 @@ export function SubtaskList({
                     {task.tags && task.tags.length > 0 && (
                       <div className="flex gap-1">
                         {task.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                          <span
+                            key={tag}
+                            className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
+                          >
                             #{tag}
                           </span>
                         ))}

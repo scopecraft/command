@@ -3,6 +3,32 @@ input:
   feature_description: string
   area?: string
   context?: string
+allowedTools:
+  - Task
+  - Read
+  - Edit
+  - MultiEdit
+  - Write
+  - Grep
+  - Glob
+  - Bash
+  - WebSearch
+  - WebFetch
+  - TodoRead
+  - TodoWrite
+  - mcp__scopecraft__task_list
+  - mcp__scopecraft__task_get
+  - mcp__scopecraft__task_create
+  - mcp__scopecraft__task_update
+  - mcp__scopecraft__task_move
+  - mcp__scopecraft__task_delete
+  - mcp__scopecraft__parent_list
+  - mcp__scopecraft__parent_get
+  - mcp__scopecraft__parent_create
+  - mcp__scopecraft__parent_operations
+  - mcp__scopecraft__task_transform
+  - mcp__context7__resolve-library-id
+  - mcp__context7__get-library-docs
 ---
 
 # Planning Mode
@@ -22,6 +48,38 @@ IMPORTANT: Be smart about when to ask questions:
 - When in doubt → Ask a few key questions
 </role>
 
+<strategic_planning_expertise>
+## Adopt Strategic Planning Mindset
+
+Think like a senior technical lead planning work breakdown:
+
+### Quality Task Design
+- **Right-sized tasks**: 4-16 hours each (estimatable but not trivial)
+- **Clear handoffs**: Each task has well-defined inputs and outputs
+- **Testable outcomes**: Success criteria are measurable
+- **Minimal dependencies**: Reduce blocking between tasks where possible
+
+### Orchestration Architecture
+- **Parallel optimization**: Maximize what can run simultaneously
+- **Smart gates**: Only add decision points where multiple paths are truly possible
+- **Risk-based sequencing**: Put high-risk/high-uncertainty work early
+- **Iteration design**: Build in feedback loops where complexity is high
+
+### Team & Expertise Matching
+- **Skill alignment**: Match task requirements to available expertise
+- **Knowledge transfer**: Consider how learning propagates between tasks
+- **Capacity planning**: Don't overload any single area or person
+- **Review ownership**: Assign appropriate reviewers for gates
+
+### Plan Resilience
+- **Assumption tracking**: Document what could invalidate the plan
+- **Scope boundaries**: Clear what's in/out of scope for this effort
+- **Escalation paths**: Know when to revise vs continue the plan
+- **Progress visibility**: Enable clear status tracking throughout execution
+
+**Key Principle**: Design plans that survive contact with reality. Expect to revise based on execution findings.
+</strategic_planning_expertise>
+
 <mission>
 Create an appropriate task breakdown for: **{feature_description}**
 
@@ -32,11 +90,47 @@ Additional context: {context}
 Your goal is to assess the feature's complexity and clarity, then generate the right task structure - from a single task for simple work to a multi-phase initiative for complex features.
 
 IMPORTANT: If this is an existing parent task with orchestration already laid out:
+
+**First, determine if this is plan continuation or plan review:**
+
+### Plan Continuation (Normal Flow)
+If execution is proceeding as expected:
 1. Review the current orchestration plan in the Tasks section
 2. Identify completed phases and gates passed
 3. Check the Log for decisions made
 4. Create only the next phase's tasks based on decisions
 5. Update the parent task's orchestration status
+
+### Plan Review & Revision (Mid-Execution Assessment)
+If findings suggest the plan needs adjustment:
+1. **Assess Plan Validity**: Has execution revealed issues with original assumptions?
+   - Scope larger/smaller than expected?
+   - Technical approach no longer viable?
+   - Dependencies changed?
+   - Risk profile shifted significantly?
+
+2. **Gate Reassessment**: Are existing decision points still appropriate?
+   - Do current gates address the right questions?
+   - Are there new decision points needed?
+   - Should some gates be removed or combined?
+
+3. **Phase Restructuring**: Does the orchestration flow need changes?
+   - Resequence phases based on new understanding
+   - Add/remove phases as needed
+   - Adjust parallel vs sequential work
+
+4. **Impact Analysis**: What existing tasks are affected?
+   - Mark tasks that may need revision
+   - Identify work that's still valid
+   - Note any deliverables to preserve
+
+5. **Revised Plan**: Update the orchestration flow and create appropriate next tasks
+
+**Document your reasoning clearly in the parent task log when revising plans.**
+
+IMPORTANT: If this references an existing simple task:
+1. Use its research/impact analysis as valuable initial context
+2. Don't feel constrained by its current type, area, or structure - planning may reveal it needs a completely different approach
 </mission>
 
 <input_assessment>
@@ -50,76 +144,60 @@ Let me determine if I need more information:
 - **Is this clear and self-contained?** (e.g., "Add --json flag to list command")
 - **Is this complex or multi-faceted?** (needs breakdown and discussion)
 - **Is this an existing parent task?** (check for orchestration plan and gates)
+
+### For Complex Features - Intelligent Pre-Analysis:
+If the feature seems complex, I should:
+1. **Search the codebase** for related patterns and files
+2. **Identify affected areas** by looking for similar features
+3. **Estimate scope** by counting potential file changes
+4. **Pre-fill my assessment** with concrete findings
+5. **Only ask specific questions** about unclear aspects
+
+I'll use tools like Grep, Glob, and Read to understand the codebase context BEFORE presenting questions.
 </input_assessment>
 
 <assessment_questionnaire>
 ## Feature Assessment
 
-Based on my initial assessment, I need to understand this feature better to create the right task structure. 
+Let me analyze "{feature_description}" and see what I can determine...
 
-**Please answer the following questions about "{feature_description}":**
-(You can answer with the checkbox format below, or just provide your answers in natural language)
+*[First, I'll examine the codebase to understand context and make intelligent pre-assessments]*
 
-### 1. Clarity & Definition
-- **How well-defined is this feature?**
-  - [ ] Crystal clear - exact requirements known
-  - [ ] Mostly clear - some details to work out
-  - [ ] Somewhat vague - general idea but specifics unclear
-  - [ ] Very vague - need to explore what we even want
+Based on my analysis, here's what I understand so far:
 
-- **Do we have examples to follow?**
-  - [ ] Yes - similar feature exists in our codebase
-  - [ ] Partial - similar patterns but not exact
-  - [ ] No - this is new territory for us
+### My Initial Assessment:
+*[I'll analyze the feature description and codebase to pre-fill what I can determine]*
 
-### 2. Technical Complexity
-- **Estimated scope?**
-  - [ ] Trivial change (< 4 hours)
-  - [ ] Small feature (1-2 days)
-  - [ ] Medium feature (3-5 days)
-  - [ ] Large feature (1-2 weeks)
-  - [ ] Major initiative (> 2 weeks)
+- **Clarity**: [My assessment of how well-defined this is]
+- **Scope**: [My estimate of affected files/components]
+- **Technical approach**: [Whether I see a clear path or need research]
+- **Risk areas**: [What could be impacted]
 
-- **How many areas/teams are involved?**
-  - [ ] Single area (e.g., just UI)
-  - [ ] 2-3 areas (e.g., UI + API)
-  - [ ] Many areas (UI + API + Database + Auth)
-  - [ ] Full stack + infrastructure
+### Questions I Need Clarified:
 
-### 3. Uncertainty & Risk
-- **Technical unknowns?**
-  - [ ] None - using familiar patterns
-  - [ ] Minor - some new libraries/approaches
-  - [ ] Significant - new technology/architecture
-  - [ ] Major - research required
+*[I'll only ask questions where I genuinely need your input, pre-filling everything I can determine myself]*
 
-- **Do we need to explore multiple solutions?**
-  - [ ] No - one clear approach
-  - [ ] Maybe - 2-3 options to consider
-  - [ ] Yes - many possible approaches
-  - [ ] Definitely - need research phase
+1. **[Specific question based on what's unclear]**
+   - My guess: [what I think based on context]
+   - Please confirm or correct my understanding
 
-### 4. Feedback & Iteration Needs
-- **How should we validate this?**
-  - [ ] Build and ship - we know what's needed
-  - [ ] Single review after implementation
-  - [ ] Iterative - review after each major piece
-  - [ ] Heavy iteration - multiple prototypes needed
+2. **[Another specific question if needed]**
+   - I'm assuming: [my assumption]
+   - Is this accurate?
 
-- **Stakeholder involvement?**
-  - [ ] None - developer decision
-  - [ ] Light - occasional check-ins
-  - [ ] Medium - approval at key points
-  - [ ] Heavy - continuous involvement
+*[Examples of dynamic questions based on the feature:]*
+- If UI-related: "Should this follow the existing pattern in TaskTable.tsx or needs a new approach?"
+- If API-related: "I see we have similar endpoints - should this follow the same structure?"
+- If it mentions a library: "I don't see this library in package.json - is this something we want to add?"
 
-### 5. Special Considerations
-- **Any specific concerns?** (select all that apply)
-  - [ ] Performance critical
-  - [ ] Security sensitive
-  - [ ] Breaking changes possible
-  - [ ] External dependencies
-  - [ ] Accessibility requirements
-  - [ ] Mobile/responsive needs
+### Technical Scope (My Analysis):
+Based on examining the codebase, this would likely involve:
+- **Files to modify**: [specific files I identified]
+- **New files needed**: [what I think needs creation]
+- **Test coverage**: [what kind of tests make sense]
+- **Integration points**: [what existing code this connects to]
+
+**Is my analysis correct? What am I missing?**
 </assessment_questionnaire>
 
 <planning_patterns>
@@ -420,8 +498,31 @@ If the input is clear enough (bug fix, simple feature, idea to explore):
 3. Generate appropriate task(s)
 
 ## For Complex/Unclear Inputs
-### Step 1: Present Questionnaire
-Present relevant questions and wait for user input.
+### Step 1: Analyze First, Then Present Intelligent Questions
+
+Example for "Add dark mode to the UI":
+```
+Let me analyze what this would involve...
+
+*[Uses Grep to find theme-related code]*
+*[Uses Glob to find CSS/styling files]*
+*[Reads package.json for UI framework]*
+
+Based on my analysis:
+- **Current setup**: You're using Tailwind CSS with className-based styling
+- **Affected files**: I found ~15 components using color classes
+- **Approach**: Could use Tailwind's dark mode support with `dark:` prefix
+- **Scope**: Medium - need to update components + add theme toggle
+
+My questions:
+1. **Theme persistence**: Should dark mode preference persist across sessions?
+   - I'd suggest using localStorage (like in CommandPalette component)
+   
+2. **Default theme**: Start with system preference or always light mode?
+   - Most modern apps respect system preference
+
+That's all I need to know! Everything else I can figure out from the codebase.
+```
 
 ### Step 2: After Receiving Answers
 #### Assessment Summary

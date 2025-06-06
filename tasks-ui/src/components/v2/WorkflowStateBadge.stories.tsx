@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { WorkflowStateBadge, StatusBadge, PriorityIndicator } from './WorkflowStateBadge';
+import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 const meta: Meta<typeof WorkflowStateBadge> = {
   title: 'V2 Components/Badges',
@@ -8,7 +8,8 @@ const meta: Meta<typeof WorkflowStateBadge> = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'Badge components for workflow states, task status, and priority indicators based on CLI visual patterns.',
+        component:
+          'Badge components for workflow states, task status, and priority indicators based on CLI visual patterns.',
       },
     },
   },
@@ -27,18 +28,18 @@ export const WorkflowStates: Story = {
   render: () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mb-4">Workflow State Badges</h3>
-      
+
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <WorkflowStateBadge workflow="backlog" />
           <span className="text-muted-foreground">Tasks waiting to be started</span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <WorkflowStateBadge workflow="current" />
           <span className="text-muted-foreground">Active work in progress</span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <WorkflowStateBadge workflow="archive" />
           <span className="text-muted-foreground">Completed or abandoned work</span>
@@ -64,29 +65,31 @@ export const TaskStatuses: Story = {
   render: () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mb-4">Task Status Badges</h3>
-      <p className="text-muted-foreground mb-4">Based on CLI status symbols: ✓ Done, → In Progress, ○ To Do, ⊗ Blocked, ⊙ Archived</p>
-      
+      <p className="text-muted-foreground mb-4">
+        Based on CLI status symbols: ✓ Done, → In Progress, ○ To Do, ⊗ Blocked, ⊙ Archived
+      </p>
+
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <StatusBadge status="todo" />
           <span className="text-muted-foreground">Ready to be worked on</span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <StatusBadge status="in_progress" />
           <span className="text-muted-foreground">Currently being worked on</span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <StatusBadge status="done" />
           <span className="text-muted-foreground">Work completed successfully</span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <StatusBadge status="blocked" />
           <span className="text-muted-foreground">Cannot proceed due to dependencies</span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <StatusBadge status="archived" />
           <span className="text-muted-foreground">No longer relevant or canceled</span>
@@ -113,24 +116,28 @@ export const PriorityIndicators: Story = {
   render: () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mb-4">Priority Indicators</h3>
-      <p className="text-muted-foreground mb-4">Following CLI pattern: ↑ High, ↓ Low (Medium priority is omitted)</p>
-      
+      <p className="text-muted-foreground mb-4">
+        Following CLI pattern: ↑ High, ↓ Low (Medium priority is omitted)
+      </p>
+
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <PriorityIndicator priority="highest" />
           <span className="text-muted-foreground">Urgent work that blocks others</span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <PriorityIndicator priority="high" />
           <span className="text-muted-foreground">Important work with deadline pressure</span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <PriorityIndicator priority="medium" />
-          <span className="text-muted-foreground">Medium priority (not shown, following CLI pattern)</span>
+          <span className="text-muted-foreground">
+            Medium priority (not shown, following CLI pattern)
+          </span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <PriorityIndicator priority="low" />
           <span className="text-muted-foreground">Nice-to-have, can be deferred</span>
@@ -144,13 +151,13 @@ export const PriorityIndicators: Story = {
           <PriorityIndicator priority="high" inline />
           <span>priority needs attention</span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <span>This</span>
           <PriorityIndicator priority="low" inline />
           <span>priority task can wait</span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <span>🔥 Critical</span>
           <PriorityIndicator priority="highest" inline />
@@ -165,8 +172,10 @@ export const CombinedUsage: Story = {
   render: () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mb-4">Combined Badge Usage</h3>
-      <p className="text-muted-foreground mb-4">Examples of how badges work together in task displays</p>
-      
+      <p className="text-muted-foreground mb-4">
+        Examples of how badges work together in task displays
+      </p>
+
       <div className="space-y-4">
         {/* Task examples */}
         <div className="p-4 border rounded-lg bg-card">
@@ -221,8 +230,10 @@ export const CLIInspiredLayout: Story = {
   render: () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mb-4">CLI-Inspired Task Layout</h3>
-      <p className="text-muted-foreground mb-4">Mimicking the clean CLI tree view with modern UI elements</p>
-      
+      <p className="text-muted-foreground mb-4">
+        Mimicking the clean CLI tree view with modern UI elements
+      </p>
+
       <div className="font-mono text-sm bg-terminal-background text-terminal-foreground p-4 rounded-lg">
         <div className="space-y-1">
           <div className="text-muted-foreground">CURRENT:</div>
@@ -230,13 +241,17 @@ export const CLIInspiredLayout: Story = {
             <div className="flex items-center gap-2 mb-1">
               <span>├── 📁 ✓ User Authentication System [parent-001]</span>
             </div>
-            <div className="ml-4 text-muted-foreground">• In Progress • 3/7 done • ↑ High • @alice • #security</div>
+            <div className="ml-4 text-muted-foreground">
+              • In Progress • 3/7 done • ↑ High • @alice • #security
+            </div>
           </div>
           <div className="ml-2">
             <div className="flex items-center gap-2 mb-1">
               <span>└── 🐛 → Fix login redirect bug [task-002]</span>
             </div>
-            <div className="ml-4 text-muted-foreground">• In Progress • ↑ High • @bob • #bugfix</div>
+            <div className="ml-4 text-muted-foreground">
+              • In Progress • ↑ High • @bob • #bugfix
+            </div>
           </div>
         </div>
       </div>
@@ -260,7 +275,7 @@ export const CLIInspiredLayout: Story = {
                 <span className="text-muted-foreground">• @alice • #security</span>
               </div>
             </div>
-            
+
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-muted-foreground">└──</span>

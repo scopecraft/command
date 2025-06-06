@@ -146,6 +146,7 @@ This helps track progress and provides context for future work.
 - Use parent tasks for any work that has 3+ subtasks
 - **Always update the Log section** of tasks when making significant changes or completing work
 - Log entries should include date and brief description: `- 2025-05-28: Implemented feature X`
+- Use bun commands, never npm commands
 
 ## Code Quality Checks
 

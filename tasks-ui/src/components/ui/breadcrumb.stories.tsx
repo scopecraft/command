@@ -25,10 +25,7 @@ export const Default: Story = {
 
 export const TwoLevels: Story = {
   args: {
-    items: [
-      { label: 'Tasks', href: '/tasks' },
-      { label: 'Implement Authentication' },
-    ],
+    items: [{ label: 'Tasks', href: '/tasks' }, { label: 'Implement Authentication' }],
   },
 };
 

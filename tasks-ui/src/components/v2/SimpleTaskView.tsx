@@ -1,42 +1,59 @@
-import { useDeleteTask } from '@/lib/api/hooks';
+import { useDeleteTask, useUpdateTask } from '@/lib/api/hooks';
+import {
+  type TaskSectionKey,
+  type TaskSections,
+  getSectionKeys,
+  getSectionsByOrder,
+} from '@/lib/task-sections';
 import type { Task } from '@/lib/types';
 import { useNavigate } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
-import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '../ui/button';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 import { ClaudeAgentButton } from './ClaudeAgentButton';
+import { MetadataEditor, type TaskMetadata } from './MetadataEditor';
+import { SectionEditor } from './SectionEditor';
 import { TaskTypeIcon } from './TaskTypeIcon';
 import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 interface SimpleTaskViewProps {
   task: Task;
   content: string;
-  isEditing: boolean;
-  onEdit: () => void;
-  onCancel: () => void;
-  onSave: () => void;
-  onContentChange: (content: string) => void;
+  // Legacy props for backward compatibility - no longer used
+  isEditing?: boolean;
+  onEdit?: () => void;
+  onCancel?: () => void;
+  onSave?: () => void;
+  onContentChange?: (content: string) => void;
   isUpdating?: boolean;
 }
 
+type MetadataValue = string | string[] | undefined;
+
 export function SimpleTaskView({
   task,
-  content,
-  isEditing,
-  onEdit,
-  onCancel,
-  onSave,
-  onContentChange,
-  isUpdating = false,
+  // Legacy props ignored - section-based editing doesn't use global edit mode
 }: SimpleTaskViewProps) {
   const metadata = task.metadata || task;
   const navigate = useNavigate();
   const deleteTask = useDeleteTask();
+  const updateTask = useUpdateTask();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [sections, setSections] = useState<TaskSections>(
+    Object.fromEntries(getSectionKeys().map((key) => [key, ''])) as TaskSections
+  );
+
+  // Use MCP-provided sections directly (no need to parse)
+  useEffect(() => {
+    if (task.sections) {
+      // Use sections from MCP API
+      setSections(task.sections as TaskSections);
+    } else {
+      // Fallback: empty sections if no sections provided
+      setSections(Object.fromEntries(getSectionKeys().map((key) => [key, ''])) as TaskSections);
+    }
+  }, [task.sections]);
 
   const handleDelete = async () => {
     try {
@@ -49,43 +66,60 @@ export function SimpleTaskView({
     }
   };
 
+  // Metadata update handler following established pattern
+  const handleMetadataUpdate = useCallback(
+    async (field: keyof TaskMetadata, value: MetadataValue) => {
+      try {
+        await updateTask.mutateAsync({
+          id: task.id,
+          parent_id: metadata.parentId,
+          updates: { [field]: value },
+        });
+      } catch (error) {
+        console.error('Failed to update task metadata:', error);
+        // Error handling will be improved in a later step
+      }
+    },
+    [task.id, metadata.parentId, updateTask]
+  );
+
+  // Section save handlers
+  const createSectionSaveHandler = useCallback(
+    (sectionName: keyof TaskSections) => async (newContent: string) => {
+      const updates: Record<string, string> = {};
+
+      if (sectionName === 'log') {
+        // For log sections, append as new entry
+        updates.add_log_entry = newContent;
+      } else {
+        // For other sections, update directly
+        updates[sectionName] = newContent;
+      }
+
+      await updateTask.mutateAsync({
+        id: task.id,
+        parent_id: metadata.parentId,
+        updates,
+      });
+
+      // Update local state optimistically
+      setSections((prev) => ({
+        ...prev,
+        [sectionName]: newContent,
+      }));
+    },
+    [task.id, metadata.parentId, updateTask]
+  );
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card border-b">
         <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex items-center gap-3">
               <TaskTypeIcon type={metadata.type || 'feature'} />
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-foreground">{metadata.title}</h1>
-                <div className="flex items-center flex-wrap gap-2 mt-2">
-                  <StatusBadge status={metadata.status || 'To Do'} />
-                  <PriorityIndicator priority={metadata.priority || 'Medium'} />
-                  <WorkflowStateBadge workflow={metadata.location || 'backlog'} />
-                  {metadata.area && (
-                    <>
-                      <span className="text-muted-foreground">•</span>
-                      <span className="text-sm text-muted-foreground">Area: {metadata.area}</span>
-                    </>
-                  )}
-                  {metadata.assigned_to && (
-                    <>
-                      <span className="text-muted-foreground">•</span>
-                      <span className="text-sm text-muted-foreground">@{metadata.assigned_to}</span>
-                    </>
-                  )}
-                </div>
-                {metadata.tags && metadata.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {metadata.tags.map((tag) => (
-                      <span key={tag} className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <h1 className="text-2xl font-bold text-foreground">{metadata.title}</h1>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
               <Button
@@ -103,6 +137,30 @@ export function SimpleTaskView({
               <ClaudeAgentButton />
             </div>
           </div>
+          <MetadataEditor
+            taskId={task.id}
+            metadata={{
+              status: (metadata.status || 'todo') as 'todo' | 'in_progress' | 'done' | 'blocked',
+              priority: (metadata.priority || 'medium') as 'highest' | 'high' | 'medium' | 'low',
+              type: (metadata.type || 'feature') as
+                | 'feature'
+                | 'bug'
+                | 'chore'
+                | 'documentation'
+                | 'test'
+                | 'spike'
+                | 'idea',
+              area: metadata.area || 'general',
+              workflowState: (metadata.location || metadata.workflowState || 'backlog') as
+                | 'backlog'
+                | 'current'
+                | 'archive',
+              assignee: metadata.assigned_to,
+              tags: metadata.tags || [],
+            }}
+            onUpdate={handleMetadataUpdate}
+            layout="horizontal"
+          />
         </div>
       </div>
 
@@ -111,54 +169,17 @@ export function SimpleTaskView({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Task Content (2/3) */}
           <div className="lg:col-span-2">
-            {isEditing ? (
-              /* Edit Mode */
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-foreground">Edit Task</h2>
-                  <div className="flex items-center gap-2">
-                    <Button onClick={onCancel} variant="ghost" size="sm">
-                      Cancel
-                    </Button>
-                    <Button onClick={onSave} variant="atlas" size="sm" disabled={isUpdating}>
-                      {isUpdating ? 'Saving...' : 'Save'}
-                    </Button>
-                  </div>
-                </div>
-                <div className="border rounded-lg">
-                  <textarea
-                    value={content}
-                    onChange={(e) => onContentChange(e.target.value)}
-                    className="w-full h-96 bg-background text-foreground p-4 font-mono text-sm resize-none focus:outline-none rounded-lg"
-                    placeholder="Enter task content using Markdown..."
-                  />
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Supports Markdown formatting. Use ## for section headers.
-                </div>
-              </div>
-            ) : (
-              /* View Mode */
-              <div className="group relative">
-                <Button
-                  onClick={onEdit}
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                >
-                  Edit
-                </Button>
-                <button
-                  type="button"
-                  className="prose prose-sm dark:prose-invert max-w-none cursor-text text-left w-full"
-                  onClick={onEdit}
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                    {content || '*No content yet. Click Edit to add details.*'}
-                  </ReactMarkdown>
-                </button>
-              </div>
-            )}
+            <div className="space-y-6">
+              {/* Dynamic Section Editors */}
+              {getSectionsByOrder().map((sectionKey) => (
+                <SectionEditor
+                  key={sectionKey}
+                  section={sectionKey}
+                  content={sections[sectionKey]}
+                  onSave={createSectionSaveHandler(sectionKey)}
+                />
+              ))}
+            </div>
           </div>
 
           {/* Sidebar (1/3) */}
