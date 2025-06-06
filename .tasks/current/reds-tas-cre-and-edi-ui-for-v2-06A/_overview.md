@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: in_progress
+status: done
 area: ui
 priority: high
 tags:
