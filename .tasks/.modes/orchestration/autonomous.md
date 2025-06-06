@@ -7,9 +7,14 @@ allowedTools:
   - Read
   - Edit
   - MultiEdit
+  - Write
   - Grep
   - Glob
   - Bash
+  - WebSearch
+  - WebFetch
+  - TodoRead
+  - TodoWrite
   - mcp__scopecraft__task_list
   - mcp__scopecraft__task_get
   - mcp__scopecraft__task_create
@@ -21,6 +26,14 @@ allowedTools:
   - mcp__scopecraft__parent_create
   - mcp__scopecraft__parent_operations
   - mcp__scopecraft__task_transform
+  - mcp__context7__resolve-library-id
+  - mcp__context7__get-library-docs
+  - mcp__playwright__browser_navigate
+  - mcp__playwright__browser_take_screenshot
+  - mcp__playwright__browser_snapshot
+  - mcp__playwright__browser_click
+  - mcp__playwright__browser_type
+  - mcp__playwright__browser_close
 ---
 
 # Autonomous Task Router
