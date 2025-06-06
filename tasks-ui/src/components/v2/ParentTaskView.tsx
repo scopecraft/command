@@ -1,16 +1,20 @@
-import { useDeleteTask } from '@/lib/api/hooks';
+import { useDeleteTask, useUpdateTask } from '@/lib/api/hooks';
+import {
+  type TaskSectionKey,
+  type TaskSections,
+  getSectionKeys,
+  getSectionsByOrder,
+} from '@/lib/task-sections';
 import type { ParentTask, SubTask } from '@/lib/types';
 import { useNavigate } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
-import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DocumentsIcon, SubtasksIcon } from '../../lib/icons';
 import { getTaskUrl } from '../../lib/task-routing';
 import { Button } from '../ui/button';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 import { ClaudeAgentButton } from './ClaudeAgentButton';
+import { SectionEditor } from './SectionEditor';
 import { SubtaskList } from './SubtaskList';
 import { TaskTypeIcon } from './TaskTypeIcon';
 import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
@@ -20,11 +24,12 @@ interface ParentTaskViewProps {
   subtasks: SubTask[];
   documents?: string[];
   content: string;
-  isEditing: boolean;
-  onEdit: () => void;
-  onCancel: () => void;
-  onSave: () => void;
-  onContentChange: (content: string) => void;
+  // Legacy props for backward compatibility - no longer used
+  isEditing?: boolean;
+  onEdit?: () => void;
+  onCancel?: () => void;
+  onSave?: () => void;
+  onContentChange?: (content: string) => void;
   isUpdating?: boolean;
 }
 
@@ -33,18 +38,28 @@ export function ParentTaskView({
   subtasks,
   documents = [],
   content,
-  isEditing,
-  onEdit,
-  onCancel,
-  onSave,
-  onContentChange,
-  isUpdating = false,
+  // Legacy props ignored - section-based editing doesn't use global edit mode
 }: ParentTaskViewProps) {
   const navigate = useNavigate();
   const metadata = task.metadata || task;
   const deleteTask = useDeleteTask();
+  const updateTask = useUpdateTask();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [cascadeDelete, setCascadeDelete] = useState(false);
+  const [sections, setSections] = useState<TaskSections>(
+    Object.fromEntries(getSectionKeys().map((key) => [key, ''])) as TaskSections
+  );
+
+  // Use MCP-provided sections directly (no need to parse)
+  useEffect(() => {
+    if (task.sections) {
+      // Use sections from MCP API
+      setSections(task.sections as TaskSections);
+    } else {
+      // Fallback: empty sections if no sections provided
+      setSections(Object.fromEntries(getSectionKeys().map((key) => [key, ''])) as TaskSections);
+    }
+  }, [task.sections]);
 
   const handleDelete = async () => {
     try {
@@ -56,6 +71,34 @@ export function ParentTaskView({
       // Error handling will be improved in a later step
     }
   };
+
+  // Section save handlers
+  const createSectionSaveHandler = useCallback(
+    (sectionName: keyof TaskSections) => async (newContent: string) => {
+      const updates: Record<string, string> = {};
+
+      if (sectionName === 'log') {
+        // For log sections, append as new entry
+        updates.add_log_entry = newContent;
+      } else {
+        // For other sections, update directly
+        updates[sectionName] = newContent;
+      }
+
+      await updateTask.mutateAsync({
+        id: task.id,
+        parent_id: metadata.parentId,
+        updates,
+      });
+
+      // Update local state optimistically
+      setSections((prev) => ({
+        ...prev,
+        [sectionName]: newContent,
+      }));
+    },
+    [task.id, metadata.parentId, updateTask]
+  );
 
   // Ensure subtasks have parent context for proper URL generation
   const subtasksWithParent = subtasks.map((subtask) => ({
@@ -113,54 +156,17 @@ export function ParentTaskView({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Overview - Main Content (2/3) */}
           <div className="lg:col-span-2">
-            {isEditing ? (
-              /* Edit Mode */
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-foreground">Edit Overview</h2>
-                  <div className="flex items-center gap-2">
-                    <Button onClick={onCancel} variant="ghost" size="sm">
-                      Cancel
-                    </Button>
-                    <Button onClick={onSave} variant="atlas" size="sm" disabled={isUpdating}>
-                      {isUpdating ? 'Saving...' : 'Save'}
-                    </Button>
-                  </div>
-                </div>
-                <div className="border rounded-lg">
-                  <textarea
-                    value={content}
-                    onChange={(e) => onContentChange(e.target.value)}
-                    className="w-full h-96 bg-background text-foreground p-4 font-mono text-sm resize-none focus:outline-none rounded-lg"
-                    placeholder="Enter overview content using Markdown..."
-                  />
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Supports Markdown formatting (headers, lists, links, etc.)
-                </div>
-              </div>
-            ) : (
-              /* View Mode */
-              <div className="group relative">
-                <Button
-                  onClick={onEdit}
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                >
-                  Edit
-                </Button>
-                <button
-                  type="button"
-                  className="prose prose-sm dark:prose-invert max-w-none cursor-text text-left w-full"
-                  onClick={onEdit}
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                    {content || '*No overview yet. Click Edit to add details.*'}
-                  </ReactMarkdown>
-                </button>
-              </div>
-            )}
+            <div className="space-y-6">
+              {/* Dynamic Section Editors */}
+              {getSectionsByOrder().map((sectionKey) => (
+                <SectionEditor
+                  key={sectionKey}
+                  section={sectionKey}
+                  content={sections[sectionKey]}
+                  onSave={createSectionSaveHandler(sectionKey)}
+                />
+              ))}
+            </div>
           </div>
 
           {/* Right Sidebar (1/3) */}

@@ -1,133 +1,133 @@
-"use client"
+'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from "react"
-import ReactMarkdown from "react-markdown"
-import { cn } from "@/lib/utils"
+import { type TaskSectionKey, getSectionTitle } from '@/lib/task-sections';
+import { cn } from '@/lib/utils';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 interface SectionEditorProps {
-  section: 'instruction' | 'tasks' | 'deliverable' | 'log'
-  content: string
-  onSave: (newContent: string) => Promise<void>
-  readOnly?: boolean
+  section: TaskSectionKey;
+  content: string;
+  onSave: (newContent: string) => Promise<void>;
+  readOnly?: boolean;
 }
 
 export function SectionEditor({ section, content, onSave, readOnly = false }: SectionEditorProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [localContent, setLocalContent] = useState(content)
-  const [isHovering, setIsHovering] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
+  const [isEditing, setIsEditing] = useState(false);
+  const [localContent, setLocalContent] = useState(content);
+  const [isHovering, setIsHovering] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Update local content when prop changes
   useEffect(() => {
-    setLocalContent(content)
-  }, [content])
+    setLocalContent(content);
+  }, [content]);
 
   const handleEdit = useCallback(() => {
     if (!readOnly && !isSaving) {
-      setIsEditing(true)
+      setIsEditing(true);
     }
-  }, [readOnly, isSaving])
+  }, [readOnly, isSaving]);
 
   const handleSave = useCallback(async () => {
-    if (isSaving) return
+    if (isSaving) return;
 
-    setIsSaving(true)
+    setIsSaving(true);
     try {
-      await onSave(localContent)
-      setIsEditing(false)
+      await onSave(localContent);
+      setIsEditing(false);
     } catch (error) {
-      console.error("Save failed:", error)
+      console.error('Save failed:', error);
       // Revert to original content on error
-      setLocalContent(content)
+      setLocalContent(content);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }, [localContent, content, isSaving, onSave])
+  }, [localContent, content, isSaving, onSave]);
 
   const handleCancel = useCallback(() => {
-    setLocalContent(content)
-    setIsEditing(false)
-  }, [content])
+    setLocalContent(content);
+    setIsEditing(false);
+  }, [content]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && e.shiftKey) {
-        e.preventDefault()
-        handleSave()
-      } else if (e.key === "Escape") {
-        e.preventDefault()
-        handleCancel()
+      if (e.key === 'Enter' && e.shiftKey) {
+        e.preventDefault();
+        handleSave();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
       }
     },
     [handleSave, handleCancel]
-  )
+  );
 
   // Global keyboard shortcut for edit mode
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (isHovering && !isEditing && !readOnly && e.key.toLowerCase() === "e") {
-        e.preventDefault()
-        handleEdit()
+      if (isHovering && !isEditing && !readOnly && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        handleEdit();
       }
-    }
+    };
 
-    document.addEventListener("keydown", handleGlobalKeyDown)
-    return () => document.removeEventListener("keydown", handleGlobalKeyDown)
-  }, [isHovering, isEditing, readOnly, handleEdit])
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isHovering, isEditing, readOnly, handleEdit]);
 
   // Auto-focus textarea when entering edit mode
   useEffect(() => {
     if (isEditing && textareaRef.current) {
-      textareaRef.current.focus()
+      textareaRef.current.focus();
       // Move cursor to end
       textareaRef.current.setSelectionRange(
         textareaRef.current.value.length,
         textareaRef.current.value.length
-      )
+      );
     }
-  }, [isEditing])
+  }, [isEditing]);
 
   // Adjust textarea height based on content
   const adjustTextareaHeight = useCallback(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (isEditing) {
-      adjustTextareaHeight()
+      adjustTextareaHeight();
     }
-  }, [isEditing, localContent, adjustTextareaHeight])
+  }, [isEditing, localContent, adjustTextareaHeight]);
 
-  const sectionTitles = {
-    instruction: "Instruction",
-    tasks: "Tasks",
-    deliverable: "Deliverable",
-    log: "Log"
-  }
+  // Get section title from centralized config
+  const sectionTitle = getSectionTitle(section);
 
   return (
     <div
       ref={cardRef}
       className={cn(
-        "relative rounded-lg border transition-all duration-200",
-        "[background-color:hsl(var(--background))] border-border",
-        isHovering && !readOnly && "border-[var(--atlas-light)] transform -translate-y-0.5",
-        isEditing && "border-[var(--atlas-light)]"
+        'relative rounded-lg border transition-all duration-200',
+        '[background-color:hsl(var(--background))] border-border',
+        isHovering && !readOnly && 'border-[var(--atlas-light)] transform -translate-y-0.5',
+        isEditing && 'border-[var(--atlas-light)]'
       )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
       {/* Section Header */}
-      <div className={cn(
-        "flex items-center justify-between px-4 py-2 border-b border-border",
-        "font-mono text-sm uppercase text-muted-foreground"
-      )}>
-        <span>## {sectionTitles[section]}</span>
+      <div
+        className={cn(
+          'flex items-center justify-between px-4 py-2 border-b border-border',
+          'font-mono text-sm uppercase text-muted-foreground'
+        )}
+      >
+        <span>## {sectionTitle}</span>
         {!readOnly && !isEditing && isHovering && (
           <span className="text-[var(--atlas-light)] text-xs">[E]</span>
         )}
@@ -141,14 +141,14 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
               ref={textareaRef}
               value={localContent}
               onChange={(e) => {
-                setLocalContent(e.target.value)
-                adjustTextareaHeight()
+                setLocalContent(e.target.value);
+                adjustTextareaHeight();
               }}
               onKeyDown={handleKeyDown}
               className={cn(
-                "w-full resize-none outline-none",
-                "bg-transparent text-foreground font-mono text-sm",
-                "placeholder-muted-foreground"
+                'w-full resize-none outline-none',
+                'bg-transparent text-foreground font-mono text-sm',
+                'placeholder-muted-foreground'
               )}
               placeholder={`Enter ${section} content...`}
             />
@@ -158,11 +158,11 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
                   onClick={handleSave}
                   disabled={isSaving}
                   className={cn(
-                    "px-3 py-1 rounded text-xs font-mono uppercase",
-                    "bg-[var(--atlas-navy)] text-[var(--cream)] shadow-xs",
-                    "hover:bg-[var(--atlas-navy)]/90 hover:translate-y-[-1px] transition-all",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    "flex items-center gap-2"
+                    'px-3 py-1 rounded text-xs font-mono uppercase',
+                    'bg-[var(--atlas-navy)] text-[var(--cream)] shadow-xs',
+                    'hover:bg-[var(--atlas-navy)]/90 hover:translate-y-[-1px] transition-all',
+                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                    'flex items-center gap-2'
                   )}
                 >
                   {isSaving ? (
@@ -171,35 +171,33 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
                       Saving...
                     </>
                   ) : (
-                    "✓ Save"
+                    '✓ Save'
                   )}
                 </button>
                 <button
                   onClick={handleCancel}
                   disabled={isSaving}
                   className={cn(
-                    "px-3 py-1 rounded text-xs font-mono uppercase",
-                    "bg-transparent text-muted-foreground",
-                    "hover:text-foreground hover:bg-muted/20 transition-colors",
-                    "disabled:opacity-50 disabled:cursor-not-allowed"
+                    'px-3 py-1 rounded text-xs font-mono uppercase',
+                    'bg-transparent text-muted-foreground',
+                    'hover:text-foreground hover:bg-muted/20 transition-colors',
+                    'disabled:opacity-50 disabled:cursor-not-allowed'
                   )}
                 >
                   ✕ Cancel
                 </button>
               </div>
-              <span className="text-xs font-mono text-muted-foreground">
-                Shift+Enter
-              </span>
+              <span className="text-xs font-mono text-muted-foreground">Shift+Enter</span>
             </div>
           </div>
         ) : (
           <div
             className={cn(
-              "prose prose-invert max-w-none",
-              "prose-headings:font-mono prose-headings:uppercase",
-              "prose-code:text-[var(--atlas-light)]",
-              "prose-a:text-[var(--connection-teal)]",
-              !localContent && "text-muted-foreground italic"
+              'prose prose-invert max-w-none',
+              'prose-headings:font-mono prose-headings:uppercase',
+              'prose-code:text-[var(--atlas-light)]',
+              'prose-a:text-[var(--connection-teal)]',
+              !localContent && 'text-muted-foreground italic'
             )}
             onClick={handleEdit}
           >
@@ -212,5 +210,5 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
         )}
       </div>
     </div>
-  )
+  );
 }
