@@ -313,6 +313,7 @@ I'll create:
 3. Synthesis gate task
    - tags: ["team:architect", "execution:interactive", "review-gate"]
 4. Mark future phases as "To be created after synthesis"
+5. **ASCII orchestration diagram in parent task's Deliverable section** (required!)
 
 ## For Pattern C (Exploratory - Existing Parent)
 If orchestration exists, I'll:
@@ -323,6 +324,7 @@ If orchestration exists, I'll:
 
 ## For Pattern D (Complex Initiative)
 I'll create a parent task with multi-phase orchestration, creating only Phase 1 tasks initially.
+The parent task MUST include an ASCII orchestration diagram in its Deliverable section.
 </task_generation_approach>
 
 <dynamic_task_creation>
@@ -363,11 +365,37 @@ Tasks will be defined based on synthesis outcomes
 Implementation approach depends on design decisions
 ```
 
-Include ASCII orchestration diagram in deliverable section showing:
+**IMPORTANT: Create ASCII Orchestration Diagram**
+You MUST include an ASCII orchestration diagram in the parent task's Deliverable section. This is a required deliverable for all parent tasks!
+
+The diagram should visualize:
 - Parallel vs sequential flows
-- Decision gates
+- Decision gates between phases
 - Dynamic task creation points
 - Agent assignments
+
+Example ASCII diagram:
+```
+Phase 1: Research (Parallel)
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│ 01_research-ui  │  │ 01_analyze-code │  │ 01_explore-libs │
+│ @research-agent │  │ @research-agent │  │ @research-agent │
+└────────┬────────┘  └────────┬────────┘  └────────┬────────┘
+         └───────────────────┴───────────────────┘
+                             │
+                    ┌────────▼────────┐
+                    │ Gate: Synthesis │
+                    │ Review findings │
+                    └────────┬────────┘
+                             │
+Phase 2: Design              ▼
+┌─────────────────────────────────────┐
+│ To be created after synthesis gate │
+│ (Design tasks based on approach)   │
+└─────────────────────────────────────┘
+```
+
+This diagram is as important as the task list itself - it helps visualize the work flow!
 </parent_task_orchestration>
 
 <gate_tasks>
