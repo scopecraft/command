@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { SectionEditor } from './SectionEditor'
+import type { Meta, StoryObj } from '@storybook/react';
+import { SectionEditor } from './SectionEditor';
 
 const meta = {
   title: 'V2/SectionEditor',
@@ -23,17 +23,17 @@ const meta = {
       control: 'boolean',
     },
   },
-} satisfies Meta<typeof SectionEditor>
+} satisfies Meta<typeof SectionEditor>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 // Mock save handler with artificial delay
 const mockSave = async (content: string) => {
-  console.log('Saving content:', content)
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  console.log('Content saved\!')
-}
+  console.log('Saving content:', content);
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  console.log('Content saved!');
+};
 
 // 1. Default - View mode with content
 export const Default: Story = {
@@ -47,7 +47,7 @@ export const Default: Story = {
 - Add remember me functionality`,
     onSave: mockSave,
   },
-}
+};
 
 // 2. Hover State - Show edit affordance
 export const HoverState: Story = {
@@ -59,13 +59,13 @@ export const HoverState: Story = {
   },
   play: async ({ canvasElement }) => {
     // Simulate hover to show [E] hint
-    const card = canvasElement.querySelector('[class*="rounded-lg"]')
+    const card = canvasElement.querySelector('[class*="rounded-lg"]');
     if (card) {
-      const event = new MouseEvent('mouseenter', { bubbles: true })
-      card.dispatchEvent(event)
+      const event = new MouseEvent('mouseenter', { bubbles: true });
+      card.dispatchEvent(event);
     }
   },
-}
+};
 
 // 3. Edit Mode - Active editing
 export const EditMode: Story = {
@@ -74,13 +74,13 @@ export const EditMode: Story = {
   },
   play: async ({ canvasElement }) => {
     // Simulate clicking to enter edit mode
-    const content = canvasElement.querySelector('.prose')
+    const content = canvasElement.querySelector('.prose');
     if (content) {
-      const event = new MouseEvent('click', { bubbles: true })
-      content.dispatchEvent(event)
+      const event = new MouseEvent('click', { bubbles: true });
+      content.dispatchEvent(event);
     }
   },
-}
+};
 
 // 4. Saving State - Loading during save
 export const SavingState: Story = {
@@ -92,25 +92,25 @@ export const SavingState: Story = {
 - [ ] Create logout functionality`,
     onSave: async (content: string) => {
       // Longer delay to show saving state
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     },
   },
   play: async ({ canvasElement }) => {
     // Enter edit mode and trigger save
-    const content = canvasElement.querySelector('.prose')
+    const content = canvasElement.querySelector('.prose');
     if (content) {
-      content.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-      
+      content.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
       // Wait for edit mode, then trigger save
       setTimeout(() => {
-        const saveButton = canvasElement.querySelector('button:first-of-type')
+        const saveButton = canvasElement.querySelector('button:first-of-type');
         if (saveButton) {
-          saveButton.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+          saveButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         }
-      }, 500)
+      }, 500);
     }
   },
-}
+};
 
 // 5. Read Only - No edit capability
 export const ReadOnly: Story = {
@@ -128,7 +128,7 @@ The authentication system has been successfully implemented with all required fe
     onSave: mockSave,
     readOnly: true,
   },
-}
+};
 
 // 6. All Sections - Show each section type
 export const InstructionSection: Story = {
@@ -142,7 +142,7 @@ Cover all edge cases including:
 - Concurrent sessions`,
     onSave: mockSave,
   },
-}
+};
 
 export const TasksSection: Story = {
   args: {
@@ -154,7 +154,7 @@ export const TasksSection: Story = {
 - [ ] Check concurrent session handling`,
     onSave: mockSave,
   },
-}
+};
 
 export const DeliverableSection: Story = {
   args: {
@@ -168,7 +168,7 @@ export const DeliverableSection: Story = {
 All tests passing in CI/CD pipeline.`,
     onSave: mockSave,
   },
-}
+};
 
 export const LogSection: Story = {
   args: {
@@ -179,7 +179,7 @@ export const LogSection: Story = {
 - 2025-01-05 16:00: Fixed failing tests related to token expiration`,
     onSave: mockSave,
   },
-}
+};
 
 // Additional stories for edge cases
 export const EmptyContent: Story = {
@@ -188,7 +188,7 @@ export const EmptyContent: Story = {
     content: '',
     onSave: mockSave,
   },
-}
+};
 
 export const LongContent: Story = {
   args: {
@@ -247,7 +247,7 @@ Maintains user data and preferences:
 - Lazy loading of user permissions`,
     onSave: mockSave,
   },
-}
+};
 
 // Story with markdown formatting
 export const MarkdownFormatting: Story = {
@@ -276,4 +276,4 @@ interface Task {
 > **Note**: Use proper error handling and validation`,
     onSave: mockSave,
   },
-}
+};

@@ -1,5 +1,5 @@
-import React from 'react';
 import { getStatusValues } from '@core/metadata/schema-service';
+import React from 'react';
 import { getStatusLucideIcon } from '../../../lib/schema-client';
 import type { TaskStatus } from '../../../lib/types';
 import { Select } from '../../ui/select';
@@ -13,7 +13,7 @@ const getStatusOptions = () => {
     return {
       value: status.name as TaskStatus,
       label: status.label,
-      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined
+      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined,
     };
   });
 };
@@ -29,17 +29,17 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
   value: initialValue,
   onChange,
   disabled = false,
-  className
+  className,
 }) => {
   const { value, isUpdating, update } = useOptimisticUpdate(initialValue);
   const statusOptions = React.useMemo(() => getStatusOptions(), []);
-  
+
   const handleSelect = async (newValue: string) => {
     if (newValue !== value) {
       await update(newValue, onChange);
     }
   };
-  
+
   return (
     <Select
       value={value}

@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { AlertCircle, Archive, CheckCircle, Circle, Clock } from 'lucide-react';
 import { useState } from 'react';
-import { FilterPanel, FilterCategory, FilterCategoryGroup } from './filter-panel';
+import { FilterCategory, FilterCategoryGroup, FilterPanel } from './filter-panel';
 import type { FilterOption } from './filter-panel';
-import { CheckCircle, Circle, Clock, AlertCircle, Archive } from 'lucide-react';
 
 const meta = {
   title: 'UI/FilterPanel',
@@ -48,26 +48,20 @@ function FilterPanelWrapper() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>(['feature', 'bug']);
 
   const toggleStatus = (status: string) => {
-    setSelectedStatuses(prev =>
-      prev.includes(status)
-        ? prev.filter(s => s !== status)
-        : [...prev, status]
+    setSelectedStatuses((prev) =>
+      prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
     );
   };
 
   const togglePriority = (priority: string) => {
-    setSelectedPriorities(prev =>
-      prev.includes(priority)
-        ? prev.filter(p => p !== priority)
-        : [...prev, priority]
+    setSelectedPriorities((prev) =>
+      prev.includes(priority) ? prev.filter((p) => p !== priority) : [...prev, priority]
     );
   };
 
   const toggleType = (type: string) => {
-    setSelectedTypes(prev =>
-      prev.includes(type)
-        ? prev.filter(t => t !== type)
-        : [...prev, type]
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   };
 
@@ -77,7 +71,8 @@ function FilterPanelWrapper() {
     setSelectedTypes([]);
   };
 
-  const activeFilterCount = selectedStatuses.length + selectedPriorities.length + selectedTypes.length;
+  const activeFilterCount =
+    selectedStatuses.length + selectedPriorities.length + selectedTypes.length;
 
   return (
     <div className="p-4">
@@ -232,9 +227,7 @@ export const EmptyState: Story = {
     onFilterToggle: () => {},
     onClearFilters: () => {},
     children: (
-      <div className="text-center py-4 text-muted-foreground text-sm">
-        No filters available
-      </div>
+      <div className="text-center py-4 text-muted-foreground text-sm">No filters available</div>
     ),
   },
 };

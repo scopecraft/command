@@ -1,10 +1,10 @@
-import type React from 'react';
 import { User } from 'lucide-react';
+import type React from 'react';
 import { cn } from '../../../lib/utils';
-import { TextInput } from './TextInput';
 import { PriorityDropdown } from './PriorityDropdown';
 import { StatusDropdown } from './StatusDropdown';
 import { TagInput } from './TagInput';
+import { TextInput } from './TextInput';
 import { TypeDropdown } from './TypeDropdown';
 import { WorkflowStateDropdown } from './WorkflowStateDropdown';
 
@@ -41,7 +41,7 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({
 
   if (layout === 'horizontal') {
     return (
-      <div className={cn("w-fit", className)}>
+      <div className={cn('w-fit', className)}>
         {/* 3-column grid with fixed spacing */}
         <div className="grid grid-cols-[auto_160px_auto_120px_auto_140px] gap-x-4 gap-y-2 items-center">
           {/* Row 1 */}
@@ -51,7 +51,7 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({
             onChange={handleFieldUpdate('status')}
             disabled={disabled}
           />
-          
+
           <label className="text-xs text-muted-foreground">Priority</label>
           <PriorityDropdown
             value={metadata.priority}
@@ -75,13 +75,13 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({
           />
 
           <label className="text-xs text-muted-foreground">Area</label>
-          <TextInput 
-            value={metadata.area} 
-            onChange={handleFieldUpdate('area')} 
+          <TextInput
+            value={metadata.area}
+            onChange={handleFieldUpdate('area')}
             disabled={disabled}
             placeholder="Set area"
           />
-          
+
           <label className="text-xs text-muted-foreground">Assignee</label>
           <TextInput
             value={metadata.assignee}
@@ -108,7 +108,7 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({
 
   // Vertical layout
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
+    <div className={cn('flex flex-col gap-3', className)}>
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">Status</label>
         <StatusDropdown
@@ -147,9 +147,9 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({
 
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">Area</label>
-        <TextInput 
-          value={metadata.area} 
-          onChange={handleFieldUpdate('area')} 
+        <TextInput
+          value={metadata.area}
+          onChange={handleFieldUpdate('area')}
           disabled={disabled}
           placeholder="Set area"
         />
@@ -168,11 +168,7 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({
 
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">Tags</label>
-        <TagInput
-          value={metadata.tags}
-          onChange={handleFieldUpdate('tags')}
-          disabled={disabled}
-        />
+        <TagInput value={metadata.tags} onChange={handleFieldUpdate('tags')} disabled={disabled} />
       </div>
     </div>
   );

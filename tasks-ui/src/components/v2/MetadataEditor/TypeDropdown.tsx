@@ -1,5 +1,5 @@
-import React from 'react';
 import { getTypeValues } from '@core/metadata/schema-service';
+import React from 'react';
 import { getTypeLucideIcon } from '../../../lib/schema-client';
 import { Select } from '../../ui/select';
 import { useOptimisticUpdate } from './useOptimisticUpdate';
@@ -19,7 +19,7 @@ const getTypeOptions = () => {
     return {
       value: type.name,
       label: type.label,
-      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined
+      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined,
     };
   });
 };
@@ -28,7 +28,7 @@ export const TypeDropdown: React.FC<TypeDropdownProps> = ({
   value,
   onChange,
   disabled = false,
-  className
+  className,
 }) => {
   const { value: currentValue, isUpdating, update } = useOptimisticUpdate(value);
   const typeOptions = React.useMemo(() => getTypeOptions(), []);
@@ -46,7 +46,7 @@ export const TypeDropdown: React.FC<TypeDropdownProps> = ({
       onChange={handleSelect}
       disabled={disabled}
       isLoading={isUpdating}
-      className={className || "w-auto min-w-[100px] h-6 text-xs"}
+      className={className || 'w-auto min-w-[100px] h-6 text-xs'}
     />
   );
 };

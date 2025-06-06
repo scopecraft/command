@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../../lib/utils';
 import { useOptimisticUpdate } from './useOptimisticUpdate';
 
@@ -13,7 +14,7 @@ export const AreaInput: React.FC<AreaInputProps> = ({
   value,
   onChange,
   disabled = false,
-  className
+  className,
 }) => {
   const { value: currentValue, isUpdating, update } = useOptimisticUpdate(value);
   const [isEditing, setIsEditing] = useState(false);
@@ -67,8 +68,8 @@ export const AreaInput: React.FC<AreaInputProps> = ({
         onKeyDown={handleKeyDown}
         disabled={isUpdating}
         className={cn(
-          "text-xs bg-muted/20 border border-ring rounded px-2 py-1 min-w-[80px] outline-none",
-          "focus:ring-1 focus:ring-ring",
+          'text-xs bg-muted/20 border border-ring rounded px-2 py-1 min-w-[80px] outline-none',
+          'focus:ring-1 focus:ring-ring',
           className
         )}
         placeholder="Area"
@@ -82,11 +83,11 @@ export const AreaInput: React.FC<AreaInputProps> = ({
       onClick={handleEdit}
       disabled={disabled}
       className={cn(
-        "text-xs text-left bg-muted/20 hover:bg-muted/30 rounded px-2 py-1 min-w-[80px]",
-        "border border-border hover:border-muted-foreground/50",
-        "transition-colors duration-150 min-h-[28px] flex items-center",
-        "focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring",
-        disabled && "opacity-50 cursor-not-allowed",
+        'text-xs text-left bg-muted/20 hover:bg-muted/30 rounded px-2 py-1 min-w-[80px]',
+        'border border-border hover:border-muted-foreground/50',
+        'transition-colors duration-150 min-h-[28px] flex items-center',
+        'focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring',
+        disabled && 'opacity-50 cursor-not-allowed',
         className
       )}
     >

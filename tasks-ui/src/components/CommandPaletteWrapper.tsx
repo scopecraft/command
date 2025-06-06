@@ -1,5 +1,5 @@
-import { CommandPalette } from './ui/command-palette';
 import { useCommandPalette } from '../context/CommandPaletteProvider';
+import { CommandPalette } from './ui/command-palette';
 
 export function CommandPaletteWrapper() {
   const { isOpen, closeCommandPalette, createTask, isCreating, error } = useCommandPalette();

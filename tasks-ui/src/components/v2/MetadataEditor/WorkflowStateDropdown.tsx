@@ -1,5 +1,5 @@
-import React from 'react';
 import { getWorkflowStateValues } from '@core/metadata/schema-service';
+import React from 'react';
 import { getWorkflowStateLucideIcon } from '../../../lib/schema-client';
 import { Select } from '../../ui/select';
 import { useOptimisticUpdate } from './useOptimisticUpdate';
@@ -19,7 +19,7 @@ const getWorkflowStateOptions = () => {
     return {
       value: state.name,
       label: state.label,
-      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined
+      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined,
     };
   });
 };
@@ -28,7 +28,7 @@ export const WorkflowStateDropdown: React.FC<WorkflowStateDropdownProps> = ({
   value,
   onChange,
   disabled = false,
-  className
+  className,
 }) => {
   const { value: currentValue, isUpdating, update } = useOptimisticUpdate(value);
   const workflowStateOptions = React.useMemo(() => getWorkflowStateOptions(), []);
@@ -46,7 +46,7 @@ export const WorkflowStateDropdown: React.FC<WorkflowStateDropdownProps> = ({
       onChange={handleSelect}
       disabled={disabled}
       isLoading={isUpdating}
-      className={className || "w-auto min-w-[100px] h-6 text-xs"}
+      className={className || 'w-auto min-w-[100px] h-6 text-xs'}
     />
   );
 };

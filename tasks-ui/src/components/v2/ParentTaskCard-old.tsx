@@ -1,9 +1,9 @@
 import React from 'react';
-import { TaskTypeIcon } from './TaskTypeIcon';
-import { WorkflowStateBadge, StatusBadge, PriorityIndicator } from './WorkflowStateBadge';
-import { Button } from '../ui/button';
-import { cn } from '../../lib/utils';
 import type { ParentTask } from '../../lib/types';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
+import { TaskTypeIcon } from './TaskTypeIcon';
+import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 interface ParentTaskCardProps {
   parentTask: ParentTask;
@@ -36,11 +36,12 @@ export function ParentTaskCard({
     updated_date,
   } = parentTask;
 
-  const progressPercentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+  const progressPercentage =
+    progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
   if (variant === 'compact') {
     return (
-      <div 
+      <div
         className={cn(
           'border rounded-lg p-3 bg-card hover:bg-accent/50 transition-colors cursor-pointer',
           className
@@ -67,11 +68,14 @@ export function ParentTaskCard({
             <PriorityIndicator priority={priority} size="sm" />
           </div>
         </div>
-        
+
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+              <span
+                key={tag}
+                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+              >
                 #{tag}
               </span>
             ))}
@@ -86,7 +90,7 @@ export function ParentTaskCard({
 
   if (variant === 'detailed') {
     return (
-      <div 
+      <div
         className={`
           border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow
           ${onClick ? 'cursor-pointer' : ''}
@@ -114,7 +118,10 @@ export function ParentTaskCard({
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (
-                <span key={tag} className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                <span
+                  key={tag}
+                  className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                >
                   #{tag}
                 </span>
               ))}
@@ -132,7 +139,7 @@ export function ParentTaskCard({
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
+              <div
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${progressPercentage}%` }}
               />
@@ -175,7 +182,7 @@ export function ParentTaskCard({
 
   // Default variant
   return (
-    <div 
+    <div
       className={`
         border rounded-lg p-4 bg-white hover:shadow-md transition-shadow
         ${onClick ? 'cursor-pointer' : ''}
@@ -208,7 +215,7 @@ export function ParentTaskCard({
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1.5">
-            <div 
+            <div
               className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
             />
@@ -229,7 +236,10 @@ export function ParentTaskCard({
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {tags.slice(0, 4).map((tag) => (
-            <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+            <span
+              key={tag}
+              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+            >
               #{tag}
             </span>
           ))}

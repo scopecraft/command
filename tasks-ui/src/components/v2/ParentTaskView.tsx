@@ -152,16 +152,8 @@ export function ParentTaskView({
           <MetadataEditor
             taskId={task.id}
             metadata={{
-              status: (metadata.status || 'todo') as
-                | 'todo'
-                | 'in_progress'
-                | 'done'
-                | 'blocked',
-              priority: (metadata.priority || 'medium') as
-                | 'highest'
-                | 'high'
-                | 'medium'
-                | 'low',
+              status: (metadata.status || 'todo') as 'todo' | 'in_progress' | 'done' | 'blocked',
+              priority: (metadata.priority || 'medium') as 'highest' | 'high' | 'medium' | 'low',
               type: (metadata.type || 'feature') as
                 | 'feature'
                 | 'bug'

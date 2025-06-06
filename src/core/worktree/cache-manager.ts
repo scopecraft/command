@@ -1,4 +1,4 @@
-import { CacheItem } from './types.js';
+import type { CacheItem } from './types.js';
 
 /**
  * Simple cache manager for git operations
@@ -23,12 +23,12 @@ export class CacheManager {
    */
   get<T>(key: string): T | undefined {
     const item = this.cache.get(key);
-    
+
     // If item doesn't exist or is expired, return undefined
     if (!item || Date.now() - item.timestamp > this.defaultTtl) {
       return undefined;
     }
-    
+
     return item.data as T;
   }
 
@@ -55,7 +55,7 @@ export class CacheManager {
     if (cached !== undefined) {
       return cached;
     }
-    
+
     const value = await producer();
     this.set(key, value);
     return value;

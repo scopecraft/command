@@ -385,22 +385,22 @@ export function MessageDisplay({ message }: { message: Message }) {
         // If content has a success and data property, process it as a typical tool result
         if ('success' in resultContent.content && resultContent.content.data) {
           const data = resultContent.content.data;
-          
+
           if (data.metadata) {
             const metadata = data.metadata;
             const summary = [];
-            
+
             if (metadata.title) summary.push(`Title: ${metadata.title}`);
             if (metadata.type) summary.push(`Type: ${metadata.type}`);
             if (metadata.status) summary.push(`Status: ${metadata.status}`);
-            
+
             return summary.join('\n');
           }
-          
+
           if (data.content) {
             return `Content: ${data.content.substring(0, 100)}...`;
           }
-          
+
           return `Tool successfully returned data (see details)`;
         }
       }

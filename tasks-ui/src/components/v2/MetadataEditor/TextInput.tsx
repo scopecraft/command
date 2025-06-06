@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../../lib/utils';
 import { useOptimisticUpdate } from './useOptimisticUpdate';
 
@@ -17,7 +18,7 @@ export const TextInput: React.FC<TextInputProps> = ({
   disabled = false,
   className,
   placeholder = 'Click to edit',
-  icon
+  icon,
 }) => {
   const { value: currentValue, isUpdating, update } = useOptimisticUpdate(value);
   const [isEditing, setIsEditing] = useState(false);
@@ -71,8 +72,8 @@ export const TextInput: React.FC<TextInputProps> = ({
         onKeyDown={handleKeyDown}
         disabled={isUpdating}
         className={cn(
-          "text-xs bg-background border border-ring rounded px-2 py-1 outline-none",
-          "focus:ring-1 focus:ring-ring min-h-[28px]",
+          'text-xs bg-background border border-ring rounded px-2 py-1 outline-none',
+          'focus:ring-1 focus:ring-ring min-h-[28px]',
           className
         )}
         placeholder={placeholder}
@@ -86,12 +87,12 @@ export const TextInput: React.FC<TextInputProps> = ({
       onClick={handleEdit}
       disabled={disabled}
       className={cn(
-        "flex items-center gap-2 text-xs text-left rounded px-2 py-1 min-h-[28px]",
-        "bg-transparent border border-transparent",
-        "hover:bg-muted/30 hover:border-border",
-        "focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring",
-        "transition-all duration-150",
-        disabled && "opacity-50 cursor-not-allowed",
+        'flex items-center gap-2 text-xs text-left rounded px-2 py-1 min-h-[28px]',
+        'bg-transparent border border-transparent',
+        'hover:bg-muted/30 hover:border-border',
+        'focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring',
+        'transition-all duration-150',
+        disabled && 'opacity-50 cursor-not-allowed',
         className
       )}
     >

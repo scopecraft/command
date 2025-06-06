@@ -1,6 +1,6 @@
 /**
  * Name Abbreviation Utility
- * 
+ *
  * Intelligently abbreviates task names using multiple strategies:
  * 1. Known abbreviations (e.g., authentication → auth)
  * 2. Acronym detection (e.g., user-interface → ui)
@@ -14,95 +14,134 @@
  */
 const COMMON_ABBREVIATIONS: Record<string, string> = {
   // Technical terms
-  'authentication': 'auth',
-  'authorization': 'authz',
-  'administrator': 'admin',
-  'administration': 'admin',
-  'application': 'app',
-  'applications': 'apps',
-  'configuration': 'config',
-  'configurations': 'configs',
-  'database': 'db',
-  'databases': 'dbs',
-  'development': 'dev',
-  'documentation': 'docs',
-  'document': 'doc',
-  'documents': 'docs',
-  'environment': 'env',
-  'environments': 'envs',
-  'implementation': 'impl',
-  'implementations': 'impls',
-  'infrastructure': 'infra',
-  'integration': 'intg',
-  'integrations': 'intgs',
-  'kubernetes': 'k8s',
-  'management': 'mgmt',
-  'manager': 'mgr',
-  'performance': 'perf',
-  'production': 'prod',
-  'repository': 'repo',
-  'repositories': 'repos',
-  'security': 'sec',
-  'deployment': 'deploy',
-  'deployments': 'deploys',
-  
+  authentication: 'auth',
+  authorization: 'authz',
+  administrator: 'admin',
+  administration: 'admin',
+  application: 'app',
+  applications: 'apps',
+  configuration: 'config',
+  configurations: 'configs',
+  database: 'db',
+  databases: 'dbs',
+  development: 'dev',
+  documentation: 'docs',
+  document: 'doc',
+  documents: 'docs',
+  environment: 'env',
+  environments: 'envs',
+  implementation: 'impl',
+  implementations: 'impls',
+  infrastructure: 'infra',
+  integration: 'intg',
+  integrations: 'intgs',
+  kubernetes: 'k8s',
+  management: 'mgmt',
+  manager: 'mgr',
+  performance: 'perf',
+  production: 'prod',
+  repository: 'repo',
+  repositories: 'repos',
+  security: 'sec',
+  deployment: 'deploy',
+  deployments: 'deploys',
+
   // Common UI/UX terms
-  'interface': 'ui',
+  interface: 'ui',
   'user-interface': 'ui',
-  'experience': 'ux',
+  experience: 'ux',
   'user-experience': 'ux',
-  'component': 'comp',
-  'components': 'comps',
-  'navigation': 'nav',
-  'dashboard': 'dash',
-  'notification': 'notif',
-  'notifications': 'notifs',
-  
+  component: 'comp',
+  components: 'comps',
+  navigation: 'nav',
+  dashboard: 'dash',
+  notification: 'notif',
+  notifications: 'notifs',
+
   // API related
   'application-programming-interface': 'api',
   'representational-state-transfer': 'rest',
   'javascript-object-notation': 'json',
   'extensible-markup-language': 'xml',
-  
+
   // Common actions
-  'initialize': 'init',
-  'generate': 'gen',
-  'validate': 'val',
-  'validation': 'val',
-  'calculate': 'calc',
-  'calculation': 'calc',
-  'synchronize': 'sync',
-  'synchronization': 'sync',
-  'optimize': 'opt',
-  'optimization': 'opt',
-  
+  initialize: 'init',
+  generate: 'gen',
+  validate: 'val',
+  validation: 'val',
+  calculate: 'calc',
+  calculation: 'calc',
+  synchronize: 'sync',
+  synchronization: 'sync',
+  optimize: 'opt',
+  optimization: 'opt',
+
   // Common suffixes/patterns
-  'service': 'svc',
-  'services': 'svcs',
-  'utility': 'util',
-  'utilities': 'utils',
-  'function': 'fn',
-  'functions': 'fns',
-  'parameter': 'param',
-  'parameters': 'params',
-  'message': 'msg',
-  'messages': 'msgs',
-  'request': 'req',
-  'response': 'res',
-  'temporary': 'tmp',
-  'directory': 'dir',
-  'directories': 'dirs'
+  service: 'svc',
+  services: 'svcs',
+  utility: 'util',
+  utilities: 'utils',
+  function: 'fn',
+  functions: 'fns',
+  parameter: 'param',
+  parameters: 'params',
+  message: 'msg',
+  messages: 'msgs',
+  request: 'req',
+  response: 'res',
+  temporary: 'tmp',
+  directory: 'dir',
+  directories: 'dirs',
 };
 
 /**
  * Known acronyms that should be detected from hyphenated phrases
  */
 const KNOWN_ACRONYMS: Set<string> = new Set([
-  'api', 'ui', 'ux', 'db', 'id', 'url', 'uri', 'http', 'https',
-  'sql', 'nosql', 'css', 'html', 'xml', 'json', 'jwt', 'oauth',
-  'sso', 'ci', 'cd', 'cli', 'gui', 'os', 'io', 'cpu', 'gpu',
-  'ram', 'ssd', 'hdd', 'vm', 'vpc', 'cdn', 'dns', 'tcp', 'udp',
-  'ip', 'ftp', 'ssh', 'ssl', 'tls', 'md', 'pdf', 'csv', 'rtf'
+  'api',
+  'ui',
+  'ux',
+  'db',
+  'id',
+  'url',
+  'uri',
+  'http',
+  'https',
+  'sql',
+  'nosql',
+  'css',
+  'html',
+  'xml',
+  'json',
+  'jwt',
+  'oauth',
+  'sso',
+  'ci',
+  'cd',
+  'cli',
+  'gui',
+  'os',
+  'io',
+  'cpu',
+  'gpu',
+  'ram',
+  'ssd',
+  'hdd',
+  'vm',
+  'vpc',
+  'cdn',
+  'dns',
+  'tcp',
+  'udp',
+  'ip',
+  'ftp',
+  'ssh',
+  'ssl',
+  'tls',
+  'md',
+  'pdf',
+  'csv',
+  'rtf',
 ]);
 
 /**
@@ -113,13 +152,13 @@ function abbreviateWord(word: string): string {
   if (word.length <= 4) {
     return word;
   }
-  
+
   // Check common abbreviations first
   const lower = word.toLowerCase();
   if (COMMON_ABBREVIATIONS[lower]) {
     return COMMON_ABBREVIATIONS[lower];
   }
-  
+
   // For longer words, intelligent vowel removal
   if (word.length > 8) {
     // Keep first letter, remove middle vowels, keep some end
@@ -127,16 +166,16 @@ function abbreviateWord(word: string): string {
     const middle = word.slice(1, -2).replace(/[aeiou]/g, '');
     const end = word.slice(-2);
     const abbreviated = first + middle + end;
-    
+
     // Ensure we actually shortened it
     if (abbreviated.length < word.length && abbreviated.length >= 3) {
       return abbreviated;
     }
   }
-  
+
   // Default: smart truncation - keep first 3 + first consonant after
   const first3 = word.slice(0, 3);
-  
+
   // Find first consonant after position 3
   for (let i = 3; i < word.length; i++) {
     const char = word[i];
@@ -144,7 +183,7 @@ function abbreviateWord(word: string): string {
       return first3 + char;
     }
   }
-  
+
   // If no consonant found, just use first 4 chars
   return word.slice(0, 4);
 }
@@ -157,17 +196,20 @@ function tryAcronym(phrase: string): string | null {
   if (words.length < 2 || words.length > 4) {
     return null;
   }
-  
-  const acronym = words.map(w => w[0]).join('').toLowerCase();
+
+  const acronym = words
+    .map((w) => w[0])
+    .join('')
+    .toLowerCase();
   if (KNOWN_ACRONYMS.has(acronym)) {
     return acronym;
   }
-  
+
   // Check if the phrase itself is a known abbreviation
   if (COMMON_ABBREVIATIONS[phrase]) {
     return COMMON_ABBREVIATIONS[phrase];
   }
-  
+
   return null;
 }
 
@@ -177,58 +219,60 @@ function tryAcronym(phrase: string): string | null {
  * @param maxLength Maximum length for the result (default 30)
  * @returns Abbreviated name suitable for task IDs
  */
-export function abbreviateTaskName(title: string, maxLength: number = 30): string {
+export function abbreviateTaskName(title: string, maxLength = 30): string {
   // Clean and prepare the title
   const cleaned = title
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
-    .replace(/\s+/g, '-')          // Replace spaces with hyphens
-    .replace(/-+/g, '-')           // Replace multiple hyphens with single
-    .replace(/^-|-$/g, '');        // Remove leading/trailing hyphens
-  
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single
+    .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+
   // If already short enough, return as-is
   if (cleaned.length <= maxLength) {
     return cleaned;
   }
-  
+
   // Try full phrase acronym first
   const fullAcronym = tryAcronym(cleaned);
   if (fullAcronym && fullAcronym.length <= maxLength) {
     return fullAcronym;
   }
-  
+
   // Split into words and process each
   const words = cleaned.split('-');
-  const abbreviated = words.map(word => {
-    // Check if this word + neighbors form an acronym
-    const wordIndex = words.indexOf(word);
-    if (wordIndex < words.length - 1) {
-      const phrase = words.slice(wordIndex, wordIndex + 2).join('-');
-      const acronym = tryAcronym(phrase);
-      if (acronym) {
-        // Mark next word as processed
-        words[wordIndex + 1] = '';
-        return acronym;
+  const abbreviated = words
+    .map((word) => {
+      // Check if this word + neighbors form an acronym
+      const wordIndex = words.indexOf(word);
+      if (wordIndex < words.length - 1) {
+        const phrase = words.slice(wordIndex, wordIndex + 2).join('-');
+        const acronym = tryAcronym(phrase);
+        if (acronym) {
+          // Mark next word as processed
+          words[wordIndex + 1] = '';
+          return acronym;
+        }
       }
-    }
-    
-    // Skip if already processed
-    if (word === '') return '';
-    
-    // Abbreviate individual word
-    return abbreviateWord(word);
-  }).filter(w => w !== ''); // Remove empty entries
-  
+
+      // Skip if already processed
+      if (word === '') return '';
+
+      // Abbreviate individual word
+      return abbreviateWord(word);
+    })
+    .filter((w) => w !== ''); // Remove empty entries
+
   // Join abbreviated words
   let result = abbreviated.join('-');
-  
+
   // If still too long, progressively shorten
   if (result.length > maxLength) {
     // Try removing less important words (usually middle ones)
     const essential = [abbreviated[0], abbreviated[abbreviated.length - 1]].filter(Boolean);
     const middle = abbreviated.slice(1, -1);
-    
+
     // Keep first and last, abbreviate middle more aggressively
     result = essential[0] || '';
     for (const word of middle) {
@@ -241,7 +285,7 @@ export function abbreviateTaskName(title: string, maxLength: number = 30): strin
       result += '-' + essential[1];
     }
   }
-  
+
   // Final truncation if needed
   return result.slice(0, maxLength);
 }
@@ -255,17 +299,17 @@ export function isReasonableAbbreviation(abbreviated: string, original: string):
   if (abbreviated.length < 3) {
     return false;
   }
-  
+
   // Must be shorter than original (unless original was already short)
   if (original.length > 10 && abbreviated.length >= original.length) {
     return false;
   }
-  
+
   // Should have at least one vowel or number
   if (!/[aeiou0-9]/i.test(abbreviated)) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -275,13 +319,37 @@ export function isReasonableAbbreviation(abbreviated: string, original: string):
  */
 export function getAbbreviationExamples(): Array<{ original: string; abbreviated: string }> {
   return [
-    { original: 'implement user authentication', abbreviated: abbreviateTaskName('implement user authentication') },
-    { original: 'fix database connection bug', abbreviated: abbreviateTaskName('fix database connection bug') },
-    { original: 'update user interface components', abbreviated: abbreviateTaskName('update user interface components') },
-    { original: 'configure deployment pipeline', abbreviated: abbreviateTaskName('configure deployment pipeline') },
-    { original: 'add application programming interface endpoints', abbreviated: abbreviateTaskName('add application programming interface endpoints') },
-    { original: 'optimize performance metrics', abbreviated: abbreviateTaskName('optimize performance metrics') },
-    { original: 'implement oauth authentication with google', abbreviated: abbreviateTaskName('implement oauth authentication with google') },
-    { original: 'setup continuous integration continuous deployment', abbreviated: abbreviateTaskName('setup continuous integration continuous deployment') },
+    {
+      original: 'implement user authentication',
+      abbreviated: abbreviateTaskName('implement user authentication'),
+    },
+    {
+      original: 'fix database connection bug',
+      abbreviated: abbreviateTaskName('fix database connection bug'),
+    },
+    {
+      original: 'update user interface components',
+      abbreviated: abbreviateTaskName('update user interface components'),
+    },
+    {
+      original: 'configure deployment pipeline',
+      abbreviated: abbreviateTaskName('configure deployment pipeline'),
+    },
+    {
+      original: 'add application programming interface endpoints',
+      abbreviated: abbreviateTaskName('add application programming interface endpoints'),
+    },
+    {
+      original: 'optimize performance metrics',
+      abbreviated: abbreviateTaskName('optimize performance metrics'),
+    },
+    {
+      original: 'implement oauth authentication with google',
+      abbreviated: abbreviateTaskName('implement oauth authentication with google'),
+    },
+    {
+      original: 'setup continuous integration continuous deployment',
+      abbreviated: abbreviateTaskName('setup continuous integration continuous deployment'),
+    },
   ];
 }

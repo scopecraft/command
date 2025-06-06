@@ -2,11 +2,11 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
-import { TaskTypeIcon } from './TaskTypeIcon';
-import { WorkflowStateBadge, StatusBadge, PriorityIndicator } from './WorkflowStateBadge';
-import { Button } from '../ui/button';
-import { cn } from '../../lib/utils';
 import type { ParentTask } from '../../lib/types';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
+import { TaskTypeIcon } from './TaskTypeIcon';
+import { PriorityIndicator, StatusBadge, WorkflowStateBadge } from './WorkflowStateBadge';
 
 interface ParentTaskCardProps {
   parentTask: ParentTask;
@@ -43,11 +43,12 @@ export function ParentTaskCard({
   const createdDateValue = createdDate || created_date;
   const updatedDateValue = updatedDate || updated_date;
 
-  const progressPercentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+  const progressPercentage =
+    progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
   if (variant === 'compact') {
     return (
-      <div 
+      <div
         className={cn(
           'border rounded-lg p-3 bg-card hover:bg-accent/50 transition-colors',
           onClick && 'cursor-pointer',
@@ -60,7 +61,7 @@ export function ParentTaskCard({
           <h3 className="font-mono text-sm font-medium truncate flex-1">{title}</h3>
           <WorkflowStateBadge workflow={workflowStateValue} />
         </div>
-        
+
         <div className="flex items-center gap-2 text-xs">
           <StatusBadge status={status} />
           <PriorityIndicator priority={priority} inline />
@@ -79,9 +80,7 @@ export function ParentTaskCard({
               </span>
             ))}
             {tags.length > 3 && (
-              <span className="font-mono text-xs text-muted-foreground">
-                +{tags.length - 3}
-              </span>
+              <span className="font-mono text-xs text-muted-foreground">+{tags.length - 3}</span>
             )}
           </div>
         )}
@@ -121,10 +120,7 @@ export function ParentTaskCard({
         {showOverview && overview && (
           <div className="bg-card border rounded-lg p-4">
             <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-              >
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                 {overview}
               </ReactMarkdown>
             </div>
@@ -136,7 +132,7 @@ export function ParentTaskCard({
 
   // Default variant
   return (
-    <div 
+    <div
       className={cn(
         'border rounded-lg p-4 bg-card hover:bg-accent/50 transition-colors',
         onClick && 'cursor-pointer',
@@ -167,7 +163,7 @@ export function ParentTaskCard({
             </span>
           </div>
           <div className="w-full bg-muted rounded-full h-1.5">
-            <div 
+            <div
               className="bg-primary h-1.5 rounded-full transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
             />

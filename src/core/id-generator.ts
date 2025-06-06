@@ -16,7 +16,7 @@ import {
   taskIdExists,
 } from './directory-utils.js';
 import { abbreviateTaskName } from './name-abbreviator.js';
-import type { TaskIdComponents, TaskReference, ProjectConfig, WorkflowState } from './types.js';
+import type { ProjectConfig, TaskIdComponents, TaskReference, WorkflowState } from './types.js';
 
 // Characters to use for month suffix (A-Z)
 const MONTH_SUFFIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -221,7 +221,10 @@ export function listTaskIds(
 /**
  * Get all task IDs across all workflow states
  */
-export function getAllTaskIds(projectRoot: string, config?: ProjectConfig): Map<string, WorkflowState> {
+export function getAllTaskIds(
+  projectRoot: string,
+  config?: ProjectConfig
+): Map<string, WorkflowState> {
   const idMap = new Map<string, WorkflowState>();
   const states = getExistingWorkflowStates(projectRoot, config);
 

@@ -11,7 +11,7 @@ export enum WorktreeStatus {
   MODIFIED = 'modified',
   UNTRACKED = 'untracked',
   CONFLICT = 'conflict',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
 }
 
 /**
@@ -27,7 +27,7 @@ export enum WorkflowStatus {
   IN_PROGRESS = 'in_progress',
   BLOCKED = 'blocked',
   DONE = 'done',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
 }
 
 /**
@@ -39,7 +39,7 @@ export enum DevelopmentMode {
   CLI = 'cli',
   MCP = 'mcp',
   DEVOPS = 'devops',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
 }
 
 /**
@@ -116,17 +116,17 @@ export const WorktreeSchema = z.object({
   status: z.nativeEnum(WorktreeStatus),
   lastActivity: z.date().optional(),
   changedFiles: z.array(ChangedFileSchema).optional(),
-  
+
   // Task properties
   taskId: z.string().optional(),
   taskTitle: z.string().optional(),
   taskStatus: z.string().optional(),
   workflowStatus: z.nativeEnum(WorkflowStatus).optional(),
   mode: DevelopmentModeObjectSchema.optional(),
-  
+
   // Feature properties
   featureProgress: FeatureProgressSchema.optional(),
-  
+
   // UI state
   isLoading: z.boolean().optional(),
   error: z.string().optional(),

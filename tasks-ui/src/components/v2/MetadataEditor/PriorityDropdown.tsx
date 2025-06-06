@@ -1,5 +1,5 @@
-import React from 'react';
 import { getPriorityValues } from '@core/metadata/schema-service';
+import React from 'react';
 import { getPriorityLucideIcon } from '../../../lib/schema-client';
 import { Select } from '../../ui/select';
 import { useOptimisticUpdate } from './useOptimisticUpdate';
@@ -12,7 +12,7 @@ const getPriorityOptions = () => {
     return {
       value: priority.name,
       label: priority.label,
-      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined
+      icon: IconComponent ? <IconComponent className="h-4 w-4" /> : undefined,
     };
   });
 };
@@ -28,17 +28,17 @@ export const PriorityDropdown: React.FC<PriorityDropdownProps> = ({
   value: initialValue,
   onChange,
   disabled = false,
-  className
+  className,
 }) => {
   const { value, isUpdating, update } = useOptimisticUpdate(initialValue);
   const priorityOptions = React.useMemo(() => getPriorityOptions(), []);
-  
+
   const handleSelect = async (newValue: string) => {
     if (newValue !== value) {
       await update(newValue, onChange);
     }
   };
-  
+
   return (
     <Select
       value={value}

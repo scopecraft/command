@@ -6,9 +6,7 @@ import { Command } from 'commander';
 
 // Initialize command structure
 const program = new Command();
-program
-  .name('task-worktree')
-  .description('Simple worktree management for tasks');
+program.name('task-worktree').description('Simple worktree management for tasks');
 
 // Base paths
 const REPO_ROOT = execSync('git rev-parse --show-toplevel').toString().trim();
@@ -66,7 +64,7 @@ async function startWorktree(taskId: string) {
 // Finish command implementation
 async function finishWorktree(providedTaskId?: string) {
   let taskId = providedTaskId;
-  
+
   // Check if we're running from a worktree
   const isInWorktree =
     fs.existsSync('.git') &&

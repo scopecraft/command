@@ -1,5 +1,6 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import type React from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { NewTaskData } from '../components/ui/command-palette';
 import { apiClient } from '../lib/api/client';
 
@@ -36,46 +37,49 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
 
   const openCommandPalette = useCallback(() => setIsOpen(true), []);
   const closeCommandPalette = useCallback(() => setIsOpen(false), []);
-  const toggleCommandPalette = useCallback(() => setIsOpen(prev => !prev), []);
+  const toggleCommandPalette = useCallback(() => setIsOpen((prev) => !prev), []);
 
-  const createTask = useCallback(async (task: NewTaskData) => {
-    setIsCreating(true);
-    setError(undefined);
+  const createTask = useCallback(
+    async (task: NewTaskData) => {
+      setIsCreating(true);
+      setError(undefined);
 
-    try {
-      const response = task.isParent
-        ? await apiClient.createParent({
-            title: task.title,
-            type: task.type,
-            // Let MCP schema provide defaults: area='general', status='todo', priority='medium', location='backlog'
-          })
-        : await apiClient.createTask({
-            title: task.title,
-            type: task.type,
-            // Let MCP schema provide defaults: area='general', status='todo', priority='medium', workflowState='backlog'
-          });
+      try {
+        const response = task.isParent
+          ? await apiClient.createParent({
+              title: task.title,
+              type: task.type,
+              // Let MCP schema provide defaults: area='general', status='todo', priority='medium', location='backlog'
+            })
+          : await apiClient.createTask({
+              title: task.title,
+              type: task.type,
+              // Let MCP schema provide defaults: area='general', status='todo', priority='medium', workflowState='backlog'
+            });
 
-      if (response.success && response.data) {
-        // Close the command palette
-        setIsOpen(false);
+        if (response.success && response.data) {
+          // Close the command palette
+          setIsOpen(false);
 
-        // Navigate to the newly created task
-        const taskData = response.data as any;
-        if (task.isParent) {
-          navigate({ to: `/parents/${taskData.id}` });
+          // Navigate to the newly created task
+          const taskData = response.data as any;
+          if (task.isParent) {
+            navigate({ to: `/parents/${taskData.id}` });
+          } else {
+            navigate({ to: `/tasks/${taskData.id}` });
+          }
         } else {
-          navigate({ to: `/tasks/${taskData.id}` });
+          setError(response.error || 'Failed to create task');
         }
-      } else {
-        setError(response.error || 'Failed to create task');
+      } catch (error) {
+        console.error('Error creating task:', error);
+        setError('An unexpected error occurred');
+      } finally {
+        setIsCreating(false);
       }
-    } catch (error) {
-      console.error('Error creating task:', error);
-      setError('An unexpected error occurred');
-    } finally {
-      setIsCreating(false);
-    }
-  }, [navigate]);
+    },
+    [navigate]
+  );
 
   const value: CommandPaletteContextValue = {
     isOpen,
@@ -87,11 +91,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
     error,
   };
 
-  return (
-    <CommandPaletteContext.Provider value={value}>
-      {children}
-    </CommandPaletteContext.Provider>
-  );
+  return <CommandPaletteContext.Provider value={value}>{children}</CommandPaletteContext.Provider>;
 }
 
 export function useCommandPalette() {

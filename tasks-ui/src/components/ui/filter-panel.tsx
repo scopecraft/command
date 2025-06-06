@@ -1,5 +1,5 @@
 import { Filter, X } from 'lucide-react';
-import { ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { cn } from '../../lib/utils';
 import { Button } from './button';
 
@@ -83,7 +83,7 @@ export function FilterCategory<T>({
       <div className="flex flex-wrap gap-2">
         {options.map((option, index) => {
           const isSelected = selectedValues.includes(option.value);
-          
+
           return (
             <Button
               key={index}

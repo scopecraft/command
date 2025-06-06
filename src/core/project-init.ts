@@ -1,24 +1,21 @@
 /**
  *  Project Initialization
- * 
+ *
  * Handles project structure initialization for  workflow-based system
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ensureWorkflowDirectories, detectStructureVersion } from './directory-utils.js';
+import { detectStructureVersion, ensureWorkflowDirectories } from './directory-utils.js';
 import type { ProjectConfig } from './types.js';
 
 /**
  * Initialize  project structure
  */
-export function initializeProjectStructure(
-  projectRoot: string,
-  config?: ProjectConfig
-): void {
+export function initializeProjectStructure(projectRoot: string, config?: ProjectConfig): void {
   // Create workflow directories
   ensureWorkflowDirectories(projectRoot, config);
-  
+
   // Create  QUICKSTART.md
   createQuickstart(projectRoot);
 }
@@ -28,12 +25,12 @@ export function initializeProjectStructure(
  */
 function createQuickstart(projectRoot: string): void {
   const quickstartPath = join(projectRoot, '.tasks', 'QUICKSTART.md');
-  
+
   // Don't overwrite existing quickstart
   if (existsSync(quickstartPath)) {
     return;
   }
-  
+
   const content = `# 🚀 Scopecraft  Quick Start Guide
 
 Welcome to Scopecraft ! This guide will help you get started with the new workflow-based task system.
@@ -135,7 +132,7 @@ Reference specific sections: \`@task:implement-oauth-0127-AB#deliverable\`
 
 For more information, visit the [Scopecraft documentation](https://github.com/timmeeuwissen/scopecraft).
 `;
-  
+
   writeFileSync(quickstartPath, content, 'utf-8');
 }
 
@@ -144,7 +141,7 @@ For more information, visit the [Scopecraft documentation](https://github.com/ti
  */
 export function needsInit(projectRoot: string): boolean {
   const version = detectStructureVersion(projectRoot);
-  
+
   // Need init if no structure or only v1 structure
   return version === 'none' || version === 'v1';
 }
@@ -154,7 +151,7 @@ export function needsInit(projectRoot: string): boolean {
  */
 export function getInitStatus(projectRoot: string): string {
   const version = detectStructureVersion(projectRoot);
-  
+
   switch (version) {
     case 'none':
       return 'No task structure found. Ready to initialize.';

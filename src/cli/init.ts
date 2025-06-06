@@ -32,37 +32,37 @@ export async function handleInitCommand(options: {
     }
 
     // Initialize project structure
-      core.initializeProjectStructure(initRoot);
+    core.initializeProjectStructure(initRoot);
 
-      console.log('\n🚀 Welcome to Scopecraft!\n');
-      console.log(`Initialized project in: ${initRoot}`);
-      console.log('✓ Created workflow structure:');
-      console.log('  .tasks/backlog/     📋 Tasks waiting to be worked on');
-      console.log('  .tasks/current/     🚀 Tasks actively being worked on');
-      console.log('  .tasks/archive/     ✅ Completed tasks (organized by date)');
-      console.log('  .tasks/.templates/  📝 Task templates');
-      console.log('✓ Generated quick start guide\n');
+    console.log('\n🚀 Welcome to Scopecraft!\n');
+    console.log(`Initialized project in: ${initRoot}`);
+    console.log('✓ Created workflow structure:');
+    console.log('  .tasks/backlog/     📋 Tasks waiting to be worked on');
+    console.log('  .tasks/current/     🚀 Tasks actively being worked on');
+    console.log('  .tasks/archive/     ✅ Completed tasks (organized by date)');
+    console.log('  .tasks/.templates/  📝 Task templates');
+    console.log('✓ Generated quick start guide\n');
 
-      console.log('🎯 Next Steps:');
-      console.log('  1. Create your first task:');
-      console.log('     sc task create --title "My first task" --type feature');
-      console.log('  2. List tasks:');
-      console.log('     sc task list');
-      console.log('  3. Move task to current:');
-      console.log('     sc workflow promote <task-id>');
-      console.log('  4. Find next task:');
-      console.log('     sc workflow next\n');
+    console.log('🎯 Next Steps:');
+    console.log('  1. Create your first task:');
+    console.log('     sc task create --title "My first task" --type feature');
+    console.log('  2. List tasks:');
+    console.log('     sc task list');
+    console.log('  3. Move task to current:');
+    console.log('     sc workflow promote <task-id>');
+    console.log('  4. Find next task:');
+    console.log('     sc workflow next\n');
 
-      console.log('📚 Learn more:');
-      console.log('  - Workflow guide: .tasks/QUICKSTART.md');
-      console.log('  - Templates: .tasks/.templates/');
-      console.log('  - Documentation: https://github.com/scopecraft/scopecraft-command\n');
+    console.log('📚 Learn more:');
+    console.log('  - Workflow guide: .tasks/QUICKSTART.md');
+    console.log('  - Templates: .tasks/.templates/');
+    console.log('  - Documentation: https://github.com/scopecraft/scopecraft-command\n');
 
-      // Update configuration if needed
-      if (options.rootDir) {
-        const configManager = ConfigurationManager.getInstance();
-        configManager.setRootFromCLI(options.rootDir);
-      }
+    // Update configuration if needed
+    if (options.rootDir) {
+      const configManager = ConfigurationManager.getInstance();
+      configManager.setRootFromCLI(options.rootDir);
+    }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
