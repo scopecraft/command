@@ -333,6 +333,13 @@ export function TaskManagementView({
         onSelectionChange={setSelectedRows}
         onRowClick={(task) => console.log('Open task detail:', task.title)}
         onParentTaskClick={(parentId) => console.log('Navigate to parent:', parentId)}
+        // Enable new features
+        enableSorting={true}
+        enableColumnVisibility={true}
+        enableUrlPersistence={true}
+        showDateColumns={false}
+        urlSortingParam="sort"
+        storageKey="task-management-table"
       />
 
       {/* Empty State */}

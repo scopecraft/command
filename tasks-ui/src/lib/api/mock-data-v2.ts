@@ -46,9 +46,9 @@ Working social authentication for all providers
     type: 'documentation',
     status: 'todo',
     priority: 'medium',
-    workflow_state: 'backlog',
-    created_date: '2025-05-20',
-    updated_date: '2025-05-20',
+    workflowState: 'backlog',
+    createdDate: '2025-05-20',
+    updatedDate: '2025-05-20',
     tags: ['docs', 'api'],
     content: `## Instruction
 Bring the API docs up to date with recent endpoint changes.
@@ -71,10 +71,10 @@ Updated API documentation with all recent changes
     type: 'chore',
     status: 'archived',
     priority: 'low',
-    workflow_state: 'archive',
-    created_date: '2025-04-01',
-    updated_date: '2025-04-15',
-    archived_date: '2025-04',
+    workflowState: 'archive',
+    createdDate: '2025-04-01',
+    updatedDate: '2025-04-15',
+    archivedDate: '2025-04',
     tags: ['database', 'performance'],
     content: `## Instruction
 Improve database connection management for better performance.
@@ -100,11 +100,11 @@ export const mockV2Subtasks: Task[] = [
     type: 'task',
     status: 'done',
     priority: 'high',
-    workflow_state: 'current',
+    workflowState: 'current',
     parent_task: 'parent-001',
     sequence: '01',
-    created_date: '2025-05-10',
-    updated_date: '2025-05-15',
+    createdDate: '2025-05-10',
+    updatedDate: '2025-05-15',
     tags: ['database', 'schema'],
     content: `## Instruction
 Create tables for user authentication and sessions.
@@ -126,11 +126,11 @@ Complete database schema for authentication system
     type: 'task',
     status: 'in_progress',
     priority: 'high',
-    workflow_state: 'current',
+    workflowState: 'current',
     parent_task: 'parent-001',
     sequence: '02',
-    created_date: '2025-05-12',
-    updated_date: '2025-05-28',
+    createdDate: '2025-05-12',
+    updatedDate: '2025-05-28',
     tags: ['security', 'middleware'],
     content: `## Instruction
 Implement bcrypt hashing for password security.
@@ -159,11 +159,11 @@ Secure password hashing middleware integrated into auth system
     type: 'task',
     status: 'todo',
     priority: 'high',
-    workflow_state: 'current',
+    workflowState: 'current',
     parent_task: 'parent-001',
     sequence: '03',
-    created_date: '2025-05-12',
-    updated_date: '2025-05-12',
+    createdDate: '2025-05-12',
+    updatedDate: '2025-05-12',
     tags: ['jwt', 'validation', 'security'],
     content: `# Implement JWT Token Validation
 
@@ -186,11 +186,11 @@ Add middleware to validate JWT tokens on protected routes.
     type: 'task',
     status: 'todo',
     priority: 'high',
-    workflow_state: 'current',
+    workflowState: 'current',
     parent_task: 'parent-001',
     sequence: '04a',
-    created_date: '2025-05-13',
-    updated_date: '2025-05-13',
+    createdDate: '2025-05-13',
+    updatedDate: '2025-05-13',
     tags: ['api', 'endpoint'],
     content: `## Instruction
 Build POST /auth/login endpoint with validation.
@@ -216,11 +216,11 @@ This task can be developed in parallel with the logout endpoint (04b).`,
     type: 'task',
     status: 'todo',
     priority: 'high',
-    workflow_state: 'current',
+    workflowState: 'current',
     parent_task: 'parent-001',
     sequence: '04b',
-    created_date: '2025-05-13',
-    updated_date: '2025-05-13',
+    createdDate: '2025-05-13',
+    updatedDate: '2025-05-13',
     tags: ['api', 'endpoint'],
     content: `# Create Logout Endpoint
 
@@ -242,11 +242,11 @@ This task can be developed in parallel with the login endpoint (04a).`,
     type: 'task',
     status: 'blocked',
     priority: 'medium',
-    workflow_state: 'current',
+    workflowState: 'current',
     parent_task: 'parent-001',
     sequence: '05',
-    created_date: '2025-05-14',
-    updated_date: '2025-05-14',
+    createdDate: '2025-05-14',
+    updatedDate: '2025-05-14',
     tags: ['session', 'redis'],
     content: `# Add Session Management
 
@@ -271,11 +271,11 @@ Blocked until Redis is available (estimated: next week)`,
     type: 'task',
     status: 'todo',
     priority: 'low',
-    workflow_state: 'current',
+    workflowState: 'current',
     parent_task: 'parent-001',
     sequence: '06',
-    created_date: '2025-05-14',
-    updated_date: '2025-05-14',
+    createdDate: '2025-05-14',
+    updatedDate: '2025-05-14',
     tags: ['password', 'email', 'recovery'],
     content: `# Implement Password Reset Flow
 
@@ -303,9 +303,9 @@ export const mockV2ParentTasks: ParentTask[] = [
     type: 'parent_task',
     status: 'in_progress',
     priority: 'high',
-    workflow_state: 'current',
-    created_date: '2025-05-10',
-    updated_date: '2025-05-28',
+    workflowState: 'current',
+    createdDate: '2025-05-10',
+    updatedDate: '2025-05-28',
     tags: ['security', 'backend', 'api', 'authentication'],
     content: `# User Authentication System
 
@@ -357,9 +357,9 @@ The authentication system follows industry best practices:
     type: 'parent_task',
     status: 'todo',
     priority: 'medium',
-    workflow_state: 'backlog',
-    created_date: '2025-05-25',
-    updated_date: '2025-05-25',
+    workflowState: 'backlog',
+    createdDate: '2025-05-25',
+    updatedDate: '2025-05-25',
     tags: ['api', 'security', 'performance'],
     content: `# API Rate Limiting
 
@@ -404,10 +404,10 @@ Implement comprehensive rate limiting to protect API endpoints from abuse and en
     type: 'parent_task',
     status: 'archived',
     priority: 'high',
-    workflow_state: 'archive',
+    workflowState: 'archive',
     archived_date: '2025-04',
-    created_date: '2025-03-01',
-    updated_date: '2025-04-20',
+    createdDate: '2025-03-01',
+    updatedDate: '2025-04-20',
     tags: ['database', 'migration', 'postgresql'],
     content: `# Database Migration to PostgreSQL
 
@@ -452,7 +452,7 @@ export const mockV2Data = {
 export const mockV2Utils = {
   // Get tasks by workflow state
   getTasksByWorkflow: (workflow: WorkflowState) =>
-    mockV2Data.tasks.filter((task) => task.workflow_state === workflow),
+    mockV2Data.tasks.filter((task) => task.workflowState === workflow),
 
   // Get subtasks for a parent task
   getSubtasks: (parentId: string) =>

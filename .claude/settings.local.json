@@ -58,7 +58,8 @@
       "mcp__serena__search_for_pattern",
       "mcp__serena__find_file",
       "mcp__serena__write_memory",
-      "mcp__serena__think_about_collected_information"
+      "mcp__serena__think_about_collected_information",
+      "Bash(npx @biomejs/biome check:*)"
     ],
     "deny": []
   }

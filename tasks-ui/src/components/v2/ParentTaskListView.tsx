@@ -306,6 +306,13 @@ export function ParentTaskListView({
         onSelectionChange={setSelectedRows}
         onRowClick={(task) => navigate({ to: `/parents/${task.id}` })}
         showSubtaskProgress={true}
+        // Enable new features
+        enableSorting={true}
+        enableColumnVisibility={true}
+        enableUrlPersistence={true}
+        showDateColumns={false}
+        urlSortingParam="sort"
+        storageKey="parent-task-table"
       />
 
       {/* Empty State */}

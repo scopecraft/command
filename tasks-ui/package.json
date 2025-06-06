@@ -25,6 +25,7 @@
     "@tanstack/react-query-devtools": "^5.79.0",
     "@tanstack/react-router": "^1.114.3",
     "@tanstack/react-router-devtools": "^1.114.3",
+    "@tanstack/react-table": "^8.21.3",
     "@tanstack/router-plugin": "^1.114.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

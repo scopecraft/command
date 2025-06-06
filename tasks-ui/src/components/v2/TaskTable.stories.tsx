@@ -233,3 +233,155 @@ export const EmptyState: Story = {
     },
   },
 };
+
+export const WithSorting: Story = {
+  render: () => {
+    return (
+      <div className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Task Table with Sorting</h2>
+          <div className="text-sm text-muted-foreground">Click column headers to sort ↕️</div>
+        </div>
+
+        <TaskTable
+          tasks={allTasks}
+          selectable={false}
+          enableSorting={true}
+          onRowClick={(task) => console.log('Open task detail:', task.title)}
+          onParentTaskClick={(parentId) => console.log('Navigate to parent:', parentId)}
+        />
+      </div>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Table with sortable columns. Click column headers to sort by that field. Supports multi-column sorting with Shift+click.',
+      },
+    },
+  },
+};
+
+export const WithColumnConfiguration: Story = {
+  render: () => {
+    return (
+      <div className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Task Table with Column Configuration</h2>
+          <div className="text-sm text-muted-foreground">
+            Configure visible columns and sort state
+          </div>
+        </div>
+
+        <TaskTable
+          tasks={allTasks}
+          selectable={true}
+          enableSorting={true}
+          enableColumnVisibility={true}
+          showDateColumns={true}
+          onRowClick={(task) => console.log('Open task detail:', task.title)}
+          onParentTaskClick={(parentId) => console.log('Navigate to parent:', parentId)}
+        />
+      </div>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Table with full column configuration including date columns and visibility controls. Settings persist to localStorage.',
+      },
+    },
+  },
+};
+
+export const WithUrlPersistence: Story = {
+  render: () => {
+    return (
+      <div className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Task Table with URL Persistence</h2>
+          <div className="text-sm text-muted-foreground">
+            Sort state persists in URL - refresh page to see it maintained
+          </div>
+        </div>
+
+        <div className="bg-blue-50 p-3 rounded-md mb-4">
+          <p className="text-sm text-blue-800">
+            <strong>Demo:</strong> Click column headers to sort. The sort state will be saved in the
+            URL. Try refreshing the page or sharing the URL - the sort order will be preserved!
+          </p>
+        </div>
+
+        <TaskTable
+          tasks={allTasks}
+          selectable={false}
+          enableSorting={true}
+          enableUrlPersistence={true}
+          urlSortingParam="sort"
+          onRowClick={(task) => console.log('Open task detail:', task.title)}
+          onParentTaskClick={(parentId) => console.log('Navigate to parent:', parentId)}
+        />
+      </div>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Table with URL parameter persistence for sort state. Sort preferences are saved in the URL and restored on page load.',
+      },
+    },
+  },
+};
+
+export const FullFeatured: Story = {
+  render: () => {
+    return (
+      <div className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Full-Featured Task Table</h2>
+          <div className="text-sm text-muted-foreground">
+            All features enabled: sorting, column config, selection, URL persistence
+          </div>
+        </div>
+
+        <div className="bg-green-50 p-3 rounded-md mb-4">
+          <p className="text-sm text-green-800">
+            <strong>Features:</strong>
+          </p>
+          <ul className="text-xs text-green-700 mt-2 space-y-1">
+            <li>• Click headers to sort (multi-column with Shift+click)</li>
+            <li>• Toggle column visibility with checkboxes above table</li>
+            <li>• Row selection with bulk actions</li>
+            <li>• Date columns (hidden by default, toggle to show)</li>
+            <li>• Sort state persists in URL</li>
+            <li>• Column preferences saved to localStorage</li>
+          </ul>
+        </div>
+
+        <TaskTable
+          tasks={allTasks}
+          selectable={true}
+          enableSorting={true}
+          enableColumnVisibility={true}
+          enableUrlPersistence={true}
+          showDateColumns={false}
+          urlSortingParam="sort"
+          storageKey="full-featured-table"
+          onRowClick={(task) => console.log('Open task detail:', task.title)}
+          onParentTaskClick={(parentId) => console.log('Navigate to parent:', parentId)}
+        />
+      </div>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Complete demonstration of all TaskTable features including sorting, column configuration, selection, and persistence.',
+      },
+    },
+  },
+};

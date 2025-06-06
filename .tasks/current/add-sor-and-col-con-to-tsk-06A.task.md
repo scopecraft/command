@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: todo
+status: done
 area: ui
 tags:
   - tanstack-table
@@ -43,6 +43,61 @@ The TaskTable component currently has a static column implementation without sor
 - No breaking changes to parent components
 
 ## Log
+- 2025-06-06: === AUTONOMOUS EXECUTION STARTED ===
+- Task: add-sor-and-col-con-to-tsk-06A
+- Analysis: Feature task in UI area with implementation-ready requirements
+- Selected Mode: Implementation Mode
+- Reasoning: Well-defined feature with clear technical specifications for TanStack Table integration
+- Professional Expertise: Senior React Engineer - focusing on clean architecture and type safety
+- 2025-06-06: Architecture Analysis Complete:
+- Current: Custom table with hardcoded columns array
+- TableTask type is well-defined with all necessary fields
+- @tanstack/react-table NOT installed - need to add
+- Component already supports selection state - good foundation
+- Storybook setup excellent for iterative development
+
+Implementation Plan:
+1. Install @tanstack/react-table dependency
+2. Refactor to TanStack Table with column definitions
+3. Implement sorting with visual indicators
+4. Add column visibility controls with localStorage
+5. Add URL param persistence for sort state
+6. Update all stories to demonstrate features
+7. Test mobile responsiveness
+- 2025-06-06: === IMPLEMENTATION COMPLETE ===
+✅ ALL REQUIREMENTS FULFILLED:
+
+Core Implementation:
+• Installed @tanstack/react-table dependency
+• Refactored TaskTable to use TanStack Table with column definitions
+• Implemented sorting with visual indicators (ChevronUp/Down/UpDown)
+• Added URL parameter persistence for sort state
+• Column visibility controls with localStorage persistence
+• Date columns (createdDate, updatedDate) hidden by default
+• Maintained 100% backward compatibility
+
+Code Quality:
+• Fixed all mock data compatibility issues
+• Resolved all linting issues and TypeScript errors
+• Added proper accessibility (keyboard nav, ARIA labels)
+• Extracted TableHeaderCell component to reduce complexity
+• Used proper TypeScript types throughout
+
+Stories & Documentation:
+• Created WithSorting story demonstrating basic sorting
+• Created WithColumnConfiguration story showing column controls
+• Created WithUrlPersistence story demonstrating URL persistence
+• Created FullFeatured story showcasing all capabilities
+• Comprehensive documentation in story descriptions
+
+Advanced Features:
+• Multi-column sorting with Shift+click
+• Sort state persists in URL (shareable/bookmarkable)
+• Column preferences persist in localStorage
+• Mobile-responsive table with horizontal scroll
+• Proper semantic HTML and accessibility
+
+Status: READY FOR TESTING & INTEGRATION
 
 ## Requirements
 ### 1. Sorting Capabilities
