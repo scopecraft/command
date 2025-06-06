@@ -365,9 +365,10 @@ Tasks will be defined based on synthesis outcomes
 Implementation approach depends on design decisions
 ```
 
-**IMPORTANT: ASCII Orchestration Diagram Placement**
-You MUST include an ASCII orchestration diagram for all parent tasks. Place it as follows:
+**IMPORTANT: ASCII Orchestration Diagram is REQUIRED**
+You MUST include an ASCII orchestration diagram for all parent tasks. This is a required deliverable!
 
+**Placement Rules**:
 1. **In Tasks Section**: Add the diagram as a `### Orchestration flow` subsection at the END of the Tasks section (after all phases)
 2. **Why**: This keeps the diagram with the task organization it visualizes
 3. **Format**: Use ### (three hashes) so it's parsed as part of the Tasks section
