@@ -2,7 +2,7 @@
 
 ---
 type: bug
-status: todo
+status: done
 area: ui
 tags:
   - storybook
@@ -65,7 +65,6 @@ TypeError: Cannot destructure property 'navigate' of 'useRouter(...)' as it is n
 - [x] Verify all V2 component stories load properly
 
 ## Deliverable
-
 ### Root Causes and Solutions
 
 #### Issue 1: TaskMetadata Export Error
