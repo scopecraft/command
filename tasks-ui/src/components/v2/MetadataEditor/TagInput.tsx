@@ -70,10 +70,11 @@ export const TagInput: React.FC<TagInputProps> = ({
     <div className={cn("relative", className)}>
       <div
         className={cn(
-          "flex flex-wrap items-center gap-1.5 px-3 py-1.5 rounded-md transition-all",
-          "bg-terminal-dark border border-gray-800",
-          "hover:border-atlas-light",
-          isAdding && "border-atlas-light",
+          "flex flex-wrap items-center gap-1.5 px-2 py-1 rounded transition-all",
+          "bg-transparent border border-transparent min-h-[28px]",
+          "hover:bg-muted/30 hover:border-border",
+          "focus-within:bg-transparent focus-within:border-ring focus-within:ring-1 focus-within:ring-ring",
+          isAdding && "bg-transparent border-ring ring-1 ring-ring",
           disabled && "opacity-50 cursor-not-allowed"
         )}
         onClick={() => !disabled && !isAdding && setIsAdding(true)}
@@ -82,9 +83,9 @@ export const TagInput: React.FC<TagInputProps> = ({
           <span
             key={tag}
             className={cn(
-              "inline-flex items-center gap-1 px-2 py-0.5 rounded",
-              "bg-atlas-navy/50 text-cream text-xs font-jetbrains-mono",
-              "transition-colors hover:bg-atlas-navy"
+              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded",
+              "bg-muted/50 text-foreground text-xs",
+              "transition-colors hover:bg-muted/70"
             )}
           >
             #{tag}

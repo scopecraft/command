@@ -62,18 +62,19 @@ export const AssigneeInput: React.FC<AssigneeInputProps> = ({
         onClick={() => !disabled && setIsEditing(true)}
         disabled={disabled || isUpdating}
         className={cn(
-          "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all",
-          "bg-terminal-dark border border-gray-800",
-          "hover:border-atlas-light focus:outline-none focus:border-atlas-light",
-          "font-jetbrains-mono text-sm",
+          "flex items-center gap-2 px-2 py-1 rounded transition-all",
+          "bg-muted/20 border border-border",
+          "hover:bg-muted/30 hover:border-muted-foreground/50",
+          "focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring",
+          "text-xs min-h-[28px]",
           disabled && "opacity-50 cursor-not-allowed",
           isUpdating && "opacity-70",
-          !value && "text-gray-400",
+          !value && "text-muted-foreground",
           className
         )}
       >
         <User className="h-3 w-3" />
-        <span className="text-cream">{value || placeholder}</span>
+        <span className="flex-1 text-left">{value || placeholder}</span>
         {isUpdating && (
           <div className="ml-2 w-3 h-3 border-2 border-atlas-light border-t-transparent rounded-full animate-spin" />
         )}

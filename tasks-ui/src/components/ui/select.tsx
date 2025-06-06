@@ -45,17 +45,19 @@ export const Select: React.FC<SelectProps> = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled || isLoading}
         className={cn(
-          'flex items-center gap-2 px-3 py-1.5 rounded-md transition-all',
-          '[background-color:hsl(var(--background))] border border-gray-800',
-          'hover:border-atlas-light focus:outline-none focus:border-atlas-light',
-          'font-jetbrains-mono text-sm uppercase',
+          'flex items-center gap-2 px-2 py-1 rounded transition-all',
+          'bg-transparent border border-transparent',
+          'hover:bg-muted/30 hover:border-border',
+          'focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring',
+          'text-xs',
+          'min-h-[28px]',
           disabled && 'opacity-50 cursor-not-allowed',
           isLoading && 'opacity-70',
           className
         )}
       >
         {selectedOption?.icon && selectedOption.icon}
-        <span className="text-cream">{displayLabel}</span>
+        <span className="flex-1 text-left">{displayLabel}</span>
         {!disabled && (
           <svg
             className={cn('w-4 h-4 ml-auto transition-transform', isOpen && 'rotate-180')}

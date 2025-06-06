@@ -14,6 +14,7 @@ import { getTaskUrl } from '../../lib/task-routing';
 import { Button } from '../ui/button';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 import { ClaudeAgentButton } from './ClaudeAgentButton';
+import { MetadataEditor, type TaskMetadata } from './MetadataEditor';
 import { SectionEditor } from './SectionEditor';
 import { SubtaskList } from './SubtaskList';
 import { TaskTypeIcon } from './TaskTypeIcon';
@@ -33,11 +34,12 @@ interface ParentTaskViewProps {
   isUpdating?: boolean;
 }
 
+type MetadataValue = string | string[] | undefined;
+
 export function ParentTaskView({
   task,
   subtasks,
   documents = [],
-  content,
   // Legacy props ignored - section-based editing doesn't use global edit mode
 }: ParentTaskViewProps) {
   const navigate = useNavigate();
@@ -71,6 +73,22 @@ export function ParentTaskView({
       // Error handling will be improved in a later step
     }
   };
+
+  // Metadata update handler following established pattern
+  const handleMetadataUpdate = useCallback(
+    async (field: keyof TaskMetadata, value: MetadataValue) => {
+      try {
+        await updateTask.mutateAsync({
+          id: task.id,
+          updates: { [field]: value },
+        });
+      } catch (error) {
+        console.error('Failed to update task metadata:', error);
+        // Error handling will be improved in a later step
+      }
+    },
+    [task.id, updateTask]
+  );
 
   // Section save handlers
   const createSectionSaveHandler = useCallback(
@@ -113,27 +131,10 @@ export function ParentTaskView({
       {/* Header */}
       <div className="bg-card border-b">
         <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex items-center gap-3">
               <TaskTypeIcon type={metadata.type || 'feature'} />
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-foreground">{metadata.title}</h1>
-                <div className="flex items-center flex-wrap gap-2 mt-2">
-                  <StatusBadge status={metadata.status || 'To Do'} />
-                  <PriorityIndicator priority={metadata.priority || 'Medium'} />
-                  <WorkflowStateBadge workflow={metadata.workflowState || 'backlog'} />
-                  {metadata.tags && metadata.tags.length > 0 && (
-                    <>
-                      <span className="text-muted-foreground">•</span>
-                      {metadata.tags.map((tag) => (
-                        <span key={tag} className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                          #{tag}
-                        </span>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </div>
+              <h1 className="text-2xl font-bold text-foreground">{metadata.title}</h1>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
               <Button
@@ -148,6 +149,38 @@ export function ParentTaskView({
               <ClaudeAgentButton />
             </div>
           </div>
+          <MetadataEditor
+            taskId={task.id}
+            metadata={{
+              status: (metadata.status || 'todo') as
+                | 'todo'
+                | 'in_progress'
+                | 'done'
+                | 'blocked',
+              priority: (metadata.priority || 'medium') as
+                | 'highest'
+                | 'high'
+                | 'medium'
+                | 'low',
+              type: (metadata.type || 'feature') as
+                | 'feature'
+                | 'bug'
+                | 'chore'
+                | 'documentation'
+                | 'test'
+                | 'spike'
+                | 'idea',
+              area: metadata.area || 'general',
+              workflowState: (metadata.location || metadata.workflowState || 'backlog') as
+                | 'backlog'
+                | 'current'
+                | 'archive',
+              assignee: metadata.assigned_to,
+              tags: metadata.tags || [],
+            }}
+            onUpdate={handleMetadataUpdate}
+            layout="horizontal"
+          />
         </div>
       </div>
 
