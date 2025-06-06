@@ -4,7 +4,7 @@
 type: feature
 status: done
 area: ui
-priority: high
+priority: highest
 tags:
   - ui
   - v2
@@ -362,4 +362,3 @@ Legend:
   - Sequential Work: MetadataEditor integration in progress
   - Next Step: Monitor MetadataEditor integration completion
   - Resume: After completion, dispatch final MCP API wire-up task
-
