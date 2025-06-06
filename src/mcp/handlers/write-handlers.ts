@@ -423,6 +423,41 @@ export async function handleTaskUpdate(rawParams: unknown): Promise<McpResponse<
 // =============================================================================
 
 /**
+ * Get cascade count for parent task deletion
+ */
+async function getCascadeCount(projectRoot: string, taskId: string): Promise<number> {
+  try {
+    const parentResult = await core.parent(projectRoot, taskId).get();
+    if (parentResult.success && parentResult.data && 'subtasks' in parentResult.data) {
+      return parentResult.data.subtasks.length;
+    }
+  } catch (_error) {
+    // If we can't get subtask count, return 0
+  }
+  return 0;
+}
+
+/**
+ * Delete parent task with cascade
+ */
+async function deleteParentTask(
+  projectRoot: string,
+  taskId: string,
+  cascade: boolean
+): Promise<{ result: core.OperationResult<void>; cascadeCount: number }> {
+  if (!cascade) {
+    throw new Error(
+      'Cannot delete parent task without cascade. Use cascade=true to delete the task and all its subtasks.'
+    );
+  }
+
+  const cascadeCount = await getCascadeCount(projectRoot, taskId);
+  const result = await core.parent(projectRoot, taskId).del(true);
+
+  return { result, cascadeCount };
+}
+
+/**
  * Handler for task_delete method
  */
 export async function handleTaskDelete(
@@ -432,26 +467,23 @@ export async function handleTaskDelete(
     // Validate input
     const params = TaskDeleteInputSchema.parse(rawParams);
     const projectRoot = getProjectRoot(params);
-
-    // Load project config
     const projectConfig = loadProjectConfig(projectRoot);
 
-    let result: core.OperationResult<void>;
-    const cascadeCount = 0;
+    // Resolve task path to check if it's a parent task
+    const taskPath = core.resolveTaskId(params.id, projectRoot, projectConfig, params.parentId);
+    if (!taskPath) {
+      return createErrorResponse(`Task not found: ${params.id}`, 'Task not found');
+    }
 
-    // Check if this is a parent task with cascade
-    if (params.cascade) {
-      // Try to delete as parent task with cascade
-      const parentDel = await core.parent(projectRoot, params.id).del(true);
-      if (parentDel.success) {
-        result = parentDel;
-        // TODO: Get cascade count from parent deletion
-      } else {
-        // Not a parent task, just delete normally
-        result = await core.del(projectRoot, params.id, projectConfig, params.parentId);
-      }
+    const isParentTask = taskPath.endsWith('_overview.md');
+    let result: core.OperationResult<void>;
+    let cascadeCount = 0;
+
+    if (isParentTask) {
+      const parentDeletion = await deleteParentTask(projectRoot, params.id, params.cascade);
+      result = parentDeletion.result;
+      cascadeCount = parentDeletion.cascadeCount;
     } else {
-      // Normal delete
       result = await core.del(projectRoot, params.id, projectConfig, params.parentId);
     }
 

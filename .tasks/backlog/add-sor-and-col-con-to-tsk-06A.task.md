@@ -31,6 +31,7 @@ The TaskTable component currently has a static column implementation without sor
 - [ ] Test responsive behavior on mobile
 - [ ] Update TaskManagementView integration if needed
 - [ ] Document sorting and column configuration in stories
+- [ ] Cleanup any of the old implementation if applicable
 
 ## Deliverable
 - Refactored TaskTable component using TanStack Table
