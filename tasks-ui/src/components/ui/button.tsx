@@ -12,7 +12,7 @@ const buttonVariants = cva(
         default:
           "bg-[var(--atlas-navy)] text-[var(--cream)] shadow-xs hover:bg-[var(--atlas-navy)]/90 hover:translate-y-[-2px] transition-transform relative after:content-['>'] after:inline-block after:ml-2 after:text-[var(--atlas-light)]",
         destructive:
-          'bg-destructive text-white shadow-xs hover:bg-destructive/90 hover:translate-y-[-2px] transition-transform focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60',
+          "bg-[var(--atlas-navy)] text-[var(--cream)] shadow-xs hover:bg-[var(--atlas-navy)]/90 hover:translate-y-[-2px] transition-transform focus-visible:ring-[var(--atlas-navy)]/20 dark:focus-visible:ring-[var(--atlas-navy)]/40",
         outline:
           'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:translate-y-[-1px] transition-transform',
         secondary:
