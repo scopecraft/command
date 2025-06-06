@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 interface SectionEditorProps {
   section: TaskSectionKey;
@@ -155,6 +157,7 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
             <div className="flex items-center justify-between pt-2">
               <div className="flex gap-2">
                 <button
+                  type="button"
                   onClick={handleSave}
                   disabled={isSaving}
                   className={cn(
@@ -175,6 +178,7 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
                   )}
                 </button>
                 <button
+                  type="button"
                   onClick={handleCancel}
                   disabled={isSaving}
                   className={cn(
@@ -202,7 +206,9 @@ export function SectionEditor({ section, content, onSave, readOnly = false }: Se
             onClick={handleEdit}
           >
             {localContent ? (
-              <ReactMarkdown>{localContent}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                {localContent}
+              </ReactMarkdown>
             ) : (
               <p>No {section} content yet. Click to add.</p>
             )}

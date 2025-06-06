@@ -64,7 +64,94 @@ All components integrated and working with real data
 - [ ] Polish animations and transitions
 - [ ] Add error handling and edge cases
 
+### Orchestration flow
+```
+                    ┌─────────────────────────┐
+                    │ Start: UI Redesign Task │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │   PHASE 1: RESEARCH     │
+                    │      (Single Task)      │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │ 01: Explore UI Patterns │
+                    │  (includes doc-editor)  │
+                    │   @research-agent       │
+                    └───────────┬─────────────┘
+                                │
+                    ╔═══════════▼═════════════╗
+                    ║   SYNTHESIS GATE       ║
+                    ║ 02: Choose UI Approach ║
+                    ║   @human-reviewer      ║
+                    ╚═══════════╤═════════════╝
+                                │
+                    ┌───────────▼─────────────┐
+                    │   PHASE 2: DESIGN       │
+                    │  (Task created here)    │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │   Design UI Approach    │
+                    │    @design-agent        │
+                    └───────────┬─────────────┘
+                                │
+                    ╔═══════════▼═════════════╗
+                    ║   DESIGN REVIEW GATE   ║
+                    ║   @human-reviewer      ║
+                    ╚═══╤═══════════════╤═══╝
+                        │ Approved      │ Revisions
+                        │               └────┐
+                        ▼                    │
+            ┌───────────────────────┐        │
+            │  PHASE 3: PLANNING    │        │
+            │  @orchestrator-agent  │◄───────┘
+            │ (Creates impl tasks)  │
+            └───────────┬───────────┘
+                        │
+        ┌───────────────┼───────────────┐
+        │               │               │
+        ▼               ▼               ▼
+   [Modal Path]   [Inline Path]   [Hybrid Path]
+        │               │               │
+   ┌────▼─────┐   ┌────▼──────┐   ┌───▼────┐
+   │  Create  │   │  Create   │   │ Create │
+   │  Modal   │   │  Inline   │   │  Both  │
+   │Component │   │  Editor   │   │ Comps  │
+   └────┬─────┘   └────┬──────┘   └───┬────┘
+        │               │               │
+        └───────────────┼───────────────┘
+                        │
+                    ┌───▼─────────────────┐
+                    │ Implement Validation│
+                    │   @frontend-agent   │
+                    └───┬─────────────────┘
+                        │
+                    ╔═══▼═════════════════╗
+                    ║ INTEGRATION GATE    ║
+                    ║ All tests passing   ║
+                    ╚═══╤═════════════════╝
+                        │
+                    ┌───▼─────────────────┐
+                    │   Task Complete     │
+                    └─────────────────────┘
+
+Legend:
+┌─────┐ = Task (created dynamically)
+╔═════╗ = Gate (decision/review point)
+──────  = Sequential flow
+  │
+──┼──   = Parallel paths
+  │
+```
+
 ## Deliverable
+- New create/edit UI components that fit V2 design system
+- Seamless integration with existing TaskTable and detail views
+- Improved UX over V1 form-based approach
+- Support for all task types and fields
+- Proper error handling and validation
 
 ## Log
 - 2025-06-05: Planned the orchestration flow and created 01_expl-mod-ui-pat-for-cru-oprtns-06Q
@@ -276,91 +363,3 @@ All components integrated and working with real data
   - Next Step: Monitor MetadataEditor integration completion
   - Resume: After completion, dispatch final MCP API wire-up task
 
-## Orchestration flow
-```
-                    ┌─────────────────────────┐
-                    │ Start: UI Redesign Task │
-                    └───────────┬─────────────┘
-                                │
-                    ┌───────────▼─────────────┐
-                    │   PHASE 1: RESEARCH     │
-                    │      (Single Task)      │
-                    └───────────┬─────────────┘
-                                │
-                    ┌───────────▼─────────────┐
-                    │ 01: Explore UI Patterns │
-                    │  (includes doc-editor)  │
-                    │   @research-agent       │
-                    └───────────┬─────────────┘
-                                │
-                    ╔═══════════▼═════════════╗
-                    ║   SYNTHESIS GATE       ║
-                    ║ 02: Choose UI Approach ║
-                    ║   @human-reviewer      ║
-                    ╚═══════════╤═════════════╝
-                                │
-                    ┌───────────▼─────────────┐
-                    │   PHASE 2: DESIGN       │
-                    │  (Task created here)    │
-                    └───────────┬─────────────┘
-                                │
-                    ┌───────────▼─────────────┐
-                    │   Design UI Approach    │
-                    │    @design-agent        │
-                    └───────────┬─────────────┘
-                                │
-                    ╔═══════════▼═════════════╗
-                    ║   DESIGN REVIEW GATE   ║
-                    ║   @human-reviewer      ║
-                    ╚═══╤═══════════════╤═══╝
-                        │ Approved      │ Revisions
-                        │               └────┐
-                        ▼                    │
-            ┌───────────────────────┐        │
-            │  PHASE 3: PLANNING    │        │
-            │  @orchestrator-agent  │◄───────┘
-            │ (Creates impl tasks)  │
-            └───────────┬───────────┘
-                        │
-        ┌───────────────┼───────────────┐
-        │               │               │
-        ▼               ▼               ▼
-   [Modal Path]   [Inline Path]   [Hybrid Path]
-        │               │               │
-   ┌────▼─────┐   ┌────▼──────┐   ┌───▼────┐
-   │  Create  │   │  Create   │   │ Create │
-   │  Modal   │   │  Inline   │   │  Both  │
-   │Component │   │  Editor   │   │ Comps  │
-   └────┬─────┘   └────┬──────┘   └───┬────┘
-        │               │               │
-        └───────────────┼───────────────┘
-                        │
-                    ┌───▼─────────────────┐
-                    │ Implement Validation│
-                    │   @frontend-agent   │
-                    └───┬─────────────────┘
-                        │
-                    ╔═══▼═════════════════╗
-                    ║ INTEGRATION GATE    ║
-                    ║ All tests passing   ║
-                    ╚═══╤═════════════════╝
-                        │
-                    ┌───▼─────────────────┐
-                    │   Task Complete     │
-                    └─────────────────────┘
-
-Legend:
-┌─────┐ = Task (created dynamically)
-╔═════╗ = Gate (decision/review point)
-──────  = Sequential flow
-  │
-──┼──   = Parallel paths
-  │
-```
-
-### Final Deliverable (Upon Completion)
-- New create/edit UI components that fit V2 design system
-- Seamless integration with existing TaskTable and detail views
-- Improved UX over V1 form-based approach
-- Support for all task types and fields
-- Proper error handling and validation
