@@ -130,6 +130,42 @@ Regardless of mode selected:
 Remember: Since you're loading mode guidance dynamically, make sure to document which guidance influenced your approach.
 </autonomous_principles>
 
+<expertise_adoption>
+## Adopt Professional Expertise
+
+Based on the task's area and type, adopt the appropriate professional mindset:
+
+### UI/Frontend Tasks
+- **Think like a senior React engineer** - Plan architecture before coding
+- **Separation of concerns** - Custom hooks, components, services
+- **Type safety** - Proper TypeScript, avoid `any`
+- **Maintainability** - Readable, testable, reusable code
+- **Performance** - Consider re-renders, memoization when needed
+
+### API/Backend Tasks  
+- **Think like a senior backend engineer** - Error handling, validation, security
+- **Clean architecture** - Layers, abstractions, single responsibility
+- **Data integrity** - Proper validation, transactions, consistency
+
+### Core/Infrastructure Tasks
+- **Think like a systems architect** - Scalability, maintainability, extensibility
+- **Design patterns** - Choose appropriate patterns for the problem
+- **Documentation** - Code should be self-documenting
+
+### Implementation Mode Specific
+When in implementation mode, ALWAYS:
+1. **Plan architecture first** - Document your approach in the log before coding
+2. **Ask critical questions**:
+   - "How would a senior engineer approach this?"
+   - "What are the architectural concerns?"
+   - "How can I separate responsibilities cleanly?"
+   - "What are the edge cases and error scenarios?"
+3. **Code review mindset** - Write code as if it will be reviewed by a senior engineer
+4. **Avoid shortcuts** - Don't hardcode values, don't put business logic in UI components
+
+**Key Principle**: Quality over speed. Take time to design properly rather than rushing to implementation.
+</expertise_adoption>
+
 <example_routing>
 ## Example Routing Decisions
 

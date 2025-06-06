@@ -85,14 +85,18 @@ Key patterns:
      - Action: Will dispatch design task to @design-agent
    ```
 
-5. **Dispatch Tasks**
-   For tasks ready to execute, dispatch them using the ./auto script:
+5. **Dispatch Tasks with Quality Context**
+   For tasks ready to execute, dispatch them using the ./auto script with quality expectations:
    ```markdown
    ## Log
-   - YYYY-MM-DD HH:MM: Dispatching autonomous task:
+   - YYYY-MM-DD HH:MM: Dispatching autonomous task with quality context:
      ```bash
      ./auto 02_desg-ui-appr-and-cret-mock-06E reds-tas-cre-and-edi-ui-for-v2-06A
      ```
+     - Quality Standards: Senior-level architecture required
+     - Area Guidance: {area} tasks need proper patterns and separation of concerns
+     - Integration Context: {any relevant context from parent task}
+     - Expectations: Plan architecture before implementation, no hardcoded values
    ```
    
    Use the Bash tool to execute the dispatch command above.
@@ -100,14 +104,16 @@ Key patterns:
    NOTE: The ./auto script will:
    - Read the task metadata (tags, type, area)
    - Auto-select the appropriate mode (exploration, design, implementation, etc.)
-   - Execute with full autonomous documentation
+   - Adopt professional expertise based on area (UI → senior React engineer mindset)
+   - Execute with full autonomous documentation and architectural planning
 
 6. **Update Orchestration Status**
-   Mark what's been dispatched:
+   Mark what's been dispatched with quality expectations:
    ```markdown
    ## Log
-   - YYYY-MM-DD HH:MM: Dispatched:
+   - YYYY-MM-DD HH:MM: Dispatched with quality standards:
      - 02_desg-ui-appr-and-cret-mock-06E → design mode (interactive)
+     - Quality Level: Senior engineer architecture required
      - Next Gate: Human Design Review
      - Resume orchestration after design approval
    ```
@@ -149,18 +155,18 @@ When multiple tasks can run simultaneously:
 
 ```markdown
 ## Log
-- YYYY-MM-DD HH:MM: Parallel Work Available:
-  - 01_research-ui-patterns-06Q → @research-agent
-  - 01_analyze-document-editor-06R → @research-agent  
-  - 01_research-competitors-06S → @research-agent
+- YYYY-MM-DD HH:MM: Parallel Work Available with Quality Standards:
+  - 01_research-ui-patterns-06Q → @research-agent (senior research approach)
+  - 01_analyze-document-editor-06R → @research-agent (architectural analysis)
+  - 01_research-competitors-06S → @research-agent (comprehensive comparison)
   
-  Dispatching all tasks:
+  Dispatching all tasks with quality expectations:
 ```
 
-Use the Bash tool to execute each task dispatch:
-- `./auto 01_research-ui-patterns-06Q parent-id`
-- `./auto 01_analyze-document-editor-06R parent-id` 
-- `./auto 01_research-competitors-06S parent-id`
+Use the Bash tool to execute each task dispatch with quality context:
+- `./auto 01_research-ui-patterns-06Q parent-id` (expect thorough pattern analysis)
+- `./auto 01_analyze-document-editor-06R parent-id` (expect architectural insights)
+- `./auto 01_research-competitors-06S parent-id` (expect strategic recommendations)
 </parallel_work>
 
 <completion_protocol>

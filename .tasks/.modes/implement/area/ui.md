@@ -1,9 +1,9 @@
 # UI Area Guide
 
 ## Quick Architecture Overview
-The UI (task-ui-2) is a modern React application using TanStack Router, React Query, Tailwind CSS, and Storybook. It features URL-based filtering, real-time data updates, and a CLI-inspired design system.
+The UI (tasks-ui) is a modern React application using TanStack Router, React Query, Tailwind CSS, and Storybook. It features URL-based filtering, real-time data updates, and a CLI-inspired design system.
 
-**IMPORTANT**: This is the NEW UI stack (task-ui-2), not the legacy tasks-ui. See `task-ui-2/README.md` for full architecture details.
+**IMPORTANT**: See `tasks-ui/README.md` for full architecture details.
 
 ## Technology Stack
 - **TanStack Router** - File-based routing with type safety
@@ -15,24 +15,26 @@ The UI (task-ui-2) is a modern React application using TanStack Router, React Qu
 
 ## Key Files and Utilities
 
-### UI Structure (task-ui-2)
-- `task-ui-2/src/main.tsx` - App entry with React Query setup
-- `task-ui-2/src/routes/` - File-based routing
-- `task-ui-2/src/components/v2/` - V2 component library
-- `task-ui-2/src/lib/api/client.ts` - Comprehensive API client
-- `task-ui-2/src/lib/api/hooks.ts` - React Query hooks
-- `task-ui-2/server.ts` - Bun API server (:8899)
-- `task-ui-2/.storybook/` - Storybook configuration
+### UI Structure (tasks-ui)
+- `tasks-ui/src/main.tsx` - App entry with React Query setup
+- `tasks-ui/src/routes/` - File-based routing
+- `tasks-ui/src/components/` - Component library
+- `tasks-ui/src/lib/api/client.ts` - Comprehensive API client
+- `tasks-ui/src/lib/api/hooks.ts` - React Query hooks
+- `tasks-ui/server.ts` - Bun API server (:8899)
+- `tasks-ui/.storybook/` - Storybook configuration
 
 ### Component Organization
 ```
-components/v2/
+components/
 ├── TaskTable.tsx        - Main task list display
 ├── ParentTaskCard.tsx   - Parent task with subtasks
 ├── SubtaskList.tsx      - Subtask management
 ├── TaskTypeIcon.tsx     - Consistent task icons
 ├── WorkflowStateBadge.tsx - Status badges
-└── Sidebar.tsx          - Navigation sidebar
+├── Sidebar.tsx          - Navigation sidebar
+├── MetadataEditor/      - Task metadata editing
+└── ui/                  - Base UI components
 ```
 
 ### API Integration
@@ -54,7 +56,7 @@ import { apiClient } from '@/lib/api/client';
 bun run storybook
 
 # Create a new story file BEFORE the component
-touch task-ui-2/src/components/v2/NewComponent.stories.tsx
+touch tasks-ui/src/components/NewComponent.stories.tsx
 ```
 
 ### Story Structure
@@ -63,7 +65,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { NewComponent } from './NewComponent';
 
 const meta = {
-  title: 'V2/NewComponent',
+  title: 'Components/NewComponent',
   component: NewComponent,
   parameters: {
     layout: 'centered',
@@ -177,7 +179,7 @@ const mutation = useMutation({
 
 ### Do's
 - ✅ ALWAYS create Storybook stories first
-- ✅ Use existing V2 components from task-ui-2
+- ✅ Use existing components from tasks-ui
 - ✅ Follow the new tech stack (TanStack Router, React Query)
 - ✅ Store filters in URL search params
 - ✅ Use Zod for search param validation
@@ -188,7 +190,6 @@ const mutation = useMutation({
 - ✅ Use consistent Tailwind spacing
 
 ### Don'ts
-- ❌ Work in the legacy tasks-ui folder
 - ❌ Create components without stories
 - ❌ Use inline styles
 - ❌ Skip Storybook prototyping
@@ -214,16 +215,16 @@ bun run storybook
 ### Development Testing
 ```bash
 # Full stack development (recommended)
-bun run ui2:dev
+bun run ui:dev
 # Opens: http://localhost:3000
 
 # Or run separately:
-bun run ui2:dev:api   # API server on :8899
-bun run ui2:dev:ui    # Vite dev on :3000
+bun run ui:dev:api    # API server on :8899
+bun run ui:dev:ui     # Vite dev on :3000
 
 # Build and preview
-bun run ui2:build
-bun run ui2:preview
+bun run ui:build
+bun run ui:preview
 ```
 
 ### Manual E2E Testing
@@ -246,13 +247,13 @@ Key points:
 - Optimistic updates for better UX
 
 ## Related Documentation
-- **Full Architecture**: `task-ui-2/README.md` (MUST READ!)
-- **V2 Components**: `task-ui-2/src/components/v2/`
-- **Example Stories**: `V2Showcase.stories.tsx`
-- **API Integration**: `task-ui-2/src/lib/api/`
+- **Full Architecture**: `tasks-ui/README.md` (MUST READ!)
+- **Components**: `tasks-ui/src/components/`
+- **Example Stories**: Check Storybook for component examples
+- **API Integration**: `tasks-ui/src/lib/api/`
 
 ## Common Tasks for UI Area
-- Building new V2 components (Storybook first!)
+- Building new components (Storybook first!)
 - Adding new routes/pages
 - Implementing URL-based filters
 - Creating React Query hooks
