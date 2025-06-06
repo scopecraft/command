@@ -313,7 +313,7 @@ I'll create:
 3. Synthesis gate task
    - tags: ["team:architect", "execution:interactive", "review-gate"]
 4. Mark future phases as "To be created after synthesis"
-5. **ASCII orchestration diagram in parent task's Deliverable section** (required!)
+5. **ASCII orchestration diagram as subsection in Tasks** (see guidance above)
 
 ## For Pattern C (Exploratory - Existing Parent)
 If orchestration exists, I'll:
@@ -324,7 +324,7 @@ If orchestration exists, I'll:
 
 ## For Pattern D (Complex Initiative)
 I'll create a parent task with multi-phase orchestration, creating only Phase 1 tasks initially.
-The parent task MUST include an ASCII orchestration diagram in its Deliverable section.
+The orchestration diagram goes as a subsection at the end of the Tasks section (see guidance above).
 </task_generation_approach>
 
 <dynamic_task_creation>
@@ -345,8 +345,8 @@ Mark future phases in parent task as "To be created after [gate]"
 Parent tasks serve as orchestration hubs. Structure them to:
 
 1. **Vision in Instruction**: Stable high-level goal and success criteria
-2. **Phased Tasks Section**: Show orchestration flow with gates
-3. **Dynamic Deliverable**: Include orchestration diagram
+2. **Phased Tasks Section**: Show orchestration flow with gates, diagram at end
+3. **Clear Deliverable**: Final deliverable description (not the diagram)
 4. **Decision Log**: Track major pivots affecting multiple subtasks
 
 Example Tasks Section Format:
@@ -365,8 +365,12 @@ Tasks will be defined based on synthesis outcomes
 Implementation approach depends on design decisions
 ```
 
-**IMPORTANT: Create ASCII Orchestration Diagram**
-You MUST include an ASCII orchestration diagram in the parent task's Deliverable section. This is a required deliverable for all parent tasks!
+**IMPORTANT: ASCII Orchestration Diagram Placement**
+You MUST include an ASCII orchestration diagram for all parent tasks. Place it as follows:
+
+1. **In Tasks Section**: Add the diagram as a `### Orchestration flow` subsection at the END of the Tasks section (after all phases)
+2. **Why**: This keeps the diagram with the task organization it visualizes
+3. **Format**: Use ### (three hashes) so it's parsed as part of the Tasks section
 
 The diagram should visualize:
 - Parallel vs sequential flows
@@ -374,33 +378,61 @@ The diagram should visualize:
 - Dynamic task creation points
 - Agent assignments
 
-Example ASCII diagram:
+Example structure in parent task:
+```markdown
+## Tasks
+### Phase 1: Research (Parallel)
+- [ ] 01_research-ui: Research UI patterns → @research-agent
+- [ ] 01_analyze-code: Analyze existing code → @research-agent
+
+### Gate: Synthesis Review
+Choose approach based on research findings
+
+### Phase 2: Design
+- [ ] Design task (to be created after synthesis)
+
+### Orchestration flow
 ```
-Phase 1: Research (Parallel)
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│ 01_research-ui  │  │ 01_analyze-code │  │ 01_explore-libs │
-│ @research-agent │  │ @research-agent │  │ @research-agent │
-└────────┬────────┘  └────────┬────────┘  └────────┬────────┘
-         └───────────────────┴───────────────────┘
-                             │
-                    ╔════════▼════════╗
-                    ║ Gate: Synthesis ║
-                    ║ Review findings ║
-                    ╚════════╤════════╝
-                             │
-Phase 2: Design              ▼
-┌─────────────────────────────────────┐
-│ To be created after synthesis gate │
-│ (Design tasks based on approach)   │
-└─────────────────────────────────────┘
+                    ┌─────────────────────────┐
+                    │ Start: Feature Planning │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼─────────────┐
+                    │   PHASE 1: RESEARCH     │
+                    │   (Parallel Tasks)      │
+                    └───────────┬─────────────┘
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        │                       │                       │
+        ▼                       ▼                       ▼
+┌───────────────┐     ┌──────────────┐      ┌──────────────┐
+│ 01_research-ui│     │01_analyze-code│     │01_explore-libs│
+│@research-agent│     │@research-agent│     │@research-agent│
+└───────┬───────┘     └───────┬───────┘     └───────┬───────┘
+        └───────────────────────┴───────────────────────┘
+                                │
+                    ╔═══════════▼═════════════╗
+                    ║   SYNTHESIS GATE        ║
+                    ║   Review findings       ║
+                    ╚═══════════╤═════════════╝
+                                │
+                    ┌───────────▼─────────────┐
+                    │   PHASE 2: DESIGN       │
+                    │  (Created after gate)   │
+                    └─────────────────────────┘
 
 Legend:
 ┌─────┐ = Task (created dynamically)
 ╔═════╗ = Gate (decision/review point)
 ──────  = Sequential flow
-  │
 ──┼──   = Parallel paths
-  │
+```
+
+## Deliverable
+[Final deliverable content - what will be delivered upon completion]
+
+## Log
+- YYYY-MM-DD: Parent task created with orchestration flow
 ```
 
 This diagram is as important as the task list itself - it helps visualize the work flow!
