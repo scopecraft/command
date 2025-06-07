@@ -10,7 +10,7 @@ program.name('task-worktree').description('Simple worktree management for tasks'
 
 // Base paths
 const REPO_ROOT = execSync('git rev-parse --show-toplevel').toString().trim();
-const WORKTREES_DIR = path.resolve(path.dirname(REPO_ROOT), 'roo-task-cli.worktrees');
+const WORKTREES_DIR = path.resolve(path.dirname(REPO_ROOT), 'scopecraft.worktrees');
 
 // Add commands
 program
