@@ -18,7 +18,8 @@ Docker mode (using `my-claude:authenticated`) is required for:
 - True autonomous execution
 
 ### Current State
-- Multiple session types exist (autonomous, interactive, planning, orchestration)
+- Multiple session types exist (autonomous, interactive, dispatch, planning, orchestration)
+- Dispatch script provides tmux-based parallel interactive sessions
 - No unified interface or queue management
 - Docker support missing from autonomous mode
 - ChannelCoder provides excellent primitives we should leverage
@@ -33,7 +34,8 @@ Docker mode (using `my-claude:authenticated`) is required for:
 
 ### Phase 1 Focus (Current Task)
 - Docker-enabled autonomous sessions using `my-claude:authenticated`
-- Basic queue management (3 concurrent sessions max)
+- TMux-based dispatch sessions for parallel interactive work
+- Basic queue management (3 concurrent autonomous max, unlimited dispatch)
 - Stream monitoring for real-time observation and intervention
 - Make sure existing UI keeps working
 

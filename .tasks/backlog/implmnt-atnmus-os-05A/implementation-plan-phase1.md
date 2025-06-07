@@ -8,20 +8,22 @@ This document focuses on Phase 1 implementation: establishing a Docker-enabled u
 
 1. Create unified session management system
 2. Enable Docker mode for autonomous execution
-3. Implement basic queue management
-4. Integrate stream monitoring for real-time observation and intervention
-5. UI/UX review for improvements based on new capabilities
+3. Support parallel interactive sessions via tmux (dispatch integration)
+4. Implement basic queue management
+5. Integrate stream monitoring for real-time observation and intervention
+6. UI/UX review for improvements based on new capabilities
 
 ## Current State
 
 ### Session Types Matrix
 
-| Feature | Autonomous | Interactive | Planning | Orchestration | Worktree |
-|---------|------------|-------------|----------|---------------|----------|
-| **ChannelCoder Sessions** | ✅ | ❌ (TMux) | ✅ | ✅ | ✅ |
-| **Docker Mode Support** | ❌ | ❌ | ❌ | ❌ | ✅ |
-| **Queue Management** | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Unified Interface** | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Feature | Autonomous | Interactive | Dispatch | Planning | Orchestration | Worktree |
+|---------|------------|-------------|----------|----------|---------------|----------|
+| **ChannelCoder Sessions** | ✅ | ❌ (TMux) | ✅ (in TMux) | ✅ | ✅ | ✅ |
+| **Docker Mode Support** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **Parallel Execution** | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ |
+| **Queue Management** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Unified Interface** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 ## Architecture
 
@@ -30,7 +32,8 @@ src/core/orchestration/
 ├── session-manager.ts          # Unified session management
 ├── executors/
 │   ├── base-executor.ts        # Shared executor interface
-│   └── autonomous.ts           # Docker-enabled autonomous executor
+│   ├── autonomous.ts           # Docker-enabled autonomous executor
+│   └── dispatch.ts             # TMux-based parallel interactive sessions
 ├── queue/
 │   └── simple-queue.ts         # Basic FIFO with limits
 ├── monitoring/
@@ -77,6 +80,11 @@ interface UnifiedSession {
     // ... other tracking data
   }
 }
+
+enum SessionMode {
+  AUTONOMOUS = 'autonomous',    // Docker-based background execution
+  DISPATCH = 'dispatch'         // TMux-based parallel interactive
+}
 ```
 
 ### 2. Docker-Enabled Autonomous Executor (Approach)
@@ -113,31 +121,60 @@ class AutonomousExecutor extends BaseExecutor {
 }
 ```
 
-### 3. Simple Queue Manager (Design)
+### 3. Dispatch Executor for TMux Sessions (Approach)
+
+```typescript
+// Key implementation considerations:
+// - Creates tmux windows for parallel interactive sessions
+// - Each task gets its own tmux window
+// - Supports worktree integration for isolated development
+// - Allows human interaction while maintaining context
+
+class DispatchExecutor extends BaseExecutor {
+  async create(options: CreateSessionOptions) {
+    // 1. Check/create tmux session (e.g., "scopecraft")
+    // 2. Create worktree if needed (using tw-start)
+    // 3. Create tmux window named "{taskId}-{mode}"
+    // 4. Start channelcoder in the window with appropriate mode
+    // 5. Return unified session record
+    
+    // Key differences from autonomous:
+    // - No Docker (human needs direct access)
+    // - Interactive terminal session
+    // - Can run multiple in parallel (different tmux windows)
+    // - Supports mode selection (implement, debug, etc.)
+  }
+  
+  async attach(sessionId: string) {
+    // Attach to existing tmux window
+    // Support different terminal emulators (WezTerm, iTerm2, etc.)
+  }
+}
+```
+
+### 4. Simple Queue Manager (Design)
 
 ```typescript
 // Queue design principles:
 // - FIFO processing with configurable limits
-// - Prevent resource exhaustion (max 3 concurrent)
+// - Prevent resource exhaustion (max 3 concurrent autonomous)
+// - Dispatch sessions don't count against queue (interactive)
 // - Basic overflow handling (max 10 queued)
-// - Automatic processing of next item when slot available
 
 class SimpleQueue {
   // Core properties:
-  // - queue array for pending items
-  // - running count for active sessions
-  // - configurable limits
+  // - Separate limits for autonomous vs dispatch
+  // - Autonomous: queued and limited (resource intensive)
+  // - Dispatch: unlimited (human manages resources)
   
   async enqueue(item: QueueItem) {
-    // 1. Check if queue is full
-    // 2. If slots available, execute immediately
-    // 3. Otherwise, add to queue
-    // 4. Return status (starting/queued with position)
-  }
-  
-  private async processNext() {
-    // Called when a session completes
-    // Dequeue and execute next item if available
+    // Only queue autonomous sessions
+    if (item.mode === SessionMode.DISPATCH) {
+      return { status: 'starting', session: await this.execute(item) };
+    }
+    
+    // Queue logic for autonomous sessions
+    // Check limits, queue if needed
   }
 }
 ```
@@ -196,15 +233,18 @@ class StreamMonitor {
 - [ ] Add session lifecycle methods (create, get, list, cancel)
 - [ ] Implement session ID generation
 
-### Task 3: Autonomous Executor (Day 5-6)
+### Task 3: Session Executors (Day 5-7)
 - [ ] Implement `AutonomousExecutor` with Docker support
-- [ ] Add worktree support for branch isolation
+- [ ] Implement `DispatchExecutor` for TMux sessions
+- [ ] Add worktree support for both executors
 - [ ] Create prompt file integration
-- [ ] Handle session continuation with feedback
+- [ ] Handle session continuation for autonomous
+- [ ] Handle attach/detach for dispatch sessions
 
-### Task 4: Queue Implementation (Day 7-8)
+### Task 4: Queue Implementation (Day 8)
 - [ ] Create `SimpleQueue` with FIFO logic
-- [ ] Add concurrency limits (default: 3)
+- [ ] Add concurrency limits for autonomous (default: 3)
+- [ ] Skip queue for dispatch sessions (unlimited)
 - [ ] Implement queue overflow handling
 - [ ] Add queue status methods
 
@@ -235,7 +275,8 @@ class StreamMonitor {
 
 1. **Functional Requirements**
    - [ ] Autonomous sessions run in Docker with full permissions
-   - [ ] Queue prevents resource exhaustion
+   - [ ] Dispatch sessions run in tmux for parallel interactive work
+   - [ ] Queue prevents resource exhaustion for autonomous
    - [ ] Real-time monitoring shows AI progress and actions
    - [ ] Intervention possible when AI goes off track
    - [ ] UI/UX improvements designed based on new capabilities

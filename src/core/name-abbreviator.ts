@@ -75,6 +75,18 @@ const COMMON_ABBREVIATIONS: Record<string, string> = {
   synchronization: 'sync',
   optimize: 'opt',
   optimization: 'opt',
+  implement: 'impl',
+  implements: 'impl',
+  redesign: 'reds',
+  refactor: 'refc',
+  create: 'cret',
+  update: 'updt',
+  improve: 'impr',
+  template: 'temp',
+  templates: 'temp',
+  discovery: 'disc',
+  editing: 'edit',
+  autonomous: 'auto',
 
   // Common suffixes/patterns
   service: 'svc',
@@ -214,6 +226,271 @@ function tryAcronym(phrase: string): string | null {
 }
 
 /**
+ * Words to skip during ID generation (filler words)
+ */
+const FILLER_WORDS: Set<string> = new Set([
+  'for',
+  'with',
+  'and',
+  'the',
+  'to',
+  'in',
+  'of',
+  'at',
+  'by',
+  'from',
+  'up',
+  'on',
+  'as',
+  'is',
+  'was',
+  'are',
+  'be',
+  'been',
+  'being',
+  'have',
+  'has',
+  'had',
+  'do',
+  'does',
+  'did',
+  'will',
+  'would',
+  'could',
+  'should',
+  'may',
+  'might',
+  'must',
+  'can',
+  'into',
+  'over',
+  'under',
+  'out',
+  'off',
+  'about',
+  'all',
+  'an',
+  'any',
+  'each',
+  'few',
+  'more',
+  'most',
+  'other',
+  'some',
+  'such',
+  'no',
+  'nor',
+  'not',
+  'only',
+  'own',
+  'same',
+  'so',
+  'than',
+  'too',
+  'very',
+  'just',
+  'now',
+  'solution',
+  'solutions',
+  'support',
+  'system',
+  'systems',
+]);
+
+/**
+ * Score words by importance for smart selection
+ */
+function scoreWordImportance(word: string, position: number): number {
+  let score = 0;
+
+  // First word gets highest priority
+  if (position === 0) score += 5;
+
+  // Core verbs/actions get very high scores
+  const actionWords = new Set([
+    'implement',
+    'create',
+    'build',
+    'add',
+    'remove',
+    'fix',
+    'update',
+    'refactor',
+    'design',
+    'test',
+    'deploy',
+    'configure',
+    'optimize',
+    'migrate',
+    'integrate',
+    'setup',
+    'install',
+    'delete',
+    'improve',
+    'enhance',
+    'develop',
+    'redesign',
+  ]);
+  if (actionWords.has(word)) score += 6;
+
+  // Core domain objects get high scores
+  const coreWords = new Set([
+    'task',
+    'tasks',
+    'user',
+    'users',
+    'auth',
+    'api',
+    'ui',
+    'database',
+    'security',
+    'performance',
+    'search',
+    'document',
+    'documents',
+    'template',
+    'templates',
+    'workflow',
+    'component',
+    'interface',
+    'data',
+    'file',
+    'files',
+    'config',
+    'server',
+    'client',
+    'admin',
+    'dashboard',
+    'report',
+    'notification',
+    'editing',
+    'edit',
+  ]);
+  if (coreWords.has(word)) score += 4;
+
+  // Technology/tool words
+  const techWords = new Set([
+    'git',
+    'cli',
+    'mcp',
+    'api',
+    'json',
+    'xml',
+    'html',
+    'css',
+    'js',
+    'ts',
+    'node',
+    'npm',
+    'docker',
+    'kubernetes',
+  ]);
+  if (techWords.has(word)) score += 3;
+
+  // Version numbers and qualifiers
+  if (word.match(/v\d+|version/)) score += 2;
+
+  // Nouns often end with common suffixes
+  if (
+    word.endsWith('tion') ||
+    word.endsWith('sion') ||
+    word.endsWith('ment') ||
+    word.endsWith('ance') ||
+    word.endsWith('ence') ||
+    word.endsWith('ity') ||
+    word.endsWith('ty')
+  ) {
+    score += 2;
+  }
+
+  // Penalize very generic words even if not in filler list
+  const genericWords = new Set([
+    'core',
+    'new',
+    'old',
+    'main',
+    'base',
+    'basic',
+    'simple',
+    'complex',
+    'general',
+    'specific',
+    'custom',
+    'default',
+    'standard',
+    'common',
+    'special',
+  ]);
+  if (genericWords.has(word)) score -= 1;
+
+  // Longer words might be more specific/important
+  if (word.length > 6) score += 1;
+
+  return score;
+}
+
+/**
+ * Select the most important words from a title
+ */
+function selectImportantWords(words: string[], maxWords = 4): string[] {
+  // Filter out filler words first
+  const meaningfulWords = words.filter((word) => !FILLER_WORDS.has(word.toLowerCase()));
+
+  // If we already have few enough words, return them
+  if (meaningfulWords.length <= maxWords) {
+    return meaningfulWords;
+  }
+
+  // Score and sort words by importance
+  const scoredWords = meaningfulWords.map((word, index) => ({
+    word,
+    score: scoreWordImportance(word.toLowerCase(), index),
+    originalIndex: index,
+  }));
+
+  // Sort by score (descending), then by original position (ascending) for stability
+  scoredWords.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.originalIndex - b.originalIndex;
+  });
+
+  // Take top words and sort back to original order
+  const selectedWords = scoredWords
+    .slice(0, maxWords)
+    .sort((a, b) => a.originalIndex - b.originalIndex)
+    .map((item) => item.word);
+
+  return selectedWords;
+}
+
+/**
+ * Abbreviate a word with preference for keeping it readable (4+ chars when possible)
+ */
+function abbreviateWordSmart(word: string): string {
+  // Don't abbreviate short words
+  if (word.length <= 4) {
+    return word;
+  }
+
+  // Check common abbreviations first
+  const lower = word.toLowerCase();
+  if (COMMON_ABBREVIATIONS[lower]) {
+    return COMMON_ABBREVIATIONS[lower];
+  }
+
+  // For words 5-7 chars, try to keep at 4+ chars
+  if (word.length <= 7) {
+    // Try intelligent truncation while keeping readability
+    if (word.length === 5) return word.slice(0, 4);
+    if (word.length === 6) return word.slice(0, 4);
+    if (word.length === 7) return word.slice(0, 4);
+  }
+
+  // For longer words, use more aggressive abbreviation
+  return abbreviateWord(word);
+}
+
+/**
  * Main function to intelligently abbreviate a task name
  * @param title The full task title
  * @param maxLength Maximum length for the result (default 30)
@@ -240,53 +517,33 @@ export function abbreviateTaskName(title: string, maxLength = 30): string {
     return fullAcronym;
   }
 
-  // Split into words and process each
+  // Split into words
   const words = cleaned.split('-');
-  const abbreviated = words
-    .map((word) => {
-      // Check if this word + neighbors form an acronym
-      const wordIndex = words.indexOf(word);
-      if (wordIndex < words.length - 1) {
-        const phrase = words.slice(wordIndex, wordIndex + 2).join('-');
-        const acronym = tryAcronym(phrase);
-        if (acronym) {
-          // Mark next word as processed
-          words[wordIndex + 1] = '';
-          return acronym;
-        }
-      }
 
-      // Skip if already processed
-      if (word === '') return '';
+  // Select only the most important words (3-4 max)
+  const selectedWords = selectImportantWords(words, 4);
 
-      // Abbreviate individual word
-      return abbreviateWord(word);
-    })
-    .filter((w) => w !== ''); // Remove empty entries
+  // Abbreviate selected words with preference for readability
+  const abbreviated = selectedWords.map((word) => abbreviateWordSmart(word));
 
   // Join abbreviated words
   let result = abbreviated.join('-');
 
-  // If still too long, progressively shorten
+  // If still too long, try with more aggressive abbreviation
   if (result.length > maxLength) {
-    // Try removing less important words (usually middle ones)
-    const essential = [abbreviated[0], abbreviated[abbreviated.length - 1]].filter(Boolean);
-    const middle = abbreviated.slice(1, -1);
-
-    // Keep first and last, abbreviate middle more aggressively
-    result = essential[0] || '';
-    for (const word of middle) {
-      const shortened = word.slice(0, 3);
-      if (result.length + shortened.length + 1 < maxLength) {
-        result += '-' + shortened;
+    // Reduce to 3 words max and abbreviate more aggressively
+    const topWords = selectImportantWords(words, 3);
+    const moreAbbreviated = topWords.map((word) => {
+      if (word.length <= 4) return word;
+      if (COMMON_ABBREVIATIONS[word.toLowerCase()]) {
+        return COMMON_ABBREVIATIONS[word.toLowerCase()];
       }
-    }
-    if (essential[1] && result.length + essential[1].length + 1 <= maxLength) {
-      result += '-' + essential[1];
-    }
+      return word.slice(0, 4);
+    });
+    result = moreAbbreviated.join('-');
   }
 
-  // Final truncation if needed
+  // Final truncation if still needed
   return result.slice(0, maxLength);
 }
 
