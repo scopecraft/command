@@ -312,6 +312,13 @@ When creating next-phase tasks after a gate:
 - **Clear dependencies**: Sequence numbers for order
 - **Proper metadata**: area, tags, assignee
 - **Actionable instructions**: Enough context to execute
+- **Assignee mapping**: Set agent type based on task purpose:
+  * `research-agent` - for research/exploration tasks
+  * `design-agent` - for design and architecture tasks  
+  * `implement-agent` - for implementation tasks
+  * `test-agent` - for testing tasks
+  * `architect-agent` - for high-level architecture
+  * `review-agent` - for review gates and synthesis
 
 ### Example Pattern
 After reading a TRD that specifies 3 components:
