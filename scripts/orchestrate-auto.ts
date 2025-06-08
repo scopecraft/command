@@ -75,6 +75,7 @@ async function executeOrchestration(parentId: string, dryRun: boolean = false) {
       data: {
         parentId,
         dryRun,
+        auto: true,  // Autonomous mode
       },
     });
     
