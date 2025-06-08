@@ -147,6 +147,7 @@ This helps track progress and provides context for future work.
 - **Always update the Log section** of tasks when making significant changes or completing work
 - Log entries should include date and brief description: `- 2025-05-28: Implemented feature X`
 - Use bun commands, never npm commands
+- Remember the existence of this CLAUDE.md folder: this file exists to provide guidance and context for AI interactions with the project, serving as a comprehensive memory and instruction set for understanding the project's workflow, philosophy, and specific practices
 
 ## Code Quality Checks
 
@@ -170,4 +171,38 @@ Options:
 
 The build will FAIL if these checks don't pass.
 
-(Rest of the existing content remains the same)
+## Documentation
+
+Comprehensive documentation is available in the `/docs` folder, organized for easy navigation:
+
+### Documentation Structure
+
+```
+docs/
+├── 00-overview/      # Start here - what is Scopecraft
+├── 01-concepts/      # Core concepts (tasks, knowledge, feedback)
+├── 02-architecture/  # System design and architecture
+├── 03-guides/        # How-to guides for users/developers
+├── 04-reference/     # API and CLI reference
+├── 05-development/   # Contributing and development
+└── 06-decisions/     # Architectural decisions (ADRs)
+```
+
+### Key Documents for AI Understanding
+
+1. **[System Architecture](docs/02-architecture/system-architecture.md)** - Complete view of how Scopecraft works as a system (process + practices + tooling)
+2. **[Philosophy](docs/01-concepts/philosophy.md)** - Unix philosophy and core principles
+3. **[Feedback Loops](docs/01-concepts/feedback-loops.md)** - How feedback and questions work as first-class features
+4. **[Service Architecture](docs/02-architecture/service-architecture.md)** - Service boundaries and interactions
+5. **[Orchestration Architecture](docs/02-architecture/orchestration-architecture.md)** - AI session coordination and automation
+
+### Why This Documentation Exists
+
+The `/docs` folder was created to:
+- Provide a clear, navigable structure for understanding Scopecraft
+- Separate stable documentation from evolving code
+- Enable progressive disclosure (start simple, dive deep as needed)
+- Support multiple audiences (users, developers, AI agents)
+- Track documentation versions and status
+
+All documents include frontmatter with version, status, and relationships to help navigate the documentation effectively.

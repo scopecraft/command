@@ -31,12 +31,35 @@ All AI operations run in containerized environments because:
 
 ### 2. Session Unification
 A single session abstraction that supports:
-- **Multiple modes**: Autonomous, interactive, planning, orchestration
+- **Multiple modes**: Autonomous, interactive, dispatch (parallel tmux), planning, orchestration
 - **Multiple environments**: Docker containers, TMux sessions, worktrees
 - **Multiple interfaces**: CLI, MCP, UI, API
 - **Multiple contexts**: Tasks, features, projects
 
-### 3. Event-Driven Architecture
+### 3. Hybrid Storage Architecture
+Separate runtime state from historical data:
+- **Runtime State** (`~/.scopecraft/`): Active sessions, queues, monitoring
+- **Historical State** (`.tasks/` in git): Completed sessions, decisions, artifacts
+- **Worktree Awareness**: Tasks exist per-branch, sessions know their context
+
+This separation enables:
+- Clean dashboard implementation (single source for runtime)
+- Git-based collaboration (shareable history)
+- Multi-developer evolution (clear boundaries)
+
+### 4. Worktree-First Execution
+Every session must execute in the appropriate git worktree:
+- **Task-Worktree Binding**: Sessions for a task run in that task's branch worktree
+- **Automatic Resolution**: System finds or creates the right worktree before execution
+- **No Main Branch Execution**: Prevents accidental changes to main branch
+- **Convention-Based**: `feature/auth-05A` branch owns tasks ending in `-05A`
+
+This ensures:
+- Proper branch isolation for all changes
+- Parallel development without conflicts
+- Clear ownership of task implementations
+
+### 5. Event-Driven Architecture
 Everything is an event:
 - **Session lifecycle**: Created, started, completed, failed
 - **Task progress**: Status changes, log entries, costs
@@ -48,11 +71,16 @@ Everything is an event:
 ### Phase 2: Multi-Interface Support (Weeks 3-4)
 **Goal**: Enable orchestration through CLI, MCP, and UI
 
+Including support for:
+- Autonomous sessions (Docker-based background execution)
+- Dispatch sessions (TMux-based parallel interactive)
+- Unified interface across all modes
+
 #### Unified CLI Commands
 ```bash
 # New unified CLI commands
 scopecraft session start <taskId> [options]
-  --mode autonomous|interactive|planning|orchestration
+  --mode autonomous|dispatch|interactive|planning|orchestration
   --worktree <branch>     # Create/use git worktree
   --dangerous             # Enable dangerous operations
   --priority high|normal  # Queue priority
@@ -62,6 +90,7 @@ scopecraft session list [--active|--queued|--all]
 scopecraft session logs <sessionId> [--follow]
 scopecraft session cancel <sessionId>
 scopecraft session continue <sessionId> "feedback"
+scopecraft session attach <sessionId>  # For dispatch/interactive sessions
 ```
 
 #### MCP Integration
@@ -151,6 +180,69 @@ class WorktreeOrchestrator {
   }
 }
 ```
+
+## Cloud Execution Strategy
+
+Leverage existing CI/PR infrastructure for cloud execution without additional infrastructure:
+
+### CI-Based Autonomous Sessions
+```yaml
+# Triggered by PR comment: @scopecraft implement feature-xyz
+name: Scopecraft Cloud Session
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  orchestrate:
+    runs-on: ubuntu-latest
+    container: my-claude:authenticated
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Scopecraft Session
+        run: |
+          scopecraft session start ${{ env.TASK_ID }} \
+            --mode autonomous \
+            --environment CI
+```
+
+### Storage Adapter Pattern
+```typescript
+interface StorageAdapter {
+  saveSession(session: Session): Promise<void>
+  getSession(id: string): Promise<Session>
+  listSessions(): Promise<Session[]>
+  updateStatus(id: string, status: SessionStatus): Promise<void>
+}
+
+// Implementations
+class LocalStorageAdapter {
+  // Stores in ~/.scopecraft/
+  constructor(private basePath = '~/.scopecraft') {}
+}
+
+class CIStorageAdapter {
+  // Stores as PR comments and artifacts
+  constructor(private github: GitHubClient) {}
+  
+  async updateStatus(id: string, status: SessionStatus) {
+    await this.github.createComment({
+      body: `🤖 Session ${id}: ${status}\n${new Date().toISOString()}`
+    });
+  }
+}
+
+// Automatic selection based on environment
+const adapter = process.env.CI 
+  ? new CIStorageAdapter(github) 
+  : new LocalStorageAdapter();
+```
+
+This approach provides:
+- **Zero Infrastructure**: Uses existing CI/PR systems
+- **Natural Audit Trail**: All updates in PR history
+- **Access Control**: Leverages GitHub permissions
+- **Cost Efficiency**: Pay only for CI minutes
 
 ## Long-Term Capabilities
 
@@ -399,6 +491,16 @@ interface ApprovalPolicy {
 ### 4. Security & Compliance
 - **Challenge**: AI with production access
 - **Solution**: Zero-trust architecture, comprehensive auditing
+
+### 5. Multi-Worktree Task State
+- **Challenge**: Tasks diverge across branches/worktrees
+- **Solution**: Worktree-aware task service with smart detection
+  - Convention-based: `feature/auth-05A` branch → owns `*-auth-05A` tasks
+  - Session context: Active sessions know their worktree
+  - Explicit override: Can query specific worktrees
+  - Dashboard aggregates runtime state (sessions) with task state (per-worktree)
+
+This enables holistic view of work across all active branches while maintaining git's branch isolation benefits.
 
 ## Conclusion
 

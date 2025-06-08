@@ -6,12 +6,13 @@ This document focuses on Phase 1 implementation: establishing a Docker-enabled u
 
 ## Phase 1 Goals (2 weeks)
 
-1. Create unified session management system
+1. Create unified session management system with hybrid storage
 2. Enable Docker mode for autonomous execution
 3. Support parallel interactive sessions via tmux (dispatch integration)
-4. Implement basic queue management
-5. Integrate stream monitoring for real-time observation and intervention
-6. UI/UX review for improvements based on new capabilities
+4. Implement worktree-first execution (all sessions run in appropriate worktree)
+5. Implement basic queue management
+6. Integrate stream monitoring for real-time observation and intervention
+7. UI/UX review for improvements based on new capabilities
 
 ## Current State
 
@@ -38,7 +39,21 @@ src/core/orchestration/
 │   └── simple-queue.ts         # Basic FIFO with limits
 ├── monitoring/
 │   └── stream-monitor.ts       # ChannelCoder stream parser integration
+├── storage/
+│   ├── storage-adapter.ts      # Storage adapter interface
+│   └── local-adapter.ts        # ~/.scopecraft/ implementation
+├── worktree/
+│   └── worktree-resolver.ts    # Find/create appropriate worktrees
 └── types.ts                    # Shared type definitions
+
+~/.scopecraft/                  # Runtime state (not in git)
+├── sessions/
+│   ├── active.json            # Active session registry
+│   └── {session-id}/          # Per-session data
+│       ├── metadata.json
+│       └── stream.log
+└── config/
+    └── orchestration.json     # User preferences
 ```
 
 ## Core Components
@@ -62,7 +77,8 @@ interface UnifiedSession {
   environment: {
     docker: boolean
     dockerImage: string         // 'my-claude:authenticated'
-    worktree?: string
+    worktree: string            // Required! Every session runs in a worktree
+    worktreePath: string        // Absolute path to the worktree
     // ... other environment settings
   }
   
@@ -70,6 +86,9 @@ interface UnifiedSession {
   channelCoderSession?: Session
   logFile?: string
   status: SessionStatus
+  
+  // Storage location
+  storagePath: string           // ~/.scopecraft/sessions/{id}/
   
   // Monitoring metadata
   metadata: {
@@ -98,25 +117,28 @@ enum SessionMode {
 
 class AutonomousExecutor extends BaseExecutor {
   async create(options: CreateSessionOptions) {
-    // 1. Create ChannelCoder session with auto-save
-    // 2. Configure Docker with my-claude:authenticated image
-    // 3. Set up appropriate volume mounts (workspace, SSH keys)
-    // 4. Configure worktree if specified
-    // 5. Start detached execution with stream-json output
-    // 6. Return unified session record for monitoring
+    // 1. Resolve worktree for task (find or create)
+    const worktree = await this.worktreeResolver.resolveForTask(options.taskId);
     
-    // Example Docker configuration structure:
+    // 2. Create ChannelCoder session with auto-save
+    // 3. Configure Docker with my-claude:authenticated image
+    // 4. Mount the specific worktree as workspace
+    // 5. Start detached execution with stream-json output
+    // 6. Save session info to ~/.scopecraft/sessions/
+    // 7. Return unified session record
+    
+    // Example Docker configuration:
     const dockerConfig = {
       docker: {
         image: 'my-claude:authenticated',
         mounts: [
-          // Mount workspace and necessary directories
+          `${worktree.path}:/workspace:rw`,  // Mount worktree!
+          `${homedir()}/.ssh:/home/claude/.ssh:ro`
         ]
       }
     };
     
-    // Use channelcoder.session() and session.detached()
-    // with appropriate configuration
+    // Worktree is always used, never main branch
   }
 }
 ```
@@ -132,22 +154,26 @@ class AutonomousExecutor extends BaseExecutor {
 
 class DispatchExecutor extends BaseExecutor {
   async create(options: CreateSessionOptions) {
-    // 1. Check/create tmux session (e.g., "scopecraft")
-    // 2. Create worktree if needed (using tw-start)
+    // 1. Resolve worktree for task (find or create)
+    const worktree = await this.worktreeResolver.resolveForTask(options.taskId);
+    
+    // 2. Check/create tmux session (e.g., "scopecraft")
     // 3. Create tmux window named "{taskId}-{mode}"
-    // 4. Start channelcoder in the window with appropriate mode
-    // 5. Return unified session record
+    // 4. Change to worktree directory in the window
+    // 5. Start channelcoder in that worktree
+    // 6. Save session info to ~/.scopecraft/sessions/
+    // 7. Return unified session record
     
     // Key differences from autonomous:
     // - No Docker (human needs direct access)
     // - Interactive terminal session
-    // - Can run multiple in parallel (different tmux windows)
-    // - Supports mode selection (implement, debug, etc.)
+    // - Still requires worktree (no main branch work!)
+    // - Can run multiple in parallel
   }
   
   async attach(sessionId: string) {
-    // Attach to existing tmux window
-    // Support different terminal emulators (WezTerm, iTerm2, etc.)
+    // Load session info from ~/.scopecraft/
+    // Attach to tmux window in correct worktree
   }
 }
 ```
@@ -179,7 +205,64 @@ class SimpleQueue {
 }
 ```
 
-### 4. Stream Monitor Integration (Real-time Observation)
+### 5. Storage Adapter (Hybrid Storage)
+
+```typescript
+// Storage adapter for runtime state in ~/.scopecraft/
+// Prepares for future CI/cloud execution
+
+interface StorageAdapter {
+  saveSession(session: UnifiedSession): Promise<void>
+  getSession(id: string): Promise<UnifiedSession | null>
+  listSessions(): Promise<UnifiedSession[]>
+  updateStatus(id: string, status: SessionStatus): Promise<void>
+}
+
+class LocalStorageAdapter implements StorageAdapter {
+  private basePath = path.join(homedir(), '.scopecraft');
+  
+  async saveSession(session: UnifiedSession) {
+    // Save to ~/.scopecraft/sessions/{id}/metadata.json
+    // Create directory structure if needed
+    // Store session metadata, worktree info, etc.
+  }
+  
+  // Archive completed sessions to git
+  async archiveSession(session: UnifiedSession) {
+    // Copy important artifacts to .tasks/archive/
+    // Create summary.md with decisions/outcomes
+  }
+}
+```
+
+### 6. Worktree Resolver (Task-Worktree Binding)
+
+```typescript
+// Ensures every session runs in appropriate worktree
+// Convention: feature/auth-05A branch → *-auth-05A tasks
+
+class WorktreeResolver {
+  async resolveForTask(taskId: string): Promise<WorktreeInfo> {
+    // 1. Check if worktree exists by convention
+    const candidates = await this.findByConvention(taskId);
+    
+    if (candidates.length === 1) {
+      return this.getWorktreeInfo(candidates[0]);
+    }
+    
+    // 2. Create worktree if needed
+    const branch = this.generateBranchName(taskId);
+    return await this.createWorktree(branch);
+  }
+  
+  private findByConvention(taskId: string): Promise<string[]> {
+    // Extract suffix (e.g., "05A" from "implement-auth-05A")
+    // Find worktrees matching pattern
+  }
+}
+```
+
+### 7. Stream Monitor Integration (Real-time Observation)
 
 ```typescript
 // Monitoring goals:
@@ -224,31 +307,39 @@ class StreamMonitor {
 ### Task 1: Core Module Structure (Day 1-2)
 - [ ] Create folder structure in `src/core/orchestration/`
 - [ ] Define TypeScript interfaces in `types.ts`
+- [ ] Create ~/.scopecraft directory structure
 - [ ] Set up exports in `src/core/index.ts`
 - [ ] Create base executor abstract class
+- [ ] Define storage adapter interface
 
-### Task 2: Session Manager (Day 3-4)
+### Task 2: Storage & Worktree (Day 3-4)
+- [ ] Implement `LocalStorageAdapter` for ~/.scopecraft/
+- [ ] Implement `WorktreeResolver` with convention-based detection
+- [ ] Update task-crud to be worktree-aware
+- [ ] Create session archival logic for completed sessions
+
+### Task 3: Session Manager (Day 5-6)
 - [ ] Implement `UnifiedSessionManager` class
-- [ ] Create session registry with in-memory storage
+- [ ] Integrate with storage adapter
 - [ ] Add session lifecycle methods (create, get, list, cancel)
-- [ ] Implement session ID generation
+- [ ] Ensure all sessions have worktree assignment
 
-### Task 3: Session Executors (Day 5-7)
-- [ ] Implement `AutonomousExecutor` with Docker support
-- [ ] Implement `DispatchExecutor` for TMux sessions
-- [ ] Add worktree support for both executors
+### Task 4: Session Executors (Day 7-9)
+- [ ] Implement `AutonomousExecutor` with Docker + worktree
+- [ ] Implement `DispatchExecutor` with TMux + worktree
+- [ ] Integrate worktree resolver in both executors
 - [ ] Create prompt file integration
 - [ ] Handle session continuation for autonomous
 - [ ] Handle attach/detach for dispatch sessions
 
-### Task 4: Queue Implementation (Day 8)
+### Task 5: Queue Implementation (Day 10)
 - [ ] Create `SimpleQueue` with FIFO logic
 - [ ] Add concurrency limits for autonomous (default: 3)
 - [ ] Skip queue for dispatch sessions (unlimited)
 - [ ] Implement queue overflow handling
 - [ ] Add queue status methods
 
-### Task 5: Monitoring Integration (Day 9-10)
+### Task 6: Monitoring Integration (Day 11)
 - [ ] Integrate ChannelCoder's `monitorLog` for real-time observation
 - [ ] Track AI actions and tool usage for intervention decisions
 - [ ] Implement error classification for severity assessment
@@ -256,26 +347,30 @@ class StreamMonitor {
 - [ ] Add activity tracking (last message, tools used)
 - [ ] Implement cleanup on session completion
 
-### Task 6: Update Existing Code (Day 11-12)
+### Task 7: Update Existing Code (Day 12)
 - [ ] Update autonomous handlers to use new core
 - [ ] Add error handling
 - [ ] Basic UI integration (keep current UI functional)
 
-### Task 7: UI/UX Review (Day 13)
+### Task 8: UI/UX Review (Day 13)
 - [ ] UX designer reviews current autonomous monitoring UI
 - [ ] Design improvements based on new capabilities (Docker mode, worktrees, intervention)
+- [ ] Consider multi-worktree dashboard view
 - [ ] Mockups for enhanced monitoring dashboard
 
-### Task 8: Testing & Documentation (Day 14)
+### Task 9: Testing & Documentation (Day 14)
 - [ ] Basic tests to ensure it works
 - [ ] Test with real Docker execution
+- [ ] Test worktree resolution and creation
 - [ ] Quick documentation of how to use it
 
 ## Success Criteria
 
 1. **Functional Requirements**
-   - [ ] Autonomous sessions run in Docker with full permissions
-   - [ ] Dispatch sessions run in tmux for parallel interactive work
+   - [ ] All sessions run in appropriate worktrees (never main branch)
+   - [ ] Autonomous sessions run in Docker with worktree mounted
+   - [ ] Dispatch sessions run in tmux in correct worktree
+   - [ ] Runtime state stored in ~/.scopecraft/, not git
    - [ ] Queue prevents resource exhaustion for autonomous
    - [ ] Real-time monitoring shows AI progress and actions
    - [ ] Intervention possible when AI goes off track
