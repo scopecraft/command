@@ -75,10 +75,14 @@ First, determine the execution mode from task metadata, then execute with the ap
    - `type:bug` → Diagnosis
    
 3. **Load Appropriate Mode Guidance**
-   Based on identified mode, load:
-   - `.tasks/.modes/{mode}/base.md` for general approach
-   - `.tasks/.modes/{mode}/area/{area}.md` for specific patterns
-   - `.tasks/.modes/guidance/*.md` based on technology tags
+   Based on identified mode:
+   - List available options: `ls .tasks/.modes/{mode}/` to see all variants
+   - Select most relevant variant based on task context, or use base.md
+   - Load `.tasks/.modes/{mode}/area/{area}.md` for specific patterns
+   - List and load relevant files from `.tasks/.modes/guidance/` based on context
+   
+   Note: Use `ls` to discover available mode variants and guidance files. 
+   Let the task context guide your selection rather than following rigid rules.
 
 4. **Document Mode Selection**
    ```markdown
@@ -216,6 +220,18 @@ tags: ["authentication", "performance"]
 ```
 → Mode: diagnosis (type:bug)
 → Load: diagnosis/base.md, diagnosis/area/core.md
+
+### Example 4: Mode Variant Selection
+```yaml
+title: "Create Technical Requirements Document (TRD)"
+type: chore
+area: cli
+tags: ["architecture", "expertise:architect"]
+```
+→ Mode: design (inferred from "Technical Requirements" + "Document")
+→ `ls .tasks/.modes/design/` finds: base.md, trd.md
+→ AI selects: design/trd.md (matches TRD context)
+→ Also loads: guidance/architecture-patterns.md (relevant for architecture task)
 </example_routing>
 
 <completion_marker>
