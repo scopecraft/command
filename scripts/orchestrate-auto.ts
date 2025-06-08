@@ -51,8 +51,13 @@ if (values.help || positionals.length === 0) {
 
 // Execute orchestration
 async function executeOrchestration(parentId: string, dryRun: boolean = false) {
+  // Detect if we're being called via orchestrate-auto or orchestrate
+  const scriptName = process.argv[1];
+  const isAuto = scriptName.includes('orchestrate-auto');
+  
   console.log(`\n${colors.cyan}${colors.bright}Task Orchestrator${colors.reset}`);
   console.log(`Parent Task: ${colors.bright}${parentId}${colors.reset}`);
+  console.log(`Mode: ${colors.bright}${isAuto ? 'Autonomous' : 'Interactive'}${colors.reset}`);
   
   if (dryRun) {
     console.log(`${colors.yellow}DRY RUN MODE - No tasks will be dispatched${colors.reset}`);
@@ -75,7 +80,7 @@ async function executeOrchestration(parentId: string, dryRun: boolean = false) {
       data: {
         parentId,
         dryRun,
-        auto: true,  // Autonomous mode
+        auto: isAuto ? "true" : "false",
       },
     });
     

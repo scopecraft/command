@@ -1,22 +1,8 @@
 #!/bin/bash
 
-# Usage: ./orchestrate <parentId> [additional instructions]
-# Example: ./orchestrate ui-redesign-06A
-# Example: ./orchestrate ui-redesign-06A "Focus on phase 1 tasks only"
+# Wrapper script for task orchestration (interactive mode)
+# This delegates to the TypeScript implementation
 
-PARENT_ID=$1
-ADDITIONAL_INSTRUCTIONS="${*:2}"
-
-if [ -z "$PARENT_ID" ]; then
-    echo "Usage: $0 <parentId> [additional instructions]"
-    echo "Example: $0 ui-redesign-06A"
-    echo "Example: $0 ui-redesign-06A \"Focus on phase 1 tasks only\""
-    exit 1
-fi
-
-# Run channelcoder with the orchestration prompt
-# Interactive mode - pass auto=false
-channelcoder .tasks/.modes/orchestration/base.md \
-    -d parentId="$PARENT_ID" \
-    -d additionalInstructions="$ADDITIONAL_INSTRUCTIONS" \
-    -d auto="false"
+# Pass all arguments to the TypeScript implementation
+# The TypeScript file will set auto=false for interactive mode
+exec bun run scripts/orchestrate-auto.ts "$@"
