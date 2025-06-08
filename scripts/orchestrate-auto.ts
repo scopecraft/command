@@ -26,6 +26,10 @@ const { values, positionals } = parseArgs({
       type: 'boolean',
       short: 'd',
     },
+    'interactive': {
+      type: 'boolean',
+      short: 'i',
+    },
   },
   strict: true,
   allowPositionals: true,
@@ -50,10 +54,9 @@ if (values.help || positionals.length === 0) {
 }
 
 // Execute orchestration
-async function executeOrchestration(parentId: string, dryRun: boolean = false) {
-  // Detect if we're being called via orchestrate-auto or orchestrate
-  const scriptName = process.argv[1];
-  const isAuto = scriptName.includes('orchestrate-auto');
+async function executeOrchestration(parentId: string, dryRun: boolean = false, isInteractive: boolean = false) {
+  // Interactive mode is explicitly set by flag, otherwise autonomous
+  const isAuto = !isInteractive;
   
   console.log(`\n${colors.cyan}${colors.bright}Task Orchestrator${colors.reset}`);
   console.log(`Parent Task: ${colors.bright}${parentId}${colors.reset}`);
@@ -113,8 +116,9 @@ async function executeOrchestration(parentId: string, dryRun: boolean = false) {
 async function main() {
   const parentId = positionals[0];
   const dryRun = values['dry-run'] || false;
+  const isInteractive = values['interactive'] || false;
   
-  await executeOrchestration(parentId, dryRun);
+  await executeOrchestration(parentId, dryRun, isInteractive);
 }
 
 // Run

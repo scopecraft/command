@@ -4,5 +4,5 @@
 # This delegates to the TypeScript implementation
 
 # Pass all arguments to the TypeScript implementation
-# The TypeScript file will set auto=false for interactive mode
-exec bun run scripts/orchestrate-auto.ts "$@"
+# Explicitly set interactive mode with --interactive flag
+exec bun run scripts/orchestrate-auto.ts --interactive "$@"
