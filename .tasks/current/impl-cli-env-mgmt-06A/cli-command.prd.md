@@ -242,12 +242,26 @@ await claude(prompt, {
 | Worktree naming conflicts | Medium | Clear conventions and conflict detection |
 | Learning curve | Low | Comprehensive examples and help text |
 
+## What's NOT in v1
+
+To maintain focus and deliver quickly, v1 explicitly excludes:
+
+1. **Session continuation**: No `--continue` flag or session history
+2. **Complex mode selection UI**: Rely on inference, not interactive mode picker
+3. **Backlog task selection**: Interactive selector only shows current tasks
+4. **Worktree location override**: Use convention `../worktrees/{taskId}`
+5. **Multiple task selection**: One task at a time
+6. **Custom Docker images**: Only `my-claude:authenticated`
+7. **Non-git environments**: Worktree only, no standalone Docker
+
 ## Future Considerations
 
 1. **Session Management**: Add `--continue` flag for resuming sessions
-2. **Environment Templates**: Pre-configured environments
+2. **Environment Templates**: Pre-configured environments  
 3. **Cloud Environments**: Extend beyond local worktrees
 4. **Multi-user**: Coordinate shared environments
+5. **Advanced mode selection**: Richer UI for mode selection with descriptions
+6. **Workflow automation**: Chain commands together for common patterns
 
 ## Command Execution Flow
 
@@ -330,6 +344,44 @@ sc dispatch test-suite-05B --mode diagnose
 ```bash
 # Orchestrate subtasks
 sc work dashboard-redesign-05B  # Automatically uses orchestrate mode
+```
+
+### Composability Examples
+```bash
+# Create environment, then do manual setup before AI work
+sc env implement-auth-05A && cd $(sc env path implement-auth-05A)
+npm install
+npm test
+sc work implement-auth-05A
+
+# Run multiple tasks in parallel
+sc dispatch task-1 &
+sc dispatch task-2 &
+sc dispatch task-3 &
+
+# Quick interactive work with additional context
+sc w implement-auth-05A "Let's focus on the refresh token logic"
+
+# Automated testing in Docker
+sc d test-suite-05B --mode diagnose
+```
+
+### Common Patterns
+```bash
+# Most common - just start working
+sc work
+
+# Second most common - work on specific task
+sc work implement-auth-05A
+
+# Add context on the fly
+sc work implement-auth-05A "The OAuth provider docs are at https://..."
+
+# Force exploration mode on implementation task
+sc work implement-auth-05A --mode explore
+
+# Close environment when done
+sc env close implement-auth-05A
 ```
 
 ---

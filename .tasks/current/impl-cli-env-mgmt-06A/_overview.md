@@ -36,24 +36,30 @@ Implement a set of composable CLI commands that provide clear separation of conc
 - Use Commander.js for consistent CLI patterns
 
 ## Tasks
-### Phase 1: Requirements & Design
+### Phase 1: Requirements & Design ✓
 - [x] Create PRD document with detailed requirements
-- [ ] Review PRD with stakeholders
+- [x] Review PRD with stakeholders
 
-### Gate: Design Approval
-Decision point: Approve command structure and naming
+### Gate: Design Approval ✓
+Decision: PRD approved, proceed to technical design
 
-### Phase 2: Core Implementation (Sequential)
-- [ ] 02_impl-shar-env-utils-06P: Implement shared environment utilities → @implement-agent
-- [ ] 03_implement-env-command-06K: Implement env command → @implement-agent
+### Phase 2: Technical Design
+- [ ] Create Technical Requirements Document (TRD)
 
-### Phase 3: Work Commands (Sequential)
-- [ ] 04_implement-work-command-06D: Implement work command → @implement-agent
-- [ ] 05_update-dispatch-command-06P: Update dispatch command → @implement-agent
+### Gate: Technical Review
+Decision point: Approve technical approach and architecture
 
-### Phase 4: Testing & Documentation (Parallel)
-- [ ] 06_add-integration-tests-06P: Add integration tests → @test-agent
-- [ ] 07_update-cli-documentation-06O: Update CLI documentation → @docs-agent
+### Phase 3: Core Implementation (To be created after TRD)
+- [ ] Implement shared environment utilities → @implement-agent
+- [ ] Implement env command → @implement-agent
+
+### Phase 4: Work Commands (To be created after core)
+- [ ] Implement work command → @implement-agent
+- [ ] Update dispatch command → @implement-agent
+
+### Phase 5: Testing & Documentation (To be created)
+- [ ] Add integration tests → @test-agent
+- [ ] Update CLI documentation → @docs-agent
 
 ### Gate: Integration Review
 Ensure all commands work together properly
@@ -65,61 +71,40 @@ Ensure all commands work together properly
                     └───────────┬─────────────────┘
                                 │
                     ┌───────────▼─────────────────┐
-                    │ PHASE 1: REQUIREMENTS      │
+                    │ PHASE 1: REQUIREMENTS ✓    │
                     │ ✓ Create PRD               │
-                    │ - Review with stakeholders │
+                    │ ✓ Review with stakeholders │
                     └───────────┬─────────────────┘
                                 │
                     ╔═══════════▼═════════════════╗
-                    ║   DESIGN APPROVAL GATE      ║
-                    ║   Approve command structure ║
+                    ║  DESIGN APPROVAL GATE ✓     ║
+                    ║  PRD Approved               ║
                     ╚═══════════╤═════════════════╝
                                 │
                     ┌───────────▼─────────────────┐
-                    │ PHASE 2: CORE IMPLEMENTATION│
-                    │      (Sequential Build)     │
+                    │ PHASE 2: TECHNICAL DESIGN   │
+                    │ - Create TRD (current)      │
+                    └───────────┬─────────────────┘
+                                │
+                    ╔═══════════▼═════════════════╗
+                    ║  TECHNICAL REVIEW GATE      ║
+                    ║  Approve implementation     ║
+                    ╚═══════════╤═════════════════╝
+                                │
+                    ┌───────────▼─────────────────┐
+                    │ PHASE 3: CORE IMPLEMENTATION│
+                    │ (To be created after TRD)   │
                     └───────────┬─────────────────┘
                                 │
                     ┌───────────▼─────────────────┐
-                    │   02_env-utilities          │
-                    │   @implement-agent          │
-                    │   (Foundation layer)        │
+                    │ PHASE 4: WORK COMMANDS      │
+                    │ (To be created after core)  │
                     └───────────┬─────────────────┘
                                 │
                     ┌───────────▼─────────────────┐
-                    │   03_env-command            │
-                    │   @implement-agent          │
-                    │   (Uses utilities)          │
+                    │ PHASE 5: TEST & DOCS        │
+                    │ (To be created)             │
                     └───────────┬─────────────────┘
-                                │
-                    ┌───────────▼─────────────────┐
-                    │ PHASE 3: WORK COMMANDS      │
-                    │      (Sequential)           │
-                    └───────────┬─────────────────┘
-                                │
-                    ┌───────────▼────────────┐
-                    │  04_work-command       │
-                    │  @implement-agent      │
-                    └───────────┬────────────┘
-                                │
-                    ┌───────────▼────────────┐
-                    │  05_dispatch-update    │
-                    │  @implement-agent      │
-                    └───────────┬────────────┘
-                                │
-                    ┌───────────▼─────────────────┐
-                    │ PHASE 4: TEST & DOCS       │
-                    │      (Parallel)            │
-                    └───────────┬─────────────────┘
-                                │
-                    ┌───────────┴───────────┐
-                    │                       │
-                    ▼                       ▼
-            ┌───────────────┐     ┌────────────────┐
-            │06_integration  │     │07_documentation│
-            │@test-agent     │     │@docs-agent     │
-            └───────┬────────┘     └───────┬────────┘
-                    └───────────┬───────────┘
                                 │
                     ╔═══════════▼═════════════════╗
                     ║  INTEGRATION REVIEW GATE    ║
@@ -156,3 +141,4 @@ Ensure all commands work together properly
 ## Log
 - 2025-01-08: Created proper parent task with full orchestration flow, instruction, and deliverable sections as required by planning mode
 - 2025-06-08: 2025-01-08: Fixed orchestration - Phase 2 tasks are sequential, not parallel, since env command depends on shared utilities
+- 2025-06-08: 2025-01-08: Passed Design Approval gate - PRD approved. Created TRD task as Phase 2.
