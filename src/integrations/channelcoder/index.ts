@@ -31,4 +31,5 @@ export {
   type SessionWithStats,
   type SessionDetails,
   type LogEntry,
+  type MonitorEvent,
 } from './monitoring.js';

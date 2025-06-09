@@ -7,6 +7,7 @@ import {
   getSessionDetails,
   getSessionLogs,
   createSessionMonitor,
+  type MonitorEvent,
 } from '../../src/integrations/channelcoder/index.js';
 import { logger } from '../src/observability/logger.js';
 
@@ -81,7 +82,7 @@ export async function handleAutonomousLogs(limit = 50) {
 /**
  * Subscribe to real-time updates for a session (WebSocket)
  */
-export function createAutonomousMonitor(taskId: string, onEvent: (event: any) => void) {
+export function createAutonomousMonitor(taskId: string, onEvent: (event: MonitorEvent) => void) {
   // Clean up existing monitor
   const existingCleanup = activeMonitors.get(taskId);
   if (existingCleanup) {
