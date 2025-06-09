@@ -4,9 +4,13 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import type { NewTaskData } from '../components/ui/command-palette';
 import { apiClient } from '../lib/api/client';
 
+interface CommandPaletteOptions {
+  defaultCommand?: string;
+}
+
 interface CommandPaletteContextValue {
   isOpen: boolean;
-  openCommandPalette: () => void;
+  openCommandPalette: (options?: CommandPaletteOptions) => void;
   closeCommandPalette: () => void;
   toggleCommandPalette: () => void;
   createTask: (task: NewTaskData) => Promise<void>;
@@ -35,7 +39,14 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const openCommandPalette = useCallback(() => setIsOpen(true), []);
+  const openCommandPalette = useCallback((options?: CommandPaletteOptions) => {
+    // TODO: When command palette is refactored to multi-purpose:
+    // - Use options?.defaultCommand to pre-filter or pre-select commands
+    // - Examples: 'create-task', 'create-parent-task', 'create-subtask', 'search-tasks'
+    // - For now, this parameter is ignored but preserves future API compatibility
+    // - Future implementation could auto-navigate to specific command or pre-fill context
+    setIsOpen(true);
+  }, []);
   const closeCommandPalette = useCallback(() => setIsOpen(false), []);
   const toggleCommandPalette = useCallback(() => setIsOpen((prev) => !prev), []);
 

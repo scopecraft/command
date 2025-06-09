@@ -9,6 +9,7 @@ import type { ParentTask, SubTask } from '@/lib/types';
 import { useNavigate } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
+import { useCommandPalette } from '../../context/CommandPaletteProvider';
 import { DocumentsIcon, SubtasksIcon } from '../../lib/icons';
 import { getTaskUrl } from '../../lib/task-routing';
 import { Button } from '../ui/button';
@@ -46,6 +47,20 @@ export function ParentTaskView({
   const metadata = task.metadata || task;
   const deleteTask = useDeleteTask();
   const updateTask = useUpdateTask();
+  const { openCommandPalette } = useCommandPalette();
+
+  // Handler for creating subtasks with parent context
+  const handleCreateSubtask = React.useCallback(() => {
+    // TODO: When command palette supports multi-purpose commands:
+    // - Use defaultCommand: 'create-subtask' to trigger subtask creation flow
+    // - Pass parent task ID as additional context for automatic parent linking
+    // - For now, this provides clear intent for future command palette refactoring
+    openCommandPalette({ 
+      defaultCommand: 'create-subtask',
+      // TODO: Add parent context when supported: parentId: task.id 
+    });
+  }, [openCommandPalette]);
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [cascadeDelete, setCascadeDelete] = useState(false);
   const [sections, setSections] = useState<TaskSections>(
@@ -243,7 +258,7 @@ export function ParentTaskView({
 
               {/* Subtask Actions */}
               <div className="mt-4 pt-3 border-t space-y-2">
-                <Button className="w-full text-left" variant="atlas">
+                <Button className="w-full text-left" variant="atlas" onClick={handleCreateSubtask}>
                   + Add Subtask
                 </Button>
                 <div className="flex gap-2">

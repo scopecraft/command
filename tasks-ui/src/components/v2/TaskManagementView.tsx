@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import React from 'react';
+import { useCommandPalette } from '../../context/CommandPaletteProvider';
 import type { ApiResponse } from '../../lib/api/client';
 import {
   createStatusFilterOptions,
@@ -41,6 +42,7 @@ export function TaskManagementView({
   searchParams = {},
 }: TaskManagementViewProps) {
   const navigate = useNavigate();
+  const { openCommandPalette } = useCommandPalette();
 
   // API now returns normalized data - minimal mapping needed
   const allTasks: TableTask[] = React.useMemo(() => {
@@ -215,7 +217,9 @@ export function TaskManagementView({
           <h1 className="text-2xl font-bold text-foreground">Task Management</h1>
           <p className="text-muted-foreground">Search, filter, and manage your tasks efficiently</p>
         </div>
-        <Button variant="atlas">+ Create Task</Button>
+        <Button variant="atlas" onClick={() => openCommandPalette({ defaultCommand: 'create-task' })}>
+          + Create Task
+        </Button>
       </div>
 
       {/* Search and Filter Bar */}
@@ -358,7 +362,7 @@ export function TaskManagementView({
               <>
                 <p className="text-lg font-medium mb-2">No tasks yet</p>
                 <p>Create your first task to get started</p>
-                <Button variant="atlas" className="mt-4">
+                <Button variant="atlas" className="mt-4" onClick={() => openCommandPalette({ defaultCommand: 'create-task' })}>
                   + Create Task
                 </Button>
               </>
