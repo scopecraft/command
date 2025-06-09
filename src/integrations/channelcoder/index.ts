@@ -1,6 +1,6 @@
 /**
  * ChannelCoder Integration Module
- * 
+ *
  * Provides an abstraction layer over the ChannelCoder SDK
  * for future replaceability and testing.
  */
@@ -9,7 +9,10 @@
 export * from './types.js';
 
 // Export session adapter
-export { 
+export {
   ChannelCoderSessionAdapter,
-  createChannelCoderClient 
+  createChannelCoderClient,
 } from './session-adapter.js';
+
+// Export utilities
+export * from './utils.js';

@@ -892,3 +892,105 @@ This TRD represents an MVP implementation that consciously builds toward Scopecr
 *Last Updated: 2025-06-08*
 *Status: Draft (Architecture Reviewed)*
 *Author: Architect Agent (Autonomous)*
+
+## Post-Implementation Review: Critical Learnings
+
+*Added: 2025-01-09 by Senior Dev Review*
+
+### Executive Summary
+
+The implementation revealed fundamental design flaws that prevented the env commands from working in their most basic use case - showing the current worktree environment. Analysis showed the rigidity was 30% from TRD specifications and 70% from implementation decisions that violated the flexible interfaces.
+
+### Core Issue Discovered
+
+**Symptom**: Running `sc env list` in the active worktree `impl-cli-env-mgmt-06A` shows "No active environments found"
+
+**Root Cause**: The implementation filtered worktrees to only show those matching the `task/{taskId}` branch pattern, hiding any worktree that didn't conform to this pattern.
+
+### Design vs Implementation Analysis
+
+#### What the TRD Actually Specified (Flexible)
+```typescript
+export interface WorktreeManager {
+  list(): Promise<WorktreeInfo[]>;  // Should return ALL worktrees
+}
+```
+
+#### What Was Implemented (Rigid)
+```typescript
+// Implementation added filtering not in TRD:
+for (const raw of rawWorktrees) {
+  const taskId = this.branchNaming.extractTaskIdFromBranch(raw.branch);
+  if (taskId) {  // ← This filters out non-task branches!
+    worktreeInfos.push(...);
+  }
+}
+```
+
+### Critical Design Flaws
+
+1. **Violation of Unix Philosophy**
+   - Tool hides information instead of being transparent
+   - User can't see their current environment
+   - Breaks composability principle
+
+2. **Poor Separation of Concerns**
+   - WorktreeManager conflates "listing worktrees" with "task association"
+   - Should list ALL worktrees, then optionally associate with tasks
+
+3. **Assumption-Driven Development**
+   - Assumed all environments follow task/ pattern
+   - Reality: Existing worktrees use various patterns
+   - Tool fails in its primary use case
+
+4. **Inadequate Testing**
+   - Unit tests focused on happy path with mocked data
+   - Never tested in actual worktree environment
+   - Integration tests created artificial scenarios
+
+### Required Architecture Changes
+
+1. **Fundamental List Behavior**
+   ```typescript
+   // Correct approach:
+   list(): Promise<WorktreeInfo[]> {
+     const allWorktrees = await this.listRawWorktrees();
+     return allWorktrees.map(wt => ({
+       ...wt,
+       taskId: this.extractTaskId(wt.branch) || wt.branch  // Fallback to branch name
+     }));
+   }
+   ```
+
+2. **Pattern Flexibility**
+   - Keep `task/{taskId}` pattern for NEW environments only
+   - Accept ANY existing worktree for list/switch operations
+   - Make task association optional metadata
+
+3. **Testing Strategy**
+   - Must test in real git worktree environments
+   - Test with various branch naming patterns
+   - Verify current environment is always visible
+
+### Attribution of Rigidity
+
+- **TRD (30%)**: Overly prescriptive patterns for new environments, missing edge cases
+- **Implementation (70%)**: Added constraints not in TRD, violated flexible interfaces
+
+### Key Learnings for Future Implementations
+
+1. **Honor Interface Contracts**: If interface says `list()`, return everything - don't filter
+2. **Test in Real Environments**: Unit tests aren't enough for CLI tools
+3. **Composability First**: Separate listing from filtering/association
+4. **User Transparency**: Show what exists, don't hide based on patterns
+5. **Validate Assumptions**: Test with existing real-world scenarios, not just ideal cases
+
+### Recommendation for Next Implementation
+
+1. Start with the flexible interfaces from this TRD
+2. Implement list() to show ALL worktrees without filtering
+3. Add pattern validation only for CREATE operations
+4. Test immediately in real worktree environments
+5. Ensure the tool works where developers actually use it
+
+This review captures critical learnings to prevent similar issues in future implementations.

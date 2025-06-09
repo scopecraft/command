@@ -1,6 +1,6 @@
 /**
  * Environment Management Types
- * 
+ *
  * Core type definitions for environment resolution and worktree management
  */
 
@@ -20,13 +20,13 @@ export interface EnvironmentResolver {
    * - For subtasks: returns the parent ID
    */
   resolveEnvironmentId(taskId: string): Promise<string>;
-  
+
   /**
    * Ensures environment exists (creates if missing)
    * @returns Environment info including path
    */
   ensureEnvironment(envId: string): Promise<EnvironmentInfo>;
-  
+
   /**
    * Gets environment info without creating
    */
@@ -56,22 +56,22 @@ export interface WorktreeManager {
    * Creates a new worktree for the given task
    */
   create(taskId: string, options?: WorktreeOptions): Promise<WorktreeInfo>;
-  
+
   /**
    * Removes a worktree safely
    */
   remove(taskId: string): Promise<void>;
-  
+
   /**
    * Lists all active worktrees
    */
   list(): Promise<WorktreeInfo[]>;
-  
+
   /**
    * Checks if a worktree exists
    */
   exists(taskId: string): Promise<boolean>;
-  
+
   /**
    * Gets the path for a worktree (doesn't check existence)
    */
@@ -82,7 +82,7 @@ export interface WorktreeManager {
  * Options for worktree creation
  */
 export interface WorktreeOptions {
-  base?: string;  // Base branch (default: current branch)
+  base?: string; // Base branch (default: current branch)
   force?: boolean; // Force creation even if exists
 }
 
@@ -110,7 +110,7 @@ export interface WorktreePathResolver {
    * Pattern: ../{projectName}.worktrees/
    */
   getWorktreeBasePath(): Promise<string>;
-  
+
   /**
    * Gets the path for a specific worktree
    * Pattern: ../{projectName}.worktrees/{taskId}
@@ -131,7 +131,7 @@ export interface BranchNamingService {
    * Pattern: task/{taskId}
    */
   getBranchName(taskId: string): string;
-  
+
   /**
    * Gets the default base branch
    */
@@ -146,7 +146,7 @@ export interface DockerConfigService {
    * Gets the default Docker image
    */
   getDefaultImage(): string;
-  
+
   /**
    * Gets the workspace mount path inside Docker
    */
@@ -179,7 +179,7 @@ export class EnvironmentError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly details?: any
+    public readonly details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'EnvironmentError';
@@ -199,4 +199,5 @@ export const EnvironmentErrorCodes = {
   CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
 } as const;
 
-export type EnvironmentErrorCode = typeof EnvironmentErrorCodes[keyof typeof EnvironmentErrorCodes];
+export type EnvironmentErrorCode =
+  (typeof EnvironmentErrorCodes)[keyof typeof EnvironmentErrorCodes];

@@ -1,6 +1,6 @@
 /**
  * Environment Management Module
- * 
+ *
  * Provides core utilities for environment resolution and worktree management.
  * All components follow the principle of centralized configuration.
  */
@@ -16,6 +16,7 @@ export {
   BranchNamingService,
   DockerConfigService,
   ModeDefaultsService,
+  OutputFormatService,
 } from './configuration-services.js';
 
 // Export worktree manager

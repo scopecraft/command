@@ -24,6 +24,35 @@ import type {
   WorkflowState,
 } from '../core/types.js';
 
+// ANSI color codes for terminal output
+const COLORS = {
+  RED: '\x1b[31m',
+  GREEN: '\x1b[32m',
+  YELLOW: '\x1b[33m',
+  RESET: '\x1b[0m',
+};
+
+/**
+ * Print an error message in red
+ */
+export function printError(message: string): void {
+  console.error(`${COLORS.RED}✗ ${message}${COLORS.RESET}`);
+}
+
+/**
+ * Print a success message in green
+ */
+export function printSuccess(message: string): void {
+  console.log(`${COLORS.GREEN}✓ ${message}${COLORS.RESET}`);
+}
+
+/**
+ * Print a warning message in yellow
+ */
+export function printWarning(message: string): void {
+  console.log(`${COLORS.YELLOW}⚠ ${message}${COLORS.RESET}`);
+}
+
 export type OutputFormat =
   | 'tree'
   | 'table'

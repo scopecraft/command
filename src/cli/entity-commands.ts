@@ -26,6 +26,14 @@ import {
   handleTaskMoveCommand,
   handleUpdateCommand,
 } from './commands.js';
+import { handleDispatchCommand } from './commands/dispatch-commands.js';
+import {
+  handleEnvCloseCommand,
+  handleEnvCreateCommand,
+  handleEnvListCommand,
+  handleEnvPathCommand,
+} from './commands/env-commands.js';
+import { handleWorkCommand } from './commands/work-commands.js';
 
 /**
  * Set up task commands for V2
@@ -303,9 +311,9 @@ You can use the global --root-dir option to specify an alternative tasks directo
           process.exit(1);
         }
 
-        console.log(`✓ Added subtask: ${result.data!.metadata.id}`);
+        console.log(`✓ Added subtask: ${result.data?.metadata.id}`);
         console.log(`  Parent: ${parentId}`);
-        console.log(`  Path: ${result.data!.metadata.path}`);
+        console.log(`  Path: ${result.data?.metadata.path}`);
       } catch (error) {
         console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         process.exit(1);
@@ -550,6 +558,182 @@ export function setupWorkflowShortcuts(program: Command): void {
 }
 
 /**
+ * Set up environment commands
+ * @param program Root commander program
+ */
+export function setupEnvironmentCommands(program: Command): void {
+  // Create env command group
+  const envCommand = new Command('env')
+    .description('Development environment management commands')
+    .addHelpText('before', '\nENVIRONMENT MANAGEMENT COMMANDS\n============================\n')
+    .addHelpText(
+      'after',
+      `
+Environment commands manage git worktrees for task-based development.
+Each task gets its own isolated environment with a dedicated branch.
+
+Examples:
+  sc env auth-feature-05A              # Create/switch to environment for task
+  sc env list                          # List all active environments
+  sc env close auth-feature-05A        # Close environment and cleanup
+  sc env path auth-feature-05A         # Output path for shell integration
+
+Shell Integration:
+  cd "$(sc env path auth-feature-05A)" # Navigate to environment in shell
+`
+    );
+
+  // env create/switch command (default action)
+  envCommand
+    .argument('<taskId>', 'Task ID to create/switch environment for')
+    .description('Create or switch to environment for a task')
+    .option('--base <branch>', 'Base branch for new environment (default: current branch)')
+    .option('--force', 'Force creation even if environment exists')
+    .action(handleEnvCreateCommand);
+
+  // env list command
+  envCommand
+    .command('list')
+    .description('List all active environments')
+    .option('-f, --format <format>', 'Output format: table (default), json, minimal', 'table')
+    .option('-v, --verbose', 'Show detailed information including commit hashes')
+    .action(handleEnvListCommand);
+
+  // env close command
+  envCommand
+    .command('close <taskId>')
+    .description('Close environment and cleanup worktree')
+    .option('-f, --force', 'Force close without confirmation')
+    .option('--keep-branch', 'Keep the git branch after closing worktree')
+    .action(handleEnvCloseCommand);
+
+  // env path command
+  envCommand
+    .command('path <taskId>')
+    .description('Output environment path for shell integration')
+    .action(handleEnvPathCommand);
+
+  // Add env group to root program
+  program.addCommand(envCommand);
+}
+
+/**
+ * Set up work command for interactive Claude sessions
+ * @param program Root commander program
+ */
+export function setupWorkCommands(program: Command): void {
+  // Create work command
+  program
+    .command('work')
+    .alias('w')
+    .description('Start interactive Claude session for a task')
+    .argument('[taskId]', 'Task ID to work on (interactive selection if not provided)')
+    .argument('[additionalPrompt...]', 'Additional prompt context')
+    .option(
+      '-m, --mode <mode>',
+      'Claude mode (default: auto): auto|implement|explore|orchestrate|diagnose'
+    )
+    .option('--no-docker', 'Force interactive mode even if Docker would normally be used')
+    .option('--dry-run', 'Show what would be executed without running it')
+    .addHelpText('before', '\nINTERACTIVE WORK SESSIONS\n========================\n')
+    .addHelpText(
+      'after',
+      `
+The work command starts interactive Claude sessions with automatic environment management.
+
+Features:
+  - Interactive task selection when no taskId provided
+  - Automatic worktree creation/switching
+  - Claude auto-selects appropriate mode based on task context
+  - Seamless ChannelCoder integration
+
+Examples:
+  sc work                              # Interactive task selection
+  sc work auth-feature-05A             # Work on specific task
+  sc work auth-feature-05A "focus on error handling"  # Add context
+  sc work bug-123 --mode diagnose      # Override with specific mode
+  sc work task-789 --dry-run           # Show what would be executed
+  
+  # Short alias
+  sc w feature-456 "implement the UI"
+
+Claude Modes:
+  - auto (default) - Claude selects the appropriate mode
+  - implement - Focus on building features
+  - explore - Research and investigation
+  - orchestrate - Coordinate complex work
+  - diagnose - Debug and troubleshoot
+`
+    )
+    .action(handleWorkCommand);
+}
+
+/**
+ * Set up dispatch command for autonomous Claude sessions
+ * @param program Root commander program
+ */
+export function setupDispatchCommands(program: Command): void {
+  // Create dispatch command
+  program
+    .command('dispatch')
+    .alias('d')
+    .description('Run autonomous Claude session for a task')
+    .argument('<taskId>', 'Task ID to dispatch (required)')
+    .option(
+      '-m, --mode <mode>',
+      'Claude mode (default: auto): auto|implement|explore|orchestrate|diagnose'
+    )
+    .option('-e, --exec <type>', 'Execution type: docker|detached|tmux (default: docker)')
+    .option('-c, --continue <sessionId>', 'Continue an existing session')
+    .option('--dry-run', 'Show what would be executed without running it')
+    .addHelpText('before', '\nAUTONOMOUS EXECUTION\n===================\n')
+    .addHelpText(
+      'after',
+      `
+The dispatch command runs Claude sessions in background/autonomous mode for CI/CD and automation.
+
+Features:
+  - Requires task ID (no interactive selection)
+  - Automatic environment management
+  - Session tracking for monitoring UI
+  - Mode prompt loading from .tasks/.modes/
+  - Multiple execution types (docker, detached, tmux)
+  - Session continuation support
+
+Examples:
+  sc dispatch auth-feature-05A              # Run in Docker (default)
+  sc dispatch bug-123 --mode diagnose       # Specific mode in Docker
+  sc dispatch feature-456 --exec detached   # Run detached (background)
+  sc dispatch task-789 --exec tmux          # Run in tmux (attachable)
+  sc dispatch --continue auto-task-123      # Continue existing session
+  sc dispatch task-456 --dry-run           # Show what would be executed
+  
+  # Short alias
+  sc d refactor-789 --exec docker
+
+Execution Types:
+  - docker (default) - Run in isolated Docker container
+  - detached - Run as background process on host
+  - tmux - Run in tmux session (can attach later)
+
+Docker Execution:
+  - Uses image: my-claude:authenticated
+  - Mounts worktree to /workspace
+  - Full isolation from host system
+  - Ideal for CI/CD pipelines
+
+Claude Modes:
+  - auto (default) - Claude selects the appropriate mode
+  - implement - Focus on building features
+  - explore - Research and investigation
+  - orchestrate - Coordinate complex work
+  - diagnose - Debug and troubleshoot
+`
+    )
+    .action(handleDispatchCommand);
+}
+
+/**
  * Set up all entity commands for v2
  * @param program Root commander program
  */
@@ -560,4 +744,7 @@ export function setupEntityCommands(program: Command): void {
   setupTemplateCommands(program);
   setupInitCommands(program);
   setupWorkflowShortcuts(program);
+  setupEnvironmentCommands(program);
+  setupWorkCommands(program);
+  setupDispatchCommands(program);
 }

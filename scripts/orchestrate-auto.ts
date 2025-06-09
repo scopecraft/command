@@ -79,13 +79,21 @@ async function executeOrchestration(parentId: string, dryRun: boolean = false, i
     const promptFile = '.tasks/.modes/orchestration/base.md';
     
     // Execute orchestration mode
-    const result = await s.run(promptFile, {
-      data: {
-        parentId,
-        dryRun,
-        auto: isAuto ? "true" : "false",
-      },
-    });
+    const result = isAuto 
+      ? await s.run(promptFile, {
+          data: {
+            parentId,
+            dryRun,
+            auto: "true",
+          },
+        })
+      : await s.interactive(promptFile, {
+          data: {
+            parentId,
+            dryRun,
+            auto: "false",
+          },
+        });
     
     if (result.success) {
       console.log(`${colors.green}✅ Orchestration completed${colors.reset}`);

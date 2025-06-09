@@ -1,19 +1,19 @@
 /**
  * Environment Resolver
- * 
+ *
  * Resolves task IDs to environment IDs and manages environment lifecycle.
  * Handles the parent/subtask logic for environment determination.
  */
 
+import { ConfigurationManager } from '../config/configuration-manager.js';
 import { get as getTask } from '../task-crud.js';
 import type { Task } from '../types.js';
-import { ConfigurationManager } from '../config/configuration-manager.js';
 import { BranchNamingService } from './configuration-services.js';
-import { 
+import {
   EnvironmentError,
   EnvironmentErrorCodes,
   type EnvironmentInfo,
-  type EnvironmentResolver as IEnvironmentResolver 
+  type EnvironmentResolver as IEnvironmentResolver,
 } from './types.js';
 import { WorktreeManager } from './worktree-manager.js';
 
@@ -21,7 +21,7 @@ export class EnvironmentResolver implements IEnvironmentResolver {
   private worktreeManager: WorktreeManager;
   private branchNaming: BranchNamingService;
   private config: ConfigurationManager;
-  
+
   constructor(
     worktreeManager?: WorktreeManager,
     branchNaming?: BranchNamingService,
@@ -31,7 +31,7 @@ export class EnvironmentResolver implements IEnvironmentResolver {
     this.branchNaming = branchNaming || new BranchNamingService();
     this.config = config || ConfigurationManager.getInstance();
   }
-  
+
   /**
    * Resolves the environment ID for a task
    * - For parent tasks: returns the task ID
@@ -45,7 +45,7 @@ export class EnvironmentResolver implements IEnvironmentResolver {
         EnvironmentErrorCodes.INVALID_TASK_ID
       );
     }
-    
+
     try {
       // Get project root from config
       const rootConfig = this.config.getRootConfig();
@@ -55,10 +55,10 @@ export class EnvironmentResolver implements IEnvironmentResolver {
           EnvironmentErrorCodes.CONFIGURATION_ERROR
         );
       }
-      
+
       // Load the task to check if it's a subtask
       const taskResult = await getTask(rootConfig.path, taskId);
-      
+
       if (!taskResult.success) {
         throw new EnvironmentError(
           `Task not found: ${taskId}`,
@@ -66,21 +66,21 @@ export class EnvironmentResolver implements IEnvironmentResolver {
           { taskId, error: taskResult.error }
         );
       }
-      
+
       const task = taskResult.data;
-      
+
       // If this is a subtask (has a parent), use the parent's ID as the environment
-      if (task && task.metadata.parentTask) {
+      if (task?.metadata.parentTask) {
         return task.metadata.parentTask;
       }
-      
+
       // Otherwise (parent task or simple task), use the task ID itself
       return taskId;
     } catch (error) {
       if (error instanceof EnvironmentError) {
         throw error;
       }
-      
+
       throw new EnvironmentError(
         `Failed to resolve environment for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
         EnvironmentErrorCodes.TASK_NOT_FOUND,
@@ -88,7 +88,7 @@ export class EnvironmentResolver implements IEnvironmentResolver {
       );
     }
   }
-  
+
   /**
    * Ensures environment exists (creates if missing)
    * @returns Environment info including path
@@ -100,16 +100,16 @@ export class EnvironmentResolver implements IEnvironmentResolver {
         EnvironmentErrorCodes.INVALID_TASK_ID
       );
     }
-    
+
     try {
       // Check if worktree already exists
       const exists = await this.worktreeManager.exists(envId);
-      
+
       if (exists) {
         // Get existing worktree info
         const worktrees = await this.worktreeManager.list();
-        const worktree = worktrees.find(w => w.taskId === envId);
-        
+        const worktree = worktrees.find((w) => w.taskId === envId);
+
         if (worktree) {
           return {
             id: envId,
@@ -120,10 +120,10 @@ export class EnvironmentResolver implements IEnvironmentResolver {
           };
         }
       }
-      
+
       // Create new worktree
       const worktree = await this.worktreeManager.create(envId);
-      
+
       return {
         id: envId,
         path: worktree.path,
@@ -135,7 +135,7 @@ export class EnvironmentResolver implements IEnvironmentResolver {
       if (error instanceof EnvironmentError) {
         throw error;
       }
-      
+
       throw new EnvironmentError(
         `Failed to ensure environment for ${envId}: ${error instanceof Error ? error.message : String(error)}`,
         EnvironmentErrorCodes.GIT_OPERATION_FAILED,
@@ -143,7 +143,7 @@ export class EnvironmentResolver implements IEnvironmentResolver {
       );
     }
   }
-  
+
   /**
    * Gets environment info without creating
    */
@@ -151,23 +151,23 @@ export class EnvironmentResolver implements IEnvironmentResolver {
     if (!envId) {
       return null;
     }
-    
+
     try {
       // Check if worktree exists
       const exists = await this.worktreeManager.exists(envId);
-      
+
       if (!exists) {
         return null;
       }
-      
+
       // Get worktree info
       const worktrees = await this.worktreeManager.list();
-      const worktree = worktrees.find(w => w.taskId === envId);
-      
+      const worktree = worktrees.find((w) => w.taskId === envId);
+
       if (!worktree) {
         return null;
       }
-      
+
       return {
         id: envId,
         path: worktree.path,
@@ -175,12 +175,12 @@ export class EnvironmentResolver implements IEnvironmentResolver {
         exists: true,
         isActive: true,
       };
-    } catch (error) {
+    } catch (_error) {
       // If we can't get info, return null rather than throwing
       return null;
     }
   }
-  
+
   /**
    * Helper method to get environment info for a task (not just environment ID)
    * This resolves the task to its environment ID first
@@ -193,7 +193,7 @@ export class EnvironmentResolver implements IEnvironmentResolver {
       return null;
     }
   }
-  
+
   /**
    * Helper method to ensure environment for a task (not just environment ID)
    * This resolves the task to its environment ID first

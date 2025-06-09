@@ -2,7 +2,7 @@
 
 ---
 type: bug
-status: in_progress
+status: done
 area: mcp
 tags:
   - parser
