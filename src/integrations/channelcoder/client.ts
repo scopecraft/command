@@ -9,6 +9,7 @@ export interface ExecutionResult extends CCResult {
   // Additional fields we add
   sessionName?: string;
   taskId?: string;
+  error?: string; // Error message when success is false
 }
 
 // Extended options to include our sessionName

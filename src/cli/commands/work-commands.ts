@@ -121,6 +121,16 @@ export async function handleWorkCommand(
       ? 'Continue working on the task from where you left off'
       : promptPath;
 
+    // Build data based on mode
+    const data: Record<string, unknown> = {
+      additionalInstructions: additionalPrompt,
+    };
+
+    // For orchestration mode, use parentId instead of taskId
+    if (mode === 'orchestration' && resolvedTaskId) {
+      data.parentId = resolvedTaskId;
+    }
+
     const result = await executeInteractiveTask(promptOrFile, {
       taskId: resolvedTaskId || 'session-resume',
       instruction: taskInstruction,
@@ -132,9 +142,7 @@ export async function handleWorkCommand(
             branch: envInfo.branch,
           }
         : undefined,
-      data: {
-        additionalInstructions: additionalPrompt,
-      },
+      data,
     });
 
     if (result.success) {
