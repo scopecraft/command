@@ -1,7 +1,15 @@
 #!/bin/bash
 
-# Wrapper script for task orchestration
-# This delegates to the TypeScript implementation
+# Autonomous orchestration CLI wrapper
+# This delegates to the new dispatch command with orchestration mode
 
-# Pass all arguments to the TypeScript implementation
-exec bun run scripts/orchestrate-auto.ts "$@"
+# Check if we have at least one argument (parentId)
+if [ $# -eq 0 ]; then
+    echo "Usage: ./orchestrate-auto <parentId>"
+    echo "Example: ./orchestrate-auto impl-cli-env-mgmt-06A"
+    exit 1
+fi
+
+# Use dispatch command with orchestration mode
+# Pass auto=true via --data to indicate autonomous orchestration
+exec bun run dev:cli dispatch "$@" --mode orchestration --data '{"auto":"true"}' --exec detached

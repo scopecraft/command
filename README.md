@@ -176,7 +176,73 @@ sc task complete new-feature-05A              # Marks as done
 sc parent move auth-05K current
 ```
 
-### Worktree Management
+### Environment and Session Management
+
+Scopecraft provides integrated development environments and Claude session management.
+
+#### Environment Commands
+
+```bash
+# Create or switch to task environment
+sc env auth-feature-05A
+
+# List active environments
+sc env list
+
+# Get environment path for shell integration
+cd "$(sc env path auth-feature-05A)"
+
+# Close environment when done
+sc env close auth-feature-05A --force
+```
+
+#### Interactive Development (Work Command)
+
+```bash
+# Interactive task selection
+sc work
+
+# Work on specific task
+sc work auth-feature-05A
+
+# Work with additional context
+sc work auth-feature-05A "Focus on security requirements"
+
+# Resume previous session
+sc work --session session-abc123
+```
+
+#### Autonomous Development (Dispatch Command)
+
+```bash
+# Autonomous execution in Docker
+sc dispatch auth-feature-05A
+
+# Execute in tmux session
+sc dispatch auth-feature-05A --exec tmux
+
+# Execute in specific mode
+sc dispatch auth-feature-05A --mode implementation
+
+# Resume autonomous session
+sc dispatch --session session-xyz789
+```
+
+#### Composable Workflows
+
+```bash
+# Complete development workflow
+sc task create --title "New feature" --type feature
+sc env new-feature-05A
+sc work new-feature-05A
+
+# Or autonomous processing
+sc dispatch new-feature-05A --exec tmux
+```
+
+### Legacy Worktree Management
+
+For compatibility with existing workflows:
 
 ```bash
 # Start a task worktree
@@ -202,14 +268,28 @@ Commands follow an intuitive pattern:
 Entities:
 - `task` - Task management (simple and subtasks)
 - `parent` - Parent task management (folders with subtasks)
+- `env` - Development environment management (worktrees)
+- `work` - Interactive Claude development sessions
+- `dispatch` - Autonomous Claude execution
 - `area` - Area directories (organizational units)
 - `workflow` - Task sequences and status
 - `template` - Task templates
 
-Example:
+Examples:
 ```bash
-# New format
+# Task management
 sc task list
+sc task create --title "Feature X" --type feature
+
+# Environment management
+sc env feature-x-05A
+sc env list
+
+# Interactive development
+sc work feature-x-05A
+
+# Autonomous execution
+sc dispatch feature-x-05A --exec tmux
 
 # Legacy format (still supported)
 sc list
@@ -285,10 +365,14 @@ Configure in your Roo Commander settings to enable LLM agents to manage tasks di
 
 ## Documentation
 
+### CLI Reference and Guides
+- [CLI Reference](docs/04-reference/cli.md) - Complete command reference
+- [CLI Workflows Guide](docs/03-guides/cli-workflows.md) - Workflow patterns and best practices
+
+### Development and Integration
 - [Feature Development Workflow](docs/feature-development-workflow.md)
 - [Claude Commands Guide](docs/claude-commands-guide.md)
 - [Organizational Structure Guide](docs/organizational-structure-guide.md)
-- [MDTM Directory Structure](docs/mdtm-directory-structure.md)
 - [Development Guide](docs/DEVELOPMENT.md)
 
 ## Integration Options

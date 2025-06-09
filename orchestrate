@@ -1,20 +1,15 @@
 #!/bin/bash
 
-# Usage: ./orchestrate <parentId> [additional instructions]
-# Example: ./orchestrate ui-redesign-06A
-# Example: ./orchestrate ui-redesign-06A "Focus on phase 1 tasks only"
+# Orchestration CLI wrapper (interactive mode)
+# This delegates to the new work command with orchestration mode
 
-PARENT_ID=$1
-ADDITIONAL_INSTRUCTIONS="${*:2}"
-
-if [ -z "$PARENT_ID" ]; then
-    echo "Usage: $0 <parentId> [additional instructions]"
-    echo "Example: $0 ui-redesign-06A"
-    echo "Example: $0 ui-redesign-06A \"Focus on phase 1 tasks only\""
+# Check if we have at least one argument (parentId)
+if [ $# -eq 0 ]; then
+    echo "Usage: ./orchestrate <parentId> [additional instructions...]"
+    echo "Example: ./orchestrate impl-cli-env-mgmt-06A"
+    echo "Example: ./orchestrate impl-cli-env-mgmt-06A \"Focus on Phase 4 tasks\""
     exit 1
 fi
 
-# Run channelcoder with the orchestration prompt
-channelcoder .tasks/.modes/orchestration/base.md \
-    -d parentId="$PARENT_ID" \
-    -d additionalInstructions="$ADDITIONAL_INSTRUCTIONS"
+# Pass parentId and any additional arguments to work command with orchestration mode
+exec bun run dev:cli work "$@" --mode orchestration

@@ -148,24 +148,23 @@ export function SubtaskList({
                 })}
               </div>
             );
-          } else {
-            // Single task
-            const task = tasks[0];
-            const statusSymbol = getStatusSymbol(task.status);
-
-            return (
-              <div
-                key={task.id}
-                className="flex items-center gap-2 text-sm hover:bg-gray-50 cursor-pointer py-1"
-                onClick={() => onTaskClick?.(task)}
-              >
-                <span className="font-mono text-gray-400">{isLastGroup ? '└──' : '├──'}</span>
-                <span className="font-mono text-blue-600">{statusSymbol}</span>
-                <span className="font-medium truncate">{task.title}</span>
-                <span className="text-gray-500 text-xs">[{task.sequence}]</span>
-              </div>
-            );
           }
+          // Single task
+          const task = tasks[0];
+          const statusSymbol = getStatusSymbol(task.status);
+
+          return (
+            <div
+              key={task.id}
+              className="flex items-center gap-2 text-sm hover:bg-gray-50 cursor-pointer py-1"
+              onClick={() => onTaskClick?.(task)}
+            >
+              <span className="font-mono text-gray-400">{isLastGroup ? '└──' : '├──'}</span>
+              <span className="font-mono text-blue-600">{statusSymbol}</span>
+              <span className="font-medium truncate">{task.title}</span>
+              <span className="text-gray-500 text-xs">[{task.sequence}]</span>
+            </div>
+          );
         })}
       </div>
     );
@@ -247,61 +246,58 @@ export function SubtaskList({
               </div>
             </div>
           );
-        } else {
-          // Single task
-          const task = tasks[0];
-
-          return (
-            <div
-              key={task.id}
-              className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-              onClick={() => onTaskClick?.(task)}
-            >
-              <div className="flex items-center gap-2 mt-1">
-                <span className="font-mono text-gray-400 text-sm">
-                  {isLastGroup ? '└──' : '├──'}
-                </span>
-                <TaskTypeIcon task={task} size="sm" />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  {showSequence && task.sequence && (
-                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                      {task.sequence}
-                    </span>
-                  )}
-                  <h4 className="font-medium text-gray-900 truncate">{task.title}</h4>
-                </div>
-
-                {showMetadata && (
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={task.status} size="sm" />
-                    <PriorityIndicator priority={task.priority} size="sm" />
-                    {task.tags && task.tags.length > 0 && (
-                      <div className="flex gap-1">
-                        {task.tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {task.content && (
-                  <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                    {task.content.split('\n')[0].replace(/^#+\s*/, '')}
-                  </p>
-                )}
-              </div>
-            </div>
-          );
         }
+        // Single task
+        const task = tasks[0];
+
+        return (
+          <div
+            key={task.id}
+            className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+            onClick={() => onTaskClick?.(task)}
+          >
+            <div className="flex items-center gap-2 mt-1">
+              <span className="font-mono text-gray-400 text-sm">{isLastGroup ? '└──' : '├──'}</span>
+              <TaskTypeIcon task={task} size="sm" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                {showSequence && task.sequence && (
+                  <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                    {task.sequence}
+                  </span>
+                )}
+                <h4 className="font-medium text-gray-900 truncate">{task.title}</h4>
+              </div>
+
+              {showMetadata && (
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={task.status} size="sm" />
+                  <PriorityIndicator priority={task.priority} size="sm" />
+                  {task.tags && task.tags.length > 0 && (
+                    <div className="flex gap-1">
+                      {task.tags.slice(0, 3).map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {task.content && (
+                <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                  {task.content.split('\n')[0].replace(/^#+\s*/, '')}
+                </p>
+              )}
+            </div>
+          </div>
+        );
       })}
 
       {/* Legend */}

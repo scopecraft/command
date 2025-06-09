@@ -5,6 +5,7 @@
 
 import * as core from '../../../core/index.js';
 import type { TaskCreateInput, TaskUpdateInput } from '../../schemas.js';
+import { sanitizeSectionContent } from './validation-utils.js';
 
 /**
  * Build common metadata fields for task creation
@@ -45,7 +46,9 @@ export function buildTaskCreateOptionsBase(params: {
     area: params.area || 'general',
     status: (params.status || 'todo') as core.TaskStatus, // Core will normalize
     workflowState: params.workflowState as core.WorkflowState,
-    instruction: params.instruction,
+    instruction: params.instruction
+      ? sanitizeSectionContent(params.instruction)
+      : params.instruction,
   };
 }
 
@@ -72,12 +75,12 @@ export function buildTaskUpdateOptions(
     updateOptions.frontmatter = frontmatter;
   }
 
-  // Build section updates
+  // Build section updates with sanitization
   const sections: Partial<core.TaskSections> = {};
-  if (updates.instruction) sections.instruction = updates.instruction;
-  if (updates.tasks) sections.tasks = updates.tasks;
-  if (updates.deliverable) sections.deliverable = updates.deliverable;
-  if (updates.log) sections.log = updates.log;
+  if (updates.instruction) sections.instruction = sanitizeSectionContent(updates.instruction);
+  if (updates.tasks) sections.tasks = sanitizeSectionContent(updates.tasks);
+  if (updates.deliverable) sections.deliverable = sanitizeSectionContent(updates.deliverable);
+  if (updates.log) sections.log = sanitizeSectionContent(updates.log);
 
   if (Object.keys(sections).length > 0) {
     updateOptions.sections = sections;
@@ -93,9 +96,10 @@ export function parseTasksList(tasksInput?: string | string[]): string[] | undef
   if (!tasksInput) return undefined;
 
   if (Array.isArray(tasksInput)) {
-    return tasksInput;
+    return tasksInput.map((task) => sanitizeSectionContent(task));
   }
 
-  // Parse markdown task list format
-  return core.parseTasksSection(tasksInput).map((t) => t.text);
+  // Sanitize the input before parsing markdown task list format
+  const sanitizedInput = sanitizeSectionContent(tasksInput);
+  return core.parseTasksSection(sanitizedInput).map((t) => t.text);
 }

@@ -123,3 +123,15 @@ export function resolveSubtaskPath(parentDir: string, subtaskId: string): string
 
   return match ? join(parentDir, match) : null;
 }
+
+/**
+ * Sanitize section content to prevent section header corruption
+ * Converts ## headers to ### headers to avoid parser conflicts
+ */
+export function sanitizeSectionContent(content: string): string {
+  if (!content) return content;
+
+  // Convert ## headers to ### headers, but leave ### and #### unchanged
+  // This prevents section content from being misinterpreted as task sections
+  return content.replace(/^##(?!#)/gm, '###');
+}

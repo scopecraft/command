@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# Wrapper script for autonomous task execution
-# This delegates to the TypeScript implementation which uses the channelcoder SDK
-
-# Pass all arguments to the TypeScript implementation
-exec bun run scripts/implement-autonomous.ts "$@"

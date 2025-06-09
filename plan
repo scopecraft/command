@@ -1,24 +1,15 @@
 #!/bin/bash
 
-# Usage: ./plan <feature description> [area] [context]
-# Example: ./plan "Add dark mode toggle"
-# Example: ./plan "Add OAuth login" auth
-# Example: ./plan "Build real-time collaboration" ui "Similar to Figma multiplayer"
+# Planning CLI wrapper
+# This delegates to the new plan command
 
-FEATURE_DESCRIPTION=$1
-AREA=${2:-general}
-CONTEXT="${*:3}"
-
-if [ -z "$FEATURE_DESCRIPTION" ]; then
-    echo "Usage: $0 <feature description> [area] [context]"
-    echo "Example: $0 \"Add dark mode toggle\""
-    echo "Example: $0 \"Add OAuth login\" auth"
-    echo "Example: $0 \"Build real-time collaboration\" ui \"Similar to Figma\""
+# Check if we have at least one argument
+if [ $# -eq 0 ]; then
+    echo "Usage: ./plan <prompt...>"
+    echo "Example: ./plan \"Add dark mode toggle\""
+    echo "Example: ./plan \"Build OAuth integration with GitHub\""
     exit 1
 fi
 
-# Run channelcoder with the planning prompt
-channelcoder .tasks/.modes/planning/base.md \
-    -d feature_description="$FEATURE_DESCRIPTION" \
-    -d area="$AREA" \
-    -d context="$CONTEXT"
+# Pass all arguments to the plan command
+exec bun run dev:cli plan "$@"

@@ -226,7 +226,7 @@ export class ConfigurationManager implements IConfigurationManager {
       const hasRuruDir = fs.existsSync(path.join(rootPath, '.ruru'));
 
       return hasTasksDir || hasRuruDir;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -238,7 +238,7 @@ export class ConfigurationManager implements IConfigurationManager {
     try {
       const config = this.loadConfigFile();
       return config?.projects || [];
-    } catch (error) {
+    } catch (_error) {
       return [];
     }
   }
@@ -250,7 +250,7 @@ export class ConfigurationManager implements IConfigurationManager {
     try {
       const rootConfig = this.getRootConfig();
       return rootConfig?.path || null;
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -318,7 +318,7 @@ export class ConfigurationManager implements IConfigurationManager {
           validated: true,
         };
       }
-    } catch (error) {
+    } catch (_error) {
       // Config file errors are non-fatal
     }
     return null;

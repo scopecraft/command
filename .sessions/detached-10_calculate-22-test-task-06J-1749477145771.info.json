@@ -1,0 +1,10 @@
+{
+  "sessionName": "detached-10_calculate-22-test-task-06J-1749477145771",
+  "startTime": "2025-06-09T13:52:25.776Z",
+  "taskId": "10_calculate-22-test-task-06J",
+  "parentId": "impl-cli-env-mgmt-06A",
+  "logFile": "/Users/davidpaquet/Projects/scopecraft.worktrees/impl-cli-env-mgmt-06A/.sessions/logs/detached-10_calculate-22-test-task-06J-1749477145771.log",
+  "status": "running",
+  "type": "autonomous-task",
+  "pid": 50822
+}

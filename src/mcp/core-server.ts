@@ -130,7 +130,7 @@ export function createServerInstance(options: { verbose?: boolean } = {}): McpSe
 /**
  * Register all tools with the MCP server
  */
-function registerTools(server: McpServer, verbose = false): McpServer {
+function registerTools(server: McpServer, _verbose = false): McpServer {
   // Task structure enum for filtering
   const taskStructureEnum = z.enum(['simple', 'parent', 'subtask', 'top-level', 'all']);
 

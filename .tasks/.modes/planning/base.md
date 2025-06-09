@@ -295,15 +295,16 @@ Example:
 type: feature
 area: ui
 mode: implementation
+assignee: implement-agent
 tags: ["team:frontend", "execution:autonomous"]
 ```
 
 ## For Pattern B (Standard Feature)
 I'll create a sequence:
-1. Technical design task (tags: ["team:architect", "execution:interactive"])
-2. Implementation task(s) by area (tags: ["team:backend", "execution:autonomous"])
-3. Integration task (tags: ["team:fullstack", "execution:autonomous"])
-4. Testing and documentation task (tags: ["team:qa", "execution:autonomous"])
+1. Technical design task (assignee: design-agent, tags: ["team:architect", "execution:interactive"])
+2. Implementation task(s) by area (assignee: implement-agent, tags: ["team:backend", "execution:autonomous"])
+3. Integration task (assignee: implement-agent, tags: ["team:fullstack", "execution:autonomous"])
+4. Testing and documentation task (assignee: test-agent, tags: ["team:qa", "execution:autonomous"])
 
 ## For Pattern C (Exploratory - New Feature)
 I'll create:
@@ -447,6 +448,7 @@ Create explicit gate tasks when decisions affect future work:
 ```yaml
 title: "Synthesis Review: Choose UI Approach"
 type: chore
+assignee: review-agent
 tags: ["review-gate", "execution:interactive", "team:architect"]
 ```
 
@@ -548,6 +550,13 @@ This project has four main areas. Choose the appropriate area for each task:
 4. Include proper metadata for each task:
    - mode (brainstorm, research, design, implementation, etc.)
    - area (choose from: core, cli, mcp, ui - see area guidance above)
+   - assignee (agent type that maps to mode):
+     * `research-agent` - for research/exploration tasks
+     * `design-agent` - for design and architecture tasks
+     * `implement-agent` - for implementation tasks
+     * `test-agent` - for testing tasks
+     * `architect-agent` - for high-level architecture (uses design mode)
+     * `review-agent` - for review gates and synthesis
    - tags using prefix format:
      * "team:ux", "team:backend", "team:infra" (which team owns this)
      * "expertise:researcher", "expertise:architect" (special skills needed)

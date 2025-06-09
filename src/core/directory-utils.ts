@@ -14,7 +14,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { basename, dirname, join, relative } from 'node:path';
+import { basename, dirname, join, relative, sep } from 'node:path';
 import type { ProjectConfig, StructureVersion, TaskLocation, WorkflowState } from './types.js';
 
 // Default workflow folder names
@@ -260,13 +260,30 @@ export function getTaskIdFromFilename(filename: string): string {
 /**
  * Check if a path is a parent task folder
  */
-export function isParentTaskFolder(dirPath: string): boolean {
+export function isParentTaskFolder(dirPath: string, projectRoot?: string): boolean {
   if (!existsSync(dirPath) || !statSync(dirPath).isDirectory()) {
     return false;
   }
 
   const overviewPath = join(dirPath, '_overview.md');
-  return existsSync(overviewPath);
+  if (!existsSync(overviewPath)) {
+    return false;
+  }
+
+  // Prevent workflow directories from being treated as parent task folders
+  // Parent task folders CANNOT be at the workflow level (second level)
+  if (projectRoot) {
+    const relativePath = relative(projectRoot, dirPath);
+    const pathParts = relativePath.split(sep);
+
+    // Block second-level directories (workflow level) from being parent folders
+    // Examples: .tasks/backlog/ or .tasks/current/ should never be parent folders
+    if (pathParts.length <= 2) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**

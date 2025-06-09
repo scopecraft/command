@@ -22,7 +22,7 @@ function formatJSON(content: unknown): string {
 
     // If it's an object, stringify it with formatting
     return JSON.stringify(content, null, 2);
-  } catch (error) {
+  } catch (_error) {
     // If anything fails, return as string or "[Object]" if conversion fails
     return String(content) || '[Object]';
   }
@@ -282,7 +282,7 @@ export function MessageDisplay({ message }: { message: Message }) {
                     const prompt = (toolInput as any).prompt;
                     // Truncate long prompts
                     summary.push(
-                      `Prompt: ${prompt.length > 100 ? prompt.substring(0, 100) + '...' : prompt}`
+                      `Prompt: ${prompt.length > 100 ? `${prompt.substring(0, 100)}...` : prompt}`
                     );
                   }
 
@@ -355,7 +355,7 @@ export function MessageDisplay({ message }: { message: Message }) {
             if (parsed.data) {
               if (parsed.data.content) {
                 // For task content, show a snippet
-                return parsed.data.content.substring(0, 150) + '...';
+                return `${parsed.data.content.substring(0, 150)}...`;
               }
 
               if (parsed.data.metadata) {
@@ -372,11 +372,11 @@ export function MessageDisplay({ message }: { message: Message }) {
             }
 
             // Return the first 150 chars or so
-            return JSON.stringify(parsed).substring(0, 150) + '...';
+            return `${JSON.stringify(parsed).substring(0, 150)}...`;
           }
-        } catch (e) {
+        } catch (_e) {
           // If JSON parsing fails, return the original text
-          return text.substring(0, 150) + '...';
+          return `${text.substring(0, 150)}...`;
         }
       }
 
@@ -401,7 +401,7 @@ export function MessageDisplay({ message }: { message: Message }) {
             return `Content: ${data.content.substring(0, 100)}...`;
           }
 
-          return `Tool successfully returned data (see details)`;
+          return 'Tool successfully returned data (see details)';
         }
       }
 
@@ -426,7 +426,7 @@ export function MessageDisplay({ message }: { message: Message }) {
             const parsed = JSON.parse(text);
             return JSON.stringify(parsed, null, 2);
           }
-        } catch (e) {
+        } catch (_e) {
           // If parsing fails, return the original text
         }
 

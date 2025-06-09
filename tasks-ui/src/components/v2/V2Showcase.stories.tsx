@@ -214,7 +214,7 @@ export const SubtaskDetailPage: Story = {
     const subtask = mockV2Subtasks[0]; // API endpoint design
     const parentTask = mockV2ParentTasks[0]; // User Authentication System
     const siblingSubtasks = mockV2Subtasks.filter((t) => t.parent_task === subtask.parent_task);
-    const currentIndex = siblingSubtasks.findIndex((t) => t.id === subtask.id);
+    const _currentIndex = siblingSubtasks.findIndex((t) => t.id === subtask.id);
 
     const [isEditing, setIsEditing] = React.useState(false);
     const [content, setContent] = React.useState(`## Instruction
@@ -1062,40 +1062,39 @@ export const MixedTaskList: Story = {
                       onClick={() => console.log('Navigate to parent:', task.title)}
                     />
                   );
-                } else {
-                  // Simple task
-                  return (
-                    <div
-                      key={task.id}
-                      className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => console.log('Navigate to task:', task.title)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <TaskTypeIcon task={task} />
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-foreground">{task.title}</h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <StatusBadge status={task.status} size="sm" />
-                            <PriorityIndicator priority={task.priority} size="sm" />
-                            <WorkflowStateBadge workflow={task.workflow_state} size="sm" />
-                          </div>
-                          {task.tags && task.tags.length > 0 && (
-                            <div className="flex gap-1 mt-2">
-                              {task.tags.slice(0, 3).map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                }
+                // Simple task
+                return (
+                  <div
+                    key={task.id}
+                    className="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => console.log('Navigate to task:', task.title)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <TaskTypeIcon task={task} />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-foreground">{task.title}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <StatusBadge status={task.status} size="sm" />
+                          <PriorityIndicator priority={task.priority} size="sm" />
+                          <WorkflowStateBadge workflow={task.workflow_state} size="sm" />
                         </div>
+                        {task.tags && task.tags.length > 0 && (
+                          <div className="flex gap-1 mt-2">
+                            {task.tags.slice(0, 3).map((tag) => (
+                              <span
+                                key={tag}
+                                className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  );
-                }
+                  </div>
+                );
               })}
           </div>
         </div>

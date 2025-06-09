@@ -121,7 +121,7 @@ export function serializeTaskDocument(task: TaskDocument): string {
   for (const { key, name } of sectionOrder) {
     lines.push(`## ${name}`);
     const content = task.sections[key];
-    if (content && content.trim()) {
+    if (content?.trim()) {
       lines.push(content);
     }
     lines.push('');
@@ -133,14 +133,14 @@ export function serializeTaskDocument(task: TaskDocument): string {
       // Capitalize first letter of custom section
       const name = key.charAt(0).toUpperCase() + key.slice(1);
       lines.push(`## ${name}`);
-      if (content && content.trim()) {
+      if (content?.trim()) {
         lines.push(content);
       }
       lines.push('');
     }
   }
 
-  return lines.join('\n').trimEnd() + '\n';
+  return `${lines.join('\n').trimEnd()}\n`;
 }
 
 /**
@@ -164,7 +164,7 @@ export function serializeTaskContent(task: TaskDocument): string {
   for (const { key, name } of sectionOrder) {
     lines.push(`## ${name}`);
     const content = task.sections[key];
-    if (content && content.trim()) {
+    if (content?.trim()) {
       lines.push(content);
     }
     lines.push('');
@@ -176,14 +176,14 @@ export function serializeTaskContent(task: TaskDocument): string {
       // Capitalize first letter of custom section
       const name = key.charAt(0).toUpperCase() + key.slice(1);
       lines.push(`## ${name}`);
-      if (content && content.trim()) {
+      if (content?.trim()) {
         lines.push(content);
       }
       lines.push('');
     }
   }
 
-  return lines.join('\n').trimEnd() + '\n';
+  return `${lines.join('\n').trimEnd()}\n`;
 }
 
 /**
@@ -340,7 +340,7 @@ export function addLogEntry(content: string, entry: string, timestamp: Date = ne
   const newEntry = `- ${formattedTimestamp}: ${entry}`;
 
   if (task.sections.log) {
-    task.sections.log = task.sections.log.trim() + '\n' + newEntry;
+    task.sections.log = `${task.sections.log.trim()}\n${newEntry}`;
   } else {
     task.sections.log = newEntry;
   }

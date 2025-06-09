@@ -105,27 +105,26 @@ export function SubtaskList({
                 })}
               </div>
             );
-          } else {
-            const task = tasks[0];
-            const statusSymbol = getStatusSymbol(task.status);
-            return (
-              <div
-                key={task.id || `single-${groupIndex}`}
-                className={cn(
-                  'flex items-center gap-2 cursor-pointer py-1 px-2 rounded',
-                  highlightTaskId === task.id
-                    ? 'bg-primary/10 border border-primary'
-                    : 'hover:bg-accent/50'
-                )}
-                onClick={() => onTaskClick?.(task)}
-              >
-                <span className="text-muted-foreground">{isLastGroup ? '└──' : '├──'}</span>
-                <span>{statusSymbol}</span>
-                <span className="truncate flex-1">{task.title}</span>
-                <span className="text-muted-foreground">[{task.sequenceNumber}]</span>
-              </div>
-            );
           }
+          const task = tasks[0];
+          const statusSymbol = getStatusSymbol(task.status);
+          return (
+            <div
+              key={task.id || `single-${groupIndex}`}
+              className={cn(
+                'flex items-center gap-2 cursor-pointer py-1 px-2 rounded',
+                highlightTaskId === task.id
+                  ? 'bg-primary/10 border border-primary'
+                  : 'hover:bg-accent/50'
+              )}
+              onClick={() => onTaskClick?.(task)}
+            >
+              <span className="text-muted-foreground">{isLastGroup ? '└──' : '├──'}</span>
+              <span>{statusSymbol}</span>
+              <span className="truncate flex-1">{task.title}</span>
+              <span className="text-muted-foreground">[{task.sequenceNumber}]</span>
+            </div>
+          );
         })}
 
         {/* Legend */}
@@ -207,46 +206,45 @@ export function SubtaskList({
               </div>
             </div>
           );
-        } else {
-          const task = tasks[0];
-          return (
-            <div
-              key={task.id || `single-${groupIndex}`}
-              className={cn(
-                'flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors',
-                highlightTaskId === task.id
-                  ? 'bg-primary/10 border-primary'
-                  : 'bg-card hover:bg-accent/50'
-              )}
-              onClick={() => onTaskClick?.(task)}
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-muted-foreground text-sm">
-                  {isLastGroup ? '└──' : '├──'}
-                </span>
-                <TaskTypeIcon task={task} size="sm" />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                    {task.sequenceNumber}
-                  </span>
-                  <h4 className="font-mono font-medium truncate">{task.title}</h4>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={task.status} />
-                  <PriorityIndicator priority={task.priority} inline />
-                </div>
-                {task.content && (
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                    {task.content.split('\n')[0].replace(/^#+\s*/, '')}
-                  </p>
-                )}
-              </div>
-            </div>
-          );
         }
+        const task = tasks[0];
+        return (
+          <div
+            key={task.id || `single-${groupIndex}`}
+            className={cn(
+              'flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors',
+              highlightTaskId === task.id
+                ? 'bg-primary/10 border-primary'
+                : 'bg-card hover:bg-accent/50'
+            )}
+            onClick={() => onTaskClick?.(task)}
+          >
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-muted-foreground text-sm">
+                {isLastGroup ? '└──' : '├──'}
+              </span>
+              <TaskTypeIcon task={task} size="sm" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                  {task.sequenceNumber}
+                </span>
+                <h4 className="font-mono font-medium truncate">{task.title}</h4>
+              </div>
+              <div className="flex items-center gap-2">
+                <StatusBadge status={task.status} />
+                <PriorityIndicator priority={task.priority} inline />
+              </div>
+              {task.content && (
+                <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                  {task.content.split('\n')[0].replace(/^#+\s*/, '')}
+                </p>
+              )}
+            </div>
+          </div>
+        );
       })}
     </div>
   );

@@ -311,7 +311,7 @@ export async function get(
     let sequenceNumber: string | undefined;
 
     // Check if the task is inside a parent directory (but not the parent task itself)
-    if (isParentTaskFolder(fileDir) && !isParentTask) {
+    if (isParentTaskFolder(fileDir, projectRoot) && !isParentTask) {
       parentTask = basename(fileDir);
 
       // Extract sequence number for subtasks
@@ -355,7 +355,7 @@ function shouldAutoTransition(
   currentWorkflow: WorkflowState,
   oldStatus: TaskStatus | undefined,
   newStatus: TaskStatus,
-  config?: ProjectConfig
+  _config?: ProjectConfig
 ): WorkflowState | null {
   // Only transition if auto-transitions are enabled (default: true)
   // TEMPORARY FIX: Force auto-transitions to false to prevent subtask corruption
@@ -768,7 +768,7 @@ export async function list(
           let sequenceNumber: string | undefined;
 
           // Check if the task is inside a parent directory (but not the parent task itself)
-          if (isParentTaskFolder(fileDir) && !isParent) {
+          if (isParentTaskFolder(fileDir, projectRoot) && !isParent) {
             parentTask = basename(fileDir);
 
             // Extract sequence number for subtasks

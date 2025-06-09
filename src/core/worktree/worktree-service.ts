@@ -154,18 +154,15 @@ export class WorktreeService {
 
         if (status.conflicted.length > 0) {
           return WorktreeStatus.CONFLICT;
-        } else if (
-          status.modified.length > 0 ||
-          status.deleted.length > 0 ||
-          status.renamed.length > 0
-        ) {
-          return WorktreeStatus.MODIFIED;
-        } else if (status.not_added.length > 0) {
-          return WorktreeStatus.UNTRACKED;
-        } else {
-          return WorktreeStatus.CLEAN;
         }
-      } catch (error) {
+        if (status.modified.length > 0 || status.deleted.length > 0 || status.renamed.length > 0) {
+          return WorktreeStatus.MODIFIED;
+        }
+        if (status.not_added.length > 0) {
+          return WorktreeStatus.UNTRACKED;
+        }
+        return WorktreeStatus.CLEAN;
+      } catch (_error) {
         return WorktreeStatus.UNKNOWN;
       }
     });
@@ -218,7 +215,7 @@ export class WorktreeService {
         ];
 
         return changedFiles;
-      } catch (error) {
+      } catch (_error) {
         return [];
       }
     });
@@ -338,15 +335,17 @@ export class WorktreeService {
 
     if (status.includes('done') || status.includes('complete') || status.includes('🟢')) {
       return WorkflowStatus.DONE;
-    } else if (status.includes('progress') || status.includes('working') || status.includes('🔵')) {
-      return WorkflowStatus.IN_PROGRESS;
-    } else if (status.includes('blocked') || status.includes('waiting') || status.includes('🔴')) {
-      return WorkflowStatus.BLOCKED;
-    } else if (status.includes('to do') || status.includes('todo') || status.includes('🟡')) {
-      return WorkflowStatus.TO_DO;
-    } else {
-      return WorkflowStatus.UNKNOWN;
     }
+    if (status.includes('progress') || status.includes('working') || status.includes('🔵')) {
+      return WorkflowStatus.IN_PROGRESS;
+    }
+    if (status.includes('blocked') || status.includes('waiting') || status.includes('🔴')) {
+      return WorkflowStatus.BLOCKED;
+    }
+    if (status.includes('to do') || status.includes('todo') || status.includes('🟡')) {
+      return WorkflowStatus.TO_DO;
+    }
+    return WorkflowStatus.UNKNOWN;
   }
 
   /**
