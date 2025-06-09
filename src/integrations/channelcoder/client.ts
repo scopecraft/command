@@ -48,30 +48,39 @@ export async function execute(
 
       // Set up metadata for our monitoring
       if (storage.setScopecraftMetadata) {
+        // Determine session type based on options
+        const sessionType =
+          options.mode === 'interactive'
+            ? 'interactive'
+            : options.detached || options.docker
+              ? 'autonomous-task'
+              : 'planning';
+
         storage.setScopecraftMetadata({
           taskId,
           parentId,
           logFile: options.logFile,
           status: 'running',
-          type: 'autonomous-task',
+          type: sessionType,
         });
       }
 
       // Just use claude through the session - it handles ALL modes!
       const result = await s.claude(promptOrFile, options);
-      
+
       // For detached mode, we need to save the session info immediately
       // since the detached process won't trigger saves until later
-      if (options.detached && storage.setScopecraftMetadata) {
+      if (options.detached) {
         await storage.saveSessionInfo(finalSessionName, {
           taskId,
           parentId,
           logFile: options.logFile,
           status: 'running',
           type: 'autonomous-task',
-          pid: result.data && typeof result.data === 'object' && 'pid' in result.data 
-            ? (result.data as any).pid 
-            : undefined,
+          pid:
+            result.data && typeof result.data === 'object' && 'pid' in result.data
+              ? (result.data as any).pid
+              : undefined,
         });
       }
 

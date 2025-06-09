@@ -7,6 +7,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import type { SessionInfo, SessionState, SessionStorage } from 'channelcoder';
 import { FileSessionStorage } from 'channelcoder';
+import { SESSION_STORAGE } from './constants.js';
 
 export interface ScopecraftSessionMetadata {
   taskId?: string;
@@ -14,7 +15,11 @@ export interface ScopecraftSessionMetadata {
   logFile?: string;
   status: 'running' | 'completed' | 'failed';
   pid?: number;
-  type: 'autonomous-task' | 'interactive' | 'planning';
+  type: string; // 'autonomous-task', 'interactive', 'planning', etc.
+  executionMode?: string; // 'detached', 'tmux', 'interactive', etc.
+  dockerEnabled?: boolean; // True if running in docker
+  executionFlags?: Record<string, unknown>; // Future extensibility
+  realSessionId?: string; // The actual Claude session ID from the log file
 }
 
 export class ScopecraftSessionStorage implements SessionStorage {
@@ -22,9 +27,10 @@ export class ScopecraftSessionStorage implements SessionStorage {
   private infoDir: string;
   private scopecraftMetadata?: ScopecraftSessionMetadata;
 
-  constructor(baseDir = './.tasks/.autonomous-sessions') {
-    this.baseStorage = new FileSessionStorage(path.join(baseDir, 'sessions'));
-    this.infoDir = baseDir;
+  constructor(baseDir?: string, projectRoot?: string) {
+    const finalBaseDir = baseDir || SESSION_STORAGE.getBaseDir(projectRoot);
+    this.baseStorage = new FileSessionStorage(SESSION_STORAGE.getSessionsDir(projectRoot));
+    this.infoDir = finalBaseDir;
   }
 
   // Method to set metadata before saving
@@ -37,7 +43,8 @@ export class ScopecraftSessionStorage implements SessionStorage {
     const sessionName = await this.baseStorage.save(state, name);
 
     // Save our additional metadata for monitoring
-    if (this.scopecraftMetadata) {
+    // Only create info files for autonomous tasks (not interactive sessions)
+    if (this.scopecraftMetadata && this.scopecraftMetadata.type === 'autonomous-task') {
       await this.saveSessionInfo(sessionName, this.scopecraftMetadata);
       // Update PID if available from state
       const stateWithPid = state as SessionState & { executionPid?: number };
@@ -62,7 +69,7 @@ export class ScopecraftSessionStorage implements SessionStorage {
   async saveSessionInfo(sessionName: string, metadata: ScopecraftSessionMetadata): Promise<void> {
     await fs.mkdir(this.infoDir, { recursive: true });
 
-    const infoPath = path.join(this.infoDir, `${sessionName}.info.json`);
+    const infoPath = path.join(this.infoDir, `${sessionName}${SESSION_STORAGE.INFO_FILE_SUFFIX}`);
     await fs.writeFile(
       infoPath,
       JSON.stringify(
@@ -82,7 +89,7 @@ export class ScopecraftSessionStorage implements SessionStorage {
       // Find most recent session for this task
       const files = await fs.readdir(this.infoDir).catch(() => []);
       const infoFiles = files.filter(
-        (f) => f.includes(`task-${taskId}`) && f.endsWith('.info.json')
+        (f) => f.includes(`task-${taskId}`) && f.endsWith(SESSION_STORAGE.INFO_FILE_SUFFIX)
       );
 
       if (infoFiles.length === 0) return null;
@@ -118,5 +125,23 @@ export class ScopecraftSessionStorage implements SessionStorage {
         return { ...session, scopecraftData };
       })
     );
+  }
+
+  async updateRealSessionId(sessionName: string, realSessionId: string): Promise<void> {
+    const infoPath = path.join(this.infoDir, `${sessionName}${SESSION_STORAGE.INFO_FILE_SUFFIX}`);
+
+    try {
+      // Read existing info
+      const content = await fs.readFile(infoPath, 'utf-8');
+      const info = JSON.parse(content);
+
+      // Update with real session ID
+      info.realSessionId = realSessionId;
+
+      // Write back
+      await fs.writeFile(infoPath, JSON.stringify(info, null, 2));
+    } catch (error) {
+      console.warn(`Failed to update real session ID for ${sessionName}:`, error);
+    }
   }
 }

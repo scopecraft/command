@@ -16,6 +16,7 @@ import {
   parseLogFile,
   streamParser,
 } from 'channelcoder';
+import { SESSION_STORAGE } from './constants.js';
 import { type ScopecraftSessionMetadata, ScopecraftSessionStorage } from './session-storage.js';
 
 export interface SessionStats {
@@ -47,14 +48,14 @@ export interface LogEntry {
 /**
  * List all autonomous sessions with basic stats
  */
-export async function listAutonomousSessions(): Promise<SessionWithStats[]> {
-  const baseDir = './.tasks/.autonomous-sessions';
-  
+export async function listAutonomousSessions(projectRoot?: string): Promise<SessionWithStats[]> {
+  const baseDir = SESSION_STORAGE.getBaseDir(projectRoot);
+
   try {
-    // Read info files directly from the autonomous sessions directory
+    // Read info files directly from the sessions directory
     const files = await fs.readdir(baseDir).catch(() => []);
-    const infoFiles = files.filter(f => f.endsWith('.info.json'));
-    
+    const infoFiles = files.filter((f) => f.endsWith(SESSION_STORAGE.INFO_FILE_SUFFIX));
+
     const results = await Promise.all(
       infoFiles.map(async (file) => {
         try {
@@ -63,19 +64,23 @@ export async function listAutonomousSessions(): Promise<SessionWithStats[]> {
             sessionName: string;
             startTime: string;
           };
-          
+
           // Determine current status
           let currentStatus = sessionData.status;
           if (sessionData.logFile && currentStatus === 'running') {
-            currentStatus = await determineSessionStatus(sessionData.logFile);
+            currentStatus = await determineSessionStatus(sessionData.logFile, projectRoot);
           }
-          
+
           // Get basic stats
           let stats: SessionStats | undefined;
           if (sessionData.logFile) {
-            stats = await parseSessionStats(sessionData.logFile);
+            stats = await parseSessionStats(
+              sessionData.logFile,
+              projectRoot,
+              sessionData.sessionName
+            );
           }
-          
+
           return {
             ...sessionData,
             status: currentStatus,
@@ -87,7 +92,7 @@ export async function listAutonomousSessions(): Promise<SessionWithStats[]> {
         }
       })
     );
-    
+
     return results
       .filter((result): result is SessionWithStats => result !== null)
       .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
@@ -100,41 +105,44 @@ export async function listAutonomousSessions(): Promise<SessionWithStats[]> {
 /**
  * Get detailed session information including recent log lines
  */
-export async function getSessionDetails(taskId: string): Promise<SessionDetails | null> {
-  const baseDir = './.tasks/.autonomous-sessions';
-  
+export async function getSessionDetails(
+  taskId: string,
+  projectRoot?: string
+): Promise<SessionDetails | null> {
+  const baseDir = SESSION_STORAGE.getBaseDir(projectRoot);
+
   try {
     // Find the most recent info file for this task
     const files = await fs.readdir(baseDir).catch(() => []);
     const taskInfoFiles = files.filter(
-      f => f.includes(`task-${taskId}`) && f.endsWith('.info.json')
+      (f) => f.includes(`task-${taskId}`) && f.endsWith(SESSION_STORAGE.INFO_FILE_SUFFIX)
     );
-    
+
     if (taskInfoFiles.length === 0) return null;
-    
+
     // Sort by timestamp in filename (newest first)
     taskInfoFiles.sort((a, b) => b.localeCompare(a));
-    
+
     const content = await fs.readFile(path.join(baseDir, taskInfoFiles[0]), 'utf-8');
     const sessionData = JSON.parse(content) as ScopecraftSessionMetadata & {
       sessionName: string;
       startTime: string;
     };
-    
+
     // Get stats and recent log lines
     let stats: SessionStats = {
       messages: 0,
       toolsUsed: [],
       lastUpdate: new Date().toISOString(),
     };
-    
+
     let lastLogLines: string[] = [];
-    
+
     if (sessionData.logFile) {
-      stats = await parseSessionStats(sessionData.logFile);
-      lastLogLines = await getRecentLogLines(sessionData.logFile, 3);
+      stats = await parseSessionStats(sessionData.logFile, projectRoot, sessionData.sessionName);
+      lastLogLines = await getRecentLogLines(sessionData.logFile, 3, projectRoot);
     }
-    
+
     return {
       ...sessionData,
       stats,
@@ -149,9 +157,8 @@ export async function getSessionDetails(taskId: string): Promise<SessionDetails 
 /**
  * Get recent log entries from all sessions
  */
-export async function getSessionLogs(limit = 50): Promise<LogEntry[]> {
-  const PROJECT_ROOT = process.cwd();
-  const LOG_DIR = path.join(PROJECT_ROOT, '.tasks/.autonomous-sessions/logs');
+export async function getSessionLogs(limit = 50, projectRoot?: string): Promise<LogEntry[]> {
+  const LOG_DIR = SESSION_STORAGE.getLogsDir(projectRoot);
 
   const logEntries: LogEntry[] = [];
 
@@ -241,10 +248,10 @@ export interface MonitorEvent {
  */
 export function createSessionMonitor(
   taskId: string,
-  onEvent: (event: MonitorEvent) => void
+  onEvent: (event: MonitorEvent) => void,
+  projectRoot?: string
 ): () => void {
-  const PROJECT_ROOT = process.cwd();
-  const LOG_DIR = path.join(PROJECT_ROOT, '.tasks/.autonomous-sessions/logs');
+  const LOG_DIR = SESSION_STORAGE.getLogsDir(projectRoot);
 
   let cleanup: (() => void) | null = null;
 
@@ -305,10 +312,11 @@ export function createSessionMonitor(
  * Determine session status based on log file activity
  */
 async function determineSessionStatus(
-  logFile: string
+  logFile: string,
+  projectRoot?: string
 ): Promise<'running' | 'completed' | 'failed'> {
   try {
-    const PROJECT_ROOT = process.cwd();
+    const PROJECT_ROOT = projectRoot || process.cwd();
     const logPath = path.isAbsolute(logFile) ? logFile : path.join(PROJECT_ROOT, logFile);
 
     if (!existsSync(logPath)) return 'failed';
@@ -326,19 +334,30 @@ async function determineSessionStatus(
 /**
  * Parse session statistics from log file
  */
-async function parseSessionStats(logFile: string): Promise<SessionStats> {
+async function parseSessionStats(
+  logFile: string,
+  projectRoot?: string,
+  sessionName?: string
+): Promise<SessionStats> {
   const stats: SessionStats = {
     messages: 0,
     toolsUsed: [],
   };
 
   try {
-    const PROJECT_ROOT = process.cwd();
+    const PROJECT_ROOT = projectRoot || process.cwd();
     const logPath = path.isAbsolute(logFile) ? logFile : path.join(PROJECT_ROOT, logFile);
 
     if (!existsSync(logPath)) return stats;
 
     const parsed = await parseLogFile(logPath);
+
+    // Lazy session ID detection - if we have a session name and found a real ID
+    if (sessionName && parsed.sessionId) {
+      const storage = new ScopecraftSessionStorage(undefined, projectRoot);
+      await storage.updateRealSessionId(sessionName, parsed.sessionId);
+    }
+
     const events = parsed.events || [];
     const toolSet = new Set<string>();
     let lastMessageTime: Date | null = null;
@@ -386,9 +405,13 @@ async function parseSessionStats(logFile: string): Promise<SessionStats> {
 /**
  * Get recent log lines from a log file
  */
-async function getRecentLogLines(logFile: string, count: number): Promise<string[]> {
+async function getRecentLogLines(
+  logFile: string,
+  count: number,
+  projectRoot?: string
+): Promise<string[]> {
   try {
-    const PROJECT_ROOT = process.cwd();
+    const PROJECT_ROOT = projectRoot || process.cwd();
     const logPath = path.isAbsolute(logFile) ? logFile : path.join(PROJECT_ROOT, logFile);
 
     if (!existsSync(logPath)) return [];

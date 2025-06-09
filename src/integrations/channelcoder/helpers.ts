@@ -3,9 +3,16 @@
  * Encapsulates complexity while maintaining composability
  */
 
-import { type ClaudeOptions, type DockerOptions, type WorktreeOptions } from 'channelcoder';
 import { join } from 'node:path';
-import { execute, executeTmux, type ExecutionResult } from './client.js';
+import {
+  type ClaudeOptions,
+  type DockerOptions,
+  type WorktreeOptions,
+  monitorLog,
+} from 'channelcoder';
+import { type ExecutionResult, execute, executeTmux } from './client.js';
+import { EXECUTION_MODES, SESSION_STORAGE, SESSION_TYPES } from './constants.js';
+import { ScopecraftSessionStorage } from './session-storage.js';
 
 /**
  * Helper for autonomous task execution with monitoring support
@@ -26,15 +33,14 @@ export async function executeAutonomousTask(
 ): Promise<ExecutionResult> {
   const projectRoot = options.projectRoot || process.cwd();
   const timestamp = Date.now();
-  
+
   // Consistent session naming: {execType}-{taskId}-{timestamp}
   const sessionName = `${options.execType}-${options.taskId}-${timestamp}`;
-  
+
   // ALWAYS generate logFile for autonomous execution
   const logFile = join(
-    projectRoot,
-    '.tasks/.autonomous-sessions/logs',
-    `${sessionName}.log`
+    SESSION_STORAGE.getLogsDir(projectRoot),
+    `${sessionName}${SESSION_STORAGE.LOG_FILE_SUFFIX}`
   );
 
   // Special case for tmux - it has its own implementation
@@ -45,7 +51,7 @@ export async function executeAutonomousTask(
       data: {
         taskId: options.taskId,
         parentId: options.parentId,
-        ...options.data
+        ...options.data,
       },
       dryRun: options.dryRun,
     });
@@ -53,19 +59,19 @@ export async function executeAutonomousTask(
 
   // For docker and detached, ALWAYS use detached=true for dispatch
   const enhancedOptions: ClaudeOptions & { sessionName?: string } = {
-    detached: true,              // ALWAYS true for autonomous tasks
-    logFile,                     // ALWAYS needed for detached
-    stream: true,                // ALWAYS stream for monitoring
+    detached: true, // ALWAYS true for autonomous tasks
+    logFile, // ALWAYS needed for detached
+    stream: true, // ALWAYS stream for monitoring
     outputFormat: 'stream-json', // REQUIRED for real-time log monitoring
-    sessionName,                 // Our tracking field
-    docker: options.docker,      // Pass through if provided
-    worktree: options.worktree,  // Pass through if provided
+    sessionName, // Our tracking field
+    docker: options.docker, // Pass through if provided
+    worktree: options.worktree, // Pass through if provided
     dryRun: options.dryRun,
     data: {
       ...options.data,
       taskId: options.taskId,
       parentId: options.parentId,
-    }
+    },
   };
 
   return execute(promptOrFile, enhancedOptions);
@@ -73,7 +79,7 @@ export async function executeAutonomousTask(
 
 /**
  * Helper for interactive task execution (work command)
- * Simpler setup without monitoring requirements
+ * Uses sessions for consistency but without log files
  */
 export async function executeInteractiveTask(
   promptOrFile: string,
@@ -86,8 +92,13 @@ export async function executeInteractiveTask(
     data?: Record<string, unknown>;
   }
 ): Promise<ExecutionResult> {
-  const enhancedOptions: ClaudeOptions = {
+  // Generate session name for interactive tasks
+  // Format: interactive-{taskId}-{timestamp}
+  const sessionName = `interactive-${options.taskId}-${Date.now()}`;
+
+  const enhancedOptions: ClaudeOptions & { sessionName?: string } = {
     mode: 'interactive',
+    sessionName, // Track session for future resume capability
     docker: options.docker,
     worktree: options.worktree,
     dryRun: options.dryRun,
@@ -95,7 +106,7 @@ export async function executeInteractiveTask(
       ...options.data,
       taskId: options.taskId,
       taskInstruction: options.instruction,
-    }
+    },
   };
 
   return execute(promptOrFile, enhancedOptions);
@@ -119,13 +130,39 @@ export async function continueSession(
   sessionName: string,
   prompt: string,
   options: {
+    projectRoot?: string;
     dryRun?: boolean;
   } = {}
 ): Promise<ExecutionResult> {
-  // For continuation, we need to load the session and continue it
-  // This is a placeholder - actual implementation depends on ChannelCoder's continuation API
+  // First, check if we need to get the real session ID from the log
+  const storage = new ScopecraftSessionStorage(undefined, options.projectRoot);
+  let effectiveSessionName = sessionName;
+
+  try {
+    // Load session info to get log file path
+    const sessionInfo = await storage.loadSessionInfo(sessionName);
+
+    if (sessionInfo?.logFile && !sessionInfo.realSessionId) {
+      // Try to extract real session ID from log file
+      const { parseLogFile } = await import('channelcoder');
+      const parsed = await parseLogFile(sessionInfo.logFile);
+
+      if (parsed.sessionId) {
+        await storage.updateRealSessionId(sessionName, parsed.sessionId);
+        // Use the real session ID for continuation
+        effectiveSessionName = parsed.sessionId;
+      }
+    } else if (sessionInfo?.realSessionId) {
+      // We already have the real session ID
+      effectiveSessionName = sessionInfo.realSessionId;
+    }
+  } catch (error) {
+    console.warn('Could not load session info for continuation:', error);
+  }
+
+  // Continue with the session (real ID if we found it, otherwise the original name)
   const enhancedOptions: ClaudeOptions & { sessionName?: string } = {
-    sessionName,
+    sessionName: effectiveSessionName,
     continue: true,
     dryRun: options.dryRun,
   };
