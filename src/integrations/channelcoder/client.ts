@@ -59,6 +59,21 @@ export async function execute(
 
       // Just use claude through the session - it handles ALL modes!
       const result = await s.claude(promptOrFile, options);
+      
+      // For detached mode, we need to save the session info immediately
+      // since the detached process won't trigger saves until later
+      if (options.detached && storage.setScopecraftMetadata) {
+        await storage.saveSessionInfo(finalSessionName, {
+          taskId,
+          parentId,
+          logFile: options.logFile,
+          status: 'running',
+          type: 'autonomous-task',
+          pid: result.data && typeof result.data === 'object' && 'pid' in result.data 
+            ? (result.data as any).pid 
+            : undefined,
+        });
+      }
 
       // For detached mode, PID is in result.data
       if (
