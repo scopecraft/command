@@ -8,23 +8,23 @@ import { join } from 'node:path';
 export const SESSION_STORAGE = {
   // Base directory for all session data (relative to project root)
   BASE_DIR: '.sessions',
-  
+
   // Subdirectories
-  SESSIONS_SUBDIR: 'sessions',  // ChannelCoder session files
-  LOGS_SUBDIR: 'logs',          // Log files for autonomous tasks
-  
+  SESSIONS_SUBDIR: 'sessions', // ChannelCoder session files
+  LOGS_SUBDIR: 'logs', // Log files for autonomous tasks
+
   // File patterns
   INFO_FILE_SUFFIX: '.info.json',
   LOG_FILE_SUFFIX: '.log',
-  
+
   // Helper functions for consistent path generation
-  getBaseDir: (projectRoot?: string) => 
+  getBaseDir: (projectRoot?: string) =>
     join(projectRoot || process.cwd(), SESSION_STORAGE.BASE_DIR),
-    
-  getSessionsDir: (projectRoot?: string) => 
+
+  getSessionsDir: (projectRoot?: string) =>
     join(SESSION_STORAGE.getBaseDir(projectRoot), SESSION_STORAGE.SESSIONS_SUBDIR),
-    
-  getLogsDir: (projectRoot?: string) => 
+
+  getLogsDir: (projectRoot?: string) =>
     join(SESSION_STORAGE.getBaseDir(projectRoot), SESSION_STORAGE.LOGS_SUBDIR),
 } as const;
 

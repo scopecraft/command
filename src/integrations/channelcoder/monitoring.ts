@@ -291,7 +291,7 @@ export function createSessionMonitor(
         }
       });
     })
-    .catch((err) => {
+    .catch((_err) => {
       onEvent({
         type: 'error',
         taskId,

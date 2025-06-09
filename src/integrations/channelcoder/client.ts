@@ -79,7 +79,7 @@ export async function execute(
           type: 'autonomous-task',
           pid:
             result.data && typeof result.data === 'object' && 'pid' in result.data
-              ? (result.data as any).pid
+              ? ((result.data as Record<string, unknown>).pid as number)
               : undefined,
         });
       }
