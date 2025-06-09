@@ -2,7 +2,7 @@
 
 ---
 type: test
-status: todo
+status: done
 area: cli
 ---
 
