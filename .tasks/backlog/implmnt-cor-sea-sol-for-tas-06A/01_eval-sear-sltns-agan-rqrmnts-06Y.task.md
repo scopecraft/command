@@ -14,7 +14,47 @@ tags:
 
 
 ## Instruction
-Evaluate the most promising search solutions discovered in the catalog against our defined requirements. Focus on practical testing with real project data to understand actual performance and capabilities.
+Evaluate discovered search solutions against Scopecraft's requirements with focus on extensibility and local-first architecture.
+
+Evaluation Framework:
+
+1. **Core Functionality** (Must have)
+   - Full-text search in markdown/YAML/TOML
+   - Metadata filtering and faceted search
+   - Sub-100ms query performance
+   - <50MB memory footprint
+   - Incremental indexing
+
+2. **Architecture Quality** (Critical)
+   - Local-first (no cloud dependencies)
+   - Clean plugin/extension architecture
+   - Streaming content support potential
+   - Mixed content type handling
+
+3. **Developer Experience**
+   - TypeScript/JavaScript native
+   - Simple API surface
+   - Good documentation
+   - Active maintenance
+
+4. **Future-Proofing**
+   - How hard to add session search later?
+   - Selective content indexing capability?
+   - Multi-index or unified index approach?
+   - Query language extensibility?
+   - **Graph support**: Can it handle relationships/links?
+     - Native graph capabilities?
+     - Plugin architecture for graph layer?
+     - Performance impact of relationship tracking?
+
+5. **Graph Considerations** (Nice to have)
+   - Document-to-document references
+   - Task dependency tracking
+   - Bidirectional link support
+   - Graph traversal queries
+   - Knowledge graph potential
+
+Create comparison matrix and recommend top 2-3 solutions with clear rationale. Note which solutions have graph capabilities even if not used in MVP.
 
 ## Tasks
 - [ ] Select top 5-7 candidates from different architecture categories
@@ -61,3 +101,5 @@ Comprehensive evaluation report with:
    - Future flexibility assessment
 
 ## Log
+- 2025-06-09: Updated evaluation criteria to emphasize extensibility, local-first operation, and future session search capabilities
+- 2025-06-09: Added graph capabilities as evaluation criterion - important for future relationship and reference tracking

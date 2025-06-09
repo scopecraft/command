@@ -14,7 +14,22 @@ tags:
 
 
 ## Instruction
-Discover and catalog a comprehensive range of search solutions that could work within our Node.js/TypeScript architecture. Cast a wide net across different architectural approaches, from lightweight in-process libraries to embedded databases with search capabilities to lightweight search servers.
+Discover and catalog search solutions across different categories with a focus on local-first, extensible architectures. Consider solutions that can handle diverse content types including structured data (tasks), unstructured documents, and streaming logs.
+
+Key evaluation dimensions:
+- Local-first indexing (no cloud dependencies)
+- Extensibility to new content types without major refactoring
+- Support for faceted search
+- Ability to handle both static files and streaming content
+- Memory efficiency for diverse content
+- Partial content indexing (e.g., user vs assistant messages in sessions)
+- Graph capabilities for relationship tracking (tasks → subtasks, documents → references)
+
+Consider both traditional search engines and graph-aware solutions that could handle:
+- Task dependency chains
+- Document cross-references
+- Session → task relationships
+- Knowledge graph construction
 
 ## Tasks
 - [ ] Research lightweight in-process search libraries (npm ecosystem)
@@ -58,3 +73,5 @@ For each solution, document:
 - Initial gut feeling on fit
 
 ## Log
+- 2025-06-09: Updated requirements to emphasize local-first architecture and extensibility for future session search capability
+- 2025-06-09: Added graph/relationship indexing as evaluation dimension for future link and reference tracking

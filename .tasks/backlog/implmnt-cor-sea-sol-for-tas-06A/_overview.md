@@ -157,3 +157,5 @@ A complete, production-ready search solution including:
 ## Log
 - 2025-06-06: Reorganized task to follow proper orchestration structure with clear phases, gates, and linkage to existing subtasks
 - 2025-06-06: Revised Phase 1 research approach based on feedback - removed predetermined library list and algorithm deep-dive, replaced with unbiased discovery, requirements analysis, and practical evaluation
+- 2025-06-09: Revised Phase 1 requirements based on orchestration integration insights: 1) Search index will be local-only in ~/.scopecraft/, 2) Architecture must support future session search via extensibility, 3) Faceted search preferred over mixed results, 4) Focus on completed sessions initially, 5) Need selective content indexing capability
+- 2025-06-09: Added graph/relationship capabilities as evaluation criterion - while not required for MVP, the architecture should support future link tracking, references, and knowledge graph construction

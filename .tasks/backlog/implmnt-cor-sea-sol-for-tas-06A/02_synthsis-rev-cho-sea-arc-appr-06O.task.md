@@ -8,7 +8,32 @@ area: core
 
 
 ## Instruction
-Synthesize findings from the three parallel research streams to make an informed architecture decision for our search solution. Review the discovered solutions, requirements analysis, and evaluation results to select the best approach.
+Review findings from Phase 1 research and select the search architecture approach for Scopecraft.
+
+Synthesis Goals:
+1. Review all three research outputs
+2. Identify consensus and conflicts
+3. Make architectural decision
+4. Document rationale
+
+Key Decision Factors:
+- **Extensibility**: How easily can we add session search later?
+- **Local-first**: No external dependencies, all data in ~/.scopecraft/
+- **Performance**: Meet our targets with room for growth
+- **Maintenance**: Long-term viability and community support
+- **Integration**: Clean boundaries with existing services
+
+Deliverables:
+- Selected search solution/approach
+- Architecture decision record (ADR)
+- Risk assessment and mitigation plan
+- Phase 2 design task definitions
+
+Considerations for session search extension:
+- Separate index vs unified index?
+- Incremental indexing strategy for active sessions
+- Privacy boundaries (what not to index)
+- Faceted search implementation approach
 
 ## Tasks
 - [ ] Review catalog of discovered search solutions
@@ -49,6 +74,7 @@ Architecture decision document with:
    - Timeline implications
 
 ## Log
+- 2025-06-09: Updated gate criteria to include extensibility assessment and local-first architecture considerations
 
 ## Synthesis goals
 1. Review and compare search library evaluation results
