@@ -48,76 +48,102 @@ export interface LogEntry {
  * List all autonomous sessions with basic stats
  */
 export async function listAutonomousSessions(): Promise<SessionWithStats[]> {
-  const storage = new ScopecraftSessionStorage();
-  const sessions = await storage.listActiveSessions();
-
-  const results = await Promise.all(
-    sessions.map(async (session) => {
-      if (!session.scopecraftData) return null;
-
-      // Determine current status
-      let currentStatus = session.scopecraftData.status;
-      if (session.scopecraftData.logFile && currentStatus === 'running') {
-        currentStatus = await determineSessionStatus(session.scopecraftData.logFile);
-      }
-
-      // Get basic stats
-      let stats: SessionStats | undefined;
-      if (session.scopecraftData.logFile) {
-        stats = await parseSessionStats(session.scopecraftData.logFile);
-      }
-
-      return {
-        ...session.scopecraftData,
-        sessionName: session.name,
-        startTime: session.created.toISOString(),
-        status: currentStatus,
-        stats,
-      } as SessionWithStats;
-    })
-  );
-
-  return results
-    .filter((result): result is SessionWithStats => result !== null)
-    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+  const baseDir = './.tasks/.autonomous-sessions';
+  
+  try {
+    // Read info files directly from the autonomous sessions directory
+    const files = await fs.readdir(baseDir).catch(() => []);
+    const infoFiles = files.filter(f => f.endsWith('.info.json'));
+    
+    const results = await Promise.all(
+      infoFiles.map(async (file) => {
+        try {
+          const content = await fs.readFile(path.join(baseDir, file), 'utf-8');
+          const sessionData = JSON.parse(content) as ScopecraftSessionMetadata & {
+            sessionName: string;
+            startTime: string;
+          };
+          
+          // Determine current status
+          let currentStatus = sessionData.status;
+          if (sessionData.logFile && currentStatus === 'running') {
+            currentStatus = await determineSessionStatus(sessionData.logFile);
+          }
+          
+          // Get basic stats
+          let stats: SessionStats | undefined;
+          if (sessionData.logFile) {
+            stats = await parseSessionStats(sessionData.logFile);
+          }
+          
+          return {
+            ...sessionData,
+            status: currentStatus,
+            stats,
+          } as SessionWithStats;
+        } catch (err) {
+          console.warn(`Error reading info file ${file}:`, err);
+          return null;
+        }
+      })
+    );
+    
+    return results
+      .filter((result): result is SessionWithStats => result !== null)
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+  } catch (err) {
+    console.warn('Error listing autonomous sessions:', err);
+    return [];
+  }
 }
 
 /**
  * Get detailed session information including recent log lines
  */
 export async function getSessionDetails(taskId: string): Promise<SessionDetails | null> {
-  const storage = new ScopecraftSessionStorage();
-  const sessionInfo = await storage.loadSessionInfo(taskId);
-
-  if (!sessionInfo) return null;
-
-  // Find the session name from active sessions
-  const sessions = await storage.listActiveSessions();
-  const session = sessions.find((s) => s.scopecraftData?.taskId === taskId);
-
-  if (!session) return null;
-
-  // Get stats and recent log lines
-  let stats: SessionStats = {
-    messages: 0,
-    toolsUsed: [],
-    lastUpdate: new Date().toISOString(),
-  };
-
-  let lastLogLines: string[] = [];
-
-  if (sessionInfo.logFile) {
-    stats = await parseSessionStats(sessionInfo.logFile);
-    lastLogLines = await getRecentLogLines(sessionInfo.logFile, 3);
+  const baseDir = './.tasks/.autonomous-sessions';
+  
+  try {
+    // Find the most recent info file for this task
+    const files = await fs.readdir(baseDir).catch(() => []);
+    const taskInfoFiles = files.filter(
+      f => f.includes(`task-${taskId}`) && f.endsWith('.info.json')
+    );
+    
+    if (taskInfoFiles.length === 0) return null;
+    
+    // Sort by timestamp in filename (newest first)
+    taskInfoFiles.sort((a, b) => b.localeCompare(a));
+    
+    const content = await fs.readFile(path.join(baseDir, taskInfoFiles[0]), 'utf-8');
+    const sessionData = JSON.parse(content) as ScopecraftSessionMetadata & {
+      sessionName: string;
+      startTime: string;
+    };
+    
+    // Get stats and recent log lines
+    let stats: SessionStats = {
+      messages: 0,
+      toolsUsed: [],
+      lastUpdate: new Date().toISOString(),
+    };
+    
+    let lastLogLines: string[] = [];
+    
+    if (sessionData.logFile) {
+      stats = await parseSessionStats(sessionData.logFile);
+      lastLogLines = await getRecentLogLines(sessionData.logFile, 3);
+    }
+    
+    return {
+      ...sessionData,
+      stats,
+      lastLogLines,
+    };
+  } catch (err) {
+    console.warn(`Error loading session details for task ${taskId}:`, err);
+    return null;
   }
-
-  return {
-    ...sessionInfo,
-    sessionName: session.name,
-    startTime: session.created.toISOString(),
-    stats,
-    lastLogLines,
-  };
 }
 
 /**
