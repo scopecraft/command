@@ -342,24 +342,45 @@ async function appendLogEntry(
   return appendTimestampedLogEntry('', logEntry);
 }
 
-/**
- * Create update response with normalized task data
- */
+function extractUpdatedFields(updateOptions: core.TaskUpdateOptions): string[] {
+  const fields: string[] = [];
+
+  if (updateOptions.title) fields.push('title');
+
+  const fm = updateOptions.frontmatter;
+  if (fm) {
+    const frontmatterFields = ['status', 'priority', 'area', 'assignee', 'tags'] as const;
+    for (const field of frontmatterFields) {
+      if (fm[field]) fields.push(field);
+    }
+  }
+
+  const sections = updateOptions.sections;
+  if (sections) {
+    const sectionFields = ['instruction', 'tasks', 'deliverable', 'log'] as const;
+    for (const field of sectionFields) {
+      if (sections[field]) fields.push(field);
+    }
+  }
+
+  return fields;
+}
+
 async function createUpdateResponse(
-  projectRoot: string,
-  updatedTask: core.Task,
-  taskId: string
-): Promise<McpResponse<Task>> {
-  const normalizedTask = await transformTask(
-    projectRoot,
-    updatedTask,
-    true, // Always include content for updates
-    false // No subtasks
-  );
+  _projectRoot: string,
+  _updatedTask: core.Task,
+  taskId: string,
+  updateOptions: core.TaskUpdateOptions
+): Promise<McpResponse<{ id: string; updatedFields: string[]; timestamp: string }>> {
+  const updatedFields = extractUpdatedFields(updateOptions);
 
   return TaskUpdateOutputSchema.parse({
     success: true,
-    data: normalizedTask,
+    data: {
+      id: taskId,
+      updatedFields,
+      timestamp: new Date().toISOString(),
+    },
     message: `Task ${taskId} updated successfully`,
   });
 }
@@ -368,7 +389,9 @@ async function createUpdateResponse(
  * Handler for task_update method
  * Complexity reduced from 28 to ~10
  */
-export async function handleTaskUpdate(rawParams: unknown): Promise<McpResponse<Task>> {
+export async function handleTaskUpdate(
+  rawParams: unknown
+): Promise<McpResponse<{ id: string; updatedFields: string[]; timestamp: string }>> {
   try {
     // Validate input
     const params = TaskUpdateInputSchema.parse(rawParams);
@@ -409,7 +432,7 @@ export async function handleTaskUpdate(rawParams: unknown): Promise<McpResponse<
     }
 
     // Create response with normalized data
-    return await createUpdateResponse(projectRoot, result.data, params.id);
+    return await createUpdateResponse(projectRoot, result.data, params.id, updateOptions);
   } catch (error) {
     if (error instanceof Error) {
       return createErrorResponse(error.message, 'Task update failed');

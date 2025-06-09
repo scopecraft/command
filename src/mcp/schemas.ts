@@ -394,8 +394,15 @@ export const TaskUpdateInputSchema = WriteOperationContextSchema.extend({
   }),
 });
 
+// Minimal update response schema - for token efficiency
+export const MinimalUpdateResponseSchema = z.object({
+  id: z.string(),
+  updatedFields: z.array(z.string()).describe('List of fields that were updated'),
+  timestamp: z.string().datetime(),
+});
+
 // task_update output schema
-export const TaskUpdateOutputSchema = createResponseSchema(TaskSchema);
+export const TaskUpdateOutputSchema = createResponseSchema(MinimalUpdateResponseSchema);
 
 // task_delete input schema
 export const TaskDeleteInputSchema = WriteOperationContextSchema.extend({
