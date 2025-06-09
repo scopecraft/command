@@ -2,19 +2,27 @@
  * Simple ChannelCoder integration - function-based, no classes
  */
 
-import { claude, session } from 'channelcoder';
+import { type CCResult, type ClaudeOptions, claude, session } from 'channelcoder';
 import { ScopecraftSessionStorage } from './session-storage.js';
 
 export interface ExecutionResult {
   success: boolean;
-  data?: any;
+  data?: CCResult['data'];
   error?: string;
+}
+
+// Extended options to include our sessionName
+export interface ScopecraftClaudeOptions extends ClaudeOptions {
+  sessionName?: string;
 }
 
 /**
  * Simple execution function with dry-run support
  */
-export async function execute(promptOrFile: string, options: any = {}): Promise<ExecutionResult> {
+export async function execute(
+  promptOrFile: string,
+  options: ScopecraftClaudeOptions = {}
+): Promise<ExecutionResult> {
   try {
     if (options.dryRun) {
       console.log('[DRY RUN] Would execute:');
@@ -23,8 +31,59 @@ export async function execute(promptOrFile: string, options: any = {}): Promise<
       return { success: true, data: { dryRun: true } };
     }
 
+    // For task tracking, always use session with our custom storage
+    const taskId = options.data?.taskId as string | undefined;
+    const parentId = options.data?.parentId as string | undefined;
+    const sessionName = options.sessionName;
+
+    if (taskId || sessionName) {
+      const storage = new ScopecraftSessionStorage();
+      const finalSessionName = sessionName || `task-${taskId || 'unknown'}-${Date.now()}`;
+
+      const s = session({
+        name: finalSessionName,
+        storage,
+        autoSave: true, // Real-time updates for monitoring
+      });
+
+      // Set up metadata for our monitoring
+      if (storage.setScopecraftMetadata) {
+        storage.setScopecraftMetadata({
+          taskId,
+          parentId,
+          logFile: options.logFile,
+          status: 'running',
+          type: 'autonomous-task',
+        });
+      }
+
+      // Just use claude through the session - it handles ALL modes!
+      const result = await s.claude(promptOrFile, options);
+
+      // For detached mode, PID is in result.data
+      if (
+        options.detached &&
+        result.success &&
+        result.data &&
+        typeof result.data === 'object' &&
+        'pid' in result.data
+      ) {
+        console.log('Detached PID:', result.data.pid);
+      }
+
+      return {
+        success: result.success,
+        data: {
+          ...(result.data || {}),
+          sessionName: finalSessionName,
+          taskId,
+        },
+      };
+    }
+
+    // For non-tracked execution, just use claude directly
     const result = await claude(promptOrFile, options);
-    return { success: true, data: result };
+    return { success: result.success, data: result.data };
   } catch (error) {
     return {
       success: false,
@@ -38,15 +97,20 @@ export async function execute(promptOrFile: string, options: any = {}): Promise<
  */
 export function createSession(options: Record<string, unknown> = {}) {
   const storage = new ScopecraftSessionStorage();
-  return session({ storage, ...options });
+  return session({
+    storage,
+    autoSave: true,
+    ...options,
+  });
 }
 
 /**
  * Load session with our storage
  */
 export async function loadSession(sessionName: string) {
-  const _storage = new ScopecraftSessionStorage();
-  return await session.load(sessionName);
+  const storage = new ScopecraftSessionStorage();
+  // Use ChannelCoder's session loading with our storage
+  return await session.load(sessionName, storage);
 }
 
 /**

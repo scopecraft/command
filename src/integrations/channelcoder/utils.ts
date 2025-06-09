@@ -3,6 +3,7 @@
  */
 
 import { join } from 'node:path';
+import type { InterpolationData } from 'channelcoder';
 
 /**
  * Resolve mode prompt path based on project structure
@@ -21,7 +22,7 @@ export function buildTaskData(
   taskId: string,
   instruction: string,
   additionalContext?: string
-): Record<string, unknown> {
+): InterpolationData {
   return {
     taskId,
     taskInstruction: instruction,

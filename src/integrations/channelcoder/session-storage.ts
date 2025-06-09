@@ -20,10 +20,16 @@ export interface ScopecraftSessionMetadata {
 export class ScopecraftSessionStorage implements SessionStorage {
   private baseStorage: FileSessionStorage;
   private infoDir: string;
+  private scopecraftMetadata?: ScopecraftSessionMetadata;
 
   constructor(baseDir = './.tasks/.autonomous-sessions') {
     this.baseStorage = new FileSessionStorage(path.join(baseDir, 'sessions'));
     this.infoDir = baseDir;
+  }
+
+  // Method to set metadata before saving
+  setScopecraftMetadata(metadata: ScopecraftSessionMetadata) {
+    this.scopecraftMetadata = metadata;
   }
 
   async save(state: SessionState, name?: string): Promise<string> {
@@ -31,8 +37,14 @@ export class ScopecraftSessionStorage implements SessionStorage {
     const sessionName = await this.baseStorage.save(state, name);
 
     // Save our additional metadata for monitoring
-    if ((state.metadata as any).scopecraftData) {
-      await this.saveSessionInfo(sessionName, (state.metadata as any).scopecraftData);
+    if (this.scopecraftMetadata) {
+      await this.saveSessionInfo(sessionName, this.scopecraftMetadata);
+      // Update PID if available from state
+      const stateWithPid = state as SessionState & { executionPid?: number };
+      if (stateWithPid.executionPid) {
+        this.scopecraftMetadata.pid = stateWithPid.executionPid;
+        await this.saveSessionInfo(sessionName, this.scopecraftMetadata);
+      }
     }
 
     return sessionName;
@@ -94,7 +106,7 @@ export class ScopecraftSessionStorage implements SessionStorage {
     return Promise.all(
       sessions.map(async (session) => {
         const infoPath = path.join(this.infoDir, `${session.name}.info.json`);
-        let scopecraftData;
+        let scopecraftData: ScopecraftSessionMetadata | undefined;
 
         try {
           const content = await fs.readFile(infoPath, 'utf-8');

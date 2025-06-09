@@ -128,13 +128,12 @@ export async function handleDispatchCommand(
           printSuccess(`Docker image: ${dockerConfig.getDefaultImage()}`);
         }
 
-        // Execute using ChannelCoder docker mode
+        // Execute using ChannelCoder with docker option
         const promptPath = resolveModePromptPath(projectRoot, mode);
         const data = buildTaskData(taskId, taskInstruction, '');
 
         result = await execute(promptPath, {
           data,
-          mode: 'docker',
           dryRun: options.dryRun,
           docker: {
             image: dockerConfig.getDefaultImage(),
@@ -143,10 +142,6 @@ export async function handleDispatchCommand(
               TASK_ID: taskId,
               WORK_MODE: mode,
             },
-          },
-          worktree: {
-            branch: envInfo.branch,
-            path: envInfo.path,
           },
         });
         break;
@@ -166,7 +161,7 @@ export async function handleDispatchCommand(
 
         result = await execute(promptPathDetached, {
           data: dataDetached,
-          mode: 'detached',
+          detached: true, // Use detached flag, not mode!
           dryRun: options.dryRun,
           worktree: {
             branch: envInfo.branch,
