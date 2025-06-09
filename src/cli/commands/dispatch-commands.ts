@@ -25,6 +25,7 @@ export interface DispatchCommandOptions {
   rootDir?: string;
   session?: string;
   dryRun?: boolean; // If true, show what would be executed without running it
+  data?: string | Record<string, unknown>; // Additional data to merge (JSON string from CLI or object)
 }
 
 /**
@@ -122,9 +123,23 @@ export async function handleDispatchCommand(
     const promptOrFile = options.session
       ? 'Continue task execution from where you left off'
       : promptPath;
-    const data = options.session
+    const baseData = options.session
       ? { sessionName: options.session }
-      : buildTaskData(taskId || '', taskInstruction, '');
+      : buildTaskData(taskId || '', taskInstruction, '', parentId);
+
+    // Parse and merge any additional data provided via --data
+    let additionalData: Record<string, unknown> = {};
+    if (options.data) {
+      try {
+        additionalData = typeof options.data === 'string' ? JSON.parse(options.data) : options.data;
+      } catch (error) {
+        printError(
+          `Invalid JSON in --data option: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
+    }
+    const data = { ...baseData, ...additionalData };
 
     const result = await executeAutonomousTask(promptOrFile, {
       taskId: taskId || 'session-resume', // Dummy value if resuming

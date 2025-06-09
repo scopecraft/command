@@ -61,7 +61,9 @@
       "mcp__serena__think_about_collected_information",
       "Bash(npx @biomejs/biome check:*)",
       "Bash(git reset:*)",
-      "Bash(http GET localhost:8888/api/autonomous-sessions)"
+      "Bash(http GET localhost:8888/api/autonomous-sessions)",
+      "Bash(./auto --help)",
+      "Bash(./orchestrate-auto:*)"
     ],
     "deny": []
   }

@@ -1,7 +1,31 @@
 #!/bin/bash
 
 # Wrapper script for autonomous task execution
-# This delegates to the TypeScript implementation which uses the channelcoder SDK
+# This delegates to the new dispatch command with auto mode
 
-# Pass all arguments to the TypeScript implementation
-exec bun run scripts/auto-autonomous.ts "$@"
+# Check if we have at least one argument (taskId)
+if [ $# -eq 0 ]; then
+    echo "Usage: ./auto <taskId> [parentId]"
+    echo "       ./auto --help"
+    exit 1
+fi
+
+# Handle help flag
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    echo "Autonomous Task Executor"
+    echo ""
+    echo "Usage:"
+    echo "  ./auto <taskId> [parentId]    Execute a task autonomously"
+    echo ""
+    echo "Examples:"
+    echo "  # Execute a standalone task"
+    echo "  ./auto implement-auth-05A"
+    echo ""
+    echo "  # Execute a subtask with parent context"
+    echo "  ./auto 02_implement-api-05B auth-feature-05A"
+    exit 0
+fi
+
+# Execute using the new dispatch command with auto mode
+# The dispatch command will handle parentId if provided as part of task resolution
+exec bun run dev:cli dispatch "$1" --mode auto --exec detached

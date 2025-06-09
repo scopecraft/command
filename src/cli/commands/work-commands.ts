@@ -23,6 +23,7 @@ export interface WorkCommandOptions {
   docker?: boolean; // This will be set to false by --no-docker flag
   session?: string; // Session ID to resume
   dryRun?: boolean; // If true, show what would be executed without running it
+  data?: string | Record<string, unknown>; // Additional data to merge (JSON string from CLI or object)
 }
 
 /**
@@ -121,15 +122,26 @@ export async function handleWorkCommand(
       ? 'Continue working on the task from where you left off'
       : promptPath;
 
-    // Build data based on mode
-    const data: Record<string, unknown> = {
+    // Build base data - always include both taskId and parentId
+    const baseData: Record<string, unknown> = {
       additionalInstructions: additionalPrompt,
+      taskId: resolvedTaskId || '',
+      parentId: task?.metadata.parentTask || '', // Get from task metadata
     };
 
-    // For orchestration mode, use parentId instead of taskId
-    if (mode === 'orchestration' && resolvedTaskId) {
-      data.parentId = resolvedTaskId;
+    // Parse and merge any additional data provided via --data
+    let additionalData: Record<string, unknown> = {};
+    if (options.data) {
+      try {
+        additionalData = typeof options.data === 'string' ? JSON.parse(options.data) : options.data;
+      } catch (error) {
+        printError(
+          `Invalid JSON in --data option: ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exit(1);
+      }
     }
+    const data = { ...baseData, ...additionalData };
 
     const result = await executeInteractiveTask(promptOrFile, {
       taskId: resolvedTaskId || 'session-resume',

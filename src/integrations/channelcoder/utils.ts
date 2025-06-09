@@ -21,10 +21,12 @@ export function resolveModePromptPath(projectRoot: string, mode: string): string
 export function buildTaskData(
   taskId: string,
   instruction: string,
-  additionalContext?: string
+  additionalContext?: string,
+  parentId?: string
 ): InterpolationData {
   return {
     taskId,
+    parentId: parentId || '',
     taskInstruction: instruction,
     additionalInstructions: additionalContext || '',
   };

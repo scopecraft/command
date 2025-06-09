@@ -640,6 +640,7 @@ export function setupWorkCommands(program: Command): void {
     .option('--no-docker', 'Force interactive mode even if Docker would normally be used')
     .option('-s, --session <sessionId>', 'Resume an existing session')
     .option('--dry-run', 'Show what would be executed without running it')
+    .option('--data <json>', 'Additional data to merge (JSON string)')
     .addHelpText('before', '\nINTERACTIVE WORK SESSIONS\n========================\n')
     .addHelpText(
       'after',
@@ -740,6 +741,7 @@ export function setupDispatchCommands(program: Command): void {
     .option('-e, --exec <type>', 'Execution type: docker|detached|tmux (default: docker)')
     .option('-s, --session <sessionId>', 'Resume an existing session')
     .option('--dry-run', 'Show what would be executed without running it')
+    .option('--data <json>', 'Additional data to merge (JSON string)')
     .addHelpText('before', '\nAUTONOMOUS EXECUTION\n===================\n')
     .addHelpText(
       'after',

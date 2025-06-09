@@ -37,7 +37,6 @@
     "ui:deploy": "cd tasks-ui && bun run build && cd .. && bun tasks-ui/server.ts",
     "ui:test:api": "cd tasks-ui && bun run test:api",
     "lint": "biome lint .",
-    "lint:eslint": "eslint src --ext .ts",
     "format": "biome format .",
     "format:fix": "biome format --write .",
     "check": "biome check .",

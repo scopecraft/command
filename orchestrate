@@ -1,8 +1,15 @@
 #!/bin/bash
 
-# Wrapper script for task orchestration (interactive mode)
-# This delegates to the TypeScript implementation
+# Orchestration CLI wrapper (interactive mode)
+# This delegates to the new work command with orchestration mode
 
-# Pass all arguments to the TypeScript implementation
-# Explicitly set interactive mode with --interactive flag
-exec bun run scripts/orchestrate-auto.ts --interactive "$@"
+# Check if we have at least one argument (parentId)
+if [ $# -eq 0 ]; then
+    echo "Usage: ./orchestrate <parentId> [additional instructions...]"
+    echo "Example: ./orchestrate impl-cli-env-mgmt-06A"
+    echo "Example: ./orchestrate impl-cli-env-mgmt-06A \"Focus on Phase 4 tasks\""
+    exit 1
+fi
+
+# Pass parentId and any additional arguments to work command with orchestration mode
+exec bun run dev:cli work "$@" --mode orchestration

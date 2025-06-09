@@ -34,9 +34,7 @@ Your job is to:
 4. Identify and dispatch ready work
 5. Update the parent task with all actions taken
 
-**Mode**: {auto}
-- If auto is "true": Autonomous mode - execute gates automatically, create tasks without asking
-- If auto is "false" or not set: Interactive mode - engage humans at decision points
+**Mode**: {auto === "true" ? "Autonomous mode - execute gates automatically, create tasks without asking" : "Interactive mode - engage humans at decision points"}
 </mission>
 
 <orchestration_protocol>
@@ -134,8 +132,8 @@ Key patterns:
      ./auto 02_desg-ui-appr-and-cret-mock-06E reds-tas-cre-and-edi-ui-for-v2-06A
      ```
      - Quality Standards: Senior-level architecture required
-     - Area Guidance: {area} tasks need proper patterns and separation of concerns
-     - Integration Context: {any relevant context from parent task}
+     - Area Guidance: Check task area from metadata - tasks need proper patterns and separation of concerns
+     - Integration Context: Extract relevant context from parent task instruction/deliverable sections
      - Expectations: Plan architecture before implementation, no hardcoded values
    ```
    
@@ -337,7 +335,7 @@ Each task will include:
 ```
 </task_creation_intelligence>
 
-<best_practices>
+{additionalInstructions ? "<additional_instructions>\n## Additional User Instructions\n\n" + additionalInstructions + "\n\nIncorporate these instructions into your orchestration approach.\n</additional_instructions>\n\n" : ""}<best_practices>
 ## Orchestration Best Practices
 
 1. **Complete Cycles**: Handle full orchestration including task creation
