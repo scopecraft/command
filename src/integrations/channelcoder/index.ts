@@ -21,3 +21,14 @@ export {
   ScopecraftSessionStorage,
   type ScopecraftSessionMetadata,
 } from './session-storage.js';
+
+export {
+  listAutonomousSessions,
+  getSessionDetails,
+  getSessionLogs,
+  createSessionMonitor,
+  type SessionStats,
+  type SessionWithStats,
+  type SessionDetails,
+  type LogEntry,
+} from './monitoring.js';

@@ -116,7 +116,10 @@ async function createTmuxWindow(windowName: string, workingDir: string): Promise
 /**
  * Build the ChannelCoder command for tmux execution
  */
-function buildChannelCoderCommand(promptPath: string, options: { data: Record<string, unknown> }): string {
+function buildChannelCoderCommand(
+  promptPath: string,
+  options: { data: Record<string, unknown> }
+): string {
   const dataArg = JSON.stringify(options.data).replace(/"/g, '\\"');
   return `claude "${promptPath}" --data "${dataArg}"`;
 }
