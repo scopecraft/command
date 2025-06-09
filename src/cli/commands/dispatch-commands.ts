@@ -12,7 +12,6 @@ import { get as getTask } from '../../core/task-crud.js';
 import type { Task } from '../../core/types.js';
 import {
   buildTaskData,
-  continueSession,
   executeAutonomousTask,
   resolveModePromptPath,
 } from '../../integrations/channelcoder/index.js';
@@ -24,7 +23,7 @@ export interface DispatchCommandOptions {
   mode?: string;
   exec?: ExecutionType;
   rootDir?: string;
-  continue?: string;
+  session?: string;
   dryRun?: boolean; // If true, show what would be executed without running it
 }
 
@@ -35,39 +34,13 @@ export interface DispatchCommandOptions {
  * @param options Command options including mode and execution type
  */
 export async function handleDispatchCommand(
-  taskId: string,
+  taskId: string | undefined,
   options: DispatchCommandOptions
 ): Promise<void> {
   try {
-    // Handle continuation first
-    if (options.continue) {
-      printSuccess(`Continuing session: ${options.continue}`);
-
-      try {
-        const result = await continueSession(
-          options.continue,
-          'Continue task execution from where you left off',
-          { dryRun: options.dryRun }
-        );
-
-        if (result.success) {
-          printSuccess(`Session ${options.continue} continued successfully`);
-        } else {
-          printError(`Failed to continue session: ${result.error}`);
-          process.exit(1);
-        }
-      } catch (error) {
-        printError(
-          `Failed to continue session: ${error instanceof Error ? error.message : String(error)}`
-        );
-        process.exit(1);
-      }
-      return;
-    }
-
-    // Validate taskId is provided
-    if (!taskId) {
-      printError('Task ID is required for dispatch command');
+    // Validate input - need either taskId or session
+    if (!taskId && !options.session) {
+      printError('Task ID is required for dispatch command (unless using --session)');
       process.exit(1);
     }
 
@@ -85,72 +58,95 @@ export async function handleDispatchCommand(
     const resolver = new EnvironmentResolver(worktreeManager);
     const dockerConfig = new DockerConfigService();
 
-    // Step 1: Load task and validate
+    // Step 1: Load task and environment if taskId provided
     let task: Task | undefined;
-    try {
-      const result = await getTask(projectRoot, taskId);
-      if (!result.success) {
-        throw new Error(result.error || 'Task not found');
+    let envInfo: { path: string; branch: string } | undefined;
+    let taskInstruction = '';
+    let parentId: string | undefined;
+
+    if (taskId) {
+      try {
+        const result = await getTask(projectRoot, taskId);
+        if (!result.success) {
+          throw new Error(result.error || 'Task not found');
+        }
+        task = result.data;
+        if (task) {
+          taskInstruction = task.document.sections.instruction || '';
+          parentId = task.metadata.parentTask;
+        }
+      } catch (_error) {
+        printError(`Task '${taskId}' not found`);
+        process.exit(1);
       }
-      task = result.data;
-    } catch (_error) {
-      printError(`Task '${taskId}' not found`);
-      process.exit(1);
+
+      // Resolve and ensure environment
+      const envId = await resolver.resolveEnvironmentId(taskId);
+      envInfo = await resolver.ensureEnvironment(envId);
+      printSuccess(`Environment ready: ${envInfo.path}`);
     }
 
-    if (!task) {
-      printError(`Task '${taskId}' not found`);
-      process.exit(1);
-    }
-
-    // Step 2: Resolve and ensure environment
-    const envId = await resolver.resolveEnvironmentId(taskId);
-    const envInfo = await resolver.ensureEnvironment(envId);
-
-    printSuccess(`Environment ready: ${envInfo.path}`);
-
-    // Step 3: Get task information
-    const taskInstruction = task.document.sections.instruction || '';
+    // Step 2: Setup execution parameters
     const mode = options.mode || 'auto';
     const execType = options.exec || 'docker';
 
-    // Step 4: Display execution info
-    if (options.dryRun) {
-      printSuccess(`[DRY RUN] Would launch Claude in ${execType} mode (${mode} mode)`);
-      printSuccess(`[DRY RUN] Would work in: ${envInfo.path}`);
-      if (execType === 'docker') {
-        printSuccess(`[DRY RUN] Would use Docker image: ${dockerConfig.getDefaultImage()}`);
+    // Step 3: Display execution info
+    if (options.session) {
+      if (options.dryRun) {
+        printSuccess(`[DRY RUN] Would resume session: ${options.session}`);
+        printSuccess(`[DRY RUN] Would execute in ${execType} mode (${mode} mode)`);
+      } else {
+        printSuccess(`Resuming session: ${options.session}`);
+        printSuccess(`Executing in ${execType} mode (${mode} mode)...`);
       }
     } else {
-      printSuccess(`Launching Claude in ${execType} mode (${mode} mode)...`);
-      printSuccess(`Working in: ${envInfo.path}`);
-      if (execType === 'docker') {
-        printSuccess(`Docker image: ${dockerConfig.getDefaultImage()}`);
+      if (options.dryRun) {
+        printSuccess(`[DRY RUN] Would launch Claude in ${execType} mode (${mode} mode)`);
+        printSuccess(`[DRY RUN] Would work in: ${envInfo!.path}`);
+        if (execType === 'docker') {
+          printSuccess(`[DRY RUN] Would use Docker image: ${dockerConfig.getDefaultImage()}`);
+        }
+      } else {
+        printSuccess(`Launching Claude in ${execType} mode (${mode} mode)...`);
+        printSuccess(`Working in: ${envInfo!.path}`);
+        if (execType === 'docker') {
+          printSuccess(`Docker image: ${dockerConfig.getDefaultImage()}`);
+        }
       }
     }
 
-    // Step 5: Execute using our helper
+    // Step 4: Execute using our helper
     const promptPath = resolveModePromptPath(projectRoot, mode);
-    const data = buildTaskData(taskId, taskInstruction, '');
 
-    const result = await executeAutonomousTask(promptPath, {
-      taskId,
-      parentId: task.metadata.parentTask,
+    // Use appropriate prompt based on whether we're resuming
+    const promptOrFile = options.session
+      ? 'Continue task execution from where you left off'
+      : promptPath;
+    const data = options.session
+      ? { sessionName: options.session }
+      : buildTaskData(taskId || '', taskInstruction, '');
+
+    const result = await executeAutonomousTask(promptOrFile, {
+      taskId: taskId || 'session-resume', // Dummy value if resuming
+      parentId,
       execType,
       projectRoot,
       dryRun: options.dryRun,
+      session: options.session, // Pass through session for resume
       data,
-      worktree: {
-        branch: envInfo.branch,
-        path: envInfo.path,
-      },
+      worktree: envInfo
+        ? {
+            branch: envInfo.branch,
+            path: envInfo.path,
+          }
+        : undefined,
       docker:
-        execType === 'docker'
+        execType === 'docker' && envInfo
           ? {
               image: dockerConfig.getDefaultImage(),
               mounts: [`${envInfo.path}:/workspace:rw`],
               env: {
-                TASK_ID: taskId,
+                TASK_ID: taskId || options.session || '',
                 WORK_MODE: mode,
               },
             }
@@ -165,17 +161,16 @@ export async function handleDispatchCommand(
     // Display result information
     if (result.success) {
       printSuccess('✅ Execution started successfully');
+
+      // Session info is at top level, other data in result.data
       if (result.sessionName) {
         printSuccess(`Session: ${result.sessionName}`);
       }
-      if (result.pid) {
-        printSuccess(`PID: ${result.pid}`);
+      if (result.data && typeof result.data === 'object' && 'pid' in result.data) {
+        printSuccess(`PID: ${(result.data as Record<string, unknown>).pid}`);
       }
-      if (result.logFile) {
-        printSuccess(`Log: ${result.logFile}`);
-      }
-      if (execType !== 'tmux') {
-        printSuccess(`Continue with: sc dispatch --continue ${result.sessionName}`);
+      if (execType !== 'tmux' && result.sessionName && !options.session) {
+        printSuccess(`Resume with: sc dispatch --session ${result.sessionName}`);
       }
     } else {
       printError(`Execution failed: ${result.error}`);

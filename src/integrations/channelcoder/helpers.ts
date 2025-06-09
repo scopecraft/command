@@ -25,6 +25,7 @@ export async function executeAutonomousTask(
     parentId?: string;
     execType: 'docker' | 'detached' | 'tmux';
     projectRoot?: string;
+    session?: string; // For resuming sessions
     worktree?: WorktreeOptions;
     docker?: DockerOptions;
     dryRun?: boolean;
@@ -34,14 +35,16 @@ export async function executeAutonomousTask(
   const projectRoot = options.projectRoot || process.cwd();
   const timestamp = Date.now();
 
-  // Consistent session naming: {execType}-{taskId}-{timestamp}
-  const sessionName = `${options.execType}-${options.taskId}-${timestamp}`;
+  // Use provided session name or generate new one
+  const sessionName = options.session || `${options.execType}-${options.taskId}-${timestamp}`;
 
   // ALWAYS generate logFile for autonomous execution
-  const logFile = join(
-    SESSION_STORAGE.getLogsDir(projectRoot),
-    `${sessionName}${SESSION_STORAGE.LOG_FILE_SUFFIX}`
-  );
+  const logDir = SESSION_STORAGE.getLogsDir(projectRoot);
+  const logFile = join(logDir, `${sessionName}${SESSION_STORAGE.LOG_FILE_SUFFIX}`);
+
+  // Ensure log directory exists
+  const { mkdirSync } = await import('node:fs');
+  mkdirSync(logDir, { recursive: true });
 
   // Special case for tmux - it has its own implementation
   if (options.execType === 'tmux') {
@@ -64,6 +67,7 @@ export async function executeAutonomousTask(
     stream: true, // ALWAYS stream for monitoring
     outputFormat: 'stream-json', // REQUIRED for real-time log monitoring
     sessionName, // Our tracking field
+    resume: options.session, // Resume if session provided
     docker: options.docker, // Pass through if provided
     worktree: options.worktree, // Pass through if provided
     dryRun: options.dryRun,
@@ -86,19 +90,20 @@ export async function executeInteractiveTask(
   options: {
     taskId: string;
     instruction?: string;
+    session?: string; // For resuming sessions
     worktree?: WorktreeOptions;
     docker?: DockerOptions;
     dryRun?: boolean;
     data?: Record<string, unknown>;
   }
 ): Promise<ExecutionResult> {
-  // Generate session name for interactive tasks
-  // Format: interactive-{taskId}-{timestamp}
-  const sessionName = `interactive-${options.taskId}-${Date.now()}`;
+  // Use provided session name or generate new one
+  const sessionName = options.session || `interactive-${options.taskId}-${Date.now()}`;
 
   const enhancedOptions: ClaudeOptions & { sessionName?: string } = {
     mode: 'interactive',
     sessionName, // Track session for future resume capability
+    resume: options.session, // Resume if session provided
     docker: options.docker,
     worktree: options.worktree,
     dryRun: options.dryRun,
@@ -121,51 +126,4 @@ export async function executePlan(
 ): Promise<ExecutionResult> {
   // Simple pass-through for non-task execution
   return execute(promptOrFile, options);
-}
-
-/**
- * Helper to continue an existing session
- */
-export async function continueSession(
-  sessionName: string,
-  prompt: string,
-  options: {
-    projectRoot?: string;
-    dryRun?: boolean;
-  } = {}
-): Promise<ExecutionResult> {
-  // First, check if we need to get the real session ID from the log
-  const storage = new ScopecraftSessionStorage(undefined, options.projectRoot);
-  let effectiveSessionName = sessionName;
-
-  try {
-    // Load session info to get log file path
-    const sessionInfo = await storage.loadSessionInfo(sessionName);
-
-    if (sessionInfo?.logFile && !sessionInfo.realSessionId) {
-      // Try to extract real session ID from log file
-      const { parseLogFile } = await import('channelcoder');
-      const parsed = await parseLogFile(sessionInfo.logFile);
-
-      if (parsed.sessionId) {
-        await storage.updateRealSessionId(sessionName, parsed.sessionId);
-        // Use the real session ID for continuation
-        effectiveSessionName = parsed.sessionId;
-      }
-    } else if (sessionInfo?.realSessionId) {
-      // We already have the real session ID
-      effectiveSessionName = sessionInfo.realSessionId;
-    }
-  } catch (error) {
-    console.warn('Could not load session info for continuation:', error);
-  }
-
-  // Continue with the session (real ID if we found it, otherwise the original name)
-  const enhancedOptions: ClaudeOptions & { sessionName?: string } = {
-    sessionName: effectiveSessionName,
-    continue: true,
-    dryRun: options.dryRun,
-  };
-
-  return execute(prompt, enhancedOptions);
 }

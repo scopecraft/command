@@ -628,13 +628,17 @@ export function setupWorkCommands(program: Command): void {
     .command('work')
     .alias('w')
     .description('Start interactive Claude session for a task')
-    .argument('[taskId]', 'Task ID to work on (interactive selection if not provided)')
+    .argument(
+      '[taskId]',
+      'Task ID to work on (interactive selection if not provided, not needed with --session)'
+    )
     .argument('[additionalPrompt...]', 'Additional prompt context')
     .option(
       '-m, --mode <mode>',
       'Claude mode (default: auto): auto|implement|explore|orchestrate|diagnose'
     )
     .option('--no-docker', 'Force interactive mode even if Docker would normally be used')
+    .option('-s, --session <sessionId>', 'Resume an existing session')
     .option('--dry-run', 'Show what would be executed without running it')
     .addHelpText('before', '\nINTERACTIVE WORK SESSIONS\n========================\n')
     .addHelpText(
@@ -653,10 +657,12 @@ Examples:
   sc work auth-feature-05A             # Work on specific task
   sc work auth-feature-05A "focus on error handling"  # Add context
   sc work bug-123 --mode diagnose      # Override with specific mode
+  sc work --session interactive-auth-feature-05A-1234  # Resume session
   sc work task-789 --dry-run           # Show what would be executed
   
   # Short alias
   sc w feature-456 "implement the UI"
+  sc w --session session-name          # Resume with short alias
 
 Claude Modes:
   - auto (default) - Claude selects the appropriate mode
@@ -726,13 +732,13 @@ export function setupDispatchCommands(program: Command): void {
     .command('dispatch')
     .alias('d')
     .description('Run autonomous Claude session for a task')
-    .argument('<taskId>', 'Task ID to dispatch (required)')
+    .argument('[taskId]', 'Task ID to dispatch (required unless using --session)')
     .option(
       '-m, --mode <mode>',
       'Claude mode (default: auto): auto|implement|explore|orchestrate|diagnose'
     )
     .option('-e, --exec <type>', 'Execution type: docker|detached|tmux (default: docker)')
-    .option('-c, --continue <sessionId>', 'Continue an existing session')
+    .option('-s, --session <sessionId>', 'Resume an existing session')
     .option('--dry-run', 'Show what would be executed without running it')
     .addHelpText('before', '\nAUTONOMOUS EXECUTION\n===================\n')
     .addHelpText(
@@ -753,11 +759,12 @@ Examples:
   sc dispatch bug-123 --mode diagnose       # Specific mode in Docker
   sc dispatch feature-456 --exec detached   # Run detached (background)
   sc dispatch task-789 --exec tmux          # Run in tmux (attachable)
-  sc dispatch --continue auto-task-123      # Continue existing session
+  sc dispatch --session detached-auth-feature-05A-1234  # Resume existing session
   sc dispatch task-456 --dry-run           # Show what would be executed
   
   # Short alias
   sc d refactor-789 --exec docker
+  sc d --session session-name --exec tmux   # Resume with different exec mode
 
 Execution Types:
   - docker (default) - Run in isolated Docker container

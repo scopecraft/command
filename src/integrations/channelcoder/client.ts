@@ -97,11 +97,9 @@ export async function execute(
 
       return {
         success: result.success,
-        data: {
-          ...(result.data || {}),
-          sessionName: finalSessionName,
-          taskId,
-        },
+        data: result.data,
+        sessionName: finalSessionName,
+        taskId,
       };
     }
 

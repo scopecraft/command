@@ -22,7 +22,6 @@ export {
   executeAutonomousTask,
   executeInteractiveTask,
   executePlan,
-  continueSession,
 } from './helpers.js';
 
 export {

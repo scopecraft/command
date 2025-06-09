@@ -74,11 +74,7 @@ export async function listAutonomousSessions(projectRoot?: string): Promise<Sess
           // Get basic stats
           let stats: SessionStats | undefined;
           if (sessionData.logFile) {
-            stats = await parseSessionStats(
-              sessionData.logFile,
-              projectRoot,
-              sessionData.sessionName
-            );
+            stats = await parseSessionStats(sessionData.logFile, projectRoot);
           }
 
           return {
@@ -139,7 +135,7 @@ export async function getSessionDetails(
     let lastLogLines: string[] = [];
 
     if (sessionData.logFile) {
-      stats = await parseSessionStats(sessionData.logFile, projectRoot, sessionData.sessionName);
+      stats = await parseSessionStats(sessionData.logFile, projectRoot);
       lastLogLines = await getRecentLogLines(sessionData.logFile, 3, projectRoot);
     }
 
@@ -334,11 +330,7 @@ async function determineSessionStatus(
 /**
  * Parse session statistics from log file
  */
-async function parseSessionStats(
-  logFile: string,
-  projectRoot?: string,
-  sessionName?: string
-): Promise<SessionStats> {
+async function parseSessionStats(logFile: string, projectRoot?: string): Promise<SessionStats> {
   const stats: SessionStats = {
     messages: 0,
     toolsUsed: [],
@@ -351,13 +343,6 @@ async function parseSessionStats(
     if (!existsSync(logPath)) return stats;
 
     const parsed = await parseLogFile(logPath);
-
-    // Lazy session ID detection - if we have a session name and found a real ID
-    if (sessionName && parsed.sessionId) {
-      const storage = new ScopecraftSessionStorage(undefined, projectRoot);
-      await storage.updateRealSessionId(sessionName, parsed.sessionId);
-    }
-
     const events = parsed.events || [];
     const toolSet = new Set<string>();
     let lastMessageTime: Date | null = null;

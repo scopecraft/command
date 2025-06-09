@@ -9,6 +9,12 @@ import type { SessionInfo, SessionState, SessionStorage } from 'channelcoder';
 import { FileSessionStorage } from 'channelcoder';
 import { SESSION_STORAGE } from './constants.js';
 
+export interface SessionHistoryEntry {
+  sessionId: string;
+  startTime: string;
+  resumedFrom?: string; // Previous session ID if this is a resume
+}
+
 export interface ScopecraftSessionMetadata {
   taskId?: string;
   parentId?: string;
@@ -20,6 +26,7 @@ export interface ScopecraftSessionMetadata {
   dockerEnabled?: boolean; // True if running in docker
   executionFlags?: Record<string, unknown>; // Future extensibility
   realSessionId?: string; // The actual Claude session ID from the log file
+  sessionHistory?: SessionHistoryEntry[]; // Track all session IDs for this task
 }
 
 export class ScopecraftSessionStorage implements SessionStorage {
@@ -39,6 +46,58 @@ export class ScopecraftSessionStorage implements SessionStorage {
   }
 
   async save(state: SessionState, name?: string): Promise<string> {
+    // Always check for real session ID from log file when:
+    // 1. We have a log file path configured
+    // 2. The log file exists
+    // This handles both initial detection and resume scenarios
+    if (this.scopecraftMetadata?.logFile) {
+      try {
+        const { existsSync } = await import('node:fs');
+
+        if (existsSync(this.scopecraftMetadata.logFile)) {
+          try {
+            const { parseLogFile } = await import('channelcoder');
+            const parsed = await parseLogFile(this.scopecraftMetadata.logFile);
+
+            if (parsed.sessionId && parsed.sessionId !== this.scopecraftMetadata.realSessionId) {
+              // Found a new session ID (either initial or resumed)
+              const previousSessionId = this.scopecraftMetadata.realSessionId;
+
+              // Update the state with real session ID
+              state.currentSessionId = parsed.sessionId;
+              state.sessionChain = state.sessionChain
+                .map((id) => (id?.startsWith('detached-') ? parsed.sessionId : id))
+                .filter((id): id is string => id !== undefined);
+
+              // Update our metadata
+              if (this.scopecraftMetadata) {
+                this.scopecraftMetadata.realSessionId = parsed.sessionId;
+
+                // Initialize or update session history
+                if (!this.scopecraftMetadata.sessionHistory) {
+                  this.scopecraftMetadata.sessionHistory = [];
+                }
+
+                // Add new session to history
+                this.scopecraftMetadata.sessionHistory.push({
+                  sessionId: parsed.sessionId,
+                  startTime: new Date().toISOString(),
+                  resumedFrom: previousSessionId,
+                });
+              }
+            }
+          } catch (_error) {
+            // Log parsing failed - might be incomplete file
+            // This is OK, we'll try again on next save
+          }
+        }
+        // If file doesn't exist yet, that's fine - we'll check on next save
+      } catch (error) {
+        // File system error - log it but don't fail the save
+        console.warn('Error checking log file existence:', error);
+      }
+    }
+
     // Save to ChannelCoder's session system
     const sessionName = await this.baseStorage.save(state, name);
 
@@ -70,18 +129,27 @@ export class ScopecraftSessionStorage implements SessionStorage {
     await fs.mkdir(this.infoDir, { recursive: true });
 
     const infoPath = path.join(this.infoDir, `${sessionName}${SESSION_STORAGE.INFO_FILE_SUFFIX}`);
-    await fs.writeFile(
-      infoPath,
-      JSON.stringify(
-        {
-          sessionName,
-          startTime: new Date().toISOString(),
-          ...metadata,
-        },
-        null,
-        2
-      )
-    );
+
+    // Load existing info to preserve session history
+    let existingInfo: Record<string, unknown> = {};
+    try {
+      const content = await fs.readFile(infoPath, 'utf-8');
+      existingInfo = JSON.parse(content);
+    } catch {
+      // File doesn't exist yet, that's fine
+    }
+
+    // Merge with new metadata, preserving session history
+    const updatedInfo = {
+      sessionName,
+      startTime: existingInfo.startTime || new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+      ...metadata,
+      // Preserve session history if it exists
+      sessionHistory: metadata.sessionHistory || existingInfo.sessionHistory || [],
+    };
+
+    await fs.writeFile(infoPath, JSON.stringify(updatedInfo, null, 2));
   }
 
   async loadSessionInfo(taskId: string): Promise<ScopecraftSessionMetadata | null> {

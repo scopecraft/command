@@ -21,6 +21,7 @@ import { printError, printSuccess, printWarning } from '../formatters.js';
 export interface WorkCommandOptions {
   mode?: string;
   docker?: boolean; // This will be set to false by --no-docker flag
+  session?: string; // Session ID to resume
   dryRun?: boolean; // If true, show what would be executed without running it
 }
 
@@ -50,52 +51,62 @@ export async function handleWorkCommand(
     const worktreeManager = new WorktreeManager();
     const resolver = new EnvironmentResolver(worktreeManager);
 
-    // Step 1: Resolve task ID
-    let resolvedTaskId = taskId;
-    if (!resolvedTaskId) {
-      resolvedTaskId = await selectTaskInteractive(projectRoot);
-      if (!resolvedTaskId) {
-        printWarning('No task selected');
-        process.exit(0);
-      }
-    }
-
-    // Step 2: Load task and validate
+    // Step 1: Handle session resume or task resolution
+    let resolvedTaskId: string | undefined;
     let task: Task | undefined;
-    try {
-      const result = await getTask(projectRoot, resolvedTaskId);
-      if (!result.success) {
-        throw new Error(result.error || 'Task not found');
+    let envInfo: { path: string; branch: string } | undefined;
+    let taskInstruction = '';
+
+    if (options.session) {
+      // When resuming, we don't need task selection
+      printSuccess(`Resuming session: ${options.session}`);
+    } else {
+      // Normal task resolution flow
+      resolvedTaskId = taskId;
+      if (!resolvedTaskId) {
+        resolvedTaskId = await selectTaskInteractive(projectRoot);
+        if (!resolvedTaskId) {
+          printWarning('No task selected');
+          process.exit(0);
+        }
       }
-      task = result.data;
-    } catch (_error) {
-      printError(`Task '${resolvedTaskId}' not found`);
-      process.exit(1);
+
+      // Load task and validate
+      try {
+        const result = await getTask(projectRoot, resolvedTaskId);
+        if (!result.success) {
+          throw new Error(result.error || 'Task not found');
+        }
+        task = result.data;
+        if (task) {
+          taskInstruction = task.document.sections.instruction || '';
+        }
+      } catch (_error) {
+        printError(`Task '${resolvedTaskId}' not found`);
+        process.exit(1);
+      }
+
+      // Resolve and ensure environment
+      const envId = await resolver.resolveEnvironmentId(resolvedTaskId);
+      envInfo = await resolver.ensureEnvironment(envId);
+      printSuccess(`Environment ready: ${envInfo.path}`);
     }
 
-    if (!task) {
-      printError(`Task '${resolvedTaskId}' not found`);
-      process.exit(1);
-    }
-
-    // Step 3: Resolve and ensure environment
-    const envId = await resolver.resolveEnvironmentId(resolvedTaskId);
-    const envInfo = await resolver.ensureEnvironment(envId);
-
-    printSuccess(`Environment ready: ${envInfo.path}`);
-
-    // Step 4: Get task information
-    const taskInstruction = task.document.sections.instruction || '';
+    // Step 2: Setup execution parameters
     const additionalPrompt = additionalPromptArgs.join(' ');
     const mode = options.mode || 'auto';
 
-    // Step 5: Execute via ChannelCoder
+    // Step 3: Display execution info
     if (options.dryRun) {
       printSuccess(`[DRY RUN] Would launch Claude session in ${mode} mode`);
-      printSuccess(`[DRY RUN] Would work in: ${envInfo.path}`);
+      if (envInfo) {
+        printSuccess(`[DRY RUN] Would work in: ${envInfo.path}`);
+      }
     } else {
       printSuccess(`Launching Claude session in ${mode} mode...`);
-      printSuccess(`Working in: ${envInfo.path}`);
+      if (envInfo) {
+        printSuccess(`Working in: ${envInfo.path}`);
+      }
     }
 
     // Work command is always interactive (never Docker) per PRD
@@ -104,17 +115,23 @@ export async function handleWorkCommand(
       printSuccess('Running in interactive mode (work command is always interactive)');
     }
 
-    // Execute with ChannelCoder using our interactive helper
+    // Step 4: Execute with ChannelCoder
     const promptPath = resolveModePromptPath(projectRoot, mode);
+    const promptOrFile = options.session
+      ? 'Continue working on the task from where you left off'
+      : promptPath;
 
-    const result = await executeInteractiveTask(promptPath, {
-      taskId: resolvedTaskId,
+    const result = await executeInteractiveTask(promptOrFile, {
+      taskId: resolvedTaskId || 'session-resume',
       instruction: taskInstruction,
       dryRun: options.dryRun,
-      worktree: {
-        path: envInfo.path,
-        branch: envInfo.branch,
-      },
+      session: options.session, // Pass through for resume
+      worktree: envInfo
+        ? {
+            path: envInfo.path,
+            branch: envInfo.branch,
+          }
+        : undefined,
       data: {
         additionalInstructions: additionalPrompt,
       },
