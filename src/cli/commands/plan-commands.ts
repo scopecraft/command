@@ -4,7 +4,7 @@
  */
 
 import { ConfigurationManager } from '../../core/config/index.js';
-import { execute, resolveModePromptPath } from '../../integrations/channelcoder/index.js';
+import { executePlan, resolveModePromptPath } from '../../integrations/channelcoder/index.js';
 import { printError, printSuccess } from '../formatters.js';
 
 /**
@@ -61,9 +61,9 @@ export async function handlePlanCommand(
       }
     }
 
-    // Execute planning using simple function
+    // Execute planning using our helper
     const promptPath = resolveModePromptPath(projectRoot, 'planning');
-    const result = await execute(promptPath, {
+    const result = await executePlan(promptPath, {
       mode: 'interactive',
       dryRun: options.dryRun,
       data: {

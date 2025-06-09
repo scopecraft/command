@@ -10,12 +10,20 @@ export {
   loadSession,
   executeTmux,
   type ExecutionResult,
+  type ScopecraftClaudeOptions,
 } from './client.js';
 
 export {
   resolveModePromptPath,
   buildTaskData,
 } from './utils.js';
+
+export {
+  executeAutonomousTask,
+  executeInteractiveTask,
+  executePlan,
+  continueSession,
+} from './helpers.js';
 
 export {
   ScopecraftSessionStorage,

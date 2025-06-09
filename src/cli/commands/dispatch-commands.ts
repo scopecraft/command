@@ -12,10 +12,8 @@ import { get as getTask } from '../../core/task-crud.js';
 import type { Task } from '../../core/types.js';
 import {
   buildTaskData,
-  createSession,
-  execute,
-  executeTmux,
-  loadSession,
+  continueSession,
+  executeAutonomousTask,
   resolveModePromptPath,
 } from '../../integrations/channelcoder/index.js';
 import { printError, printSuccess, printWarning } from '../formatters.js';
@@ -46,9 +44,18 @@ export async function handleDispatchCommand(
       printSuccess(`Continuing session: ${options.continue}`);
 
       try {
-        const _session = await loadSession(options.continue);
-        // TODO: Implement continuation logic
-        printSuccess(`Session ${options.continue} continued successfully`);
+        const result = await continueSession(
+          options.continue,
+          'Continue task execution from where you left off',
+          { dryRun: options.dryRun }
+        );
+
+        if (result.success) {
+          printSuccess(`Session ${options.continue} continued successfully`);
+        } else {
+          printError(`Failed to continue session: ${result.error}`);
+          process.exit(1);
+        }
       } catch (error) {
         printError(
           `Failed to continue session: ${error instanceof Error ? error.message : String(error)}`
@@ -107,100 +114,52 @@ export async function handleDispatchCommand(
     const mode = options.mode || 'auto';
     const execType = options.exec || 'docker';
 
-    // Step 4: Execute based on type
-    let result: {
-      success: boolean;
-      sessionName?: string;
-      pid?: number;
-      logFile?: string;
-      error?: string;
-    };
-
-    switch (execType) {
-      case 'docker': {
-        if (options.dryRun) {
-          printSuccess(`[DRY RUN] Would launch Claude in Docker (${mode} mode)`);
-          printSuccess(`[DRY RUN] Would work in: ${envInfo.path}`);
-          printSuccess(`[DRY RUN] Would use Docker image: ${dockerConfig.getDefaultImage()}`);
-        } else {
-          printSuccess(`Launching Claude in Docker (${mode} mode)...`);
-          printSuccess(`Working in: ${envInfo.path}`);
-          printSuccess(`Docker image: ${dockerConfig.getDefaultImage()}`);
-        }
-
-        // Execute using ChannelCoder with docker option
-        const promptPath = resolveModePromptPath(projectRoot, mode);
-        const data = buildTaskData(taskId, taskInstruction, '');
-
-        result = await execute(promptPath, {
-          data,
-          dryRun: options.dryRun,
-          docker: {
-            image: dockerConfig.getDefaultImage(),
-            mounts: [`${envInfo.path}:/workspace:rw`],
-            env: {
-              TASK_ID: taskId,
-              WORK_MODE: mode,
-            },
-          },
-        });
-        break;
+    // Step 4: Display execution info
+    if (options.dryRun) {
+      printSuccess(`[DRY RUN] Would launch Claude in ${execType} mode (${mode} mode)`);
+      printSuccess(`[DRY RUN] Would work in: ${envInfo.path}`);
+      if (execType === 'docker') {
+        printSuccess(`[DRY RUN] Would use Docker image: ${dockerConfig.getDefaultImage()}`);
       }
-
-      case 'detached': {
-        if (options.dryRun) {
-          printSuccess(`[DRY RUN] Would launch Claude in detached mode (${mode} mode)`);
-        } else {
-          printSuccess(`Launching Claude in detached mode (${mode} mode)...`);
-        }
-        printSuccess(`Working in: ${envInfo.path}`);
-
-        // Execute using ChannelCoder detached mode
-        const promptPathDetached = resolveModePromptPath(projectRoot, mode);
-        const dataDetached = buildTaskData(taskId, taskInstruction, '');
-
-        result = await execute(promptPathDetached, {
-          data: dataDetached,
-          detached: true, // Use detached flag, not mode!
-          dryRun: options.dryRun,
-          worktree: {
-            branch: envInfo.branch,
-            path: envInfo.path,
-          },
-        });
-        break;
+    } else {
+      printSuccess(`Launching Claude in ${execType} mode (${mode} mode)...`);
+      printSuccess(`Working in: ${envInfo.path}`);
+      if (execType === 'docker') {
+        printSuccess(`Docker image: ${dockerConfig.getDefaultImage()}`);
       }
+    }
 
-      case 'tmux': {
-        if (options.dryRun) {
-          printSuccess(`[DRY RUN] Would launch Claude in tmux (${mode} mode)`);
-          printSuccess(`[DRY RUN] Would work in: ${envInfo.path}`);
-        } else {
-          printSuccess(`Launching Claude in tmux (${mode} mode)...`);
-          printSuccess(`Working in: ${envInfo.path}`);
-        }
+    // Step 5: Execute using our helper
+    const promptPath = resolveModePromptPath(projectRoot, mode);
+    const data = buildTaskData(taskId, taskInstruction, '');
 
-        // Execute using TMux
-        const promptPathTmux = resolveModePromptPath(projectRoot, mode);
-        const dataTmux = buildTaskData(taskId, taskInstruction, '');
+    const result = await executeAutonomousTask(promptPath, {
+      taskId,
+      parentId: task.metadata.parentTask,
+      execType,
+      projectRoot,
+      dryRun: options.dryRun,
+      data,
+      worktree: {
+        branch: envInfo.branch,
+        path: envInfo.path,
+      },
+      docker:
+        execType === 'docker'
+          ? {
+              image: dockerConfig.getDefaultImage(),
+              mounts: [`${envInfo.path}:/workspace:rw`],
+              env: {
+                TASK_ID: taskId,
+                WORK_MODE: mode,
+              },
+            }
+          : undefined,
+    });
 
-        result = await executeTmux(promptPathTmux, {
-          taskId,
-          data: dataTmux,
-          dryRun: options.dryRun,
-          worktree: envInfo.path,
-        });
-
-        if (!options.dryRun) {
-          printSuccess('✓ Tmux window created');
-          printSuccess('Attach with: tmux attach -t scopecraft');
-        }
-        break;
-      }
-
-      default:
-        printError(`Unknown execution type: ${execType}`);
-        process.exit(1);
+    if (execType === 'tmux' && !options.dryRun) {
+      printSuccess('✓ Tmux window created');
+      printSuccess('Attach with: tmux attach -t scopecraft');
     }
 
     // Display result information

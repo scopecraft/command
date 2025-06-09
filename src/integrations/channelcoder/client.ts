@@ -5,10 +5,10 @@
 import { type CCResult, type ClaudeOptions, claude, session } from 'channelcoder';
 import { ScopecraftSessionStorage } from './session-storage.js';
 
-export interface ExecutionResult {
-  success: boolean;
-  data?: CCResult['data'];
-  error?: string;
+export interface ExecutionResult extends CCResult {
+  // Additional fields we add
+  sessionName?: string;
+  taskId?: string;
 }
 
 // Extended options to include our sessionName

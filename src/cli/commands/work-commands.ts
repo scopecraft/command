@@ -13,7 +13,7 @@ import { get as getTask, list as listTasks } from '../../core/task-crud.js';
 import type { Task } from '../../core/types.js';
 import {
   buildTaskData,
-  execute,
+  executeInteractiveTask,
   resolveModePromptPath,
 } from '../../integrations/channelcoder/index.js';
 import { printError, printSuccess, printWarning } from '../formatters.js';
@@ -104,15 +104,20 @@ export async function handleWorkCommand(
       printSuccess('Running in interactive mode (work command is always interactive)');
     }
 
-    // Execute with ChannelCoder using simple function
+    // Execute with ChannelCoder using our interactive helper
     const promptPath = resolveModePromptPath(projectRoot, mode);
-    const data = buildTaskData(resolvedTaskId, taskInstruction, additionalPrompt);
 
-    const result = await execute(promptPath, {
-      data,
-      mode: 'interactive', // Work command always uses interactive mode
+    const result = await executeInteractiveTask(promptPath, {
+      taskId: resolvedTaskId,
+      instruction: taskInstruction,
       dryRun: options.dryRun,
-      worktree: envInfo.path,
+      worktree: {
+        path: envInfo.path,
+        branch: envInfo.branch,
+      },
+      data: {
+        additionalInstructions: additionalPrompt,
+      },
     });
 
     if (result.success) {
