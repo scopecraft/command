@@ -2,7 +2,7 @@
 
 ---
 type: feature
-status: in_progress
+status: done
 area: cli
 priority: high
 assignee: architect
