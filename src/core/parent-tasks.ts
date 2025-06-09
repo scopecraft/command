@@ -393,7 +393,7 @@ export function parent(projectRoot: string, parentId: string, config?: ProjectCo
               (st) =>
                 st.metadata.id === options.after || st.metadata.filename.includes(options.after!)
             );
-            if (afterTask && afterTask.metadata.sequenceNumber) {
+            if (afterTask?.metadata.sequenceNumber) {
               const afterSeq = Number.parseInt(afterTask.metadata.sequenceNumber, 10);
               sequence = String(afterSeq + 1).padStart(2, '0');
             }
@@ -403,7 +403,7 @@ export function parent(projectRoot: string, parentId: string, config?: ProjectCo
               (st) =>
                 st.metadata.id === options.before || st.metadata.filename.includes(options.before!)
             );
-            if (beforeTask && beforeTask.metadata.sequenceNumber) {
+            if (beforeTask?.metadata.sequenceNumber) {
               const beforeSeq = Number.parseInt(beforeTask.metadata.sequenceNumber, 10);
               sequence = String(Math.max(1, beforeSeq - 1)).padStart(2, '0');
             }
@@ -525,7 +525,7 @@ export async function createParent(
     const overviewOptions: TaskCreateOptions = {
       ...options,
       instruction:
-        options.instruction || `This is a parent task that will be broken down into child tasks.`,
+        options.instruction || 'This is a parent task that will be broken down into child tasks.',
       tasks: ['Break down into subtasks', 'Create subtask files', 'Track progress'],
     };
 

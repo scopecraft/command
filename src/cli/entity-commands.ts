@@ -33,6 +33,7 @@ import {
   handleEnvListCommand,
   handleEnvPathCommand,
 } from './commands/env-commands.js';
+import { handlePlanCommand } from './commands/plan-commands.js';
 import { handleWorkCommand } from './commands/work-commands.js';
 
 /**
@@ -669,6 +670,53 @@ Claude Modes:
 }
 
 /**
+ * Set up plan command for exploratory planning sessions
+ * @param program Root commander program
+ */
+export function setupPlanCommands(program: Command): void {
+  // Create plan command
+  program
+    .command('plan')
+    .alias('p')
+    .description('Start exploratory planning session without creating tasks')
+    .argument('<description>', 'Feature or idea description')
+    .argument('[area]', 'Area/domain (defaults to "general")')
+    .argument('[context...]', 'Additional context or requirements')
+    .option('--dry-run', 'Show what would be executed without running it')
+    .addHelpText('before', '\nEXPLORATORY PLANNING\n===================\n')
+    .addHelpText(
+      'after',
+      `
+The plan command enables quick exploratory planning sessions without requiring task creation.
+
+Features:
+  - No task creation required - plan first, create tasks later
+  - Exploratory planning without workflow overhead
+  - Mode prompt loading from .tasks/.modes/planning/
+  - Clean composition using Unix philosophy primitives
+
+Examples:
+  sc plan "Add dark mode toggle"
+  sc plan "OAuth integration" auth
+  sc plan "Real-time collaboration" ui "Similar to Figma multiplayer"
+  sc plan "Fix memory leak" core --dry-run
+
+Arguments:
+  - description: What you want to plan (required)
+  - area: Domain/area like ui, core, cli, mcp (optional, defaults to "general")
+  - context: Additional requirements or context (optional)
+
+The planning prompt will help you:
+  - Break down vague ideas into actionable tasks
+  - Identify research needs and decision points  
+  - Create appropriate task structures (simple, parent, or complex)
+  - Consider technical approaches and constraints
+`
+    )
+    .action(handlePlanCommand);
+}
+
+/**
  * Set up dispatch command for autonomous Claude sessions
  * @param program Root commander program
  */
@@ -747,4 +795,5 @@ export function setupEntityCommands(program: Command): void {
   setupEnvironmentCommands(program);
   setupWorkCommands(program);
   setupDispatchCommands(program);
+  setupPlanCommands(program);
 }

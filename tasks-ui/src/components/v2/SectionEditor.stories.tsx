@@ -90,7 +90,7 @@ export const SavingState: Story = {
 - [ ] Implement login endpoint
 - [ ] Add JWT token generation
 - [ ] Create logout functionality`,
-    onSave: async (content: string) => {
+    onSave: async (_content: string) => {
       // Longer delay to show saving state
       await new Promise((resolve) => setTimeout(resolve, 3000));
     },

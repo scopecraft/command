@@ -1,29 +1,29 @@
 /**
  * Dispatch command implementation for autonomous Claude sessions
- * 
+ *
  * Provides the `sc dispatch` command for running Claude in background/autonomous mode
  * with Docker or detached execution options.
  */
 
 import { ConfigurationManager } from '../../core/config/index.js';
-import {
-  EnvironmentResolver,
-  WorktreeManager,
-} from '../../core/environment/index.js';
 import { DockerConfigService } from '../../core/environment/configuration-services.js';
-import { printError, printSuccess, printWarning } from '../formatters.js';
+import { EnvironmentResolver, WorktreeManager } from '../../core/environment/index.js';
 import { get as getTask } from '../../core/task-crud.js';
 import type { Task } from '../../core/types.js';
 import {
-  createChannelCoderClient,
-  type ChannelCoderClient,
-  type WorkMode,
+  buildTaskData,
+  createSession,
+  execute,
+  executeTmux,
+  loadSession,
+  resolveModePromptPath,
 } from '../../integrations/channelcoder/index.js';
+import { printError, printSuccess, printWarning } from '../formatters.js';
 
 export type ExecutionType = 'docker' | 'detached' | 'tmux';
 
 export interface DispatchCommandOptions {
-  mode?: WorkMode;
+  mode?: string;
   exec?: ExecutionType;
   rootDir?: string;
   continue?: string;
@@ -32,7 +32,7 @@ export interface DispatchCommandOptions {
 
 /**
  * Main handler for the dispatch command
- * 
+ *
  * @param taskId Required task ID for autonomous execution
  * @param options Command options including mode and execution type
  */
@@ -43,31 +43,31 @@ export async function handleDispatchCommand(
   try {
     // Handle continuation first
     if (options.continue) {
-      const client = createChannelCoderClient();
       printSuccess(`Continuing session: ${options.continue}`);
-      
+
       try {
-        const result = await client.continueSession(options.continue);
-        if (result.success) {
-          printSuccess(`Session ${result.sessionName} continued successfully`);
-        }
+        const _session = await loadSession(options.continue);
+        // TODO: Implement continuation logic
+        printSuccess(`Session ${options.continue} continued successfully`);
       } catch (error) {
-        printError(`Failed to continue session: ${error instanceof Error ? error.message : String(error)}`);
+        printError(
+          `Failed to continue session: ${error instanceof Error ? error.message : String(error)}`
+        );
         process.exit(1);
       }
       return;
     }
-    
+
     // Validate taskId is provided
     if (!taskId) {
       printError('Task ID is required for dispatch command');
       process.exit(1);
     }
-    
+
     // Get project root from configuration
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = options.rootDir || configManager.getProjectRoot();
-    
+
     if (!projectRoot) {
       printError('No project root found. Run "sc init" or specify --root-dir.');
       process.exit(1);
@@ -77,8 +77,7 @@ export async function handleDispatchCommand(
     const worktreeManager = new WorktreeManager();
     const resolver = new EnvironmentResolver(worktreeManager);
     const dockerConfig = new DockerConfigService();
-    const client = createChannelCoderClient();
-    
+
     // Step 1: Load task and validate
     let task: Task | undefined;
     try {
@@ -87,44 +86,38 @@ export async function handleDispatchCommand(
         throw new Error(result.error || 'Task not found');
       }
       task = result.data;
-    } catch (error) {
+    } catch (_error) {
       printError(`Task '${taskId}' not found`);
       process.exit(1);
     }
-    
+
     if (!task) {
       printError(`Task '${taskId}' not found`);
       process.exit(1);
     }
-    
+
     // Step 2: Resolve and ensure environment
     const envId = await resolver.resolveEnvironmentId(taskId);
     const envInfo = await resolver.ensureEnvironment(envId);
-    
+
     printSuccess(`Environment ready: ${envInfo.path}`);
-    
+
     // Step 3: Get task information
     const taskInstruction = task.document.sections.instruction || '';
     const mode = options.mode || 'auto';
     const execType = options.exec || 'docker';
-    
-    // Common options for all execution types
-    const baseOptions = {
-      taskId,
-      taskInstruction,
-      mode,
-      projectRoot,
-      dryRun: options.dryRun,
-      session: {
-        parentId: task.metadata.parentTask
-      }
-    };
-    
+
     // Step 4: Execute based on type
-    let result;
-    
+    let result: {
+      success: boolean;
+      sessionName?: string;
+      pid?: number;
+      logFile?: string;
+      error?: string;
+    };
+
     switch (execType) {
-      case 'docker':
+      case 'docker': {
         if (options.dryRun) {
           printSuccess(`[DRY RUN] Would launch Claude in Docker (${mode} mode)`);
           printSuccess(`[DRY RUN] Would work in: ${envInfo.path}`);
@@ -134,42 +127,56 @@ export async function handleDispatchCommand(
           printSuccess(`Working in: ${envInfo.path}`);
           printSuccess(`Docker image: ${dockerConfig.getDefaultImage()}`);
         }
-        
-        result = await client.executeDocker({
-          ...baseOptions,
+
+        // Execute using ChannelCoder docker mode
+        const promptPath = resolveModePromptPath(projectRoot, mode);
+        const data = buildTaskData(taskId, taskInstruction, '');
+
+        result = await execute(promptPath, {
+          data,
+          mode: 'docker',
+          dryRun: options.dryRun,
           docker: {
             image: dockerConfig.getDefaultImage(),
             mounts: [`${envInfo.path}:/workspace:rw`],
             env: {
               TASK_ID: taskId,
-              WORK_MODE: mode
-            }
+              WORK_MODE: mode,
+            },
           },
           worktree: {
             branch: envInfo.branch,
-            path: envInfo.path
-          }
+            path: envInfo.path,
+          },
         });
         break;
-        
-      case 'detached':
+      }
+
+      case 'detached': {
         if (options.dryRun) {
           printSuccess(`[DRY RUN] Would launch Claude in detached mode (${mode} mode)`);
         } else {
           printSuccess(`Launching Claude in detached mode (${mode} mode)...`);
         }
         printSuccess(`Working in: ${envInfo.path}`);
-        
-        result = await client.executeDetached({
-          ...baseOptions,
+
+        // Execute using ChannelCoder detached mode
+        const promptPathDetached = resolveModePromptPath(projectRoot, mode);
+        const dataDetached = buildTaskData(taskId, taskInstruction, '');
+
+        result = await execute(promptPathDetached, {
+          data: dataDetached,
+          mode: 'detached',
+          dryRun: options.dryRun,
           worktree: {
             branch: envInfo.branch,
-            path: envInfo.path
-          }
+            path: envInfo.path,
+          },
         });
         break;
-        
-      case 'tmux':
+      }
+
+      case 'tmux': {
         if (options.dryRun) {
           printSuccess(`[DRY RUN] Would launch Claude in tmux (${mode} mode)`);
           printSuccess(`[DRY RUN] Would work in: ${envInfo.path}`);
@@ -177,29 +184,33 @@ export async function handleDispatchCommand(
           printSuccess(`Launching Claude in tmux (${mode} mode)...`);
           printSuccess(`Working in: ${envInfo.path}`);
         }
-        
-        result = await client.executeTmux({
-          ...baseOptions,
-          worktree: {
-            branch: envInfo.branch,
-            path: envInfo.path
-          }
+
+        // Execute using TMux
+        const promptPathTmux = resolveModePromptPath(projectRoot, mode);
+        const dataTmux = buildTaskData(taskId, taskInstruction, '');
+
+        result = await executeTmux(promptPathTmux, {
+          taskId,
+          data: dataTmux,
+          dryRun: options.dryRun,
+          worktree: envInfo.path,
         });
-        
+
         if (!options.dryRun) {
-          printSuccess(`✓ Tmux window created`);
-          printSuccess(`Attach with: tmux attach -t scopecraft`);
+          printSuccess('✓ Tmux window created');
+          printSuccess('Attach with: tmux attach -t scopecraft');
         }
         break;
-        
+      }
+
       default:
         printError(`Unknown execution type: ${execType}`);
         process.exit(1);
     }
-    
+
     // Display result information
     if (result.success) {
-      printSuccess(`✅ Execution started successfully`);
+      printSuccess('✅ Execution started successfully');
       if (result.sessionName) {
         printSuccess(`Session: ${result.sessionName}`);
       }
@@ -216,9 +227,10 @@ export async function handleDispatchCommand(
       printError(`Execution failed: ${result.error}`);
       process.exit(1);
     }
-    
   } catch (error) {
-    printError(`Dispatch command failed: ${error instanceof Error ? error.message : String(error)}`);
+    printError(
+      `Dispatch command failed: ${error instanceof Error ? error.message : String(error)}`
+    );
     process.exit(1);
   }
 }

@@ -355,7 +355,7 @@ function shouldAutoTransition(
   currentWorkflow: WorkflowState,
   oldStatus: TaskStatus | undefined,
   newStatus: TaskStatus,
-  config?: ProjectConfig
+  _config?: ProjectConfig
 ): WorkflowState | null {
   // Only transition if auto-transitions are enabled (default: true)
   // TEMPORARY FIX: Force auto-transitions to false to prevent subtask corruption

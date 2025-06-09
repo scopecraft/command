@@ -48,7 +48,6 @@ export function SearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        autoFocus={autoFocus}
         className={cn(
           'flex w-full rounded-md border border-input bg-background pl-10 pr-10 text-sm ring-offset-background',
           'file:border-0 file:bg-transparent file:text-sm file:font-medium',

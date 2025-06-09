@@ -57,22 +57,22 @@ program
     // Handle mode option - now this is handled by configuration manager
     if (options.mode) {
       console.log(
-        `Note: Mode option is deprecated. Project configuration is now managed automatically.`
+        'Note: Mode option is deprecated. Project configuration is now managed automatically.'
       );
     }
 
     // Validate environment using projectConfig
     if (!projectConfig.validateEnvironment()) {
-      const rootDir = projectConfig.getTasksDirectory();
+      const _rootDir = projectConfig.getTasksDirectory();
 
-      console.error(`Error: Project structure not found in the current directory`);
+      console.error('Error: Project structure not found in the current directory');
       console.error(`Initialize the project first with "sc init"`);
 
       // Attempt to create the directory structure if it doesn't exist
       try {
-        console.log(`Creating project structure...`);
+        console.log('Creating project structure...');
         projectConfig.initializeProjectStructure();
-        console.log(`Project structure created successfully.`);
+        console.log('Project structure created successfully.');
       } catch (error) {
         console.error(
           `Failed to create directory structure: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -86,7 +86,7 @@ program
     ensureDirectoryExists(tasksDir);
 
     // Start server
-    console.log(`Starting MCP server...`);
+    console.log('Starting MCP server...');
     await startServer(options.port);
   });
 

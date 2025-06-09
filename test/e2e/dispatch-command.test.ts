@@ -2,7 +2,7 @@
  * Integration tests for the dispatch command
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -18,13 +18,13 @@ describe('Dispatch Command', () => {
       rmSync(TEST_DIR, { recursive: true });
     }
     mkdirSync(TEST_DIR, { recursive: true });
-    
+
     // Initialize project structure
     mkdirSync(join(TEST_DIR, '.tasks'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.tasks/backlog'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.tasks/current'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.tasks/archive'), { recursive: true });
-    
+
     // Initialize git repo (required for worktree operations)
     execSync('git init', { cwd: TEST_DIR });
     execSync('git config user.name "Test User"', { cwd: TEST_DIR });
@@ -43,10 +43,7 @@ describe('Dispatch Command', () => {
 
   it('should require task ID', () => {
     try {
-      execSync(
-        `bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch`,
-        { encoding: 'utf8' }
-      );
+      execSync(`bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch`, { encoding: 'utf8' });
       // Should not reach here
       expect(true).toBe(false);
     } catch (error: any) {
@@ -57,21 +54,17 @@ describe('Dispatch Command', () => {
   });
 
   it('should show dispatch command in main help', () => {
-    const output = execSync(
-      `bun run ${CLI_PATH} --help`,
-      { encoding: 'utf8' }
-    );
-    
+    const output = execSync(`bun run ${CLI_PATH} --help`, { encoding: 'utf8' });
+
     expect(output).toContain('dispatch');
     expect(output).toContain('Run autonomous Claude session');
   });
 
   it('should show help for dispatch command', () => {
-    const output = execSync(
-      `bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch --help 2>&1`,
-      { encoding: 'utf8' }
-    );
-    
+    const output = execSync(`bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch --help 2>&1`, {
+      encoding: 'utf8',
+    });
+
     expect(output).toContain('Run autonomous Claude session');
     expect(output).toContain('--mode');
     expect(output).toContain('--exec');
@@ -80,10 +73,10 @@ describe('Dispatch Command', () => {
 
   it('should reject invalid task ID', async () => {
     try {
-      execSync(
-        `bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch non-existent-task 2>&1`,
-        { encoding: 'utf8', stdio: 'pipe' }
-      );
+      execSync(`bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch non-existent-task 2>&1`, {
+        encoding: 'utf8',
+        stdio: 'pipe',
+      });
       // Should not reach here
       expect(true).toBe(false);
     } catch (error: any) {
@@ -94,42 +87,38 @@ describe('Dispatch Command', () => {
   });
 
   it('should accept mode option', () => {
-    const output = execSync(
-      `bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch --help 2>&1`,
-      { encoding: 'utf8' }
-    );
-    
+    const output = execSync(`bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch --help 2>&1`, {
+      encoding: 'utf8',
+    });
+
     expect(output).toContain('--mode');
     expect(output).toContain('auto|implement|explore|orchestrate|diagnose');
   });
 
   it('should accept exec option', () => {
-    const output = execSync(
-      `bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch --help 2>&1`,
-      { encoding: 'utf8' }
-    );
-    
+    const output = execSync(`bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch --help 2>&1`, {
+      encoding: 'utf8',
+    });
+
     expect(output).toContain('--exec');
     expect(output).toContain('docker|detached');
     expect(output).toContain('default: docker');
   });
 
   it('should have short alias', () => {
-    const output = execSync(
-      `bun run ${CLI_PATH} --root-dir ${TEST_DIR} d --help 2>&1`,
-      { encoding: 'utf8' }
-    );
-    
+    const output = execSync(`bun run ${CLI_PATH} --root-dir ${TEST_DIR} d --help 2>&1`, {
+      encoding: 'utf8',
+    });
+
     expect(output).toContain('dispatch');
     expect(output).toContain('Run autonomous Claude session');
   });
 
   it('should show Docker as default execution type', () => {
-    const output = execSync(
-      `bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch --help 2>&1`,
-      { encoding: 'utf8' }
-    );
-    
+    const output = execSync(`bun run ${CLI_PATH} --root-dir ${TEST_DIR} dispatch --help 2>&1`, {
+      encoding: 'utf8',
+    });
+
     expect(output).toContain('Docker Execution:');
     expect(output).toContain('my-claude:authenticated');
     expect(output).toContain('docker (default)');

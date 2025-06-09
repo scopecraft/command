@@ -107,7 +107,7 @@ export function isValidTaskId(taskId: string): boolean {
   // Validate sequence number if present
   if (components.sequenceNumber) {
     const seq = Number.parseInt(components.sequenceNumber, 10);
-    if (isNaN(seq) || seq < 1 || seq > 99) return false;
+    if (Number.isNaN(seq) || seq < 1 || seq > 99) return false;
   }
 
   // Validate descriptive name

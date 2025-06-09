@@ -384,7 +384,7 @@ export function listSubtasksWithSequence(parentFolder: string): SubtaskInfo[] {
       if (!bySequence.has(sequence)) {
         bySequence.set(sequence, []);
       }
-      bySequence.get(sequence)!.push(filename);
+      bySequence.get(sequence)?.push(filename);
     }
   }
 

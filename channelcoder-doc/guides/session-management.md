@@ -84,14 +84,35 @@ await restored.claude('What about Promise.all?');
 ### Creating Sessions
 
 ```typescript
-// With auto-save enabled
+import { session, FileSessionStorage } from 'channelcoder';
+
+// Basic session (uses FileSessionStorage with auto-save enabled by default)
+const s = session();
+
+// With custom name
 const s = session({ 
-  autoSave: true  // Saves after each interaction
+  name: 'my-project-session'
+});
+
+// With auto-save disabled
+const s = session({ 
+  autoSave: false  // Default: true
 });
 
 // With custom storage location
+const storage = new FileSessionStorage('./my-sessions');
+const s = session({ storage });
+
+// With custom storage adapter
 const s = session({
-  storageDir: './my-sessions'  // Default: ~/.channelcoder/sessions
+  storage: new DatabaseStorage(myDb)
+});
+
+// All options combined
+const s = session({
+  name: 'feature-implementation',
+  autoSave: true,
+  storage: new FileSessionStorage('./project-sessions')
 });
 ```
 
@@ -261,6 +282,59 @@ for await (const chunk of s.stream('Write comprehensive docs')) {
 }
 ```
 
+## TypeScript Interfaces
+
+### Session Types
+
+```typescript
+export interface SessionOptions {
+  name?: string;
+  storage?: SessionStorage;
+  autoSave?: boolean; // Default: true
+}
+
+export interface SessionState {
+  sessionChain: string[]; // All session IDs in order
+  currentSessionId?: string; // Latest session ID
+  messages: Message[]; // Conversation history
+  metadata: {
+    name?: string;
+    created: Date;
+    lastActive: Date;
+  };
+}
+
+export interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  sessionId: string;
+}
+
+export interface SessionInfo {
+  name: string;
+  path: string;
+  created: Date;
+  lastActive: Date;
+  messageCount: number;
+}
+
+export interface Session {
+  // Wrapped functions with session context
+  claude: ClaudeFunction;
+  stream: typeof streamBase;
+  interactive: typeof interactiveBase;
+  run: typeof runBase;
+  detached: typeof detachedBase;
+
+  // Session management methods
+  id(): string | undefined;
+  messages(): Message[];
+  save(name?: string): Promise<string>;
+  clear(): void;
+}
+```
+
 ## Session Storage
 
 ### Default Location
@@ -292,25 +366,228 @@ Sessions are stored in:
 }
 ```
 
-### Custom Storage
+### Custom Storage Adapters
+
+The session system supports pluggable storage through the `SessionStorage` interface:
 
 ```typescript
-// Use custom directory
-const s = session({
-  storageDir: './project-sessions'
-});
+export interface SessionStorage {
+  save(state: SessionState, name?: string): Promise<string>;
+  load(nameOrPath: string): Promise<SessionState>;
+  list(): Promise<SessionInfo[]>;
+}
+```
 
-// Or implement custom storage
-class CustomStorage {
-  async save(name, data) { /* ... */ }
-  async load(name) { /* ... */ }
-  async list() { /* ... */ }
-  async remove(name) { /* ... */ }
+#### File-Based Storage (Default)
+
+```typescript
+import { FileSessionStorage } from 'channelcoder';
+
+// Use custom directory
+const storage = new FileSessionStorage('./project-sessions');
+const s = session({ storage });
+
+// Default storage location: ~/.channelcoder/sessions/
+const s = session(); // Uses FileSessionStorage automatically
+```
+
+#### Custom Storage Implementation
+
+Implement your own storage backend:
+
+```typescript
+import type { SessionStorage, SessionState, SessionInfo } from 'channelcoder';
+
+class DatabaseStorage implements SessionStorage {
+  constructor(private db: Database) {}
+
+  async save(state: SessionState, name?: string): Promise<string> {
+    const id = name || `session-${Date.now()}`;
+    await this.db.sessions.upsert({
+      id,
+      data: JSON.stringify(state),
+      updated: new Date()
+    });
+    return id;
+  }
+
+  async load(nameOrPath: string): Promise<SessionState> {
+    const record = await this.db.sessions.findUnique({
+      where: { id: nameOrPath }
+    });
+    if (!record) {
+      throw new Error(`Session ${nameOrPath} not found`);
+    }
+    const state = JSON.parse(record.data) as SessionState;
+    
+    // Convert date strings back to Date objects
+    state.metadata.created = new Date(state.metadata.created);
+    state.metadata.lastActive = new Date(state.metadata.lastActive);
+    state.messages.forEach(msg => {
+      msg.timestamp = new Date(msg.timestamp);
+    });
+    
+    return state;
+  }
+
+  async list(): Promise<SessionInfo[]> {
+    const records = await this.db.sessions.findMany({
+      orderBy: { updated: 'desc' }
+    });
+    
+    return records.map(record => {
+      const state = JSON.parse(record.data) as SessionState;
+      return {
+        name: state.metadata.name || record.id,
+        path: record.id,
+        created: new Date(state.metadata.created),
+        lastActive: new Date(state.metadata.lastActive),
+        messageCount: state.messages.length
+      };
+    });
+  }
 }
 
-const s = session({
-  storage: new CustomStorage()
-});
+// Use custom storage
+const dbStorage = new DatabaseStorage(myDatabase);
+const s = session({ storage: dbStorage });
+```
+
+#### Cloud Storage Example
+
+```typescript
+class S3Storage implements SessionStorage {
+  constructor(private s3Client: S3Client, private bucket: string) {}
+
+  async save(state: SessionState, name?: string): Promise<string> {
+    const key = name || `session-${Date.now()}.json`;
+    await this.s3Client.send(new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: `sessions/${key}`,
+      Body: JSON.stringify(state, null, 2),
+      ContentType: 'application/json'
+    }));
+    return key;
+  }
+
+  async load(nameOrPath: string): Promise<SessionState> {
+    const response = await this.s3Client.send(new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: `sessions/${nameOrPath}`
+    }));
+    
+    const body = await response.Body?.transformToString();
+    if (!body) {
+      throw new Error(`Session ${nameOrPath} not found`);
+    }
+    
+    const state = JSON.parse(body) as SessionState;
+    // Convert dates...
+    return state;
+  }
+
+  async list(): Promise<SessionInfo[]> {
+    const response = await this.s3Client.send(new ListObjectsV2Command({
+      Bucket: this.bucket,
+      Prefix: 'sessions/'
+    }));
+    
+    const sessions: SessionInfo[] = [];
+    for (const object of response.Contents || []) {
+      // Load and parse each session for metadata...
+    }
+    return sessions;
+  }
+}
+
+const s3Storage = new S3Storage(s3Client, 'my-sessions-bucket');
+const s = session({ storage: s3Storage });
+```
+
+#### Redis Storage Example
+
+```typescript
+class RedisStorage implements SessionStorage {
+  constructor(private redis: RedisClient) {}
+
+  async save(state: SessionState, name?: string): Promise<string> {
+    const key = name || `session:${Date.now()}`;
+    await this.redis.set(key, JSON.stringify(state));
+    await this.redis.sadd('sessions:all', key);
+    return key;
+  }
+
+  async load(nameOrPath: string): Promise<SessionState> {
+    const data = await this.redis.get(nameOrPath);
+    if (!data) {
+      throw new Error(`Session ${nameOrPath} not found`);
+    }
+    const state = JSON.parse(data) as SessionState;
+    // Convert dates...
+    return state;
+  }
+
+  async list(): Promise<SessionInfo[]> {
+    const keys = await this.redis.smembers('sessions:all');
+    const sessions: SessionInfo[] = [];
+    
+    for (const key of keys) {
+      const data = await this.redis.get(key);
+      if (data) {
+        const state = JSON.parse(data) as SessionState;
+        sessions.push({
+          name: state.metadata.name || key,
+          path: key,
+          created: new Date(state.metadata.created),
+          lastActive: new Date(state.metadata.lastActive),
+          messageCount: state.messages.length
+        });
+      }
+    }
+    
+    return sessions.sort((a, b) => 
+      b.lastActive.getTime() - a.lastActive.getTime()
+    );
+  }
+}
+
+const redisStorage = new RedisStorage(redisClient);
+const s = session({ storage: redisStorage });
+```
+
+#### Storage Adapter Guidelines
+
+When implementing custom storage:
+
+1. **Handle Date Serialization**: Convert Date objects to/from strings properly
+2. **Error Handling**: Throw meaningful errors for missing sessions
+3. **Atomic Operations**: Ensure save operations are atomic when possible
+4. **Performance**: Consider caching for frequently accessed sessions
+5. **Cleanup**: Implement garbage collection for old sessions if needed
+
+```typescript
+class CustomStorage implements SessionStorage {
+  async save(state: SessionState, name?: string): Promise<string> {
+    // 1. Generate unique identifier
+    // 2. Serialize state (handle dates)
+    // 3. Store atomically
+    // 4. Return identifier
+  }
+
+  async load(nameOrPath: string): Promise<SessionState> {
+    // 1. Retrieve by identifier
+    // 2. Parse and validate
+    // 3. Convert dates back to Date objects
+    // 4. Return state
+  }
+
+  async list(): Promise<SessionInfo[]> {
+    // 1. Get all session identifiers
+    // 2. Load metadata efficiently (avoid full content)
+    // 3. Sort by last active
+    // 4. Return session info
+  }
+}
 ```
 
 ## Best Practices

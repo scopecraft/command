@@ -20,6 +20,23 @@ function claude(
 - **promptOrFile** `string` - Either a prompt string or path to a markdown file with frontmatter
 - **options** `ClaudeOptions` (optional) - Configuration options including data and execution mode
 
+#### File Path Detection
+
+The SDK automatically detects when the first parameter is a file path versus an inline prompt:
+
+**Recognized as file paths:**
+- `'prompt.md'` - Files ending with .md
+- `'./prompts/analyze.md'` - Relative paths starting with ./
+- `'../templates/review.md'` - Relative paths starting with ../
+- `'/abs/path/prompt.md'` - Absolute Unix paths
+- `'C:\\prompts\\task.md'` - Windows absolute paths
+- `'folder/file.txt'` - Any path with separators and file extension
+
+**Treated as inline prompts:**
+- `'What is TypeScript?'` - Plain text
+- `'Debug this: const x = null'` - Code snippets
+- `'Review PR #123'` - Any string not matching file patterns
+
 #### Returns
 
 `Promise<CCResult>` - Result object containing response or error
@@ -106,7 +123,7 @@ const detachedResult = await claude(
   }
 );
 
-// From file with all options
+// File-based prompt with frontmatter
 const result = await claude(
   './prompts/analyze.md',
   { 
@@ -128,6 +145,109 @@ The `claude()` function supports different execution modes through the `mode` an
 - **`detached: true`** - Run in background, optionally with logging
 
 The convenience functions below (`stream()`, `interactive()`, `run()`, `detached()`) are just syntactic sugar that call `claude()` with the appropriate mode set.
+
+## File-Based Prompts
+
+ChannelCoder supports loading prompts from markdown files with YAML frontmatter. This enables reusable, configurable prompts with built-in validation and tool specifications.
+
+### Basic File Structure
+
+```markdown
+---
+allowedTools: [Read, Write]
+systemPrompt: "You are a code analysis assistant."
+input:
+  repository: string
+  branch?: string
+---
+
+# Code Analysis for {repository}
+
+Please analyze the repository {repository} on branch {branch}.
+
+Focus on code quality, security, and performance.
+```
+
+### Frontmatter Configuration
+
+The YAML frontmatter can specify:
+
+- **allowedTools/disallowedTools**: Tool restrictions for Claude
+- **systemPrompt/appendSystemPrompt**: System message configuration  
+- **mcpConfig/permissionPromptTool**: MCP server settings
+- **input/output**: Schema validation for data and responses
+- **session**: Session requirements
+
+### Input Schema Validation
+
+File-based prompts can validate input data:
+
+```markdown
+---
+input:
+  taskId: string
+  priority: string
+  tags: string[]
+---
+
+Task {taskId} has priority {priority}
+Tags: {tags}
+```
+
+When used with data, the SDK validates against the schema:
+
+```typescript
+const result = await claude('./prompts/task.md', {
+  data: {
+    taskId: 'FEAT-123',
+    priority: 'high',
+    tags: ['backend', 'api']
+  }
+});
+// Input validation passes - all required fields provided
+```
+
+### Option Merging
+
+File configuration merges with passed options (options override file settings):
+
+```typescript
+// File specifies: allowedTools: [Read]
+// This adds Write to the tools and sets verbose mode
+const result = await claude('./prompts/analyze.md', {
+  tools: ['Read', 'Write'], // Combined with file's tools
+  verbose: true // Added to file's config
+});
+```
+
+### File Path Examples
+
+All execution modes support file-based prompts:
+
+```typescript
+// Regular execution
+const result = await claude('./prompts/analyze.md', {
+  data: { repo: 'user/project' }
+});
+
+// Streaming
+for await (const chunk of stream('./prompts/explain.md', {
+  data: { topic: 'async/await' }
+})) {
+  console.log(chunk.content);
+}
+
+// Interactive mode
+interactive('./prompts/debug.md', {
+  data: { issue: 'memory leak' }
+});
+
+// Detached mode
+detached('./prompts/long-task.md', {
+  data: { dataset: 'large.csv' },
+  logFile: 'analysis.log'
+});
+```
 
 ### `stream()`
 

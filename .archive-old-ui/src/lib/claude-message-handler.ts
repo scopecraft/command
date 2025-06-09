@@ -283,7 +283,7 @@ function createMessageHandlers(handlers: MessageHandlerInterface) {
       }
 
       // Case 2: Older format with content directly in the message
-      else if (msg.content) {
+      if (msg.content) {
         const messageId = msg.id || Date.now().toString();
         console.log('[Claude Handler] Processing direct content message:', messageId);
 
@@ -313,7 +313,7 @@ function createMessageHandlers(handlers: MessageHandlerInterface) {
       }
 
       // Case 3: Handle very simplified assistant format (just has text content)
-      else if (typeof msg.content === 'string' || Array.isArray(msg.content)) {
+      if (typeof msg.content === 'string' || Array.isArray(msg.content)) {
         const messageId = msg.id || Date.now().toString();
         console.log('[Claude Handler] Processing simple message:', messageId);
 

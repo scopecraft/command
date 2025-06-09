@@ -1,18 +1,23 @@
 /**
  * ChannelCoder Integration Module
  *
- * Provides an abstraction layer over the ChannelCoder SDK
- * for future replaceability and testing.
+ * Simple function-based wrapper around ChannelCoder SDK
  */
 
-// Export all types
-export * from './types.js';
-
-// Export session adapter
 export {
-  ChannelCoderSessionAdapter,
-  createChannelCoderClient,
-} from './session-adapter.js';
+  execute,
+  createSession,
+  loadSession,
+  executeTmux,
+  type ExecutionResult,
+} from './client.js';
 
-// Export utilities
-export * from './utils.js';
+export {
+  resolveModePromptPath,
+  buildTaskData,
+} from './utils.js';
+
+export {
+  ScopecraftSessionStorage,
+  type ScopecraftSessionMetadata,
+} from './session-storage.js';
