@@ -7,7 +7,8 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import type { SessionInfo, SessionState, SessionStorage } from 'channelcoder';
 import { FileSessionStorage } from 'channelcoder';
-import { SESSION_STORAGE } from './constants.js';
+import type { IConfigurationManager } from '../../core/config/types.js';
+import { SESSION_STORAGE, getSessionStorageRoot } from './constants.js';
 
 export interface SessionHistoryEntry {
   sessionId: string;
@@ -34,9 +35,11 @@ export class ScopecraftSessionStorage implements SessionStorage {
   private infoDir: string;
   private scopecraftMetadata?: ScopecraftSessionMetadata;
 
-  constructor(baseDir?: string, projectRoot?: string) {
-    const finalBaseDir = baseDir || SESSION_STORAGE.getBaseDir(projectRoot);
-    this.baseStorage = new FileSessionStorage(SESSION_STORAGE.getSessionsDir(projectRoot));
+  constructor(config?: IConfigurationManager, baseDir?: string, projectRoot?: string) {
+    // Use ConfigurationManager if provided, otherwise fall back to legacy behavior
+    const resolvedProjectRoot = config ? getSessionStorageRoot(config) : projectRoot;
+    const finalBaseDir = baseDir || SESSION_STORAGE.getBaseDir(resolvedProjectRoot);
+    this.baseStorage = new FileSessionStorage(SESSION_STORAGE.getSessionsDir(resolvedProjectRoot));
     this.infoDir = finalBaseDir;
   }
 

@@ -53,14 +53,23 @@ your-project/              # Main worktree
 ├── package.json
 └── .git/
 
-.worktrees/               # Additional worktrees
-├── feature-auth/         # Feature branch worktree
-│   ├── src/
-│   └── package.json
-└── bugfix-memory/        # Bugfix branch worktree
-    ├── src/
-    └── package.json
+your-project-feature-auth/ # Sibling worktrees (not nested)
+├── src/
+└── package.json
+
+your-project-bugfix-memory/
+├── src/
+└── package.json
 ```
+
+### Nesting Prevention
+
+ChannelCoder automatically prevents worktree nesting by:
+- **Smart Detection**: Uses `git rev-parse` to detect if you're already in a worktree
+- **Main Repo Discovery**: Always creates new worktrees from the main repository root
+- **Sibling Creation**: Creates new worktrees as siblings, not children
+
+This means running `claude('...', { worktree: 'branch-b' })` from within an existing worktree creates `project-branch-b/` next to the current worktree, not nested inside it.
 
 ## Worktree Options
 
@@ -80,7 +89,27 @@ interface WorktreeOptions {
   
   // Force creation vs. use existing
   create?: boolean;   // default: false (upsert behavior)
+  
+  // Working directory for git operations (NEW)
+  cwd?: string;      // default: process.cwd()
 }
+```
+
+### Multi-Repository Support
+
+The `cwd` parameter enables managing worktrees across multiple repositories:
+
+```typescript
+// Work with different repositories
+await claude('Task in repo1', { 
+  worktree: 'feature/auth',
+  cwd: '/path/to/repo1' 
+});
+
+await claude('Task in repo2', { 
+  worktree: 'feature/payments',
+  cwd: '/path/to/repo2'
+});
 ```
 
 ## Advanced Usage
@@ -131,7 +160,7 @@ import { worktreeUtils } from 'channelcoder';
 const worktrees = await worktreeUtils.list();
 /*
 [{
-  path: '/path/to/.worktrees/feature-auth',
+  path: '/path/to/project-feature-auth',
   branch: 'feature/auth',
   commit: 'abc123',
   isMain: false
@@ -149,7 +178,22 @@ await worktreeUtils.remove('feature/old');
 
 // Clean up orphaned worktrees
 const cleaned = await worktreeUtils.cleanup();
-console.log(`Removed ${cleaned} orphaned worktrees`);
+console.log(`Removed ${cleaned.length} orphaned worktrees`);
+
+// Multi-repository utilities
+await worktreeUtils.create('feature/auth', { 
+  cwd: '/path/to/repo1',
+  base: 'main' 
+});
+
+const repo2Worktrees = await worktreeUtils.list({ 
+  cwd: '/path/to/repo2' 
+});
+
+// Detection utilities
+const inWorktree = await worktreeUtils.isInWorktree();
+const mainRepo = await worktreeUtils.findMainRepository();
+console.log(`In worktree: ${inWorktree}, Main repo: ${mainRepo}`);
 ```
 
 ## Combining with Other Features
@@ -278,6 +322,21 @@ await Promise.all(features.map(feature =>
     await claude(`Implement ${feature} system`);
   }, { base: 'main', cleanup: false })
 ));
+
+// Multi-repository development
+const repos = [
+  { path: '/path/to/backend', features: ['api', 'auth'] },
+  { path: '/path/to/frontend', features: ['ui', 'state'] }
+];
+
+await Promise.all(repos.flatMap(repo =>
+  repo.features.map(feature =>
+    claude(`Implement ${feature}`, {
+      worktree: `feature/${feature}`,
+      cwd: repo.path
+    })
+  )
+));
 ```
 
 ## Troubleshooting
@@ -311,6 +370,26 @@ await Promise.all(features.map(feature =>
        path: '.worktrees/feature-new-v2'
      }
    });
+   ```
+
+4. **Nested worktree issues** (Now prevented automatically)
+   ```typescript
+   // ChannelCoder automatically prevents nesting
+   // This creates siblings, not nested worktrees
+   await worktree('branch-a', async () => {
+     // Even from inside a worktree, this creates a sibling
+     await claude('...', { worktree: 'branch-b' });
+   });
+   ```
+
+5. **Multi-repository confusion**
+   ```typescript
+   // Always specify cwd for clarity
+   await worktreeUtils.list({ cwd: '/path/to/specific/repo' });
+   
+   // Check which repo you're in
+   const mainRepo = await worktreeUtils.findMainRepository();
+   console.log('Working with repo:', mainRepo);
    ```
 
 ### Debugging

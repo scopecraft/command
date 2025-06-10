@@ -7,7 +7,7 @@
 
 import inquirer from 'inquirer';
 import { ConfigurationManager } from '../../core/config/index.js';
-import { EnvironmentResolver, WorktreeManager } from '../../core/environment/index.js';
+import { ensureEnvironment, resolveEnvironmentId } from '../../core/environment/index.js';
 import { getStatusEmoji, getTypeEmoji } from '../../core/metadata/schema-service.js';
 import { get as getTask, list as listTasks } from '../../core/task-crud.js';
 import type { Task } from '../../core/types.js';
@@ -49,8 +49,7 @@ export async function handleWorkCommand(
     }
 
     // Initialize core services
-    const worktreeManager = new WorktreeManager();
-    const resolver = new EnvironmentResolver(worktreeManager);
+    // Using new functional API with ConfigurationManager
 
     // Step 1: Handle session resume or task resolution
     let resolvedTaskId: string | undefined;
@@ -87,10 +86,14 @@ export async function handleWorkCommand(
         process.exit(1);
       }
 
-      // Resolve and ensure environment
-      const envId = await resolver.resolveEnvironmentId(resolvedTaskId);
-      envInfo = await resolver.ensureEnvironment(envId);
-      printSuccess(`Environment ready: ${envInfo.path}`);
+      // Resolve and ensure environment (respecting dry-run mode)
+      const envId = await resolveEnvironmentId(resolvedTaskId, configManager);
+      envInfo = await ensureEnvironment(envId, configManager, options.dryRun);
+      if (options.dryRun) {
+        printSuccess(`[DRY RUN] Environment would be: ${envInfo.path}`);
+      } else {
+        printSuccess(`Environment ready: ${envInfo.path}`);
+      }
     }
 
     // Step 2: Setup execution parameters
@@ -148,12 +151,13 @@ export async function handleWorkCommand(
       instruction: taskInstruction,
       dryRun: options.dryRun,
       session: options.session, // Pass through for resume
-      worktree: envInfo
-        ? {
-            path: envInfo.path,
-            branch: envInfo.branch,
-          }
-        : undefined,
+      worktree:
+        envInfo && !options.dryRun
+          ? {
+              path: envInfo.path,
+              branch: envInfo.branch,
+            }
+          : undefined,
       data,
     });
 

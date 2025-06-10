@@ -53,9 +53,11 @@ Decision: Proceed with functional architecture design based on research findings
 TRD finalized and grounded in actual implementation - ready for Phase 3
 
 ### Phase 3: Implementation
-- [ ] 17_cret-rgrsson-test-curr-06K: Create regression test suite for current behavior → @test-agent
-- [ ] 09_conv-envrnmntrslver-pure-fns-06D: Convert EnvironmentResolver to pure functions → @implement-agent
-- [ ] 09_conv-wrktrmnger-pure-fns-06P: Convert WorktreeManager to pure functions → @implement-agent (parallel)
+- [x] 17_cret-rgrsson-test-curr-06K: Create regression test suite for current behavior → @test-agent
+- [x] 21_fix-dry-run-mod-sti-cre-06I: Fix dry-run mode still creating worktrees (HIGH PRIORITY BUG) → @implement-agent
+- [x] 09_conv-envrnmntrslver-pure-fns-06D: Convert EnvironmentResolver to pure functions → @implement-agent
+- [x] 09_conv-wrktrmnger-pure-fns-06P: Convert WorktreeManager to pure functions → @implement-agent (parallel)
+- [ ] 22_revw-and-ip-rfctrng-task-06T: Review and integrate parallel refactoring tasks → @architect-agent
 - [ ] 18_fix-sess-stor-rslton-06O: Fix session storage root resolution bug → @implement-agent
 - [ ] 19_updt-cli-comm-fns-06G: Update CLI commands to use new functions → @implement-agent
 
@@ -143,3 +145,52 @@ Confirm no breaking changes and session monitoring bug is fixed
   - Current Status: Regression test creation in progress
   - Next Steps: After regression tests complete, dispatch parallel conversion tasks
   - Resume: Monitor test creation, then dispatch 09_conv-envrnmntrslver-pure-fns-06D and 09_conv-wrktrmnger-pure-fns-06P in parallel
+- 2025-06-10: === ORCHESTRATION RUN ===
+  - Current Phase: Phase 3: Implementation
+  - Critical Context Discovered: ChannelCoder SDK already provides worktree utilities!
+  - Updated Tasks: Added ChannelCoder SDK context to prevent duplication
+  - Bug Found: Dry-run mode still creates worktrees (from regression testing)
+  - Created Task: 21_fix-dry-run-mod-sti-cre-06I (high priority bug fix)
+  - Tasks Dispatched (Parallel):
+    * 09_conv-envrnmntrslver-pure-fns-06D → Session: detached-09_conv-envrnmntrslver-pure-fns-06D-1749564502811 (PID: 63021)
+    * 09_conv-wrktrmnger-pure-fns-06P → Session: detached-09_conv-wrktrmnger-pure-fns-06P-1749564510956 (PID: 63500)
+    * 21_fix-dry-run-mod-sti-cre-06I → Session: detached-21_fix-dry-run-mod-sti-cre-06I-1749564519586 (PID: 63978)
+  - Quality Standards: Review TRD first, use ChannelCoder SDK, avoid duplication
+  - Next Steps: Monitor parallel conversions, then dispatch session storage fix
+  - Resume: After conversions complete, dispatch 18_fix-sess-stor-rslton-06O
+- 2025-06-10: === ORCHESTRATION ADJUSTMENT ===
+  - Lesson Learned: Parallel tasks touching same codebase created potential conflicts
+  - Created Integration Task: 22_revw-and-ip-rfctrng-task-06T
+  - Purpose: Review and integrate the three parallel implementations
+  - Updated orchestration prompt: Added conflict analysis requirements
+  - Next: Dispatch integration task before continuing with remaining work
+- 2025-06-10: === ORCHESTRATION COMPLETE ===
+  - Integration Task Dispatched: 22_revw-and-ip-rfctrng-task-06T → Session: detached-22_revw-and-ip-rfctrng-task-06T-1749567281172 (PID: 73759)
+  - Purpose: Review and integrate three parallel implementations
+  - Mode: architect-agent (code review and integration)
+  - Current Status: Awaiting integration review completion
+  - Next Steps: After integration, dispatch remaining sequential tasks:
+    * 18_fix-sess-stor-rslton-06O (session storage fix)
+    * 19_updt-cli-comm-fns-06G (CLI updates)
+    * 20_run-full-regression-test-suite-06G (final testing)
+  - Resume: Monitor integration task, then continue with remaining implementation
+- 2025-06-10: === TASK DISPATCH ===
+  - Task: 18_fix-sess-stor-rslton-06O (session storage fix)
+  - Session: detached-18_fix-sess-stor-rslton-06O-1749568311432 (PID: 80945)
+  - Context: Now that functional refactoring is integrated, fix the session storage bug
+  - Note: The resolver-functions.ts already includes getSessionStorageRoot() function
+  - Next: After this completes, dispatch CLI update task
+- 2025-06-10: === PARALLEL DISPATCH ===
+  - Task: 19_updt-cli-comm-fns-06G (CLI updates with cleanup)
+  - Session: detached-19_updt-cli-comm-fns-06G-1749568510426 (PID: 82559)
+  - Special Instructions: Added explicit code cleanup requirements
+  - Context: Safe to run in parallel with session storage fix (monitoring only)
+  - Running Tasks: 2 concurrent (18 and 19)
+  - Remaining: Only final regression test suite after these complete
+- 2025-06-10: === FINAL TESTING DISPATCH ===
+  - Task: 20_run-full-regression-test-suite-06G
+  - Session: detached-20_run-full-regression-test-suite-06G-1749569093228 (PID: 87051)
+  - Purpose: Final validation of all refactoring changes
+  - Context: All implementation complete, need to verify no breaking changes
+  - Status: This is the LAST task - 14/15 complete
+  - Gates Ahead: Implementation Review → Final Validation

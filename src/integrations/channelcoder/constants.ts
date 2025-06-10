@@ -3,6 +3,7 @@
  */
 
 import { join } from 'node:path';
+import type { IConfigurationManager } from '../../core/config/types.js';
 
 // Session storage configuration
 export const SESSION_STORAGE = {
@@ -27,6 +28,15 @@ export const SESSION_STORAGE = {
   getLogsDir: (projectRoot?: string) =>
     join(SESSION_STORAGE.getBaseDir(projectRoot), SESSION_STORAGE.LOGS_SUBDIR),
 } as const;
+
+/**
+ * Get session storage root using ConfigurationManager for consistent resolution
+ * Ensures CLI and UI use the same project root regardless of working directory
+ */
+export function getSessionStorageRoot(config: IConfigurationManager): string {
+  const rootConfig = config.getRootConfig();
+  return rootConfig.path;
+}
 
 // Session types
 export const SESSION_TYPES = {

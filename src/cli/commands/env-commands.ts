@@ -8,9 +8,16 @@
 import { z } from 'zod';
 import { ConfigurationManager } from '../../core/config/configuration-manager.js';
 import { OutputFormatService } from '../../core/environment/index.js';
-import { EnvironmentResolver } from '../../core/environment/resolver.js';
+import {
+  createWorktreeContext,
+  ensureEnvironment,
+  getEnvironmentInfo,
+  listWorktrees,
+  removeWorktree,
+  resolveEnvironmentId,
+  worktreeExists,
+} from '../../core/environment/index.js';
 import { EnvironmentError, EnvironmentErrorCodes } from '../../core/environment/types.js';
-import { WorktreeManager } from '../../core/environment/worktree-manager.js';
 import * as core from '../../core/index.js';
 
 // Initialize centralized configuration services
@@ -65,7 +72,6 @@ export async function handleEnvCreateCommand(
     // Initialize services
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getRootConfig().path;
-    const resolver = new EnvironmentResolver();
 
     // Verify task exists first
     const taskResult = await core.get(projectRoot, validated.taskId);
@@ -76,13 +82,14 @@ export async function handleEnvCreateCommand(
     }
 
     // Resolve environment ID (handles parent/subtask logic)
-    const envId = await resolver.resolveEnvironmentId(validated.taskId);
+    const envId = await resolveEnvironmentId(validated.taskId, configManager);
 
     // Create or get existing environment
-    const envInfo = await resolver.ensureEnvironment(envId);
+    const envInfo = await ensureEnvironment(envId, configManager);
 
     // Check if this is a new environment or existing
-    const isNew = !(await new WorktreeManager().exists(envId));
+    const context = createWorktreeContext(configManager);
+    const isNew = !(await worktreeExists(envId, context));
 
     if (isNew) {
       console.log(`✓ Created environment for task: ${validated.taskId}`);
@@ -145,10 +152,11 @@ export async function handleEnvListCommand(
     const validated = envListSchema.parse(options);
 
     // Initialize services
-    const worktreeManager = new WorktreeManager();
+    const configManager = ConfigurationManager.getInstance();
+    const context = createWorktreeContext(configManager);
 
     // Get all worktrees
-    const worktrees = await worktreeManager.list();
+    const worktrees = await listWorktrees(context);
 
     // Format output based on requested format
     if (validated.format === 'json') {
@@ -248,14 +256,14 @@ export async function handleEnvCloseCommand(
     const validated = envCloseSchema.parse({ taskId, ...options });
 
     // Initialize services
-    const resolver = new EnvironmentResolver();
-    const worktreeManager = new WorktreeManager();
+    const configManager = ConfigurationManager.getInstance();
+    const context = createWorktreeContext(configManager);
 
     // Resolve environment ID
-    const envId = await resolver.resolveEnvironmentId(validated.taskId);
+    const envId = await resolveEnvironmentId(validated.taskId, configManager);
 
     // Check if environment exists
-    const envInfo = await resolver.getEnvironmentInfo(envId);
+    const envInfo = await getEnvironmentInfo(envId, configManager);
     if (!envInfo) {
       console.error(`Error: No environment found for task '${validated.taskId}'`);
       console.error('\nTip: Use "sc env list" to see active environments');
@@ -277,7 +285,7 @@ export async function handleEnvCloseCommand(
     }
 
     // Remove the worktree
-    await worktreeManager.remove(envId);
+    await removeWorktree(envId, context);
 
     console.log(`✓ Closed environment for task: ${validated.taskId}`);
     if (envId !== validated.taskId) {
@@ -320,13 +328,13 @@ export async function handleEnvPathCommand(taskId: string, options: {} = {}): Pr
     const validated = envPathSchema.parse({ taskId, ...options });
 
     // Initialize services
-    const resolver = new EnvironmentResolver();
+    const configManager = ConfigurationManager.getInstance();
 
     // Resolve environment ID
-    const envId = await resolver.resolveEnvironmentId(validated.taskId);
+    const envId = await resolveEnvironmentId(validated.taskId, configManager);
 
     // Get environment info
-    const envInfo = await resolver.getEnvironmentInfo(envId);
+    const envInfo = await getEnvironmentInfo(envId, configManager);
     if (!envInfo) {
       console.error(`Error: No environment found for task '${validated.taskId}'`);
       process.exit(1);

@@ -3,6 +3,7 @@
  */
 
 import { type CCResult, type ClaudeOptions, claude, session } from 'channelcoder';
+import { ConfigurationManager } from '../../core/config/configuration-manager.js';
 import { ScopecraftSessionStorage } from './session-storage.js';
 
 export interface ExecutionResult extends CCResult {
@@ -38,7 +39,8 @@ export async function execute(
     const sessionName = options.sessionName;
 
     if (taskId || sessionName) {
-      const storage = new ScopecraftSessionStorage();
+      const config = ConfigurationManager.getInstance();
+      const storage = new ScopecraftSessionStorage(config);
       const finalSessionName = sessionName || `task-${taskId || 'unknown'}-${Date.now()}`;
 
       const s = session({
@@ -119,7 +121,8 @@ export async function execute(
  * Create session with our custom storage
  */
 export function createSession(options: Record<string, unknown> = {}) {
-  const storage = new ScopecraftSessionStorage();
+  const config = ConfigurationManager.getInstance();
+  const storage = new ScopecraftSessionStorage(config);
   return session({
     storage,
     autoSave: true,
@@ -131,7 +134,8 @@ export function createSession(options: Record<string, unknown> = {}) {
  * Load session with our storage
  */
 export async function loadSession(sessionName: string) {
-  const storage = new ScopecraftSessionStorage();
+  const config = ConfigurationManager.getInstance();
+  const storage = new ScopecraftSessionStorage(config);
   // Use ChannelCoder's session loading with our storage
   return await session.load(sessionName, storage);
 }

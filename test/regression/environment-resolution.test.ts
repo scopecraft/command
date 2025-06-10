@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import simpleGit from 'simple-git';
 
 import { ConfigurationManager } from '../../src/core/config/configuration-manager.js';
-import { 
+import {
   BranchNamingService,
   DockerConfigService,
   ModeDefaultsService,
@@ -183,7 +183,7 @@ describe('Environment Resolution Regression Tests', () => {
   beforeEach(() => {
     const configManager = ConfigurationManager.getInstance();
     configManager.setRootFromCLI(TEST_PROJECT);
-    
+
     // Initialize services
     branchService = new BranchNamingService();
     dockerService = new DockerConfigService();
@@ -195,7 +195,7 @@ describe('Environment Resolution Regression Tests', () => {
 
   describe('Task ID Resolution', () => {
     test('should resolve simple task IDs directly', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) {
         throw new Error('No simple task found in test data');
       }
@@ -210,7 +210,7 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should resolve parent task IDs directly', async () => {
-      const parentTask = testTasks.find(t => t.type === 'parent');
+      const parentTask = testTasks.find((t) => t.type === 'parent');
       if (!parentTask) {
         throw new Error('No parent task found in test data');
       }
@@ -225,7 +225,7 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should resolve subtask IDs to parent environment', async () => {
-      const parentTask = testTasks.find(t => t.type === 'parent' && t.subtasks.length > 0);
+      const parentTask = testTasks.find((t) => t.type === 'parent' && t.subtasks.length > 0);
       if (!parentTask || !parentTask.subtasks[0]) {
         throw new Error('No parent with subtasks found in test data');
       }
@@ -260,7 +260,7 @@ describe('Environment Resolution Regression Tests', () => {
 
   describe('Worktree Path Resolution', () => {
     test('should generate consistent worktree paths for simple tasks', () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) {
         throw new Error('No simple task found in test data');
       }
@@ -273,7 +273,7 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should generate consistent worktree paths for parent tasks', () => {
-      const parentTask = testTasks.find(t => t.type === 'parent');
+      const parentTask = testTasks.find((t) => t.type === 'parent');
       if (!parentTask) {
         throw new Error('No parent task found in test data');
       }
@@ -292,7 +292,7 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should check if path is worktree correctly', () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) {
         throw new Error('No simple task found in test data');
       }
@@ -312,7 +312,7 @@ describe('Environment Resolution Regression Tests', () => {
 
       for (const taskId of taskIds) {
         const branchName = branchService.getBranchName(taskId);
-        
+
         expect(branchName).toBe(`task/${taskId}`);
         expect(branchName).toMatch(/^task\//);
       }
@@ -335,26 +335,26 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should have inverse branch operations', () => {
-      const taskIds = testTasks.map(t => t.id).filter(Boolean);
+      const taskIds = testTasks.map((t) => t.id).filter(Boolean);
 
       for (const taskId of taskIds) {
         const branchName = branchService.getBranchName(taskId);
         const extracted = branchService.extractTaskIdFromBranch(branchName);
-        
+
         expect(extracted).toBe(taskId);
       }
     });
 
     test('should use consistent default base branch', () => {
       const baseBranch = branchService.getDefaultBaseBranch();
-      
+
       expect(baseBranch).toBe('main');
     });
   });
 
   describe('Environment Creation and Switching', () => {
     test('should create environment for simple task', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) {
         throw new Error('No simple task found in test data');
       }
@@ -373,7 +373,7 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should reuse existing environment on second call', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) {
         throw new Error('No simple task found in test data');
       }
@@ -390,7 +390,7 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should share environment between parent and subtasks', async () => {
-      const parentTask = testTasks.find(t => t.type === 'parent' && t.subtasks.length > 0);
+      const parentTask = testTasks.find((t) => t.type === 'parent' && t.subtasks.length > 0);
       if (!parentTask || !parentTask.subtasks[0]) {
         throw new Error('No parent with subtasks found in test data');
       }
@@ -408,7 +408,7 @@ describe('Environment Resolution Regression Tests', () => {
       const subtaskResult = await worktreeManager.createOrSwitchEnvironment(
         subtaskResolution.environment!.taskId
       );
-      
+
       expect(subtaskResult.data!.path).toBe(parentResult.data!.path);
       expect(subtaskResult.data!.switched).toBe(true); // Should switch, not create
     });
@@ -418,7 +418,7 @@ describe('Environment Resolution Regression Tests', () => {
     test('should list all active environments', async () => {
       // Create a few environments
       const tasksToCreate = testTasks.slice(0, 2);
-      
+
       for (const task of tasksToCreate) {
         await worktreeManager.createOrSwitchEnvironment(task.id);
       }
@@ -426,9 +426,9 @@ describe('Environment Resolution Regression Tests', () => {
       const environments = await worktreeManager.listEnvironments();
 
       expect(environments.length).toBeGreaterThanOrEqual(tasksToCreate.length);
-      
+
       for (const task of tasksToCreate) {
-        const env = environments.find(e => e.taskId === task.id);
+        const env = environments.find((e) => e.taskId === task.id);
         expect(env).toBeDefined();
         expect(env!.branch).toBe(branchService.getBranchName(task.id));
         expect(env!.path).toBe(pathResolver.getWorktreePath(task.id));
@@ -436,7 +436,7 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should include branch and path info in listings', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) {
         throw new Error('No simple task found in test data');
       }
@@ -444,7 +444,7 @@ describe('Environment Resolution Regression Tests', () => {
       await worktreeManager.createOrSwitchEnvironment(simpleTask.id);
       const environments = await worktreeManager.listEnvironments();
 
-      const env = environments.find(e => e.taskId === simpleTask.id);
+      const env = environments.find((e) => e.taskId === simpleTask.id);
       expect(env).toBeDefined();
       expect(env!.branch).toMatch(/^task\//);
       expect(env!.path).toContain('.worktrees');
@@ -454,7 +454,7 @@ describe('Environment Resolution Regression Tests', () => {
 
   describe('Environment Cleanup', () => {
     test('should close environment and cleanup worktree', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) {
         throw new Error('No simple task found in test data');
       }
@@ -474,7 +474,7 @@ describe('Environment Resolution Regression Tests', () => {
 
       // Verify not in listings
       const environments = await worktreeManager.listEnvironments();
-      const env = environments.find(e => e.taskId === simpleTask.id);
+      const env = environments.find((e) => e.taskId === simpleTask.id);
       expect(env).toBeUndefined();
     });
 
@@ -486,7 +486,7 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should keep branch by default when closing', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) {
         throw new Error('No simple task found in test data');
       }
@@ -580,7 +580,7 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should use orchestrate mode for parent tasks', async () => {
-      const parentTask = testTasks.find(t => t.type === 'parent');
+      const parentTask = testTasks.find((t) => t.type === 'parent');
       if (!parentTask) {
         throw new Error('No parent task found in test data');
       }
@@ -620,7 +620,7 @@ describe('Environment Resolution Regression Tests', () => {
     });
 
     test('should handle concurrent environment operations', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) {
         throw new Error('No simple task found in test data');
       }
@@ -635,33 +635,33 @@ describe('Environment Resolution Regression Tests', () => {
       const results = await Promise.all(promises);
 
       // All should succeed
-      expect(results.every(r => r.success)).toBe(true);
+      expect(results.every((r) => r.success)).toBe(true);
 
       // Only one should have created
-      const createdCount = results.filter(r => r.data?.created).length;
+      const createdCount = results.filter((r) => r.data?.created).length;
       expect(createdCount).toBe(1);
 
       // Others should have switched
-      const switchedCount = results.filter(r => r.data?.switched).length;
+      const switchedCount = results.filter((r) => r.data?.switched).length;
       expect(switchedCount).toBe(2);
     });
 
     test('should handle deeply nested subtask resolution', async () => {
       // This tests the current behavior - subtasks resolve to parent
-      const parentTask = testTasks.find(t => t.type === 'parent' && t.subtasks.length > 1);
+      const parentTask = testTasks.find((t) => t.type === 'parent' && t.subtasks.length > 1);
       if (!parentTask) {
         throw new Error('No parent with multiple subtasks found');
       }
 
       // All subtasks should resolve to same parent environment
       const resolutions = await Promise.all(
-        parentTask.subtasks.map(id => resolver.resolveTaskEnvironment(id))
+        parentTask.subtasks.map((id) => resolver.resolveTaskEnvironment(id))
       );
 
-      expect(resolutions.every(r => r.success)).toBe(true);
-      expect(resolutions.every(r => r.environment!.taskId === parentTask.id)).toBe(true);
-      expect(resolutions.every(r => r.environment!.isParentEnvironment)).toBe(true);
-      expect(resolutions.every(r => r.environment!.resolvedFromSubtask)).toBe(true);
+      expect(resolutions.every((r) => r.success)).toBe(true);
+      expect(resolutions.every((r) => r.environment!.taskId === parentTask.id)).toBe(true);
+      expect(resolutions.every((r) => r.environment!.isParentEnvironment)).toBe(true);
+      expect(resolutions.every((r) => r.environment!.resolvedFromSubtask)).toBe(true);
     });
   });
 });

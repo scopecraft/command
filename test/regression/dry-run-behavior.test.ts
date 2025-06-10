@@ -66,21 +66,21 @@ async function cleanup() {
 
 async function setupTestProject() {
   mkdirSync(TEST_PROJECT, { recursive: true });
-  
+
   const git = simpleGit(TEST_PROJECT);
   await git.init();
   await git.addConfig('user.name', 'Test User');
   await git.addConfig('user.email', 'test@example.com');
   await git.raw(['commit', '--allow-empty', '-m', 'Initial commit']);
-  
+
   core.initializeProjectStructure(TEST_PROJECT);
-  
+
   const configManager = ConfigurationManager.getInstance();
   configManager.setRootFromCLI(TEST_PROJECT);
-  
+
   // Create test task hierarchy for realistic testing
   const tasks: any[] = [];
-  
+
   // Simple task
   const simpleResult = await core.create(TEST_PROJECT, {
     title: 'Simple Task for Dry Run Testing',
@@ -91,10 +91,10 @@ async function setupTestProject() {
   if (simpleResult.success && simpleResult.data) {
     tasks.push({
       id: simpleResult.data.metadata.id,
-      type: 'simple'
+      type: 'simple',
     });
   }
-  
+
   // Parent with subtasks
   const parentResult = await core.createParent(TEST_PROJECT, {
     title: 'Parent Feature for Dry Run',
@@ -102,138 +102,131 @@ async function setupTestProject() {
     area: 'dryrun-test',
     workflowState: 'current',
   });
-  
+
   if (parentResult.success && parentResult.data) {
     const parentId = parentResult.data.metadata.id;
-    
+
     const subtask = await core.parent(TEST_PROJECT, parentId).create('Subtask for Testing', {
       type: 'feature',
       area: 'dryrun-test',
     });
-    
+
     if (subtask.success && subtask.data) {
       tasks.push({
         id: parentId,
         type: 'parent',
-        subtaskId: subtask.data.metadata.id
+        subtaskId: subtask.data.metadata.id,
       });
     }
   }
-  
+
   return tasks;
 }
 
 describe('Dry-Run Behavior Regression Tests', () => {
   let testTasks: any[] = [];
-  
+
   beforeAll(async () => {
     await cleanup();
     testTasks = await setupTestProject();
   });
-  
+
   afterAll(async () => {
     await cleanup();
   });
-  
+
   beforeEach(() => {
     const configManager = ConfigurationManager.getInstance();
     configManager.setRootFromCLI(TEST_PROJECT);
   });
-  
+
   describe('work command --dry-run behavior', () => {
     test('should show environment resolution without creating worktree', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) throw new Error('No simple task in test data');
-      
+
       setupMocks();
-      
+
       try {
         await handleWorkCommand(simpleTask.id, [], { dryRun: true });
-        
+
         const output = getCapturedOutput();
-        
+
         // Should show DRY RUN mode
         expect(output).toContain('[DRY RUN]');
-        
+
         // Should show environment information
-        expect(output).toContain('Environment ready');
+        expect(output).toContain('Environment would be');
         expect(output).toContain('.worktrees');
         expect(output).toContain(simpleTask.id);
-        
+
         // Should show what command would be executed
         expect(output).toContain('[DRY RUN] Would execute:');
         expect(output).toContain('Prompt/File:');
         expect(output).toContain('.modes/');
-        
+
         // Should show the options that would be passed
         expect(output).toContain('"dryRun": true');
         expect(output).toContain(`"taskId": "${simpleTask.id}"`);
         expect(output).toContain(`"branch": "task/${simpleTask.id}"`);
-        
-        // BUG: Worktree IS created even in dry-run mode!
-        // This is because resolver.ensureEnvironment() is called before checking dryRun
+
+        // FIXED: Worktree should NOT be created in dry-run mode
         const expectedWorktreePath = join(WORKTREE_BASE, simpleTask.id);
-        
-        // This SHOULD be false, but currently it's true (bug)
         const worktreeExists = existsSync(expectedWorktreePath);
-        
-        // Document the bug - worktree should NOT exist in dry-run
-        if (worktreeExists) {
-          console.log('BUG CONFIRMED: Worktree created in dry-run mode at:', expectedWorktreePath);
-        }
-        
-        // For now, expect the buggy behavior so test passes
-        // After fix, this should expect(worktreeExists).toBe(false)
-        expect(worktreeExists).toBe(true); // BUGGY BEHAVIOR
+
+        // Worktree should NOT exist in dry-run mode
+        expect(worktreeExists).toBe(false);
       } finally {
         restoreMocks();
       }
     });
-    
+
     test('should show parent resolution for subtask without creating worktree', async () => {
-      const parentTask = testTasks.find(t => t.type === 'parent');
+      const parentTask = testTasks.find((t) => t.type === 'parent');
       if (!parentTask) throw new Error('No parent task in test data');
-      
+
       setupMocks();
-      
+
       try {
         // Use subtask ID, should resolve to parent
         await handleWorkCommand(parentTask.subtaskId, [], { dryRun: true });
-        
+
         const output = getCapturedOutput();
-        
+
         // Should show it resolved to parent
         expect(output).toContain('DRY RUN');
-        expect(output).toContain(`Resolved task ${parentTask.subtaskId} to parent ${parentTask.id}`);
+        expect(output).toContain(
+          `Resolved task ${parentTask.subtaskId} to parent ${parentTask.id}`
+        );
         expect(output).toContain(`Task: ${parentTask.id}`); // Parent ID
         expect(output).toContain(`Branch: task/${parentTask.id}`); // Parent branch
-        
+
         // Verify NO worktree created
         expect(existsSync(join(WORKTREE_BASE, parentTask.id))).toBe(false);
       } finally {
         restoreMocks();
       }
     });
-    
+
     test('should show mode inference in dry-run', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) throw new Error('No simple task in test data');
-      
+
       // Test different modes
       const modeTests = [
         { mode: undefined, expectedMode: 'implement' }, // Default for feature
         { mode: 'diagnose', expectedMode: 'diagnose' },
         { mode: 'explore', expectedMode: 'explore' },
       ];
-      
+
       for (const { mode, expectedMode } of modeTests) {
         setupMocks();
-        
+
         try {
           await handleWorkCommand(simpleTask.id, [], { dryRun: true, mode });
-          
+
           const output = getCapturedOutput();
-          
+
           expect(output).toContain('DRY RUN');
           expect(output).toContain(`Mode: ${expectedMode}`);
           expect(output).toContain(`.modes/${expectedMode}`);
@@ -242,22 +235,18 @@ describe('Dry-Run Behavior Regression Tests', () => {
         }
       }
     });
-    
+
     test('should show additional context in dry-run', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) throw new Error('No simple task in test data');
-      
+
       setupMocks();
-      
+
       try {
-        await handleWorkCommand(
-          simpleTask.id, 
-          ['focus on', 'error handling'], 
-          { dryRun: true }
-        );
-        
+        await handleWorkCommand(simpleTask.id, ['focus on', 'error handling'], { dryRun: true });
+
         const output = getCapturedOutput();
-        
+
         expect(output).toContain('DRY RUN');
         expect(output).toContain('Additional context: focus on error handling');
       } finally {
@@ -265,52 +254,52 @@ describe('Dry-Run Behavior Regression Tests', () => {
       }
     });
   });
-  
+
   describe('dispatch command --dry-run behavior', () => {
     test('should show Docker execution details without running', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) throw new Error('No simple task in test data');
-      
+
       setupMocks();
-      
+
       try {
-        await handleDispatchCommand(simpleTask.id, { 
+        await handleDispatchCommand(simpleTask.id, {
           dryRun: true,
-          exec: 'docker' 
+          exec: 'docker',
         });
-        
+
         const output = getCapturedOutput();
-        
+
         expect(output).toContain('DRY RUN');
         expect(output).toContain('Execution type: docker');
         expect(output).toContain('Docker image: my-claude:authenticated');
         expect(output).toContain('Mount: ');
         expect(output).toContain('/workspace');
-        
+
         // Should NOT show success message for actual execution
         expect(output).not.toContain('✅ Execution started successfully');
       } finally {
         restoreMocks();
       }
     });
-    
+
     test('should show different execution modes in dry-run', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) throw new Error('No simple task in test data');
-      
+
       const execModes = ['docker', 'detached', 'tmux'];
-      
+
       for (const exec of execModes) {
         setupMocks();
-        
+
         try {
           await handleDispatchCommand(simpleTask.id, { dryRun: true, exec });
-          
+
           const output = getCapturedOutput();
-          
+
           expect(output).toContain('DRY RUN');
           expect(output).toContain(`Execution type: ${exec}`);
-          
+
           if (exec === 'docker') {
             expect(output).toContain('Docker image:');
           } else if (exec === 'tmux') {
@@ -322,21 +311,18 @@ describe('Dry-Run Behavior Regression Tests', () => {
       }
     });
   });
-  
+
   describe('plan command --dry-run behavior', () => {
     test('should show planning session details without execution', async () => {
       setupMocks();
-      
+
       try {
-        await handlePlanCommand(
-          'Add dark mode toggle',
-          'ui',
-          ['similar to system preferences'],
-          { dryRun: true }
-        );
-        
+        await handlePlanCommand('Add dark mode toggle', 'ui', ['similar to system preferences'], {
+          dryRun: true,
+        });
+
         const output = getCapturedOutput();
-        
+
         expect(output).toContain('DRY RUN');
         expect(output).toContain('Planning: Add dark mode toggle');
         expect(output).toContain('Area: ui');
@@ -348,20 +334,20 @@ describe('Dry-Run Behavior Regression Tests', () => {
       }
     });
   });
-  
+
   describe('env create command --dry-run behavior', () => {
     test('should show what environment would be created', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) throw new Error('No simple task in test data');
-      
+
       setupMocks();
-      
+
       try {
         // Note: env commands might not support dry-run, but we should test
         await handleEnvCreateCommand(simpleTask.id);
-        
+
         const output = getCapturedOutput();
-        
+
         // Should show environment creation details
         expect(output).toContain(simpleTask.id);
         expect(output).toContain('Path:');
@@ -371,53 +357,53 @@ describe('Dry-Run Behavior Regression Tests', () => {
       }
     });
   });
-  
+
   describe('comparing behaviors with dry-run', () => {
     test('should show consistent environment resolution across commands', async () => {
-      const parentTask = testTasks.find(t => t.type === 'parent');
+      const parentTask = testTasks.find((t) => t.type === 'parent');
       if (!parentTask) throw new Error('No parent task in test data');
-      
+
       // Test work command
       setupMocks();
       await handleWorkCommand(parentTask.subtaskId, [], { dryRun: true });
       const workOutput = getCapturedOutput();
       restoreMocks();
-      
+
       // Test dispatch command
       setupMocks();
       await handleDispatchCommand(parentTask.subtaskId, { dryRun: true });
       const dispatchOutput = getCapturedOutput();
       restoreMocks();
-      
+
       // Both should resolve to same parent
       expect(workOutput).toContain(`parent ${parentTask.id}`);
       expect(dispatchOutput).toContain(`parent ${parentTask.id}`);
-      
+
       // Both should use same branch
       const expectedBranch = `task/${parentTask.id}`;
       expect(workOutput).toContain(expectedBranch);
       expect(dispatchOutput).toContain(expectedBranch);
-      
+
       // Both should use same worktree path pattern
       expect(workOutput).toContain('.worktrees');
       expect(dispatchOutput).toContain('.worktrees');
     });
-    
+
     test('should capture all configuration in dry-run output', async () => {
-      const simpleTask = testTasks.find(t => t.type === 'simple');
+      const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) throw new Error('No simple task in test data');
-      
+
       setupMocks();
-      
+
       try {
         await handleWorkCommand(simpleTask.id, ['implement OAuth'], {
           dryRun: true,
           mode: 'implement',
-          data: '{"priority": "high", "framework": "NextAuth"}'
+          data: '{"priority": "high", "framework": "NextAuth"}',
         });
-        
+
         const output = getCapturedOutput();
-        
+
         // Should capture ALL parameters
         expect(output).toContain('DRY RUN');
         expect(output).toContain('Mode: implement');

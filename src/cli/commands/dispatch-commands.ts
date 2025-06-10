@@ -7,7 +7,7 @@
 
 import { ConfigurationManager } from '../../core/config/index.js';
 import { DockerConfigService } from '../../core/environment/configuration-services.js';
-import { EnvironmentResolver, WorktreeManager } from '../../core/environment/index.js';
+import { ensureEnvironment, resolveEnvironmentId } from '../../core/environment/index.js';
 import { get as getTask } from '../../core/task-crud.js';
 import type { Task } from '../../core/types.js';
 import {
@@ -55,9 +55,8 @@ export async function handleDispatchCommand(
     }
 
     // Initialize core services
-    const worktreeManager = new WorktreeManager();
-    const resolver = new EnvironmentResolver(worktreeManager);
     const dockerConfig = new DockerConfigService();
+    // Using new functional API with ConfigurationManager
 
     // Step 1: Load task and environment if taskId provided
     let task: Task | undefined;
@@ -81,10 +80,14 @@ export async function handleDispatchCommand(
         process.exit(1);
       }
 
-      // Resolve and ensure environment
-      const envId = await resolver.resolveEnvironmentId(taskId);
-      envInfo = await resolver.ensureEnvironment(envId);
-      printSuccess(`Environment ready: ${envInfo.path}`);
+      // Resolve and ensure environment (respecting dry-run mode)
+      const envId = await resolveEnvironmentId(taskId, configManager);
+      envInfo = await ensureEnvironment(envId, configManager, options.dryRun);
+      if (options.dryRun) {
+        printSuccess(`[DRY RUN] Environment would be: ${envInfo.path}`);
+      } else {
+        printSuccess(`Environment ready: ${envInfo.path}`);
+      }
     }
 
     // Step 2: Setup execution parameters
@@ -103,13 +106,13 @@ export async function handleDispatchCommand(
     } else {
       if (options.dryRun) {
         printSuccess(`[DRY RUN] Would launch Claude in ${execType} mode (${mode} mode)`);
-        printSuccess(`[DRY RUN] Would work in: ${envInfo!.path}`);
+        printSuccess(`[DRY RUN] Would work in: ${envInfo?.path}`);
         if (execType === 'docker') {
           printSuccess(`[DRY RUN] Would use Docker image: ${dockerConfig.getDefaultImage()}`);
         }
       } else {
         printSuccess(`Launching Claude in ${execType} mode (${mode} mode)...`);
-        printSuccess(`Working in: ${envInfo!.path}`);
+        printSuccess(`Working in: ${envInfo?.path}`);
         if (execType === 'docker') {
           printSuccess(`Docker image: ${dockerConfig.getDefaultImage()}`);
         }
@@ -149,14 +152,15 @@ export async function handleDispatchCommand(
       dryRun: options.dryRun,
       session: options.session, // Pass through session for resume
       data,
-      worktree: envInfo
-        ? {
-            branch: envInfo.branch,
-            path: envInfo.path,
-          }
-        : undefined,
+      worktree:
+        envInfo && !options.dryRun
+          ? {
+              branch: envInfo.branch,
+              path: envInfo.path,
+            }
+          : undefined,
       docker:
-        execType === 'docker' && envInfo
+        execType === 'docker' && envInfo && !options.dryRun
           ? {
               image: dockerConfig.getDefaultImage(),
               mounts: [`${envInfo.path}:/workspace:rw`],
