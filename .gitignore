@@ -1,4 +1,5 @@
 dist/
+.sessions
 .test-projects
 .claude/settings.local.json
 .claude/commands/temp-release-prompt-*
