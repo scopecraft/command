@@ -143,3 +143,9 @@ Confirm no breaking changes and session monitoring bug is fixed
   - Current Status: Regression test creation in progress
   - Next Steps: After regression tests complete, dispatch parallel conversion tasks
   - Resume: Monitor test creation, then dispatch 09_conv-envrnmntrslver-pure-fns-06D and 09_conv-wrktrmnger-pure-fns-06P in parallel
+- 2025-06-10: === TASK RE-DISPATCH ===
+  - Issue: Initial dispatch failed due to worktree sync issue
+  - Resolution: Merged main into worktree, re-dispatched task
+  - Task Dispatched: 17_cret-rgrsson-test-curr-06K
+  - Session: detached-17_cret-rgrsson-test-curr-06K-1749524163020 (PID: 48220)
+  - Status: Regression test creation now running in correct worktree context
