@@ -1,7 +1,9 @@
 ---
 input:
   parentId: string
+  taskId?: string
   auto?: string
+  additionalInstructions?: string
 allowedTools:
   - Bash
   - mcp__scopecraft__parent_get
@@ -80,25 +82,25 @@ Key patterns:
 
 3. **Handle Phase Transitions**
    If a gate is passed but next phase has no tasks:
-   
+
    a) **Analyze Deliverables**
       - Use Read/Glob to find deliverables (TRD, design docs, spike results)
       - Understand decisions made and technical requirements
       - Assess if plan assumptions still hold
-   
+
    b) **In Interactive Mode: Discuss Changes**
       If the deliverables suggest plan changes:
       ```
       📊 Plan Assessment:
       Original assumption: Simple integration
       Research finding: Requires new architecture layer
-      
+
       This changes our approach. Should we:
       1. Add new tasks for the architecture work?
       2. Revise the entire plan?
       3. Proceed with original plan despite findings?
       ```
-   
+
    c) **Create Next Phase Tasks**
       - Based on deliverables and decisions, create appropriate tasks
       - Right-sized (4-16 hours), clear dependencies, proper metadata
@@ -136,9 +138,9 @@ Key patterns:
      - Integration Context: Extract relevant context from parent task instruction/deliverable sections
      - Expectations: Plan architecture before implementation, no hardcoded values
    ```
-   
+
    Use the Bash tool to execute the dispatch command above.
-   
+
    NOTE: The ./auto script will:
    - Read the task metadata (tags, type, area)
    - Auto-select the appropriate mode (exploration, design, implementation, etc.)
@@ -197,7 +199,7 @@ When multiple tasks can run simultaneously:
   - 01_research-ui-patterns-06Q → @research-agent (senior research approach)
   - 01_analyze-document-editor-06R → @research-agent (architectural analysis)
   - 01_research-competitors-06S → @research-agent (comprehensive comparison)
-  
+
   Dispatching all tasks with quality expectations:
 ```
 
@@ -231,43 +233,43 @@ When NOT in auto mode, engage humans at key decision points:
 1. **Gate Reviews**
    ```
    📋 Gate Assessment: Technical Review
-   
+
    Phase 2 Deliverable: TRD (approved ✓)
    Original estimate: 3-4 implementation tasks
    My assessment: Aligns with plan, straightforward implementation
-   
+
    Proposed Phase 3 tasks:
    - Core environment utilities
    - CLI env command
    - Integration tests
-   
+
    Proceed with task creation? [y/n/discuss]
    ```
 
 2. **Plan Deviations**
    Recognize when findings differ from assumptions:
-   
+
    **Complexity Increase:**
    ```
    ⚠️ Plan Deviation Detected
-   
+
    Original: Simple library integration (1 task)
    Finding: Library requires custom adapter layer
    Impact: +3 tasks, +1 week timeline
-   
+
    Should we:
    1. Accept increased scope and continue?
    2. Look for alternative libraries?
    3. Revisit the architectural approach?
    ```
-   
+
    **Simplification Opportunity:**
    ```
    ✅ Simplification Available
-   
+
    Original plan: Build custom solution (5 tasks)
    Spike finding: Perfect library exists (MIT licensed)
-   
+
    We can reduce Phase 3 from 5 tasks to 1 integration task.
    Update the plan with this simplification? [y/n]
    ```
@@ -276,10 +278,10 @@ When NOT in auto mode, engage humans at key decision points:
    Surface important choices that affect the plan:
    ```
    The research phase revealed a critical decision:
-   
+
    Option A: Use existing auth system (2 tasks, some limitations)
    Option B: Build new auth layer (5 tasks, full flexibility)
-   
+
    This decision impacts all subsequent phases.
    Which direction should we take?
    ```
@@ -312,7 +314,7 @@ When creating next-phase tasks after a gate:
 - **Actionable instructions**: Enough context to execute
 - **Assignee mapping**: Set agent type based on task purpose:
   * `research-agent` - for research/exploration tasks
-  * `design-agent` - for design and architecture tasks  
+  * `design-agent` - for design and architecture tasks
   * `implement-agent` - for implementation tasks
   * `test-agent` - for testing tasks
   * `architect-agent` - for high-level architecture
@@ -324,7 +326,7 @@ After reading a TRD that specifies 3 components:
 Creating Phase 3 tasks based on TRD:
 
 1. Environment resolver module (core logic)
-2. CLI command handlers (user interface)  
+2. CLI command handlers (user interface)
 3. Integration tests (validation)
 
 Each task will include:
@@ -334,6 +336,12 @@ Each task will include:
 - Relevant TRD sections as context
 ```
 </task_creation_intelligence>
+
+
+<task_to_orchestrate>
+Parent Task: {parentId}
+Task: {taskId}
+</task_to_orchestrate>
 
 {additionalInstructions ? "<additional_instructions>\n## Additional User Instructions\n\n" + additionalInstructions + "\n\nIncorporate these instructions into your orchestration approach.\n</additional_instructions>\n\n" : ""}<best_practices>
 ## Orchestration Best Practices

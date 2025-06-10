@@ -35,71 +35,38 @@ Current architecture has several issues:
 - **Progressive enhancement**: Existing functionality continues working
 
 ## Tasks
-### Phase 1: Research & Analysis (Parallel)
-- [ ] 01_anal-curr-envi-06J: Analyze current environment/config class dependencies and usage patterns → @research-agent
-- [ ] 01_map-cont-rqrmnts-excton-06M: Map dual-context requirements across all execution scenarios → @research-agent
+### Phase 1: Research & Analysis (Parallel) ✓
+- [x] 10_anal-curr-envi-06J: Analyze current environment/config class dependencies and usage patterns → @research-agent
+- [x] 11_map-cont-rqrmnts-excton-06M: Map dual-context requirements across all execution scenarios → @research-agent
 
-### Gate: Architecture Review
-Decision point: Synthesize findings and approve functional API design approach
+### Gate: Architecture Review ✓
+Decision: Proceed with functional architecture design based on research findings
 
-### Phase 2: Design (To be created after gate)
-- [ ] Design functional API patterns following channelcoder integration style
-- [ ] Create migration strategy maintaining backward compatibility
+### Phase 2: Design ✓
+- [x] 12_desi-fnctnal-api-intg-06R: Design functional API patterns following channelcoder integration style → @design-agent
+- [x] 13_revi-agai-archtctre-desi-06B: Review TRD against architecture docs → @architect-agent
+- [x] 14_simp-feat-pari-exis-06W: Simplify TRD to feature parity → @design-agent
+- [x] 15_rewr-clea-excton-cont-06N: Rewrite with clearer execution context → @design-agent  
+- [x] 16_stud-actu-impl-real-06X: Study actual implementation and ground TRD → @design-agent
 
-### Phase 3: Implementation (To be created after design approval)
-Implementation tasks will be defined based on design decisions
+### Gate: TRD Approval ✓
+TRD finalized and grounded in actual implementation - ready for Phase 3
 
-### Phase 4: Migration & Testing (To be created during implementation)
-Testing and migration verification tasks
+### Phase 3: Implementation
+- [ ] 17_cret-rgrsson-test-curr-06K: Create regression test suite for current behavior → @test-agent
+- [ ] 09_conv-envrnmntrslver-pure-fns-06D: Convert EnvironmentResolver to pure functions → @implement-agent
+- [ ] 09_conv-wrktrmnger-pure-fns-06P: Convert WorktreeManager to pure functions → @implement-agent (parallel)
+- [ ] 18_fix-sess-stor-rslton-06O: Fix session storage root resolution bug → @implement-agent
+- [ ] 19_updt-cli-comm-fns-06G: Update CLI commands to use new functions → @implement-agent
 
-### Orchestration Flow
-```
-                    ┌─────────────────────────┐
-                    │ Start: Architecture     │
-                    │ Refactoring Planning    │
-                    └───────────┬─────────────┘
-                                │
-                    ┌───────────▼─────────────┐
-                    │   PHASE 1: RESEARCH     │
-                    │   (Parallel Tasks)      │
-                    └───────────┬─────────────┘
-                                │
-        ┌───────────────────────┼───────────────────────┐
-        │                       │                       │
-        ▼                       ▼                       ▼
-┌──────────────────┐     ┌─────────────────┐    (Future research
-│01_anal-curr-envi │     │01_map-cont-rqrmnts│     if needed)
-│  @research-agent │     │  @research-agent │
-└────────┬─────────┘     └────────┬────────┘
-         └───────────────────────┼───────────────────────┘
-                                 │
-                     ╔═══════════▼═════════════╗
-                     ║   ARCHITECTURE REVIEW   ║
-                     ║   Synthesize findings   ║
-                     ║   Approve approach      ║
-                     ╚═══════════╤═════════════╝
-                                 │
-                     ┌───────────▼─────────────┐
-                     │   PHASE 2: DESIGN       │
-                     │  (Created after gate)   │
-                     └───────────┬─────────────┘
-                                 │
-                     ┌───────────▼─────────────┐
-                     │  PHASE 3: IMPLEMENT     │
-                     │ (Migration strategy)    │
-                     └───────────┬─────────────┘
-                                 │
-                     ┌───────────▼─────────────┐
-                     │ PHASE 4: MIGRATE & TEST │
-                     │ (Backward compatibility)│
-                     └─────────────────────────┘
+### Gate: Implementation Review
+Verify all functions work correctly and tests pass
 
-Legend:
-┌─────┐ = Task (created dynamically)
-╔═════╗ = Gate (decision/review point)
-──────  = Sequential flow
-──┼──   = Parallel paths
-```
+### Phase 4: Migration & Testing
+- [ ] 20_run-full-regression-test-suite-06G: Run full regression test suite → @test-agent
+
+### Gate: Final Validation
+Confirm no breaking changes and session monitoring bug is fixed
 
 ## Deliverable
 
@@ -157,3 +124,22 @@ Legend:
   - Key Focus: Study impl-cli-env-mgmt-06A lessons, actual CLI commands, channelcoder
   - Dispatched: Session detached-07_stud-actu-impl-real-06X-1749505913952 (PID: 16449)
   - Expected: TRD that matches how system actually works
+- 2025-06-10: === ORCHESTRATION RUN - PHASE 3 CREATION ===
+  - Current State: Design Phase COMPLETED ✓
+  - TRD Status: Finalized and grounded in reality
+  - Phase 3 Created: 6 implementation tasks
+  - Task Breakdown:
+    * Regression test creation (prerequisite)
+    * Convert EnvironmentResolver and WorktreeManager (parallel)
+    * Fix session storage bug
+    * Update CLI integration
+    * Final validation testing
+  - Ready for Dispatch: 17_cret-rgrsson-test-curr-06K (regression tests)
+  - Next Step: Create regression tests before starting refactor
+- 2025-06-10: === ORCHESTRATION COMPLETE ===
+  - Tasks Created: 6 implementation tasks for Phase 3
+  - Tasks Dispatched: 1
+    * 17_cret-rgrsson-test-curr-06K → Session: detached-17_cret-rgrsson-test-curr-06K-1749523701977 (PID: 46571)
+  - Current Status: Regression test creation in progress
+  - Next Steps: After regression tests complete, dispatch parallel conversion tasks
+  - Resume: Monitor test creation, then dispatch 09_conv-envrnmntrslver-pure-fns-06D and 09_conv-wrktrmnger-pure-fns-06P in parallel
