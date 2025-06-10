@@ -1,15 +1,15 @@
-# Technical Requirements Document: Environment Configuration Functional Refactor
+# Technical Requirements Document: Environment System Integration and Functional Refactor
 
 ### Executive Summary
 
-This TRD defines the conversion of Scopecraft's current class-based environment system to a functional architecture. **This document is grounded in the actual implementation from impl-cli-env-mgmt-06A**, not theoretical design.
+This TRD defines how to properly integrate the environment system with ConfigurationManager and convert only the environment components to a functional architecture. **This document is grounded in the actual implementation from impl-cli-env-mgmt-06A** and recognizes ConfigurationManager as the established foundation.
 
-**Core Principle**: Convert existing classes to functions while maintaining exact same behavior and fixing identified bugs.
+**Core Principle**: Better integrate the environment system with the existing ConfigurationManager foundation while improving composability.
 
 **Problems Solved**: 
-1. **Session Monitoring Bug**: Fix project root resolution inconsistency between CLI and UI
-2. **Class-to-Function Migration**: Replace classes with composable functions  
-3. **Maintain Compatibility**: Keep all existing CLI command signatures and behavior
+1. **Session Monitoring Bug**: Fix project root resolution inconsistency between CLI and UI by properly using ConfigurationManager
+2. **Poor Integration**: Environment system creates its own ConfigurationManager instance internally instead of receiving it as a dependency
+3. **Improve Composability**: Make environment resolution functions while preserving ConfigurationManager as the configuration authority
 
 ### Current Architecture Analysis
 
@@ -18,8 +18,8 @@ Based on the actual implementation in impl-cli-env-mgmt-06A, the system currentl
 ### Current Class-Based Implementation
 
 **Core Classes**:
-- `ConfigurationManager` (singleton) - Project root resolution with precedence hierarchy
-- `EnvironmentResolver` - Task to environment ID resolution, parent/subtask logic  
+- `ConfigurationManager` (singleton) - **FOUNDATION** - Project root resolution with precedence hierarchy, config file support
+- `EnvironmentResolver` - Task to environment ID resolution, parent/subtask logic (needs better ConfigurationManager integration)
 - `WorktreeManager` - Git worktree operations using simple-git
 - `BranchNamingService`, `DockerConfigService` - Configuration utilities
 
@@ -95,48 +95,64 @@ export interface EnvironmentInfo {
 }
 ```
 
-### Proposed Functional API (Convert From Classes)
+### Proposed Integration Strategy
 
 ```typescript
 /**
- * Configuration Resolution Functions
- * Convert ConfigurationManager to functional equivalents
+ * ConfigurationManager STAYS AS-IS
+ * It's the foundation that works across MCP and CLI
+ * DO NOT convert to functions - it's already well-designed
  */
 
-// Replace ConfigurationManager.getRootConfig()
-export function resolveProjectRoot(runtime?: { rootPath?: string }): RootConfig;
+// Keep ConfigurationManager as the source of truth
+const configManager = ConfigurationManager.getInstance();
 
-// Replace ConfigurationManager methods - keep exact behavior  
-export function setRootFromCLI(path: string): void;
-export function setRootFromEnvironment(): void;
-export function setRootFromSession(path: string): void;
-export function validateRoot(rootPath: string): boolean;
-export function getProjectRoot(): string | null;
+/**
+ * Environment System Integration
+ * Make environment system properly consume ConfigurationManager
+ */
+
+// Option 1: Keep ConfigurationManager, make environment functions
+// Environment functions that properly use ConfigurationManager
+export async function resolveEnvironmentId(
+  taskId: string,
+  config: IConfigurationManager
+): Promise<string> {
+  const rootConfig = config.getRootConfig();
+  // ... rest of logic
+}
+
+// Option 2: If we must have classes, at least inject dependencies
+// But prefer Option 1 for composability
 
 /**
  * Environment Resolution Functions  
- * Convert EnvironmentResolver to functional equivalents
+ * Make these functions but they MUST use ConfigurationManager
  */
 
-// Replace EnvironmentResolver.resolveEnvironmentId() - EXACT same logic
-export async function resolveEnvironmentId(taskId: string): Promise<string>;
+// These functions should accept config as a parameter
+export async function resolveEnvironmentId(
+  taskId: string, 
+  config: IConfigurationManager
+): Promise<string>;
 
-// Replace EnvironmentResolver.ensureEnvironment() - EXACT same logic
-export async function ensureEnvironment(envId: string): Promise<EnvironmentInfo>;
-
-// Replace EnvironmentResolver.getEnvironmentInfo() - EXACT same logic  
-export async function getEnvironmentInfo(envId: string): Promise<EnvironmentInfo | null>;
+export async function ensureEnvironment(
+  envId: string,
+  config: IConfigurationManager,
+  worktreeManager: WorktreeManager
+): Promise<EnvironmentInfo>;
 
 /**
- * Worktree Management Functions
- * Convert WorktreeManager to functional equivalents
+ * Session Storage Fix
+ * CRITICAL: Always use ConfigurationManager's root for sessions
  */
 
-// Replace WorktreeManager methods - keep exact behavior
-export async function createWorktree(taskId: string): Promise<EnvironmentInfo>;
-export async function removeWorktree(taskId: string): Promise<void>;
-export async function listWorktrees(): Promise<EnvironmentInfo[]>;
-export async function worktreeExists(taskId: string): Promise<boolean>;
+export function getSessionStorageRoot(config: IConfigurationManager): string {
+  // MUST use ConfigurationManager's resolved root
+  // This ensures CLI and UI always find sessions in same place
+  const rootConfig = config.getRootConfig();
+  return rootConfig.path;
+}
 ```
 
 ### Current Environment Resolution Logic (Keep This)
@@ -217,22 +233,26 @@ SESSION_STORAGE.getBaseDir(projectRoot) → `${projectRoot}/.sessions`
 
 **Fix**: Ensure consistent project root resolution across CLI/UI contexts
 
-### 2. Configuration State Management (ACTUAL ISSUE) 
+### 2. Environment System Integration (ACTUAL ISSUE) 
 
-**Problem**: ConfigurationManager singleton state can become inconsistent
+**Problem**: Environment system doesn't properly use ConfigurationManager
 
 ```typescript
-// Current: Singleton with mutable state
-const configManager = ConfigurationManager.getInstance();
-configManager.setRootFromCLI(path); // Mutates global state
+// Current: Environment system creates its own ConfigurationManager instance
+class EnvironmentResolver {
+  constructor(worktreeManager: WorktreeManager) {
+    // Creates internal instance instead of receiving it
+    this.config = ConfigurationManager.getInstance();
+  }
+}
 
 // Issues:
-// - Global mutable state across different command invocations
-// - Cache invalidation complexity  
-// - Difficult to test with different configurations
+// - Hidden dependency on ConfigurationManager singleton
+// - Can't test with different configurations  
+// - Tight coupling between systems
 ```
 
-**Fix**: Convert to pure functions with explicit state passing
+**Fix**: Make environment functions accept ConfigurationManager as parameter
 
 ### Current Docker Integration (Keep This)
 
@@ -268,58 +288,59 @@ const result = await executeAutonomousTask(promptOrFile, {
 
 ### Migration Strategy
 
-### Phase 1: Configuration Functions
+### Phase 1: Keep ConfigurationManager AS-IS
 
-**Goal**: Replace ConfigurationManager singleton with pure functions
-
-**Current Class → Functional Equivalent**:
+**Goal**: Recognize ConfigurationManager as the working foundation
 
 ```typescript
-// Before: ConfigurationManager singleton
+// ConfigurationManager STAYS as singleton - it works well!
 const configManager = ConfigurationManager.getInstance();
 const rootConfig = configManager.getRootConfig();
 
-// After: Pure functions with explicit state
-const rootConfig = resolveProjectRoot({ 
-  cliRoot: options.rootDir,
-  envVar: process.env.SCOPECRAFT_ROOT 
-});
+// This is NOT changing - it's the foundation
+// Works across MCP and CLI with proper precedence
 ```
 
-**Benefits**:
-- No global state mutations
-- Explicit dependencies
-- Easier testing
-- Thread-safe
+**Why Keep It**:
+- Already handles configuration precedence correctly
+- Supports config files and personalization
+- Works consistently across MCP and CLI
+- Well-tested and stable
 
-### Phase 2: Environment Resolution Functions  
+### Phase 2: Convert Environment System to Functions
 
-**Goal**: Replace EnvironmentResolver class with functions
+**Goal**: Make EnvironmentResolver and WorktreeManager into functions that properly use ConfigurationManager
 
 ```typescript
-// Before: Class instantiation 
+// Before: Class with internal ConfigurationManager coupling
 const resolver = new EnvironmentResolver(worktreeManager);
 const envId = await resolver.resolveEnvironmentId(taskId);
 
-// After: Pure functions
-const envId = await resolveEnvironmentId(taskId, { projectRoot });
+// After: Functions that accept ConfigurationManager
+const configManager = ConfigurationManager.getInstance();
+const envId = await resolveEnvironmentId(taskId, configManager);
 ```
 
-**Keep Exact Same Logic**: Parent/subtask resolution works correctly
+**Benefits**:
+- Better integration with ConfigurationManager
+- More composable and testable
+- Explicit dependencies
 
-### Phase 3: Session Storage Fix
+### Phase 3: Fix Session Storage Bug
 
-**Goal**: Fix session monitoring bug with consistent root resolution
+**Goal**: Ensure sessions always use ConfigurationManager's root
 
 ```typescript
-// Fix: Always resolve to main repository root for session storage
-function getSessionStorageRoot(projectRoot: string): string {
-  // Always use main repository root, not worktree path
-  return detectMainRepositoryRoot(projectRoot);
+// Fix: Always use ConfigurationManager's resolved root
+function getSessionStorageRoot(config: IConfigurationManager): string {
+  // ConfigurationManager already handles root resolution correctly
+  const rootConfig = config.getRootConfig();
+  return rootConfig.path; // This is consistent across CLI and UI
 }
 
-// Ensures CLI and UI always use same session directory
-const sessionsDir = path.join(getSessionStorageRoot(projectRoot), '.sessions');
+// Update session storage to always use ConfigurationManager
+const configManager = ConfigurationManager.getInstance();
+const sessionsDir = path.join(getSessionStorageRoot(configManager), '.sessions');
 ```
 
 ### Implementation Requirements
@@ -361,13 +382,14 @@ describe('Environment System Regression Tests', () => {
 ### Success Criteria
 
 **✅ Migration Complete When**:
-1. **ConfigurationManager** → Pure functions (no global state)
-2. **EnvironmentResolver** → Pure functions (same logic)  
-3. **WorktreeManager** → Pure functions (same operations)
-4. **Session monitoring bug fixed** (consistent root resolution)
+1. **ConfigurationManager** → Remains as-is (the foundation)
+2. **EnvironmentResolver** → Pure functions that use ConfigurationManager  
+3. **WorktreeManager** → Pure functions that use ConfigurationManager
+4. **Session monitoring bug fixed** (always uses ConfigurationManager's root)
 5. **All CLI commands work identically**
 6. **All tests pass**
 7. **No breaking changes for users**
+8. **Better integration** between environment system and ConfigurationManager
 
 ### Constraints
 
@@ -379,9 +401,10 @@ describe('Environment System Regression Tests', () => {
 - Change worktree naming patterns
 
 **DO**:
-- Convert classes to pure functions
-- Fix session root resolution bug
-- Improve testability
+- Keep ConfigurationManager as the foundation
+- Convert only environment classes to pure functions  
+- Make environment functions properly use ConfigurationManager
+- Fix session root resolution bug using ConfigurationManager
 - Maintain exact same behavior
 
 ## Key Principles Summary
@@ -391,14 +414,15 @@ describe('Environment System Regression Tests', () => {
 - Fix specific identified bugs
 - Avoid "architecture astronaut" features
 
-### 2. Functional Conversion
-- Replace classes with pure functions
-- Eliminate global mutable state
+### 2. Strategic Functional Conversion
+- Keep ConfigurationManager class (it works well)
+- Convert only environment system to functions
+- Functions must properly use ConfigurationManager
 - Improve testability and composability
 
-### 3. Bug Fixes, Not Redesigns
-- Session monitoring: consistent root resolution
-- Configuration: remove singleton state issues
+### 3. Bug Fixes Through Better Integration
+- Session monitoring: use ConfigurationManager's root consistently
+- Environment system: properly consume ConfigurationManager instead of internal coupling
 - Keep everything else working exactly the same
 
 ### 4. Backward Compatibility First
@@ -406,4 +430,4 @@ describe('Environment System Regression Tests', () => {
 - Existing patterns and conventions preserved
 - No breaking changes for users
 
-*This functional refactor maintains all current functionality while fixing identified bugs and improving the codebase architecture. The focus is on incremental improvement, not radical redesign.*
+*This refactor properly integrates the environment system with ConfigurationManager while converting only the environment components to functions. ConfigurationManager remains the foundation, and the focus is on fixing integration issues and the session monitoring bug through better architecture, not radical redesign.*
