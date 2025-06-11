@@ -48,66 +48,98 @@ export class ScopecraftSessionStorage implements SessionStorage {
     this.scopecraftMetadata = metadata;
   }
 
-  async save(state: SessionState, name?: string): Promise<string> {
-    // Always check for real session ID from log file when:
-    // 1. We have a log file path configured
-    // 2. The log file exists
-    // This handles both initial detection and resume scenarios
-    if (this.scopecraftMetadata?.logFile) {
-      try {
-        const { existsSync } = await import('node:fs');
+  /**
+   * Validates session data and checks for required metadata
+   */
+  private validateSessionData(state: SessionState): void {
+    if (!state) {
+      throw new Error('Session state is required');
+    }
+  }
 
-        if (existsSync(this.scopecraftMetadata.logFile)) {
-          try {
-            const { parseLogFile } = await import('channelcoder');
-            const parsed = await parseLogFile(this.scopecraftMetadata.logFile);
-
-            if (parsed.sessionId && parsed.sessionId !== this.scopecraftMetadata.realSessionId) {
-              // Found a new session ID (either initial or resumed)
-              const previousSessionId = this.scopecraftMetadata.realSessionId;
-
-              // Update the state with real session ID
-              state.currentSessionId = parsed.sessionId;
-              state.sessionChain = state.sessionChain
-                .map((id) => (id?.startsWith('detached-') ? parsed.sessionId : id))
-                .filter((id): id is string => id !== undefined);
-
-              // Update our metadata
-              if (this.scopecraftMetadata) {
-                this.scopecraftMetadata.realSessionId = parsed.sessionId;
-
-                // Initialize or update session history
-                if (!this.scopecraftMetadata.sessionHistory) {
-                  this.scopecraftMetadata.sessionHistory = [];
-                }
-
-                // Add new session to history
-                this.scopecraftMetadata.sessionHistory.push({
-                  sessionId: parsed.sessionId,
-                  startTime: new Date().toISOString(),
-                  resumedFrom: previousSessionId,
-                });
-              }
-            }
-          } catch (_error) {
-            // Log parsing failed - might be incomplete file
-            // This is OK, we'll try again on next save
-          }
-        }
-        // If file doesn't exist yet, that's fine - we'll check on next save
-      } catch (error) {
-        // File system error - log it but don't fail the save
-        console.warn('Error checking log file existence:', error);
-      }
+  /**
+   * Processes log file to extract real session ID and update metadata
+   */
+  private async prepareSessionMetadata(state: SessionState): Promise<void> {
+    if (!this.scopecraftMetadata?.logFile) {
+      return;
     }
 
-    // Save to ChannelCoder's session system
-    const sessionName = await this.baseStorage.save(state, name);
+    try {
+      const { existsSync } = await import('node:fs');
 
+      if (!existsSync(this.scopecraftMetadata.logFile)) {
+        return;
+      }
+
+      await this.extractSessionIdFromLog(state);
+    } catch (error) {
+      console.warn('Error checking log file existence:', error);
+    }
+  }
+
+  /**
+   * Extracts session ID from log file and updates state
+   */
+  private async extractSessionIdFromLog(state: SessionState): Promise<void> {
+    if (!this.scopecraftMetadata?.logFile) {
+      return;
+    }
+
+    try {
+      const { parseLogFile } = await import('channelcoder');
+      const parsed = await parseLogFile(this.scopecraftMetadata.logFile);
+
+      if (parsed.sessionId && parsed.sessionId !== this.scopecraftMetadata.realSessionId) {
+        this.updateSessionWithParsedId(state, parsed.sessionId);
+      }
+    } catch (_error) {
+      // Log parsing failed - might be incomplete file
+      // This is OK, we'll try again on next save
+    }
+  }
+
+  /**
+   * Updates session state and metadata with parsed session ID
+   */
+  private updateSessionWithParsedId(state: SessionState, sessionId: string): void {
+    if (!this.scopecraftMetadata) {
+      return;
+    }
+
+    const previousSessionId = this.scopecraftMetadata.realSessionId;
+
+    // Update the state with real session ID
+    state.currentSessionId = sessionId;
+    state.sessionChain = state.sessionChain
+      .map((id) => (id?.startsWith('detached-') ? sessionId : id))
+      .filter((id): id is string => id !== undefined);
+
+    // Update our metadata
+    this.scopecraftMetadata.realSessionId = sessionId;
+
+    // Initialize or update session history
+    if (!this.scopecraftMetadata.sessionHistory) {
+      this.scopecraftMetadata.sessionHistory = [];
+    }
+
+    // Add new session to history
+    this.scopecraftMetadata.sessionHistory.push({
+      sessionId,
+      startTime: new Date().toISOString(),
+      resumedFrom: previousSessionId,
+    });
+  }
+
+  /**
+   * Writes session files including metadata for autonomous tasks
+   */
+  private async writeSessionFiles(state: SessionState, sessionName: string): Promise<void> {
     // Save our additional metadata for monitoring
     // Only create info files for autonomous tasks (not interactive sessions)
     if (this.scopecraftMetadata && this.scopecraftMetadata.type === 'autonomous-task') {
       await this.saveSessionInfo(sessionName, this.scopecraftMetadata);
+
       // Update PID if available from state
       const stateWithPid = state as SessionState & { executionPid?: number };
       if (stateWithPid.executionPid) {
@@ -115,6 +147,20 @@ export class ScopecraftSessionStorage implements SessionStorage {
         await this.saveSessionInfo(sessionName, this.scopecraftMetadata);
       }
     }
+  }
+
+  async save(state: SessionState, name?: string): Promise<string> {
+    // Step 1: Validate session data
+    this.validateSessionData(state);
+
+    // Step 2: Prepare metadata and process log file
+    await this.prepareSessionMetadata(state);
+
+    // Step 3: Save to ChannelCoder's session system
+    const sessionName = await this.baseStorage.save(state, name);
+
+    // Step 4: Write session files and metadata
+    await this.writeSessionFiles(state, sessionName);
 
     return sessionName;
   }

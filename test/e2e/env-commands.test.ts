@@ -359,6 +359,10 @@ describe('env commands integration tests', () => {
         // Debug: log actual output to see what's happening
         if (!consoleOutput.some((line) => line.includes('No active environments found'))) {
           console.log('Expected no environments, but got:', consoleOutput);
+          console.log('Test project:', TEST_PROJECT);
+          console.log('Current directory:', process.cwd());
+          const configManager = ConfigurationManager.getInstance();
+          console.log('ConfigManager root:', configManager.getProjectRoot());
         }
 
         expect(consoleOutput.some((line) => line.includes('No active environments found'))).toBe(

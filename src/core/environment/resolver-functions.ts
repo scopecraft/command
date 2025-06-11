@@ -1,9 +1,9 @@
 /**
  * Environment Resolution Functions
- * 
+ *
  * Pure functions for environment resolution that properly use ConfigurationManager.
  * Replaces the class-based EnvironmentResolver with functional architecture.
- * 
+ *
  * Based on TRD requirements:
  * - Keep ConfigurationManager as foundation
  * - Convert environment system to pure functions
@@ -22,12 +22,12 @@ import {
   type WorktreeInfo,
 } from './types.js';
 import {
-  createWorktreeContext,
+  type WorktreeContext,
   createWorktree,
+  createWorktreeContext,
+  getWorktreePath as getWorktreePathPure,
   listWorktrees,
   worktreeExists,
-  getWorktreePath as getWorktreePathPure,
-  type WorktreeContext,
 } from './worktree-functions.js';
 
 /**
@@ -35,7 +35,7 @@ import {
  * - For parent tasks: returns the task ID
  * - For subtasks: returns the parent ID
  * - For simple tasks: returns the task ID
- * 
+ *
  * @param taskId - Task ID to resolve
  * @param config - ConfigurationManager instance to use for project root
  * @returns Promise<string> - Environment ID
@@ -97,7 +97,7 @@ export async function resolveEnvironmentId(
 /**
  * Gets the worktree path for an environment ID
  * Pure function equivalent of WorktreeManager.getWorktreePath
- * 
+ *
  * @param envId - Environment ID
  * @param config - ConfigurationManager instance
  * @returns Promise<string> - Worktree path
@@ -107,10 +107,7 @@ export async function getWorktreePath(
   config: ConfigurationManager
 ): Promise<string> {
   if (!envId) {
-    throw new EnvironmentError(
-      'Environment ID is required',
-      EnvironmentErrorCodes.INVALID_TASK_ID
-    );
+    throw new EnvironmentError('Environment ID is required', EnvironmentErrorCodes.INVALID_TASK_ID);
   }
 
   // Use pure worktree functions with ChannelCoder integration
@@ -121,16 +118,13 @@ export async function getWorktreePath(
 /**
  * Gets the branch name for an environment ID
  * Pure function equivalent of BranchNamingService.getBranchName
- * 
+ *
  * @param envId - Environment ID
  * @returns string - Branch name
  */
 export function getBranchNameForTask(envId: string): string {
   if (!envId) {
-    throw new EnvironmentError(
-      'Environment ID is required',
-      EnvironmentErrorCodes.INVALID_TASK_ID
-    );
+    throw new EnvironmentError('Environment ID is required', EnvironmentErrorCodes.INVALID_TASK_ID);
   }
 
   // For now, delegate to existing BranchNamingService
@@ -142,7 +136,7 @@ export function getBranchNameForTask(envId: string): string {
 /**
  * Ensures environment exists (creates if missing)
  * Pure function equivalent of EnvironmentResolver.ensureEnvironment
- * 
+ *
  * @param envId - Environment ID
  * @param config - ConfigurationManager instance
  * @param dryRun - If true, only check existence without creating
@@ -154,10 +148,7 @@ export async function ensureEnvironment(
   dryRun = false
 ): Promise<EnvironmentInfo> {
   if (!envId) {
-    throw new EnvironmentError(
-      'Environment ID is required',
-      EnvironmentErrorCodes.INVALID_TASK_ID
-    );
+    throw new EnvironmentError('Environment ID is required', EnvironmentErrorCodes.INVALID_TASK_ID);
   }
 
   try {
@@ -223,7 +214,7 @@ export async function ensureEnvironment(
 /**
  * Gets environment info without creating
  * Pure function equivalent of EnvironmentResolver.getEnvironmentInfo
- * 
+ *
  * @param envId - Environment ID
  * @param config - ConfigurationManager instance
  * @returns Promise<EnvironmentInfo | null> - Environment info or null if not found
@@ -270,7 +261,7 @@ export async function getEnvironmentInfo(
 /**
  * Helper function to resolve environment ID for a task and then get its info
  * Combines resolveEnvironmentId + getEnvironmentInfo
- * 
+ *
  * @param taskId - Task ID
  * @param config - ConfigurationManager instance
  * @returns Promise<EnvironmentInfo | null> - Environment info or null if not found
@@ -290,7 +281,7 @@ export async function getTaskEnvironmentInfo(
 /**
  * Helper function to resolve environment ID for a task and then ensure it exists
  * Combines resolveEnvironmentId + ensureEnvironment
- * 
+ *
  * @param taskId - Task ID
  * @param config - ConfigurationManager instance
  * @param dryRun - If true, only check existence without creating
@@ -308,7 +299,7 @@ export async function ensureTaskEnvironment(
 /**
  * Gets session storage root path using ConfigurationManager
  * Fixes the session monitoring bug by consistently using ConfigurationManager's root
- * 
+ *
  * @param config - ConfigurationManager instance
  * @returns string - Session storage root path
  */

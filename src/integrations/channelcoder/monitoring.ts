@@ -155,83 +155,133 @@ export async function getSessionDetails(
   }
 }
 
+interface LogFileInfo {
+  file: string;
+  mtime: number;
+  taskId: string;
+  logPath: string;
+}
+
+/**
+ * Find and sort session log files by modification time
+ */
+async function findSessionLogFiles(logDir: string): Promise<LogFileInfo[]> {
+  try {
+    const logFiles = await fs.readdir(logDir).catch(() => []);
+
+    const fileInfos = await Promise.all(
+      logFiles.map(async (file) => {
+        const filePath = path.join(logDir, file);
+        const stats = await fs.stat(filePath);
+        const taskId = file.match(/task-([^-]+)/)?.[1] || 'unknown';
+
+        return {
+          file,
+          mtime: stats.mtime.getTime(),
+          taskId,
+          logPath: filePath,
+        };
+      })
+    );
+
+    // Sort by modification time (newest first) and take up to 10 most recent
+    return fileInfos.sort((a, b) => b.mtime - a.mtime).slice(0, 10);
+  } catch (err) {
+    console.warn('Error reading log directory:', err);
+    return [];
+  }
+}
+
+/**
+ * Parse a single event into a log entry
+ */
+function parseLogEventEntry(event: ClaudeEvent, taskId: string): LogEntry[] {
+  const entries: LogEntry[] = [];
+  const timestamp = new Date().toISOString();
+
+  // Parse content from chunk
+  const chunk = streamParser.eventToChunk(event);
+  if (chunk?.content) {
+    const content = chunk.content.trim();
+    if (content.length > 5) {
+      entries.push({
+        timestamp,
+        taskId,
+        content: content.substring(0, 200),
+        type: streamParser.isErrorEvent(event)
+          ? 'error'
+          : streamParser.isToolUseEvent(event)
+            ? 'tool'
+            : 'output',
+      });
+    }
+  }
+
+  // Add tool use events explicitly
+  if (streamParser.isToolUseEvent(event)) {
+    const toolEvent = event as ToolUseEvent;
+    entries.push({
+      timestamp,
+      taskId,
+      content: `🔧 Using tool: ${toolEvent.tool}`,
+      type: 'tool',
+    });
+  }
+
+  return entries;
+}
+
+/**
+ * Aggregate log entries from multiple log files
+ */
+async function aggregateLogStreams(logFiles: LogFileInfo[]): Promise<LogEntry[]> {
+  const logEntries: LogEntry[] = [];
+
+  for (const { logPath, taskId } of logFiles) {
+    if (existsSync(logPath)) {
+      try {
+        const parsed = await parseLogFile(logPath);
+        const events = parsed.events || [];
+
+        // Get recent events from each file (last 20)
+        for (const event of events.slice(-20)) {
+          const eventEntries = parseLogEventEntry(event, taskId);
+          logEntries.push(...eventEntries);
+        }
+      } catch (err) {
+        console.warn(`Error parsing log ${logPath}:`, err);
+      }
+    }
+  }
+
+  return logEntries;
+}
+
+/**
+ * Format and limit the final log entries
+ */
+function formatSessionLogs(entries: LogEntry[], limit: number): LogEntry[] {
+  return entries
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, limit);
+}
+
 /**
  * Get recent log entries from all sessions
  */
 export async function getSessionLogs(limit = 50, projectRoot?: string): Promise<LogEntry[]> {
   const resolvedProjectRoot =
     projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-  const LOG_DIR = SESSION_STORAGE.getLogsDir(resolvedProjectRoot);
+  const logDir = SESSION_STORAGE.getLogsDir(resolvedProjectRoot);
 
-  const logEntries: LogEntry[] = [];
+  // Step 1: Find and sort log files
+  const logFiles = await findSessionLogFiles(logDir);
 
-  try {
-    const logFiles = await fs.readdir(LOG_DIR).catch(() => []);
+  // Step 2: Aggregate entries from all log files
+  const logEntries = await aggregateLogStreams(logFiles);
 
-    // Sort log files by modification time
-    const sortedFiles = await Promise.all(
-      logFiles.map(async (file) => {
-        const filePath = path.join(LOG_DIR, file);
-        const stats = await fs.stat(filePath);
-        return { file, mtime: stats.mtime.getTime() };
-      })
-    );
-    sortedFiles.sort((a, b) => b.mtime - a.mtime);
-
-    // Parse recent log files (up to 10 most recent)
-    for (const { file: logFile } of sortedFiles.slice(0, 10)) {
-      const taskId = logFile.match(/task-([^-]+)/)?.[1] || 'unknown';
-      const logPath = path.join(LOG_DIR, logFile);
-
-      if (existsSync(logPath)) {
-        try {
-          const parsed = await parseLogFile(logPath);
-          const events = parsed.events || [];
-
-          // Get events from each file
-          for (const event of events.slice(-20)) {
-            const chunk = streamParser.eventToChunk(event);
-            if (chunk?.content) {
-              const content = chunk.content.trim();
-              if (content.length > 5) {
-                const timestamp = new Date().toISOString();
-
-                logEntries.push({
-                  timestamp,
-                  taskId,
-                  content: content.substring(0, 200),
-                  type: streamParser.isErrorEvent(event)
-                    ? 'error'
-                    : streamParser.isToolUseEvent(event)
-                      ? 'tool'
-                      : 'output',
-                });
-              }
-            }
-
-            // Add tool use events explicitly
-            if (streamParser.isToolUseEvent(event)) {
-              const toolEvent = event as ToolUseEvent;
-              logEntries.push({
-                timestamp: new Date().toISOString(),
-                taskId,
-                content: `🔧 Using tool: ${toolEvent.tool}`,
-                type: 'tool',
-              });
-            }
-          }
-        } catch (err) {
-          console.warn(`Error parsing log ${logFile}:`, err);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('Error reading log directory:', err);
-  }
-
-  return logEntries
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    .slice(0, limit);
+  // Step 3: Format and limit results
+  return formatSessionLogs(logEntries, limit);
 }
 
 export interface MonitorEvent {

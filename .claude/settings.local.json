@@ -63,7 +63,9 @@
       "Bash(git reset:*)",
       "Bash(http GET localhost:8888/api/autonomous-sessions)",
       "Bash(./auto --help)",
-      "Bash(./orchestrate-auto:*)"
+      "Bash(./orchestrate-auto:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git init:*)"
     ],
     "deny": []
   }

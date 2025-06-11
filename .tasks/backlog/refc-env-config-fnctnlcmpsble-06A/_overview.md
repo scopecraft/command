@@ -52,23 +52,31 @@ Decision: Proceed with functional architecture design based on research findings
 ### Gate: TRD Approval ✓
 TRD finalized and grounded in actual implementation - ready for Phase 3
 
-### Phase 3: Implementation
+### Phase 3: Implementation ✓
 - [x] 17_cret-rgrsson-test-curr-06K: Create regression test suite for current behavior → @test-agent
 - [x] 21_fix-dry-run-mod-sti-cre-06I: Fix dry-run mode still creating worktrees (HIGH PRIORITY BUG) → @implement-agent
 - [x] 09_conv-envrnmntrslver-pure-fns-06D: Convert EnvironmentResolver to pure functions → @implement-agent
 - [x] 09_conv-wrktrmnger-pure-fns-06P: Convert WorktreeManager to pure functions → @implement-agent (parallel)
-- [ ] 22_revw-and-ip-rfctrng-task-06T: Review and integrate parallel refactoring tasks → @architect-agent
-- [ ] 18_fix-sess-stor-rslton-06O: Fix session storage root resolution bug → @implement-agent
-- [ ] 19_updt-cli-comm-fns-06G: Update CLI commands to use new functions → @implement-agent
+- [x] 22_revw-and-ip-rfctrng-task-06T: Review and integrate parallel refactoring tasks → @architect-agent
+- [x] 18_fix-sess-stor-rslton-06O: Fix session storage root resolution bug → @implement-agent
+- [x] 19_updt-cli-comm-fns-06G: Update CLI commands to use new functions → @implement-agent
+- [x] 20_run-full-regression-test-suite-06G: Run full regression test suite → @test-agent
 
-### Gate: Implementation Review
-Verify all functions work correctly and tests pass
+### Gate: Implementation Review (HOLD)
+Critical issues identified - must fix before proceeding
+
+### Phase 3.5: Critical Fixes
+- [ ] 23_upgr-to-chn-v3-and-add-cwd-06D: Upgrade to ChannelCoder v3 and add cwd parameter support (CRITICAL BUG) → @implement-agent
+- [ ] 24_refc-hig-cmp-fns-in-cli-comm-06H: Refactor high-complexity functions in CLI commands → @implement-agent
+
+### Gate: Implementation Review (Retry)
+Verify all critical issues resolved
 
 ### Phase 4: Migration & Testing
-- [ ] 20_run-full-regression-test-suite-06G: Run full regression test suite → @test-agent
+- [ ] 25_run-final-validation-suite: Run comprehensive validation after critical fixes → @test-agent
 
 ### Gate: Final Validation
-Confirm no breaking changes and session monitoring bug is fixed
+Confirm no breaking changes and all bugs fixed
 
 ## Deliverable
 
@@ -194,3 +202,44 @@ Confirm no breaking changes and session monitoring bug is fixed
   - Context: All implementation complete, need to verify no breaking changes
   - Status: This is the LAST task - 14/15 complete
   - Gates Ahead: Implementation Review → Final Validation
+- 2025-06-10: === ORCHESTRATION RUN ===
+  - Current Phase: Phase 3: Implementation (COMPLETED ✓)
+  - All 15 subtasks: DONE
+  - Final Testing: COMPLETED with mixed results
+  - Key Finding: ChannelCoder v3 released with required features
+  - Gate Assessment: Implementation Review (Ready for evaluation)
+  - Critical Issues:
+    * Test failures due to ChannelCoder v2 limitations (now fixed in v3)
+    * Code complexity violations need refactoring
+    * Core functionality verified working in production
+  - Next Action: Evaluate Implementation Review gate
+- 2025-06-10: === IMPLEMENTATION REVIEW GATE ===
+  - Status: HOLD - Critical issues must be addressed
+  - Code Complexity: Multiple functions exceed limits (61, 46, 39, 27, 25)
+  - ChannelCoder v3: MUST upgrade to fix project isolation bug
+  - Decision: Create follow-up tasks before proceeding
+  - Next Action: Creating Phase 3.5 tasks for critical fixes
+- 2025-06-10: === PHASE 3.5 CREATED ===
+  - Reason: Implementation Review gate failed - critical issues found
+  - Created Tasks:
+    * 23_upgr-to-chn-v3-and-add-cwd-06D - ChannelCoder v3 upgrade (CRITICAL)
+    * 24_refc-hig-cmp-fns-in-cli-comm-06H - Fix code complexity violations
+  - Issue Severity:
+    * Project isolation bug is CRITICAL - affects multi-project support
+    * Code complexity is HIGH - maintainability concern
+  - Next Action: Dispatch critical fix tasks immediately
+- 2025-06-10: === CRITICAL FIXES DISPATCHED ===
+  - Current Phase: Phase 3.5: Critical Fixes
+  - Tasks Dispatched:
+    * 23_upgr-to-chn-v3-and-add-cwd-06D → Session: detached-23_upgr-to-chn-v3-and-add-cwd-06D-1749581460405 (PID: 68732)
+    * 24_refc-hig-cmp-fns-in-cli-comm-06H → Session: detached-24_refc-hig-cmp-fns-in-cli-comm-06H-1749581478784 (PID: 69253)
+  - Quality Standards: Critical bug fixes require thorough testing
+  - ChannelCoder Task: Add cwd parameter to ALL SDK calls for project isolation
+  - Complexity Task: Refactor 5 functions exceeding limits (61, 46, 39, 27, 25)
+  - Next Step: Monitor completion, then run final validation
+  - Resume: After both complete, proceed to Implementation Review retry
+- 2025-06-10: === ORCHESTRATION COMPLETE ===
+  - Tasks Dispatched: 2 critical fixes
+  - Current Status: Phase 3.5 in progress
+  - Next Steps: Monitor critical fix completion
+  - Resume: After both tasks complete, retry Implementation Review gate

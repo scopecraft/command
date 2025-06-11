@@ -6,7 +6,20 @@ import { type CCResult, type ClaudeOptions, claude, session } from 'channelcoder
 import { ConfigurationManager } from '../../core/config/configuration-manager.js';
 import { ScopecraftSessionStorage } from './session-storage.js';
 
-export interface ExecutionResult extends CCResult {
+/**
+ * Gets project root from configuration for cwd parameter
+ */
+function getProjectRoot(config: ConfigurationManager): string {
+  const rootConfig = config.getRootConfig();
+  if (!rootConfig.validated || !rootConfig.path) {
+    throw new Error('No valid project root found for ChannelCoder operations');
+  }
+  return rootConfig.path;
+}
+
+export interface ExecutionResult {
+  success: boolean;
+  data?: Record<string, unknown>;
   // Additional fields we add
   sessionName?: string;
   taskId?: string;
@@ -18,6 +31,174 @@ export interface ScopecraftClaudeOptions extends ClaudeOptions {
   sessionName?: string;
 }
 
+interface SessionSetup {
+  taskId?: string;
+  parentId?: string;
+  sessionName: string;
+  config: ConfigurationManager;
+  storage: ScopecraftSessionStorage;
+  projectRoot: string;
+}
+
+/**
+ * Handles dry-run mode execution
+ */
+function handleDryRun(
+  promptOrFile: string,
+  options: ScopecraftClaudeOptions
+): ExecutionResult | null {
+  if (!options.dryRun) {
+    return null;
+  }
+
+  console.log('[DRY RUN] Would execute:');
+  console.log(`  Prompt/File: ${promptOrFile}`);
+  console.log(`  Options: ${JSON.stringify(options, null, 2)}`);
+  return { success: true, data: { dryRun: true } };
+}
+
+/**
+ * Sets up session configuration for tracked execution
+ */
+function setupTrackedSession(options: ScopecraftClaudeOptions): SessionSetup | null {
+  const taskId = options.data?.taskId as string | undefined;
+  const parentId = options.data?.parentId as string | undefined;
+  const sessionName = options.sessionName;
+
+  if (!taskId && !sessionName) {
+    return null;
+  }
+
+  const config = ConfigurationManager.getInstance();
+  const storage = new ScopecraftSessionStorage(config);
+  const projectRoot = getProjectRoot(config);
+  const finalSessionName = sessionName || `task-${taskId || 'unknown'}-${Date.now()}`;
+
+  return {
+    taskId,
+    parentId,
+    sessionName: finalSessionName,
+    config,
+    storage,
+    projectRoot,
+  };
+}
+
+/**
+ * Determines session type based on execution options
+ */
+function determineSessionType(options: ScopecraftClaudeOptions): string {
+  if (options.mode === 'interactive') {
+    return 'interactive';
+  }
+  if (options.detached || options.docker) {
+    return 'autonomous-task';
+  }
+  return 'planning';
+}
+
+/**
+ * Executes with session tracking
+ */
+async function executeWithTracking(
+  promptOrFile: string,
+  options: ScopecraftClaudeOptions,
+  setup: SessionSetup
+): Promise<ExecutionResult> {
+  const { taskId, parentId, sessionName, storage, projectRoot } = setup;
+
+  // Create session with cwd for v3 compatibility
+  const s = session({
+    name: sessionName,
+    storage,
+    autoSave: true,
+    cwd: projectRoot, // v3: Added missing cwd parameter
+  });
+
+  // Set up metadata for monitoring
+  if (storage.setScopecraftMetadata) {
+    const sessionType = determineSessionType(options);
+    storage.setScopecraftMetadata({
+      taskId,
+      parentId,
+      logFile: options.logFile,
+      status: 'running',
+      type: sessionType,
+    });
+  }
+
+  // Execute with cwd for proper project isolation (v3)
+  const optionsWithCwd = { ...options, cwd: projectRoot };
+  const result = await s.claude(promptOrFile, optionsWithCwd);
+
+  // Handle detached mode if needed
+  if (options.detached) {
+    await handleDetachedMode(storage, sessionName, result, taskId, parentId, options);
+  }
+
+  return {
+    success: result.success,
+    data: result.data as Record<string, unknown> | undefined,
+    sessionName,
+    taskId,
+  };
+}
+
+/**
+ * Handles detached mode session persistence
+ */
+async function handleDetachedMode(
+  storage: ScopecraftSessionStorage,
+  sessionName: string,
+  result: CCResult,
+  taskId?: string,
+  parentId?: string,
+  options?: ScopecraftClaudeOptions
+): Promise<void> {
+  const pid = extractPidFromResult(result);
+
+  await storage.saveSessionInfo(sessionName, {
+    taskId,
+    parentId,
+    logFile: options?.logFile,
+    status: 'running',
+    type: 'autonomous-task',
+    pid,
+  });
+
+  if (result.success && pid) {
+    console.log('Detached PID:', pid);
+  }
+}
+
+/**
+ * Extracts PID from execution result
+ */
+function extractPidFromResult(result: CCResult): number | undefined {
+  if (result.data && typeof result.data === 'object' && 'pid' in result.data) {
+    return (result.data as Record<string, unknown>).pid as number;
+  }
+  return undefined;
+}
+
+/**
+ * Executes without session tracking
+ */
+async function executeDirectly(
+  promptOrFile: string,
+  options: ScopecraftClaudeOptions
+): Promise<ExecutionResult> {
+  const config = ConfigurationManager.getInstance();
+  const projectRoot = getProjectRoot(config);
+  const optionsWithCwd = { ...options, cwd: projectRoot };
+  const result = await claude(promptOrFile, optionsWithCwd);
+
+  return {
+    success: result.success,
+    data: result.data as Record<string, unknown> | undefined,
+  };
+}
+
 /**
  * Simple execution function with dry-run support
  */
@@ -26,89 +207,20 @@ export async function execute(
   options: ScopecraftClaudeOptions = {}
 ): Promise<ExecutionResult> {
   try {
-    if (options.dryRun) {
-      console.log('[DRY RUN] Would execute:');
-      console.log(`  Prompt/File: ${promptOrFile}`);
-      console.log(`  Options: ${JSON.stringify(options, null, 2)}`);
-      return { success: true, data: { dryRun: true } };
+    // Step 1: Handle dry-run mode
+    const dryRunResult = handleDryRun(promptOrFile, options);
+    if (dryRunResult) {
+      return dryRunResult;
     }
 
-    // For task tracking, always use session with our custom storage
-    const taskId = options.data?.taskId as string | undefined;
-    const parentId = options.data?.parentId as string | undefined;
-    const sessionName = options.sessionName;
+    // Step 2: Check if we need session tracking
+    const sessionSetup = setupTrackedSession(options);
 
-    if (taskId || sessionName) {
-      const config = ConfigurationManager.getInstance();
-      const storage = new ScopecraftSessionStorage(config);
-      const finalSessionName = sessionName || `task-${taskId || 'unknown'}-${Date.now()}`;
-
-      const s = session({
-        name: finalSessionName,
-        storage,
-        autoSave: true, // Real-time updates for monitoring
-      });
-
-      // Set up metadata for our monitoring
-      if (storage.setScopecraftMetadata) {
-        // Determine session type based on options
-        const sessionType =
-          options.mode === 'interactive'
-            ? 'interactive'
-            : options.detached || options.docker
-              ? 'autonomous-task'
-              : 'planning';
-
-        storage.setScopecraftMetadata({
-          taskId,
-          parentId,
-          logFile: options.logFile,
-          status: 'running',
-          type: sessionType,
-        });
-      }
-
-      // Just use claude through the session - it handles ALL modes!
-      const result = await s.claude(promptOrFile, options);
-
-      // For detached mode, we need to save the session info immediately
-      // since the detached process won't trigger saves until later
-      if (options.detached) {
-        await storage.saveSessionInfo(finalSessionName, {
-          taskId,
-          parentId,
-          logFile: options.logFile,
-          status: 'running',
-          type: 'autonomous-task',
-          pid:
-            result.data && typeof result.data === 'object' && 'pid' in result.data
-              ? ((result.data as Record<string, unknown>).pid as number)
-              : undefined,
-        });
-      }
-
-      // For detached mode, PID is in result.data
-      if (
-        options.detached &&
-        result.success &&
-        result.data &&
-        typeof result.data === 'object' &&
-        'pid' in result.data
-      ) {
-        console.log('Detached PID:', result.data.pid);
-      }
-
-      return {
-        success: result.success,
-        data: result.data,
-        sessionName: finalSessionName,
-        taskId,
-      };
+    // Step 3: Execute with or without tracking
+    if (sessionSetup) {
+      return await executeWithTracking(promptOrFile, options, sessionSetup);
     }
-
-    // For non-tracked execution, just use claude directly
-    const result = await claude(promptOrFile, options);
-    return { success: result.success, data: result.data };
+    return await executeDirectly(promptOrFile, options);
   } catch (error) {
     return {
       success: false,

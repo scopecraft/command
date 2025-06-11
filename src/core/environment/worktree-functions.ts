@@ -16,15 +16,6 @@ import {
 } from './types.js';
 import { WorktreePathResolver } from './worktree-path-resolver.js';
 
-// Internal types for ChannelCoder integration
-interface ChannelCoderWorktreeInfo {
-  path: string;
-  branch: string;
-  commit: string;
-  isBare?: boolean;
-  isDetached?: boolean;
-}
-
 /**
  * Configuration context for worktree operations
  */
@@ -43,7 +34,7 @@ export function createWorktreeContext(
   branchNaming?: BranchNamingService
 ): WorktreeContext {
   const configManager = config || ConfigurationManager.getInstance();
-  
+
   return {
     config: configManager,
     pathResolver: pathResolver || new WorktreePathResolver(configManager),
@@ -104,27 +95,29 @@ export async function createWorktree(
   validateProjectRoot(context.config);
 
   try {
-    const worktreePath = await context.pathResolver.getWorktreePath(taskId);
+    const _worktreePath = await context.pathResolver.getWorktreePath(taskId);
     const branchName = context.branchNaming.getBranchName(taskId);
+    const projectRoot = validateProjectRoot(context.config);
 
     // Check if worktree already exists using ChannelCoder
     if (!options?.force) {
-      const existing = await worktreeUtils.worktreeUtils.find(branchName);
+      const existing = await worktreeUtils.find(branchName, { cwd: projectRoot });
       if (existing) {
         // Extract task ID from existing worktree
         const extractedTaskId = context.branchNaming.extractTaskIdFromBranch(existing.branch);
         const resultTaskId = extractedTaskId || existing.branch;
-        
+
         return convertWorktreeInfo(existing, resultTaskId);
       }
     }
 
     // Create worktree using ChannelCoder
     // ChannelCoder's create handles branch creation automatically
-    await worktreeUtils.worktreeUtils.create(branchName);
-    
+    const baseBranch = context.branchNaming.getDefaultBaseBranch();
+    await worktreeUtils.create(branchName, { cwd: projectRoot, base: baseBranch });
+
     // Get the created worktree info
-    const created = await worktreeUtils.worktreeUtils.find(branchName);
+    const created = await worktreeUtils.find(branchName, { cwd: projectRoot });
     if (!created) {
       throw new EnvironmentError(
         `Failed to find created worktree for branch ${branchName}`,
@@ -150,17 +143,15 @@ export async function createWorktree(
 /**
  * Removes a worktree safely using ChannelCoder utilities
  */
-export async function removeWorktree(
-  taskId: string,
-  context: WorktreeContext
-): Promise<void> {
+export async function removeWorktree(taskId: string, context: WorktreeContext): Promise<void> {
   validateTaskId(taskId);
 
   try {
     const branchName = context.branchNaming.getBranchName(taskId);
-    
+    const projectRoot = validateProjectRoot(context.config);
+
     // Check if worktree exists
-    const existing = await worktreeUtils.worktreeUtils.find(branchName);
+    const existing = await worktreeUtils.find(branchName, { cwd: projectRoot });
     if (!existing) {
       throw new EnvironmentError(
         `Worktree not found for task ${taskId}`,
@@ -170,7 +161,7 @@ export async function removeWorktree(
     }
 
     // Remove using ChannelCoder utilities
-    await worktreeUtils.worktreeUtils.remove(branchName);
+    await worktreeUtils.remove(branchName, { cwd: projectRoot });
   } catch (error) {
     if (error instanceof EnvironmentError) {
       throw error;
@@ -189,7 +180,8 @@ export async function removeWorktree(
  */
 export async function listWorktrees(context: WorktreeContext): Promise<WorktreeInfo[]> {
   try {
-    const ccWorktrees = await worktreeUtils.worktreeUtils.list();
+    const projectRoot = validateProjectRoot(context.config);
+    const ccWorktrees = await worktreeUtils.list({ cwd: projectRoot });
     const worktreeInfos: WorktreeInfo[] = [];
 
     for (const ccWorktree of ccWorktrees) {
@@ -213,17 +205,15 @@ export async function listWorktrees(context: WorktreeContext): Promise<WorktreeI
 /**
  * Checks if a worktree exists for the given task
  */
-export async function worktreeExists(
-  taskId: string,
-  context: WorktreeContext
-): Promise<boolean> {
+export async function worktreeExists(taskId: string, context: WorktreeContext): Promise<boolean> {
   if (!taskId) {
     return false;
   }
 
   try {
     const branchName = context.branchNaming.getBranchName(taskId);
-    return await worktreeUtils.worktreeUtils.exists(branchName);
+    const projectRoot = validateProjectRoot(context.config);
+    return await worktreeUtils.exists(branchName, { cwd: projectRoot });
   } catch {
     return false;
   }
@@ -232,10 +222,7 @@ export async function worktreeExists(
 /**
  * Gets the path for a worktree (async version)
  */
-export async function getWorktreePath(
-  taskId: string,
-  context: WorktreeContext
-): Promise<string> {
+export async function getWorktreePath(taskId: string, context: WorktreeContext): Promise<string> {
   return context.pathResolver.getWorktreePath(taskId);
 }
 
@@ -248,10 +235,11 @@ export async function withWorktree<T>(
   callback: (worktreeInfo: WorktreeInfo) => Promise<T>
 ): Promise<T> {
   validateTaskId(taskId);
-  
+
   const branchName = context.branchNaming.getBranchName(taskId);
-  
-  return worktree(branchName, async (wt) => {
+  const _projectRoot = validateProjectRoot(context.config);
+
+  return worktree(branchName, async (wt: any) => {
     // Convert ChannelCoder worktree info to our format
     const worktreeInfo: WorktreeInfo = {
       path: wt.path,
@@ -259,7 +247,7 @@ export async function withWorktree<T>(
       taskId,
       commit: wt.commit || 'unknown',
     };
-    
+
     return callback(worktreeInfo);
   });
 }
@@ -267,9 +255,10 @@ export async function withWorktree<T>(
 /**
  * Cleans up unused worktree references
  */
-export async function cleanupWorktrees(): Promise<void> {
+export async function cleanupWorktrees(context: WorktreeContext): Promise<void> {
   try {
-    await worktreeUtils.worktreeUtils.cleanup();
+    const projectRoot = validateProjectRoot(context.config);
+    await worktreeUtils.cleanup({ cwd: projectRoot });
   } catch (error) {
     throw new EnvironmentError(
       `Failed to cleanup worktrees: ${error instanceof Error ? error.message : String(error)}`,
@@ -284,7 +273,8 @@ export async function cleanupWorktrees(): Promise<void> {
  */
 export async function getCurrentWorktree(context: WorktreeContext): Promise<WorktreeInfo | null> {
   try {
-    const current = await worktreeUtils.worktreeUtils.current();
+    const projectRoot = validateProjectRoot(context.config);
+    const current = await worktreeUtils.current({ cwd: projectRoot });
     if (!current) {
       return null;
     }
@@ -310,9 +300,9 @@ export async function prepareWorktreeForTmux(
 ): Promise<{ worktreeInfo: WorktreeInfo; sessionName: string }> {
   // Ensure worktree exists
   const worktreeInfo = await createWorktree(taskId, context, options);
-  
+
   // Generate session name for tmux
   const sessionName = `scopecraft-${taskId}`;
-  
+
   return { worktreeInfo, sessionName };
 }
