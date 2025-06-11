@@ -383,6 +383,186 @@ await orchestrator.deployTeam({
 })
 ```
 
+## Learnings from Claude-Code-Flow
+
+While Scopecraft already has robust monitoring through ChannelCoder's parser and session monitoring, there are valuable patterns from Claude-Code-Flow that could enhance our orchestration:
+
+### 1. Resource Pooling for Worktrees
+
+Adapt terminal pooling pattern for worktree management:
+
+```typescript
+class WorktreePool {
+  private available: Set<string> = new Set();
+  private inUse: Map<string, SessionInfo> = new Map();
+  private readonly maxWorktrees = 5;
+  
+  async acquire(branch: string): Promise<string> {
+    // Reuse existing worktree if available
+    const existing = this.findAvailable(branch);
+    if (existing) return existing;
+    
+    // Or create new up to limit
+    if (this.inUse.size < this.maxWorktrees) {
+      return await this.createWorktree(branch);
+    }
+    
+    // Otherwise recycle oldest
+    return await this.recycleOldest();
+  }
+}
+```
+
+### 2. Circuit Breaker for Session Resilience
+
+Prevent cascade failures with circuit breakers:
+
+```typescript
+class SessionCircuitBreaker {
+  private failures = new Map<string, number>();
+  private readonly threshold = 3;
+  
+  async executeWithBreaker(
+    sessionConfig: SessionConfig,
+    executor: () => Promise<void>
+  ): Promise<void> {
+    const key = `${sessionConfig.mode}-${sessionConfig.taskId}`;
+    
+    if (this.isOpen(key)) {
+      throw new Error(`Circuit open for ${key}, too many failures`);
+    }
+    
+    try {
+      await executor();
+      this.recordSuccess(key);
+    } catch (error) {
+      this.recordFailure(key);
+      throw error;
+    }
+  }
+}
+```
+
+### 3. Priority Queue Aligned with Task System
+
+Leverage existing task priorities for queue management:
+
+```typescript
+class TaskAlignedQueue {
+  private queues = new Map([
+    ['high', []],     // Maps to Scopecraft's task priorities
+    ['medium', []],
+    ['low', []]
+  ]);
+  
+  async enqueue(session: SessionConfig): Promise<void> {
+    const task = await taskService.get(session.taskId);
+    const priority = task.frontmatter.priority || 'medium';
+    this.queues.get(priority).push(session);
+  }
+}
+```
+
+### 4. Conflict Detection for Parallel Sessions
+
+Essential for dispatch mode with multiple worktrees:
+
+```typescript
+class WorktreeConflictResolver {
+  async detectConflicts(sessions: ActiveSession[]): Promise<Conflict[]> {
+    const conflicts = [];
+    
+    // Check for file conflicts between sessions
+    for (let i = 0; i < sessions.length; i++) {
+      for (let j = i + 1; j < sessions.length; j++) {
+        const sharedFiles = this.findSharedFiles(
+          sessions[i].modifiedFiles,
+          sessions[j].modifiedFiles
+        );
+        
+        if (sharedFiles.length > 0) {
+          conflicts.push({
+            type: 'file',
+            sessions: [sessions[i].id, sessions[j].id],
+            resources: sharedFiles
+          });
+        }
+      }
+    }
+    
+    return conflicts;
+  }
+}
+```
+
+### 5. Session State Machine
+
+Formalize session lifecycle management:
+
+```typescript
+enum SessionState {
+  QUEUED = 'queued',
+  PREPARING = 'preparing',  // Setting up worktree/docker
+  RUNNING = 'running',
+  PAUSED = 'paused',       // For human intervention
+  COMPLETED = 'completed',
+  FAILED = 'failed'
+}
+
+class SessionStateMachine {
+  private transitions = {
+    [SessionState.QUEUED]: [SessionState.PREPARING],
+    [SessionState.PREPARING]: [SessionState.RUNNING, SessionState.FAILED],
+    [SessionState.RUNNING]: [SessionState.PAUSED, SessionState.COMPLETED, SessionState.FAILED],
+    [SessionState.PAUSED]: [SessionState.RUNNING, SessionState.FAILED],
+    // Terminal states
+    [SessionState.COMPLETED]: [],
+    [SessionState.FAILED]: []
+  };
+  
+  canTransition(from: SessionState, to: SessionState): boolean {
+    return this.transitions[from]?.includes(to) ?? false;
+  }
+}
+```
+
+### 6. Enhanced Monitoring Integration
+
+Build on existing ChannelCoder monitoring with aggregation:
+
+```typescript
+// Extend existing monitoring with cross-session aggregation
+class OrchestrationMonitor {
+  constructor(
+    private channelCoderMonitor: typeof monitoring
+  ) {}
+  
+  async getSystemHealth(): Promise<SystemHealth> {
+    const sessions = await this.channelCoderMonitor.listAutonomousSessions();
+    
+    return {
+      activeSessions: sessions.filter(s => s.status === 'running').length,
+      queuedSessions: await this.getQueueLength(),
+      worktreeCount: await this.getActiveWorktrees(),
+      recentFailures: sessions.filter(s => 
+        s.status === 'failed' && 
+        Date.now() - new Date(s.startTime).getTime() < 3600000
+      ).length
+    };
+  }
+}
+```
+
+### Implementation Recommendations
+
+1. **Start with Queue Manager** - File-based queue using existing session storage
+2. **Add Resource Limits** - Max sessions: 3, Max worktrees: 5
+3. **Leverage Existing Monitoring** - Build aggregation on top of ChannelCoder
+4. **Simple Retry Logic** - Exponential backoff for failed sessions
+5. **Progressive Enhancement** - Start file-based, add complexity as needed
+
+The key insight is that Scopecraft already has robust foundations (ChannelCoder monitoring, session storage, worktree management). The learnings from Claude-Code-Flow should enhance these existing capabilities rather than replace them.
+
 ## Key Takeaways
 
 1. **Orchestration coordinates, doesn't implement** - Uses existing services
@@ -390,6 +570,7 @@ await orchestrator.deployTeam({
 3. **Worktree-first execution** - All work happens in appropriate branches
 4. **Hybrid storage model** - Runtime vs historical separation
 5. **Progressive autonomy** - From guided to fully autonomous
+6. **Build on existing strengths** - Enhance ChannelCoder monitoring and session storage
 
 ## Next Steps
 
