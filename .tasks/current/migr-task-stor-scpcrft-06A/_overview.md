@@ -22,6 +22,12 @@ Migrate task storage from in-repo `.tasks/` to user directory `~/.scopecraft/pro
 - All operations through core layer maintain abstraction
 - Simple cp migration since we're the only users
 
+### Key Files to Consider
+- **Session Storage**: The refc-env-config-fnctnlcmpsble-06A task has already refactored session storage:
+  - `src/integrations/channelcoder/session-storage.ts` - Now uses ConfigurationManager
+  - `src/integrations/channelcoder/constants.ts` - Has getSessionStorageRoot() function
+  - These provide patterns for how task storage should integrate with ConfigurationManager
+
 ### Success Criteria
 - Tasks stored in ~/.scopecraft with same structure
 - Work documents remain in repo and visible to agents
@@ -111,3 +117,4 @@ Legend:
 
 ## Log
 - 2025-06-10: 2025-06-10: Parent task created with 5-phase orchestration plan. Phase 1 research tasks created in parallel. Linked to refc-env-config-fnctnlcmpsble-06A for regression test leverage.
+- 2025-06-11: 2025-06-10: Updated to reference session storage refactoring from refc-env-config-fnctnlcmpsble-06A. Key files: session-storage.ts and constants.ts show ConfigurationManager integration patterns.
