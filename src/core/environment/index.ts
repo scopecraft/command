@@ -22,8 +22,23 @@ export {
 // Export worktree manager
 export { WorktreeManager } from './worktree-manager.js';
 
-// Export environment resolver
+// Export environment resolver (class-based for backward compatibility)
 export { EnvironmentResolver } from './resolver.js';
+
+// Export pure worktree functions
+export * from './worktree-functions.js';
+
+// Export pure environment resolver functions
+export {
+  resolveEnvironmentId,
+  getWorktreePath,
+  getBranchNameForTask,
+  ensureEnvironment,
+  getEnvironmentInfo,
+  getTaskEnvironmentInfo,
+  ensureTaskEnvironment,
+  getSessionStorageRoot,
+} from './resolver-functions.js';
 
 // Import classes for factory functions
 import { EnvironmentResolver as EnvironmentResolverClass } from './resolver.js';

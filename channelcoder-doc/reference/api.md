@@ -84,6 +84,9 @@ interface ClaudeOptions {
   
   // Worktree execution
   worktree?: boolean | string | WorktreeOptions; // Run in git worktree
+  
+  // Working Directory
+  cwd?: string; // Working directory for git operations (defaults to process.cwd())
 }
 ```
 
@@ -601,6 +604,129 @@ try {
 }
 ```
 
+## Worktree Utilities
+
+The `worktreeUtils` object provides utilities for advanced worktree management across multiple repositories.
+
+### `worktreeUtils.create()`
+
+Creates a new git worktree.
+
+```typescript
+async function create(
+  branch: string,
+  options?: Omit<WorktreeOptions, 'branch'> & { cwd?: string }
+): Promise<WorktreeInfo>
+```
+
+#### Parameters
+- **branch** `string` - Branch name for the worktree
+- **options** - Worktree configuration options including `cwd` for multi-repository support
+
+### `worktreeUtils.list()`
+
+Lists all existing worktrees.
+
+```typescript
+async function list(options?: { cwd?: string }): Promise<WorktreeInfo[]>
+```
+
+### `worktreeUtils.remove()`
+
+Removes a worktree by path or branch name.
+
+```typescript
+async function remove(
+  pathOrBranch: string, 
+  options?: { force?: boolean; cwd?: string }
+): Promise<void>
+```
+
+### `worktreeUtils.exists()`
+
+Checks if a worktree exists for a branch.
+
+```typescript
+async function exists(
+  branch: string, 
+  options?: { cwd?: string }
+): Promise<boolean>
+```
+
+### `worktreeUtils.current()`
+
+Gets current worktree info (if in a worktree).
+
+```typescript
+async function current(options?: { cwd?: string }): Promise<WorktreeInfo | null>
+```
+
+### `worktreeUtils.find()`
+
+Finds a worktree by branch name.
+
+```typescript
+async function find(
+  branch: string, 
+  options?: { cwd?: string }
+): Promise<WorktreeInfo | null>
+```
+
+### `worktreeUtils.cleanup()`
+
+Cleans up auto-created worktrees.
+
+```typescript
+async function cleanup(
+  options?: { dryRun?: boolean; cwd?: string }
+): Promise<string[]>
+```
+
+### `worktreeUtils.isInWorktree()`
+
+Checks if a directory is inside a git worktree.
+
+```typescript
+async function isInWorktree(cwd?: string): Promise<boolean>
+```
+
+### `worktreeUtils.findMainRepository()`
+
+Finds the main repository root from any location.
+
+```typescript
+async function findMainRepository(cwd?: string): Promise<string>
+```
+
+#### Multi-Repository Examples
+
+```typescript
+import { worktreeUtils } from 'channelcoder';
+
+// Create worktrees in different repositories
+await worktreeUtils.create('feature/auth', { 
+  cwd: '/path/to/backend',
+  base: 'main' 
+});
+
+await worktreeUtils.create('feature/ui', { 
+  cwd: '/path/to/frontend',
+  base: 'develop' 
+});
+
+// List worktrees for specific repository
+const backendWorktrees = await worktreeUtils.list({ 
+  cwd: '/path/to/backend' 
+});
+
+// Check if currently in a worktree
+const inWorktree = await worktreeUtils.isInWorktree();
+if (inWorktree) {
+  const mainRepo = await worktreeUtils.findMainRepository();
+  console.log('Main repository:', mainRepo);
+}
+```
+
 ## Best Practices
 
 1. **Use file-based prompts** for complex, reusable prompts
@@ -609,3 +735,5 @@ try {
 4. **Set timeouts** for long-running operations
 5. **Use streaming** for real-time output display
 6. **Leverage dry-run** mode for testing templates
+7. **Specify cwd** when working with multiple repositories
+8. **Use worktree utilities** for advanced git worktree management

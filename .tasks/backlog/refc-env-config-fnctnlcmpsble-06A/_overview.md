@@ -52,21 +52,31 @@ Decision: Proceed with functional architecture design based on research findings
 ### Gate: TRD Approval ✓
 TRD finalized and grounded in actual implementation - ready for Phase 3
 
-### Phase 3: Implementation
-- [ ] 17_cret-rgrsson-test-curr-06K: Create regression test suite for current behavior → @test-agent
-- [ ] 09_conv-envrnmntrslver-pure-fns-06D: Convert EnvironmentResolver to pure functions → @implement-agent
-- [ ] 09_conv-wrktrmnger-pure-fns-06P: Convert WorktreeManager to pure functions → @implement-agent (parallel)
-- [ ] 18_fix-sess-stor-rslton-06O: Fix session storage root resolution bug → @implement-agent
-- [ ] 19_updt-cli-comm-fns-06G: Update CLI commands to use new functions → @implement-agent
+### Phase 3: Implementation ✓
+- [x] 17_cret-rgrsson-test-curr-06K: Create regression test suite for current behavior → @test-agent
+- [x] 21_fix-dry-run-mod-sti-cre-06I: Fix dry-run mode still creating worktrees (HIGH PRIORITY BUG) → @implement-agent
+- [x] 09_conv-envrnmntrslver-pure-fns-06D: Convert EnvironmentResolver to pure functions → @implement-agent
+- [x] 09_conv-wrktrmnger-pure-fns-06P: Convert WorktreeManager to pure functions → @implement-agent (parallel)
+- [x] 22_revw-and-ip-rfctrng-task-06T: Review and integrate parallel refactoring tasks → @architect-agent
+- [x] 18_fix-sess-stor-rslton-06O: Fix session storage root resolution bug → @implement-agent
+- [x] 19_updt-cli-comm-fns-06G: Update CLI commands to use new functions → @implement-agent
+- [x] 20_run-full-regression-test-suite-06G: Run full regression test suite → @test-agent
 
-### Gate: Implementation Review
-Verify all functions work correctly and tests pass
+### Gate: Implementation Review (HOLD)
+Critical issues identified - must fix before proceeding
+
+### Phase 3.5: Critical Fixes
+- [ ] 23_upgr-to-chn-v3-and-add-cwd-06D: Upgrade to ChannelCoder v3 and add cwd parameter support (CRITICAL BUG) → @implement-agent
+- [ ] 24_refc-hig-cmp-fns-in-cli-comm-06H: Refactor high-complexity functions in CLI commands → @implement-agent
+
+### Gate: Implementation Review (Retry)
+Verify all critical issues resolved
 
 ### Phase 4: Migration & Testing
-- [ ] 20_run-full-regression-test-suite-06G: Run full regression test suite → @test-agent
+- [ ] 25_run-final-validation-suite: Run comprehensive validation after critical fixes → @test-agent
 
 ### Gate: Final Validation
-Confirm no breaking changes and session monitoring bug is fixed
+Confirm no breaking changes and all bugs fixed
 
 ## Deliverable
 
@@ -143,9 +153,102 @@ Confirm no breaking changes and session monitoring bug is fixed
   - Current Status: Regression test creation in progress
   - Next Steps: After regression tests complete, dispatch parallel conversion tasks
   - Resume: Monitor test creation, then dispatch 09_conv-envrnmntrslver-pure-fns-06D and 09_conv-wrktrmnger-pure-fns-06P in parallel
+<<<<<<< HEAD
 - 2025-06-10: === TASK RE-DISPATCH ===
   - Issue: Initial dispatch failed due to worktree sync issue
   - Resolution: Merged main into worktree, re-dispatched task
   - Task Dispatched: 17_cret-rgrsson-test-curr-06K
   - Session: detached-17_cret-rgrsson-test-curr-06K-1749524163020 (PID: 48220)
   - Status: Regression test creation now running in correct worktree context
+=======
+- 2025-06-10: === ORCHESTRATION RUN ===
+  - Current Phase: Phase 3: Implementation
+  - Critical Context Discovered: ChannelCoder SDK already provides worktree utilities!
+  - Updated Tasks: Added ChannelCoder SDK context to prevent duplication
+  - Bug Found: Dry-run mode still creates worktrees (from regression testing)
+  - Created Task: 21_fix-dry-run-mod-sti-cre-06I (high priority bug fix)
+  - Tasks Dispatched (Parallel):
+    * 09_conv-envrnmntrslver-pure-fns-06D → Session: detached-09_conv-envrnmntrslver-pure-fns-06D-1749564502811 (PID: 63021)
+    * 09_conv-wrktrmnger-pure-fns-06P → Session: detached-09_conv-wrktrmnger-pure-fns-06P-1749564510956 (PID: 63500)
+    * 21_fix-dry-run-mod-sti-cre-06I → Session: detached-21_fix-dry-run-mod-sti-cre-06I-1749564519586 (PID: 63978)
+  - Quality Standards: Review TRD first, use ChannelCoder SDK, avoid duplication
+  - Next Steps: Monitor parallel conversions, then dispatch session storage fix
+  - Resume: After conversions complete, dispatch 18_fix-sess-stor-rslton-06O
+- 2025-06-10: === ORCHESTRATION ADJUSTMENT ===
+  - Lesson Learned: Parallel tasks touching same codebase created potential conflicts
+  - Created Integration Task: 22_revw-and-ip-rfctrng-task-06T
+  - Purpose: Review and integrate the three parallel implementations
+  - Updated orchestration prompt: Added conflict analysis requirements
+  - Next: Dispatch integration task before continuing with remaining work
+- 2025-06-10: === ORCHESTRATION COMPLETE ===
+  - Integration Task Dispatched: 22_revw-and-ip-rfctrng-task-06T → Session: detached-22_revw-and-ip-rfctrng-task-06T-1749567281172 (PID: 73759)
+  - Purpose: Review and integrate three parallel implementations
+  - Mode: architect-agent (code review and integration)
+  - Current Status: Awaiting integration review completion
+  - Next Steps: After integration, dispatch remaining sequential tasks:
+    * 18_fix-sess-stor-rslton-06O (session storage fix)
+    * 19_updt-cli-comm-fns-06G (CLI updates)
+    * 20_run-full-regression-test-suite-06G (final testing)
+  - Resume: Monitor integration task, then continue with remaining implementation
+- 2025-06-10: === TASK DISPATCH ===
+  - Task: 18_fix-sess-stor-rslton-06O (session storage fix)
+  - Session: detached-18_fix-sess-stor-rslton-06O-1749568311432 (PID: 80945)
+  - Context: Now that functional refactoring is integrated, fix the session storage bug
+  - Note: The resolver-functions.ts already includes getSessionStorageRoot() function
+  - Next: After this completes, dispatch CLI update task
+- 2025-06-10: === PARALLEL DISPATCH ===
+  - Task: 19_updt-cli-comm-fns-06G (CLI updates with cleanup)
+  - Session: detached-19_updt-cli-comm-fns-06G-1749568510426 (PID: 82559)
+  - Special Instructions: Added explicit code cleanup requirements
+  - Context: Safe to run in parallel with session storage fix (monitoring only)
+  - Running Tasks: 2 concurrent (18 and 19)
+  - Remaining: Only final regression test suite after these complete
+- 2025-06-10: === FINAL TESTING DISPATCH ===
+  - Task: 20_run-full-regression-test-suite-06G
+  - Session: detached-20_run-full-regression-test-suite-06G-1749569093228 (PID: 87051)
+  - Purpose: Final validation of all refactoring changes
+  - Context: All implementation complete, need to verify no breaking changes
+  - Status: This is the LAST task - 14/15 complete
+  - Gates Ahead: Implementation Review → Final Validation
+- 2025-06-10: === ORCHESTRATION RUN ===
+  - Current Phase: Phase 3: Implementation (COMPLETED ✓)
+  - All 15 subtasks: DONE
+  - Final Testing: COMPLETED with mixed results
+  - Key Finding: ChannelCoder v3 released with required features
+  - Gate Assessment: Implementation Review (Ready for evaluation)
+  - Critical Issues:
+    * Test failures due to ChannelCoder v2 limitations (now fixed in v3)
+    * Code complexity violations need refactoring
+    * Core functionality verified working in production
+  - Next Action: Evaluate Implementation Review gate
+- 2025-06-10: === IMPLEMENTATION REVIEW GATE ===
+  - Status: HOLD - Critical issues must be addressed
+  - Code Complexity: Multiple functions exceed limits (61, 46, 39, 27, 25)
+  - ChannelCoder v3: MUST upgrade to fix project isolation bug
+  - Decision: Create follow-up tasks before proceeding
+  - Next Action: Creating Phase 3.5 tasks for critical fixes
+- 2025-06-10: === PHASE 3.5 CREATED ===
+  - Reason: Implementation Review gate failed - critical issues found
+  - Created Tasks:
+    * 23_upgr-to-chn-v3-and-add-cwd-06D - ChannelCoder v3 upgrade (CRITICAL)
+    * 24_refc-hig-cmp-fns-in-cli-comm-06H - Fix code complexity violations
+  - Issue Severity:
+    * Project isolation bug is CRITICAL - affects multi-project support
+    * Code complexity is HIGH - maintainability concern
+  - Next Action: Dispatch critical fix tasks immediately
+- 2025-06-10: === CRITICAL FIXES DISPATCHED ===
+  - Current Phase: Phase 3.5: Critical Fixes
+  - Tasks Dispatched:
+    * 23_upgr-to-chn-v3-and-add-cwd-06D → Session: detached-23_upgr-to-chn-v3-and-add-cwd-06D-1749581460405 (PID: 68732)
+    * 24_refc-hig-cmp-fns-in-cli-comm-06H → Session: detached-24_refc-hig-cmp-fns-in-cli-comm-06H-1749581478784 (PID: 69253)
+  - Quality Standards: Critical bug fixes require thorough testing
+  - ChannelCoder Task: Add cwd parameter to ALL SDK calls for project isolation
+  - Complexity Task: Refactor 5 functions exceeding limits (61, 46, 39, 27, 25)
+  - Next Step: Monitor completion, then run final validation
+  - Resume: After both complete, proceed to Implementation Review retry
+- 2025-06-10: === ORCHESTRATION COMPLETE ===
+  - Tasks Dispatched: 2 critical fixes
+  - Current Status: Phase 3.5 in progress
+  - Next Steps: Monitor critical fix completion
+  - Resume: After both tasks complete, retry Implementation Review gate
+>>>>>>> task/refc-env-config-fnctnlcmpsble-06A

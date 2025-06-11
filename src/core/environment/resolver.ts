@@ -91,9 +91,11 @@ export class EnvironmentResolver implements IEnvironmentResolver {
 
   /**
    * Ensures environment exists (creates if missing)
+   * @param envId Environment ID
+   * @param dryRun If true, only check existence without creating
    * @returns Environment info including path
    */
-  async ensureEnvironment(envId: string): Promise<EnvironmentInfo> {
+  async ensureEnvironment(envId: string, dryRun = false): Promise<EnvironmentInfo> {
     if (!envId) {
       throw new EnvironmentError(
         'Environment ID is required',
@@ -119,6 +121,19 @@ export class EnvironmentResolver implements IEnvironmentResolver {
             isActive: true,
           };
         }
+      }
+
+      // In dry-run mode, don't create - just return what would be created
+      if (dryRun) {
+        const branch = this.branchNaming.getBranchName(envId);
+        const path = await this.worktreeManager.getWorktreePath(envId);
+        return {
+          id: envId,
+          path: path,
+          branch: branch,
+          exists: false,
+          isActive: false,
+        };
       }
 
       // Create new worktree

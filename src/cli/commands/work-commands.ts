@@ -7,7 +7,7 @@
 
 import inquirer from 'inquirer';
 import { ConfigurationManager } from '../../core/config/index.js';
-import { EnvironmentResolver, WorktreeManager } from '../../core/environment/index.js';
+import { ensureEnvironment, resolveEnvironmentId } from '../../core/environment/index.js';
 import { getStatusEmoji, getTypeEmoji } from '../../core/metadata/schema-service.js';
 import { get as getTask, list as listTasks } from '../../core/task-crud.js';
 import type { Task } from '../../core/types.js';
@@ -26,6 +26,205 @@ export interface WorkCommandOptions {
   data?: string | Record<string, unknown>; // Additional data to merge (JSON string from CLI or object)
 }
 
+interface ValidatedWorkOptions {
+  projectRoot: string;
+  configManager: ConfigurationManager;
+  options: WorkCommandOptions;
+  additionalPrompt: string;
+}
+
+interface WorkEnvironment {
+  taskId?: string;
+  task?: Task;
+  envInfo?: { path: string; branch: string };
+  taskInstruction: string;
+}
+
+/**
+ * Validates work command options and sets up configuration
+ */
+function validateWorkOptions(
+  additionalPromptArgs: string[],
+  options: WorkCommandOptions
+): ValidatedWorkOptions {
+  const configManager = ConfigurationManager.getInstance();
+  const projectRoot = configManager.getProjectRoot();
+
+  if (!projectRoot) {
+    printError('No project root found. Run "sc init" or specify --root-dir.');
+    process.exit(1);
+  }
+
+  const additionalPrompt = additionalPromptArgs.join(' ');
+
+  return {
+    projectRoot,
+    configManager,
+    options,
+    additionalPrompt,
+  };
+}
+
+/**
+ * Handles session resumption logic
+ */
+async function handleSessionResume(sessionId: string): Promise<WorkEnvironment> {
+  printSuccess(`Resuming session: ${sessionId}`);
+  return {
+    taskInstruction: '',
+  };
+}
+
+/**
+ * Prepares work environment by resolving task and setting up environment
+ */
+async function prepareWorkEnvironment(
+  taskId: string | undefined,
+  validated: ValidatedWorkOptions
+): Promise<WorkEnvironment> {
+  const { projectRoot, configManager, options } = validated;
+
+  // Resolve task ID
+  let resolvedTaskId = taskId;
+  if (!resolvedTaskId) {
+    resolvedTaskId = await selectTaskInteractive(projectRoot);
+    if (!resolvedTaskId) {
+      printWarning('No task selected');
+      process.exit(0);
+    }
+  }
+
+  // Load task and validate
+  let task: Task | undefined;
+  let taskInstruction = '';
+  try {
+    const result = await getTask(projectRoot, resolvedTaskId);
+    if (!result.success) {
+      throw new Error(result.error || 'Task not found');
+    }
+    task = result.data;
+    if (task) {
+      taskInstruction = task.document.sections.instruction || '';
+    }
+  } catch (_error) {
+    printError(`Task '${resolvedTaskId}' not found`);
+    process.exit(1);
+  }
+
+  // Resolve and ensure environment (respecting dry-run mode)
+  const envId = await resolveEnvironmentId(resolvedTaskId, configManager);
+  const envInfo = await ensureEnvironment(envId, configManager, options.dryRun);
+
+  if (options.dryRun) {
+    printSuccess(`[DRY RUN] Environment would be: ${envInfo.path}`);
+  } else {
+    printSuccess(`Environment ready: ${envInfo.path}`);
+  }
+
+  return {
+    taskId: resolvedTaskId,
+    task,
+    envInfo,
+    taskInstruction,
+  };
+}
+
+/**
+ * Displays work session information
+ */
+function displayWorkInfo(
+  environment: WorkEnvironment,
+  mode: string,
+  options: WorkCommandOptions
+): void {
+  const { envInfo } = environment;
+
+  if (options.dryRun) {
+    printSuccess(`[DRY RUN] Would launch Claude session in ${mode} mode`);
+    if (envInfo) {
+      printSuccess(`[DRY RUN] Would work in: ${envInfo.path}`);
+    }
+  } else {
+    printSuccess(`Launching Claude session in ${mode} mode...`);
+    if (envInfo) {
+      printSuccess(`Working in: ${envInfo.path}`);
+    }
+  }
+
+  // Work command is always interactive (never Docker) per PRD
+  if (options.docker === false) {
+    printSuccess('Running in interactive mode (work command is always interactive)');
+  }
+}
+
+/**
+ * Parses additional data from CLI options - shared with dispatch command
+ */
+function parseWorkAdditionalData(
+  dataOption?: string | Record<string, unknown>
+): Record<string, unknown> {
+  if (!dataOption) {
+    return {};
+  }
+
+  try {
+    return typeof dataOption === 'string' ? JSON.parse(dataOption) : dataOption;
+  } catch (error) {
+    printError(
+      `Invalid JSON in --data option: ${error instanceof Error ? error.message : String(error)}`
+    );
+    process.exit(1);
+  }
+}
+
+/**
+ * Starts the interactive session with prepared environment
+ */
+async function startInteractiveSession(
+  environment: WorkEnvironment,
+  validated: ValidatedWorkOptions,
+  mode: string
+): Promise<void> {
+  const { projectRoot, options, additionalPrompt } = validated;
+  const { taskId, task, envInfo, taskInstruction } = environment;
+
+  const promptPath = resolveModePromptPath(projectRoot, mode);
+  const promptOrFile = options.session
+    ? 'Continue working on the task from where you left off'
+    : promptPath;
+
+  // Build base data - always include both taskId and parentId
+  const baseData: Record<string, unknown> = {
+    additionalInstructions: additionalPrompt,
+    taskId: taskId || '',
+    parentId: task?.metadata.parentTask || '',
+  };
+
+  const additionalData = parseWorkAdditionalData(options.data);
+  const data = { ...baseData, ...additionalData };
+
+  const result = await executeInteractiveTask(promptOrFile, {
+    taskId: taskId || 'session-resume',
+    instruction: taskInstruction,
+    dryRun: options.dryRun,
+    session: options.session,
+    worktree:
+      envInfo && !options.dryRun
+        ? {
+            path: envInfo.path,
+            branch: envInfo.branch,
+          }
+        : undefined,
+    data,
+  });
+
+  if (result.success) {
+    printSuccess('✅ Interactive session completed');
+  } else {
+    printError(`Session failed: ${result.error}`);
+  }
+}
+
 /**
  * Main handler for the work command
  *
@@ -39,129 +238,20 @@ export async function handleWorkCommand(
   options: WorkCommandOptions
 ): Promise<void> {
   try {
-    // Get project root from configuration (already set by CLI framework)
-    const configManager = ConfigurationManager.getInstance();
-    const projectRoot = configManager.getProjectRoot();
+    // Step 1: Validate options and setup configuration
+    const validated = validateWorkOptions(additionalPromptArgs, options);
 
-    if (!projectRoot) {
-      printError('No project root found. Run "sc init" or specify --root-dir.');
-      process.exit(1);
-    }
+    // Step 2: Handle session resume or prepare work environment
+    const environment = options.session
+      ? await handleSessionResume(options.session)
+      : await prepareWorkEnvironment(taskId, validated);
 
-    // Initialize core services
-    const worktreeManager = new WorktreeManager();
-    const resolver = new EnvironmentResolver(worktreeManager);
-
-    // Step 1: Handle session resume or task resolution
-    let resolvedTaskId: string | undefined;
-    let task: Task | undefined;
-    let envInfo: { path: string; branch: string } | undefined;
-    let taskInstruction = '';
-
-    if (options.session) {
-      // When resuming, we don't need task selection
-      printSuccess(`Resuming session: ${options.session}`);
-    } else {
-      // Normal task resolution flow
-      resolvedTaskId = taskId;
-      if (!resolvedTaskId) {
-        resolvedTaskId = await selectTaskInteractive(projectRoot);
-        if (!resolvedTaskId) {
-          printWarning('No task selected');
-          process.exit(0);
-        }
-      }
-
-      // Load task and validate
-      try {
-        const result = await getTask(projectRoot, resolvedTaskId);
-        if (!result.success) {
-          throw new Error(result.error || 'Task not found');
-        }
-        task = result.data;
-        if (task) {
-          taskInstruction = task.document.sections.instruction || '';
-        }
-      } catch (_error) {
-        printError(`Task '${resolvedTaskId}' not found`);
-        process.exit(1);
-      }
-
-      // Resolve and ensure environment
-      const envId = await resolver.resolveEnvironmentId(resolvedTaskId);
-      envInfo = await resolver.ensureEnvironment(envId);
-      printSuccess(`Environment ready: ${envInfo.path}`);
-    }
-
-    // Step 2: Setup execution parameters
-    const additionalPrompt = additionalPromptArgs.join(' ');
+    // Step 3: Setup execution parameters and display info
     const mode = options.mode || 'auto';
+    displayWorkInfo(environment, mode, options);
 
-    // Step 3: Display execution info
-    if (options.dryRun) {
-      printSuccess(`[DRY RUN] Would launch Claude session in ${mode} mode`);
-      if (envInfo) {
-        printSuccess(`[DRY RUN] Would work in: ${envInfo.path}`);
-      }
-    } else {
-      printSuccess(`Launching Claude session in ${mode} mode...`);
-      if (envInfo) {
-        printSuccess(`Working in: ${envInfo.path}`);
-      }
-    }
-
-    // Work command is always interactive (never Docker) per PRD
-    // The --no-docker option exists for compatibility but work never uses Docker
-    if (options.docker === false) {
-      printSuccess('Running in interactive mode (work command is always interactive)');
-    }
-
-    // Step 4: Execute with ChannelCoder
-    const promptPath = resolveModePromptPath(projectRoot, mode);
-    const promptOrFile = options.session
-      ? 'Continue working on the task from where you left off'
-      : promptPath;
-
-    // Build base data - always include both taskId and parentId
-    const baseData: Record<string, unknown> = {
-      additionalInstructions: additionalPrompt,
-      taskId: resolvedTaskId || '',
-      parentId: task?.metadata.parentTask || '', // Get from task metadata
-    };
-
-    // Parse and merge any additional data provided via --data
-    let additionalData: Record<string, unknown> = {};
-    if (options.data) {
-      try {
-        additionalData = typeof options.data === 'string' ? JSON.parse(options.data) : options.data;
-      } catch (error) {
-        printError(
-          `Invalid JSON in --data option: ${error instanceof Error ? error.message : String(error)}`
-        );
-        process.exit(1);
-      }
-    }
-    const data = { ...baseData, ...additionalData };
-
-    const result = await executeInteractiveTask(promptOrFile, {
-      taskId: resolvedTaskId || 'session-resume',
-      instruction: taskInstruction,
-      dryRun: options.dryRun,
-      session: options.session, // Pass through for resume
-      worktree: envInfo
-        ? {
-            path: envInfo.path,
-            branch: envInfo.branch,
-          }
-        : undefined,
-      data,
-    });
-
-    if (result.success) {
-      printSuccess('✅ Interactive session completed');
-    } else {
-      printError(`Session failed: ${result.error}`);
-    }
+    // Step 4: Start interactive session
+    await startInteractiveSession(environment, validated, mode);
   } catch (error) {
     printError(`Work command failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);

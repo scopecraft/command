@@ -191,22 +191,78 @@ Example:
 <parallel_work>
 ## Handling Parallel Tasks
 
-When multiple tasks can run simultaneously:
+### CRITICAL: Conflict Analysis Required
+
+Before dispatching parallel tasks, you MUST perform conflict analysis:
+
+1. **File Overlap Analysis**
+   ```markdown
+   Task A expected files: [list files]
+   Task B expected files: [list files]
+   Overlap: [identify common files]
+   
+   Decision: 
+   - No overlap → Safe to parallelize
+   - Minor overlap (<30%) → Proceed with caution
+   - Major overlap (>30%) → MUST run sequentially
+   ```
+
+2. **Dependency Analysis**
+   - Does Task B need Task A's output? → Sequential
+   - Are they touching different modules? → Parallel OK
+   - Are they refactoring shared code? → Sequential
+
+3. **Safe Parallel Patterns**
+   ✅ Frontend component + Backend API (integrate later)
+   ✅ Different microservices or modules
+   ✅ Documentation + Implementation
+   ✅ Tests for different features
+   ✅ Research tasks (reading, not writing)
+   
+4. **Unsafe Parallel Patterns**
+   ❌ Multiple refactors of same module
+   ❌ Multiple tasks touching same core services
+   ❌ Architectural changes to shared code
+   ❌ Tasks modifying same configuration files
+
+### Example Conflict Analysis
 
 ```markdown
 ## Log
-- YYYY-MM-DD HH:MM: Parallel Work Available with Quality Standards:
-  - 01_research-ui-patterns-06Q → @research-agent (senior research approach)
-  - 01_analyze-document-editor-06R → @research-agent (architectural analysis)
-  - 01_research-competitors-06S → @research-agent (comprehensive comparison)
+- YYYY-MM-DD HH:MM: Parallel Work Analysis:
+  
+  Tasks considered for parallel execution:
+  - 09_conv-envrnmntrslver-pure-fns → Refactors src/core/environment/resolver.ts
+  - 09_conv-wrktrmnger-pure-fns → Refactors src/core/environment/worktree-manager.ts
+  - 21_fix-dry-run-bug → Modifies src/cli/commands/work-commands.ts
+  
+  File overlap analysis:
+  - All tasks touch environment system
+  - Resolver and WorktreeManager likely interdependent
+  - CLI commands depend on both services
+  
+  Decision: SEQUENTIAL EXECUTION REQUIRED
+  - These tasks will create merge conflicts
+  - Order: bug fix → resolver → worktree manager → CLI updates
+```
 
+### When Parallel IS Safe
+
+```markdown
+## Log
+- YYYY-MM-DD HH:MM: Parallel Work Available (Conflict-Free):
+  - 01_research-ui-patterns-06Q → @research-agent (senior research approach)
+  - 01_analyze-backend-architecture-06R → @research-agent (architectural analysis)
+  - 01_create-ui-mockups-06S → @design-agent (visual design)
+
+  Conflict analysis: No file overlaps, different domains
   Dispatching all tasks with quality expectations:
 ```
 
 Use the Bash tool to execute each task dispatch with quality context:
 - `./auto 01_research-ui-patterns-06Q parent-id` (expect thorough pattern analysis)
-- `./auto 01_analyze-document-editor-06R parent-id` (expect architectural insights)
-- `./auto 01_research-competitors-06S parent-id` (expect strategic recommendations)
+- `./auto 01_analyze-backend-architecture-06R parent-id` (expect architectural insights)
+- `./auto 01_create-ui-mockups-06S parent-id` (expect design mockups)
 </parallel_work>
 
 <completion_protocol>
