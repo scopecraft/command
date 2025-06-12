@@ -15,6 +15,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { basename, dirname, join, relative, sep } from 'node:path';
+import { WorktreePathResolver } from './environment/worktree-path-resolver.js';
+import { TaskStoragePathEncoder } from './task-storage-path-encoder.js';
 import type { ProjectConfig, StructureVersion, TaskLocation, WorkflowState } from './types.js';
 
 // Default workflow folder names
@@ -25,10 +27,29 @@ const DEFAULT_WORKFLOW_FOLDERS = {
 } as const;
 
 /**
- * Get the .tasks directory path
+ * Get the tasks directory path (centralized storage)
  */
 export function getTasksDirectory(projectRoot: string): string {
-  return join(projectRoot, '.tasks');
+  // Get the main repository root to ensure all worktrees share the same storage
+  const resolver = new WorktreePathResolver();
+  const mainRepoRoot = resolver.getMainRepositoryRootSync();
+  
+  // Encode the main repository path for consistent storage location
+  const encoded = TaskStoragePathEncoder.encode(mainRepoRoot);
+  const centralizedPath = join(
+    process.env.HOME || require('node:os').homedir(),
+    '.scopecraft',
+    'projects',
+    encoded,
+    'tasks'
+  );
+
+  // Ensure centralized directory exists
+  if (!existsSync(centralizedPath)) {
+    mkdirSync(centralizedPath, { recursive: true });
+  }
+
+  return centralizedPath;
 }
 
 /**

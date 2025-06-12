@@ -115,7 +115,7 @@ export class ConfigurationManager implements IConfigurationManager {
   public setRootFromCLI(path: string): void {
     if (!this.validateRoot(path)) {
       throw new ConfigurationError(
-        `Invalid project root: ${path} does not contain .tasks or .ruru directory`,
+        `Invalid project root: ${path} is not a valid directory`,
         'cli' as ConfigSource,
         path
       );
@@ -148,7 +148,7 @@ export class ConfigurationManager implements IConfigurationManager {
   public setRootFromSession(path: string): void {
     if (!this.validateRoot(path)) {
       throw new ConfigurationError(
-        `Invalid project root: ${path} does not contain .tasks or .ruru directory`,
+        `Invalid project root: ${path} is not a valid directory`,
         'session' as ConfigSource,
         path
       );
@@ -221,11 +221,10 @@ export class ConfigurationManager implements IConfigurationManager {
       // Check if path exists
       if (!fs.existsSync(rootPath)) return false;
 
-      // Check for .tasks or .ruru directory
-      const hasTasksDir = fs.existsSync(path.join(rootPath, '.tasks'));
-      const hasRuruDir = fs.existsSync(path.join(rootPath, '.ruru'));
-
-      return hasTasksDir || hasRuruDir;
+      // For centralized storage, we just need a valid directory
+      // The actual project validation happens when we check for git or other project markers
+      const stat = fs.statSync(rootPath);
+      return stat.isDirectory();
     } catch (_error) {
       return false;
     }

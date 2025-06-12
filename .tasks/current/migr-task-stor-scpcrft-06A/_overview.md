@@ -120,3 +120,13 @@ Legend:
   - Gate Status: Synthesis Review (Pending)
   - Findings: Phase 1 research substantially complete with comprehensive deliverables
   - Note: Task 01_resr-stor-patt-implctns-06L marked as in_progress but log shows completion
+- 2025-06-11: Fixed critical bug where storage migration feature flags were non-functional
+- 2025-06-11: Pivoted from dual storage support to centralized-only approach (simpler implementation)
+- 2025-06-11: Added getMainRepositoryRootSync() to WorktreePathResolver to detect main repo from worktrees
+- 2025-06-11: Updated getTasksDirectory() to use main repository root for path encoding
+- 2025-06-11: Updated ConfigurationManager validation to work with centralized storage (removed .tasks directory requirement)
+- 2025-06-11: Removed QUICKSTART.md creation from project initialization
+- 2025-06-11: Successfully tested that all worktrees now share the same task storage at ~/.scopecraft/projects/{encoded}/tasks/
+- 2025-06-11: Migrated session storage to use centralized location at ~/.scopecraft/projects/{encoded}/sessions/
+- 2025-06-11: Cleaned up deprecated getSessionStorageRoot functions
+- 2025-06-11: Updated ADR to reflect centralized-only decision

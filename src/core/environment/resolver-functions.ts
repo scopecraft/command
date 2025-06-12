@@ -296,22 +296,3 @@ export async function ensureTaskEnvironment(
   return ensureEnvironment(envId, config, dryRun);
 }
 
-/**
- * Gets session storage root path using ConfigurationManager
- * Fixes the session monitoring bug by consistently using ConfigurationManager's root
- *
- * @param config - ConfigurationManager instance
- * @returns string - Session storage root path
- */
-export function getSessionStorageRoot(config: ConfigurationManager): string {
-  // CRITICAL: Always use ConfigurationManager's resolved root
-  // This ensures CLI and UI always find sessions in same place
-  const rootConfig = config.getRootConfig();
-  if (!rootConfig.validated || !rootConfig.path) {
-    throw new EnvironmentError(
-      'No valid project root found for session storage',
-      EnvironmentErrorCodes.CONFIGURATION_ERROR
-    );
-  }
-  return rootConfig.path;
-}

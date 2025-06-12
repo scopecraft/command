@@ -116,6 +116,13 @@ export interface WorktreePathResolver {
    * Pattern: ../{projectName}.worktrees/{taskId}
    */
   getWorktreePath(taskId: string): Promise<string>;
+
+  /**
+   * Gets the main repository root, even when running from a worktree
+   * This is needed for centralized storage to ensure all worktrees
+   * share the same storage location
+   */
+  getMainRepositoryRoot(): Promise<string>;
 }
 
 // ============================================

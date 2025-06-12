@@ -3,40 +3,40 @@
  */
 
 import { join } from 'node:path';
+import { WorktreePathResolver } from '../../core/environment/worktree-path-resolver.js';
+import { TaskStoragePathEncoder } from '../../core/task-storage-path-encoder.js';
 import type { IConfigurationManager } from '../../core/config/types.js';
 
 // Session storage configuration
 export const SESSION_STORAGE = {
-  // Base directory for all session data (relative to project root)
-  BASE_DIR: '.sessions',
-
-  // Subdirectories
+  // Subdirectories under centralized storage
   SESSIONS_SUBDIR: 'sessions', // ChannelCoder session files
   LOGS_SUBDIR: 'logs', // Log files for autonomous tasks
 
   // File patterns
   INFO_FILE_SUFFIX: '.info.json',
   LOG_FILE_SUFFIX: '.log',
-
-  // Helper functions for consistent path generation
-  getBaseDir: (projectRoot?: string) =>
-    join(projectRoot || process.cwd(), SESSION_STORAGE.BASE_DIR),
-
-  getSessionsDir: (projectRoot?: string) =>
-    join(SESSION_STORAGE.getBaseDir(projectRoot), SESSION_STORAGE.SESSIONS_SUBDIR),
-
-  getLogsDir: (projectRoot?: string) =>
-    join(SESSION_STORAGE.getBaseDir(projectRoot), SESSION_STORAGE.LOGS_SUBDIR),
 } as const;
 
 /**
- * Get session storage root using ConfigurationManager for consistent resolution
- * Ensures CLI and UI use the same project root regardless of working directory
+ * Get centralized session storage directories
+ * All worktrees share the same session storage in ~/.scopecraft/projects/{encoded}/sessions/
  */
-export function getSessionStorageRoot(config: IConfigurationManager): string {
-  const rootConfig = config.getRootConfig();
-  return rootConfig.path;
+export function getCentralizedSessionPaths(config?: IConfigurationManager) {
+  // Get main repository root to ensure all worktrees share the same storage
+  const resolver = new WorktreePathResolver(config);
+  const mainRepoRoot = resolver.getMainRepositoryRootSync();
+  
+  // Use the same encoder as task storage for consistency
+  const storageRoot = TaskStoragePathEncoder.getProjectStorageRoot(mainRepoRoot);
+  
+  return {
+    baseDir: join(storageRoot, 'sessions'),
+    sessionsDir: join(storageRoot, 'sessions', SESSION_STORAGE.SESSIONS_SUBDIR),
+    logsDir: join(storageRoot, 'sessions', SESSION_STORAGE.LOGS_SUBDIR),
+  };
 }
+
 
 // Session types
 export const SESSION_TYPES = {

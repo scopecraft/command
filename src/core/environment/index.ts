@@ -37,7 +37,6 @@ export {
   getEnvironmentInfo,
   getTaskEnvironmentInfo,
   ensureTaskEnvironment,
-  getSessionStorageRoot,
 } from './resolver-functions.js';
 
 // Import classes for factory functions
