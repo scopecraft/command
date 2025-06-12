@@ -11,7 +11,7 @@ import {
   monitorLog,
 } from 'channelcoder';
 import { type ExecutionResult, execute, executeTmux } from './client.js';
-import { EXECUTION_MODES, SESSION_STORAGE, SESSION_TYPES } from './constants.js';
+import { EXECUTION_MODES, getCentralizedSessionPaths, SESSION_STORAGE, SESSION_TYPES } from './constants.js';
 import { ScopecraftSessionStorage } from './session-storage.js';
 
 /**
@@ -39,12 +39,12 @@ export async function executeAutonomousTask(
   const sessionName = options.session || `${options.execType}-${options.taskId}-${timestamp}`;
 
   // ALWAYS generate logFile for autonomous execution
-  const logDir = SESSION_STORAGE.getLogsDir(projectRoot);
-  const logFile = join(logDir, `${sessionName}${SESSION_STORAGE.LOG_FILE_SUFFIX}`);
+  const paths = getCentralizedSessionPaths();
+  const logFile = join(paths.logsDir, `${sessionName}${SESSION_STORAGE.LOG_FILE_SUFFIX}`);
 
   // Ensure log directory exists
   const { mkdirSync } = await import('node:fs');
-  mkdirSync(logDir, { recursive: true });
+  mkdirSync(paths.logsDir, { recursive: true });
 
   // Special case for tmux - it has its own implementation
   if (options.execType === 'tmux') {

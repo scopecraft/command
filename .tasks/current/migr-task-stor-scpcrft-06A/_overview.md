@@ -133,3 +133,10 @@ Legend:
 - 2025-06-12: 2025-06-11: Created migration script at scripts/migrate-to-centralized-storage.ts to help users migrate existing tasks from local .tasks/ to centralized storage
 - 2025-06-11: Script features: dry-run mode, interactive conflict resolution, worktree detection, preserves directory structure
 - 2025-06-11: Added scripts/README.md documenting the migration tool
+- 2025-06-12: 2025-06-12 06:20: === MAJOR ARCHITECTURE DECISION ===
+  - Task 09_fix-stor-mgrton-impl-06X: COMPLETED ✓
+  - Decision: NO FEATURE FLAGS - Centralized storage only!
+  - Removed all dual-support code and feature flags
+  - Simplified to always use ~/.scopecraft/projects/{encoded}/
+  - Created: 11_simp-test-cntrlzed-stor-06N (test simplification)
+  - ADR updated to reflect centralized-only decision
