@@ -9,6 +9,7 @@
  *   --force      Overwrite existing files without prompting
  */
 
+import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { copyFile, mkdir, readdir } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -33,6 +34,14 @@ interface TaskInfo {
   title: string;
   status: string;
   type: string;
+}
+
+/**
+ * Calculate MD5 hash of a file
+ */
+function calculateMD5(filePath: string): string {
+  const content = readFileSync(filePath);
+  return createHash('md5').update(content).digest('hex');
 }
 
 /**
@@ -137,7 +146,7 @@ async function migrateFile(
   targetPath: string,
   localRoot: string,
   centralRoot: string
-): Promise<boolean> {
+): Promise<boolean | 'identical'> {
   // Ensure target directory exists
   const targetDir = dirname(targetPath);
   if (!DRY_RUN) {
@@ -146,6 +155,20 @@ async function migrateFile(
   
   // Check if target already exists
   if (existsSync(targetPath) && !FORCE) {
+    // First check if files are identical via MD5
+    try {
+      const localMD5 = calculateMD5(sourcePath);
+      const centralMD5 = calculateMD5(targetPath);
+      
+      if (localMD5 === centralMD5) {
+        console.log(`✓ Identical file, skipping: ${basename(sourcePath)}`);
+        return 'identical';
+      }
+    } catch (error) {
+      // If MD5 comparison fails, continue with normal conflict resolution
+      console.warn(`Could not compare MD5 hashes: ${error}`);
+    }
+    
     const localTask = getTaskInfo(sourcePath);
     const centralTask = getTaskInfo(targetPath);
     
@@ -215,6 +238,7 @@ async function migrate() {
   let totalMigrated = 0;
   let totalSkipped = 0;
   let totalConflicts = 0;
+  let totalIdentical = 0;
   
   for (const workflow of workflows) {
     const localWorkflowDir = join(localTasksDir, workflow);
@@ -238,14 +262,16 @@ async function migrate() {
       const relativePath = taskFile.replace(localWorkflowDir, '');
       const targetPath = join(centralWorkflowDir, relativePath);
       
-      const migrated = await migrateFile(
+      const result = await migrateFile(
         taskFile,
         targetPath,
         localTasksDir,
         centralTasksDir
       );
       
-      if (migrated) {
+      if (result === 'identical') {
+        totalIdentical++;
+      } else if (result === true) {
         totalMigrated++;
       } else {
         totalSkipped++;
@@ -261,7 +287,8 @@ async function migrate() {
   console.log('📊 Migration Summary:');
   console.log(`   ✓ Migrated: ${totalMigrated} tasks`);
   console.log(`   ⏭️  Skipped: ${totalSkipped} tasks`);
-  console.log(`   🔄 Conflicts: ${totalConflicts} tasks`);
+  console.log(`   🔄 Conflicts resolved: ${totalConflicts} tasks`);
+  console.log(`   🟰 Identical files: ${totalIdentical} tasks`);
   
   if (DRY_RUN) {
     console.log('\n⚠️  This was a DRY RUN - no files were actually migrated');

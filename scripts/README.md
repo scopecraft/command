@@ -23,13 +23,14 @@ bun scripts/migrate-to-centralized-storage.ts --force
 
 - Migrates tasks from `backlog/`, `current/`, and `archive/` workflows
 - Preserves directory structure including parent task folders
+- **Automatic MD5 comparison** - Identical files are skipped without prompting
 - Detects conflicts and shows task metadata (title, status, type) for resolution
 - Interactive conflict resolution with options to:
   - Keep local version (overwrite central)
   - Keep central version (skip local)
   - Skip the file entirely
 - Works correctly from worktrees (detects main repository)
-- Provides migration summary with counts
+- Provides migration summary with counts including identical files
 
 ### What it migrates
 
