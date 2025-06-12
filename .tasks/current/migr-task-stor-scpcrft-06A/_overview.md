@@ -130,3 +130,6 @@ Legend:
 - 2025-06-11: Migrated session storage to use centralized location at ~/.scopecraft/projects/{encoded}/sessions/
 - 2025-06-11: Cleaned up deprecated getSessionStorageRoot functions
 - 2025-06-11: Updated ADR to reflect centralized-only decision
+- 2025-06-12: 2025-06-11: Created migration script at scripts/migrate-to-centralized-storage.ts to help users migrate existing tasks from local .tasks/ to centralized storage
+- 2025-06-11: Script features: dry-run mode, interactive conflict resolution, worktree detection, preserves directory structure
+- 2025-06-11: Added scripts/README.md documenting the migration tool
