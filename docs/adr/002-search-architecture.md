@@ -48,7 +48,8 @@ We will adopt **Orama** as our primary search solution, with **MiniSearch** docu
 | **Search Library** | Orama, MiniSearch, FlexSearch, Fuse.js | Orama | Best feature set, future-proof |
 | **Architecture Pattern** | Embedded vs Server vs Service | Service in core/ | Clean boundaries, testable |
 | **Index Storage** | Memory-only vs Persistent | Persistent in project path | Fast startup, survives restarts |
-| **Index Strategy** | Single vs Multi-index | Single unified index | Simpler, supports cross-type search |
+| **Index Strategy** | Single vs Multi-index | Single unified index per project | Simpler, supports cross-type search |
+| **Cross-Project Search** | Single unified vs Multiple indexes | Multiple separate indexes | Unix composability, maintenance simplicity |
 | **Update Model** | Batch vs Incremental | Incremental | Real-time updates, better UX |
 | **Integration Approach** | Direct vs Adapter pattern | Adapter pattern | Library independence |
 
@@ -69,6 +70,22 @@ Search indexes will be stored in the centralized storage location following ADR-
 - **Adapter Pattern**: Search implementation will be abstracted behind an interface to allow future library changes
 - **Service Layer**: Search functionality will be implemented as a service in the core layer
 - **Path Resolution**: Will use the existing path resolution system by adding SEARCH to PATH_TYPES
+
+### Cross-Project Search Architecture
+
+**Decision**: Use multiple separate indexes (one per project) rather than a single unified index for cross-project search capability.
+
+**Rationale**:
+- **Unix Philosophy**: Composable approach - each project index does one thing well
+- **Storage Consistency**: Aligns with existing `~/.scopecraft/projects/{encoded}/` structure
+- **Maintenance Simplicity**: Corrupted index affects only one project, easier to rebuild
+- **Performance Control**: Users can select specific projects to search
+- **Incremental Adoption**: Can add cross-project search without migrating existing indexes
+
+**Implementation Approach**:
+- MVP: Single-project search within one index
+- Future: Search across multiple project indexes and merge results
+- Query execution: Parallel search across selected projects, client-side result merging
 
 
 
