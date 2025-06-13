@@ -8,75 +8,186 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as AutonomousRouteImport } from './routes/autonomous'
-import { Route as AssistantRouteImport } from './routes/assistant'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as WorkflowIndexRouteImport } from './routes/workflow/index'
-import { Route as TasksIndexRouteImport } from './routes/tasks/index'
-import { Route as ParentsIndexRouteImport } from './routes/parents/index'
-import { Route as WorkflowStateRouteImport } from './routes/workflow/$state'
-import { Route as TasksTaskIdRouteImport } from './routes/tasks/$taskId'
-import { Route as ParentsParentIdRouteImport } from './routes/parents/$parentId'
-import { Route as TasksParentIdSubtaskIdRouteImport } from './routes/tasks/$parentId/$subtaskId'
-import { Route as ParentsParentIdSubtaskIdRouteImport } from './routes/parents/$parentId.$subtaskId'
+// Import Routes
 
-const AutonomousRoute = AutonomousRouteImport.update({
+import { Route as rootRoute } from './routes/__root'
+import { Route as AutonomousImport } from './routes/autonomous'
+import { Route as AssistantImport } from './routes/assistant'
+import { Route as IndexImport } from './routes/index'
+import { Route as WorkflowIndexImport } from './routes/workflow/index'
+import { Route as TasksIndexImport } from './routes/tasks/index'
+import { Route as ParentsIndexImport } from './routes/parents/index'
+import { Route as WorkflowStateImport } from './routes/workflow/$state'
+import { Route as TasksTaskIdImport } from './routes/tasks/$taskId'
+import { Route as ParentsParentIdImport } from './routes/parents/$parentId'
+import { Route as TasksParentIdSubtaskIdImport } from './routes/tasks/$parentId/$subtaskId'
+import { Route as ParentsParentIdSubtaskIdImport } from './routes/parents/$parentId.$subtaskId'
+
+// Create/Update Routes
+
+const AutonomousRoute = AutonomousImport.update({
   id: '/autonomous',
   path: '/autonomous',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const AssistantRoute = AssistantRouteImport.update({
+
+const AssistantRoute = AssistantImport.update({
   id: '/assistant',
   path: '/assistant',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+
+const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const WorkflowIndexRoute = WorkflowIndexRouteImport.update({
+
+const WorkflowIndexRoute = WorkflowIndexImport.update({
   id: '/workflow/',
   path: '/workflow/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const TasksIndexRoute = TasksIndexRouteImport.update({
+
+const TasksIndexRoute = TasksIndexImport.update({
   id: '/tasks/',
   path: '/tasks/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const ParentsIndexRoute = ParentsIndexRouteImport.update({
+
+const ParentsIndexRoute = ParentsIndexImport.update({
   id: '/parents/',
   path: '/parents/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const WorkflowStateRoute = WorkflowStateRouteImport.update({
+
+const WorkflowStateRoute = WorkflowStateImport.update({
   id: '/workflow/$state',
   path: '/workflow/$state',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const TasksTaskIdRoute = TasksTaskIdRouteImport.update({
+
+const TasksTaskIdRoute = TasksTaskIdImport.update({
   id: '/tasks/$taskId',
   path: '/tasks/$taskId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const ParentsParentIdRoute = ParentsParentIdRouteImport.update({
+
+const ParentsParentIdRoute = ParentsParentIdImport.update({
   id: '/parents/$parentId',
   path: '/parents/$parentId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const TasksParentIdSubtaskIdRoute = TasksParentIdSubtaskIdRouteImport.update({
+
+const TasksParentIdSubtaskIdRoute = TasksParentIdSubtaskIdImport.update({
   id: '/tasks/$parentId/$subtaskId',
   path: '/tasks/$parentId/$subtaskId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const ParentsParentIdSubtaskIdRoute =
-  ParentsParentIdSubtaskIdRouteImport.update({
-    id: '/$subtaskId',
-    path: '/$subtaskId',
-    getParentRoute: () => ParentsParentIdRoute,
-  } as any)
+
+const ParentsParentIdSubtaskIdRoute = ParentsParentIdSubtaskIdImport.update({
+  id: '/$subtaskId',
+  path: '/$subtaskId',
+  getParentRoute: () => ParentsParentIdRoute,
+} as any)
+
+// Populate the FileRoutesByPath interface
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/assistant': {
+      id: '/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AssistantImport
+      parentRoute: typeof rootRoute
+    }
+    '/autonomous': {
+      id: '/autonomous'
+      path: '/autonomous'
+      fullPath: '/autonomous'
+      preLoaderRoute: typeof AutonomousImport
+      parentRoute: typeof rootRoute
+    }
+    '/parents/$parentId': {
+      id: '/parents/$parentId'
+      path: '/parents/$parentId'
+      fullPath: '/parents/$parentId'
+      preLoaderRoute: typeof ParentsParentIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/tasks/$taskId': {
+      id: '/tasks/$taskId'
+      path: '/tasks/$taskId'
+      fullPath: '/tasks/$taskId'
+      preLoaderRoute: typeof TasksTaskIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/workflow/$state': {
+      id: '/workflow/$state'
+      path: '/workflow/$state'
+      fullPath: '/workflow/$state'
+      preLoaderRoute: typeof WorkflowStateImport
+      parentRoute: typeof rootRoute
+    }
+    '/parents/': {
+      id: '/parents/'
+      path: '/parents'
+      fullPath: '/parents'
+      preLoaderRoute: typeof ParentsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/tasks/': {
+      id: '/tasks/'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/workflow/': {
+      id: '/workflow/'
+      path: '/workflow'
+      fullPath: '/workflow'
+      preLoaderRoute: typeof WorkflowIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/parents/$parentId/$subtaskId': {
+      id: '/parents/$parentId/$subtaskId'
+      path: '/$subtaskId'
+      fullPath: '/parents/$parentId/$subtaskId'
+      preLoaderRoute: typeof ParentsParentIdSubtaskIdImport
+      parentRoute: typeof ParentsParentIdImport
+    }
+    '/tasks/$parentId/$subtaskId': {
+      id: '/tasks/$parentId/$subtaskId'
+      path: '/tasks/$parentId/$subtaskId'
+      fullPath: '/tasks/$parentId/$subtaskId'
+      preLoaderRoute: typeof TasksParentIdSubtaskIdImport
+      parentRoute: typeof rootRoute
+    }
+  }
+}
+
+// Create and export the route tree
+
+interface ParentsParentIdRouteChildren {
+  ParentsParentIdSubtaskIdRoute: typeof ParentsParentIdSubtaskIdRoute
+}
+
+const ParentsParentIdRouteChildren: ParentsParentIdRouteChildren = {
+  ParentsParentIdSubtaskIdRoute: ParentsParentIdSubtaskIdRoute,
+}
+
+const ParentsParentIdRouteWithChildren = ParentsParentIdRoute._addFileChildren(
+  ParentsParentIdRouteChildren,
+)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -91,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/parents/$parentId/$subtaskId': typeof ParentsParentIdSubtaskIdRoute
   '/tasks/$parentId/$subtaskId': typeof TasksParentIdSubtaskIdRoute
 }
+
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/assistant': typeof AssistantRoute
@@ -104,8 +216,9 @@ export interface FileRoutesByTo {
   '/parents/$parentId/$subtaskId': typeof ParentsParentIdSubtaskIdRoute
   '/tasks/$parentId/$subtaskId': typeof TasksParentIdSubtaskIdRoute
 }
+
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
+  __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/assistant': typeof AssistantRoute
   '/autonomous': typeof AutonomousRoute
@@ -118,6 +231,7 @@ export interface FileRoutesById {
   '/parents/$parentId/$subtaskId': typeof ParentsParentIdSubtaskIdRoute
   '/tasks/$parentId/$subtaskId': typeof TasksParentIdSubtaskIdRoute
 }
+
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
@@ -160,6 +274,7 @@ export interface FileRouteTypes {
     | '/tasks/$parentId/$subtaskId'
   fileRoutesById: FileRoutesById
 }
+
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AssistantRoute: typeof AssistantRoute
@@ -173,100 +288,6 @@ export interface RootRouteChildren {
   TasksParentIdSubtaskIdRoute: typeof TasksParentIdSubtaskIdRoute
 }
 
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/autonomous': {
-      id: '/autonomous'
-      path: '/autonomous'
-      fullPath: '/autonomous'
-      preLoaderRoute: typeof AutonomousRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/assistant': {
-      id: '/assistant'
-      path: '/assistant'
-      fullPath: '/assistant'
-      preLoaderRoute: typeof AssistantRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workflow/': {
-      id: '/workflow/'
-      path: '/workflow'
-      fullPath: '/workflow'
-      preLoaderRoute: typeof WorkflowIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tasks/': {
-      id: '/tasks/'
-      path: '/tasks'
-      fullPath: '/tasks'
-      preLoaderRoute: typeof TasksIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/parents/': {
-      id: '/parents/'
-      path: '/parents'
-      fullPath: '/parents'
-      preLoaderRoute: typeof ParentsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workflow/$state': {
-      id: '/workflow/$state'
-      path: '/workflow/$state'
-      fullPath: '/workflow/$state'
-      preLoaderRoute: typeof WorkflowStateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tasks/$taskId': {
-      id: '/tasks/$taskId'
-      path: '/tasks/$taskId'
-      fullPath: '/tasks/$taskId'
-      preLoaderRoute: typeof TasksTaskIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/parents/$parentId': {
-      id: '/parents/$parentId'
-      path: '/parents/$parentId'
-      fullPath: '/parents/$parentId'
-      preLoaderRoute: typeof ParentsParentIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tasks/$parentId/$subtaskId': {
-      id: '/tasks/$parentId/$subtaskId'
-      path: '/tasks/$parentId/$subtaskId'
-      fullPath: '/tasks/$parentId/$subtaskId'
-      preLoaderRoute: typeof TasksParentIdSubtaskIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/parents/$parentId/$subtaskId': {
-      id: '/parents/$parentId/$subtaskId'
-      path: '/$subtaskId'
-      fullPath: '/parents/$parentId/$subtaskId'
-      preLoaderRoute: typeof ParentsParentIdSubtaskIdRouteImport
-      parentRoute: typeof ParentsParentIdRoute
-    }
-  }
-}
-
-interface ParentsParentIdRouteChildren {
-  ParentsParentIdSubtaskIdRoute: typeof ParentsParentIdSubtaskIdRoute
-}
-
-const ParentsParentIdRouteChildren: ParentsParentIdRouteChildren = {
-  ParentsParentIdSubtaskIdRoute: ParentsParentIdSubtaskIdRoute,
-}
-
-const ParentsParentIdRouteWithChildren = ParentsParentIdRoute._addFileChildren(
-  ParentsParentIdRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AssistantRoute: AssistantRoute,
@@ -279,6 +300,66 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowIndexRoute: WorkflowIndexRoute,
   TasksParentIdSubtaskIdRoute: TasksParentIdSubtaskIdRoute,
 }
-export const routeTree = rootRouteImport
+
+export const routeTree = rootRoute
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+/* ROUTE_MANIFEST_START
+{
+  "routes": {
+    "__root__": {
+      "filePath": "__root.tsx",
+      "children": [
+        "/",
+        "/assistant",
+        "/autonomous",
+        "/parents/$parentId",
+        "/tasks/$taskId",
+        "/workflow/$state",
+        "/parents/",
+        "/tasks/",
+        "/workflow/",
+        "/tasks/$parentId/$subtaskId"
+      ]
+    },
+    "/": {
+      "filePath": "index.tsx"
+    },
+    "/assistant": {
+      "filePath": "assistant.tsx"
+    },
+    "/autonomous": {
+      "filePath": "autonomous.tsx"
+    },
+    "/parents/$parentId": {
+      "filePath": "parents/$parentId.tsx",
+      "children": [
+        "/parents/$parentId/$subtaskId"
+      ]
+    },
+    "/tasks/$taskId": {
+      "filePath": "tasks/$taskId.tsx"
+    },
+    "/workflow/$state": {
+      "filePath": "workflow/$state.tsx"
+    },
+    "/parents/": {
+      "filePath": "parents/index.tsx"
+    },
+    "/tasks/": {
+      "filePath": "tasks/index.tsx"
+    },
+    "/workflow/": {
+      "filePath": "workflow/index.tsx"
+    },
+    "/parents/$parentId/$subtaskId": {
+      "filePath": "parents/$parentId.$subtaskId.tsx",
+      "parent": "/parents/$parentId"
+    },
+    "/tasks/$parentId/$subtaskId": {
+      "filePath": "tasks/$parentId/$subtaskId.tsx"
+    }
+  }
+}
+ROUTE_MANIFEST_END */
