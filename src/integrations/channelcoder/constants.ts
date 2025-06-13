@@ -3,9 +3,9 @@
  */
 
 import { join } from 'node:path';
+import type { IConfigurationManager } from '../../core/config/types.js';
 import { WorktreePathResolver } from '../../core/environment/worktree-path-resolver.js';
 import { TaskStoragePathEncoder } from '../../core/task-storage-path-encoder.js';
-import type { IConfigurationManager } from '../../core/config/types.js';
 
 // Session storage configuration
 export const SESSION_STORAGE = {
@@ -24,19 +24,19 @@ export const SESSION_STORAGE = {
  */
 export function getCentralizedSessionPaths(config?: IConfigurationManager) {
   // Get main repository root to ensure all worktrees share the same storage
-  const resolver = new WorktreePathResolver(config);
+  // If interface provided, let WorktreePathResolver use its default getInstance()
+  const resolver = new WorktreePathResolver();
   const mainRepoRoot = resolver.getMainRepositoryRootSync();
-  
+
   // Use the same encoder as task storage for consistency
   const storageRoot = TaskStoragePathEncoder.getProjectStorageRoot(mainRepoRoot);
-  
+
   return {
     baseDir: join(storageRoot, 'sessions'),
     sessionsDir: join(storageRoot, 'sessions', SESSION_STORAGE.SESSIONS_SUBDIR),
     logsDir: join(storageRoot, 'sessions', SESSION_STORAGE.LOGS_SUBDIR),
   };
 }
-
 
 // Session types
 export const SESSION_TYPES = {

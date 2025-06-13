@@ -36,12 +36,15 @@ export async function handleInitCommand(options: {
 
     console.log('\n🚀 Welcome to Scopecraft!\n');
     console.log(`Initialized project in: ${initRoot}`);
-    console.log('✓ Created workflow structure:');
-    console.log('  .tasks/backlog/     📋 Tasks waiting to be worked on');
-    console.log('  .tasks/current/     🚀 Tasks actively being worked on');
-    console.log('  .tasks/archive/     ✅ Completed tasks (organized by date)');
+    console.log('✓ Created hybrid storage structure:');
+    console.log('\n📁 Repository (.tasks/):');
     console.log('  .tasks/.templates/  📝 Task templates');
-    console.log('✓ Generated quick start guide\n');
+    console.log('  .tasks/.modes/      🎯 Execution modes');
+    console.log('\n☁️  Centralized (~/.scopecraft/):');
+    console.log('  tasks/backlog/      📋 Tasks waiting to be worked on');
+    console.log('  tasks/current/      🚀 Tasks actively being worked on');
+    console.log('  tasks/archive/      ✅ Completed tasks (organized by date)');
+    console.log('\n✓ Ready to start!\n');
 
     console.log('🎯 Next Steps:');
     console.log('  1. Create your first task:');

@@ -6,14 +6,18 @@
 
 import { existsSync } from 'node:fs';
 import { detectStructureVersion, ensureWorkflowDirectories } from './directory-utils.js';
+import { initializeTemplates } from './template-manager.js';
 import type { ProjectConfig } from './types.js';
 
 /**
  * Initialize  project structure
  */
 export function initializeProjectStructure(projectRoot: string, config?: ProjectConfig): void {
-  // Create workflow directories
+  // Create workflow directories (handles both centralized and repo paths)
   ensureWorkflowDirectories(projectRoot, config);
+
+  // Initialize templates in the repository
+  initializeTemplates(projectRoot);
 }
 
 /**

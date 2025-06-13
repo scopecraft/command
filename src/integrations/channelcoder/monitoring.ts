@@ -17,7 +17,8 @@ import {
   streamParser,
 } from 'channelcoder';
 import { ConfigurationManager } from '../../core/config/configuration-manager.js';
-import { getCentralizedSessionPaths, SESSION_STORAGE } from './constants.js';
+import { PATH_TYPES, createPathContext, resolvePath } from '../../core/paths/index.js';
+import { SESSION_STORAGE, getCentralizedSessionPaths } from './constants.js';
 import { type ScopecraftSessionMetadata, ScopecraftSessionStorage } from './session-storage.js';
 
 export interface SessionStats {
@@ -371,8 +372,12 @@ async function determineSessionStatus(
   projectRoot?: string
 ): Promise<'running' | 'completed' | 'failed'> {
   try {
-    const PROJECT_ROOT = projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-    const logPath = path.isAbsolute(logFile) ? logFile : path.join(PROJECT_ROOT, logFile);
+    // Use centralized path resolver for session logs
+    const context = createPathContext(projectRoot || process.cwd());
+    const sessionsPath = resolvePath(PATH_TYPES.SESSIONS, context);
+    const logPath = path.isAbsolute(logFile)
+      ? logFile
+      : path.join(sessionsPath, SESSION_STORAGE.LOGS_SUBDIR, logFile);
 
     if (!existsSync(logPath)) return 'failed';
 
@@ -396,8 +401,12 @@ async function parseSessionStats(logFile: string, projectRoot?: string): Promise
   };
 
   try {
-    const PROJECT_ROOT = projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-    const logPath = path.isAbsolute(logFile) ? logFile : path.join(PROJECT_ROOT, logFile);
+    // Use centralized path resolver for session logs
+    const context = createPathContext(projectRoot || process.cwd());
+    const sessionsPath = resolvePath(PATH_TYPES.SESSIONS, context);
+    const logPath = path.isAbsolute(logFile)
+      ? logFile
+      : path.join(sessionsPath, SESSION_STORAGE.LOGS_SUBDIR, logFile);
 
     if (!existsSync(logPath)) return stats;
 
@@ -455,8 +464,12 @@ async function getRecentLogLines(
   projectRoot?: string
 ): Promise<string[]> {
   try {
-    const PROJECT_ROOT = projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-    const logPath = path.isAbsolute(logFile) ? logFile : path.join(PROJECT_ROOT, logFile);
+    // Use centralized path resolver for session logs
+    const context = createPathContext(projectRoot || process.cwd());
+    const sessionsPath = resolvePath(PATH_TYPES.SESSIONS, context);
+    const logPath = path.isAbsolute(logFile)
+      ? logFile
+      : path.join(sessionsPath, SESSION_STORAGE.LOGS_SUBDIR, logFile);
 
     if (!existsSync(logPath)) return [];
 

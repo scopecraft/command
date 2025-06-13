@@ -16,6 +16,8 @@ import {
 } from 'node:fs';
 import { basename, dirname, join, relative, sep } from 'node:path';
 import { WorktreePathResolver } from './environment/worktree-path-resolver.js';
+// MIGRATION: Using new centralized path resolver
+import { PATH_TYPES, createPathContext, resolvePath } from './paths/index.js';
 import { TaskStoragePathEncoder } from './task-storage-path-encoder.js';
 import type { ProjectConfig, StructureVersion, TaskLocation, WorkflowState } from './types.js';
 
@@ -33,7 +35,7 @@ export function getTasksDirectory(projectRoot: string): string {
   // Get the main repository root to ensure all worktrees share the same storage
   const resolver = new WorktreePathResolver();
   const mainRepoRoot = resolver.getMainRepositoryRootSync();
-  
+
   // Encode the main repository path for consistent storage location
   const encoded = TaskStoragePathEncoder.encode(mainRepoRoot);
   const centralizedPath = join(
@@ -88,16 +90,41 @@ export function getArchiveDirectory(
 
 /**
  * Get templates directory path
+ *
+ * @deprecated Since v2.1.0 - Use resolvePath(PATH_TYPES.TEMPLATES, context) instead
+ * @migration This function now delegates to the new path resolver
+ * @removeIn v3.0.0
  */
 export function getTemplatesDirectory(projectRoot: string): string {
-  return join(getTasksDirectory(projectRoot), '.templates');
+  // MIGRATION: Now using centralized path resolver
+  // OLD: return join(getTasksDirectory(projectRoot), '.templates');
+  const context = createPathContext(projectRoot);
+  return resolvePath(PATH_TYPES.TEMPLATES, context);
 }
 
 /**
  * Get config directory path
+ *
+ * @deprecated Since v2.1.0 - Use resolvePath(PATH_TYPES.CONFIG, context) instead
+ * @migration This function now delegates to the new path resolver
+ * @removeIn v3.0.0
  */
 export function getConfigDirectory(projectRoot: string): string {
-  return join(getTasksDirectory(projectRoot), '.config');
+  // MIGRATION: Now using centralized path resolver
+  // OLD: return join(getTasksDirectory(projectRoot), '.config');
+  const context = createPathContext(projectRoot);
+  return resolvePath(PATH_TYPES.CONFIG, context);
+}
+
+/**
+ * Get modes directory path
+ *
+ * @since v2.1.0
+ * NEW: Added to support centralized path resolution
+ */
+export function getModesDirectory(projectRoot: string): string {
+  const context = createPathContext(projectRoot);
+  return resolvePath(PATH_TYPES.MODES, context);
 }
 
 /**
@@ -120,13 +147,28 @@ export function ensureWorkflowDirectories(projectRoot: string, config?: ProjectC
     }
   }
 
-  // Create .templates directory
-  const templatesDir = getTemplatesDirectory(projectRoot);
+  // MIGRATION NOTE: Templates and modes now properly created in repository
+  // while tasks remain centralized
+
+  // Create repo-based directories for templates and modes
+  const repoTasksDir = join(projectRoot, '.tasks');
+  if (!existsSync(repoTasksDir)) {
+    mkdirSync(repoTasksDir, { recursive: true });
+  }
+
+  // Create .templates directory in repo
+  const templatesDir = join(repoTasksDir, '.templates');
   if (!existsSync(templatesDir)) {
     mkdirSync(templatesDir, { recursive: true });
   }
 
-  // Create .config directory
+  // Create .modes directory in repo
+  const modesDir = join(repoTasksDir, '.modes');
+  if (!existsSync(modesDir)) {
+    mkdirSync(modesDir, { recursive: true });
+  }
+
+  // Create .config directory (centralized)
   const configDir = getConfigDirectory(projectRoot);
   if (!existsSync(configDir)) {
     mkdirSync(configDir, { recursive: true });
