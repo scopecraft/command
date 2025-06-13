@@ -359,10 +359,7 @@ function buildChannelCoderCommand(
   // Build command with multiple --data flags for better shell compatibility
   let command = `channelcoder "${promptPath}"`;
   
-  // Add worktree flag if provided
-  if (options.worktree) {
-    command += ` --worktree "${options.worktree}"`;
-  }
+  // Note: We don't pass --worktree since tmux already sets the working directory with -c flag
   
   // Add each data field as a separate --data flag
   for (const [key, value] of Object.entries(options.data)) {
