@@ -201,6 +201,38 @@ Any service can be replaced with an alternative implementation that maintains th
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Storage Service
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     STORAGE SERVICE                              │
+│              (Task Storage Management)                           │
+│                                                                  │
+│  Responsibility: Manage task storage location & access           │
+│                                                                  │
+│  Core Operations:                                                │
+│  • getStoragePath(projectPath) → string                         │
+│  • resolveTaskPath(projectPath, taskId) → string               │
+│  • encodeProjectPath(path) → string                             │
+│  • decodeProjectPath(encoded) → string                          │
+│  • ensureStorageStructure(projectPath) → void                  │
+│                                                                  │
+│  Storage Modes:                                                  │
+│  • Legacy: .tasks/ in repository                                │
+│  • Centralized: ~/.scopecraft/projects/<encoded-path>/         │
+│                                                                  │
+│  Key Components:                                                 │
+│  • TaskStoragePathEncoder: Path encoding/decoding               │
+│  • ConfigurationManager: Storage mode configuration             │
+│  • storage-utils: Path resolution utilities                     │
+│                                                                  │
+│  Does NOT:                                                       │
+│  • Read/write task content (Task Service handles that)         │
+│  • Manage git operations                                        │
+│  • Handle authentication                                        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ## Service Interactions
 
 ```
@@ -249,6 +281,7 @@ Any service can be replaced with an alternative implementation that maintains th
 | Context | Information gathering, prompt building | Data modification, session execution |
 | Environment | Execution contexts, isolation | AI sessions, task management |
 | Orchestration | Workflow coordination, queuing | Service implementation, data storage |
+| Storage | Path resolution, storage mode logic | Task content, file I/O operations |
 
 ### Communication Rules
 
@@ -300,6 +333,11 @@ src/services/
 │   ├── session.interface.ts
 │   ├── session.types.ts
 │   └── session.test.ts
+├── storage/
+│   ├── storage.service.ts
+│   ├── TaskStoragePathEncoder.ts
+│   ├── storage-utils.ts
+│   └── storage.test.ts
 └── [other services...]
 ```
 

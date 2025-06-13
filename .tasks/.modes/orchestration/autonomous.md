@@ -67,21 +67,21 @@ First, determine the execution mode from task metadata, then execute with the ap
    - `mode:design` → Load design mode
    - `mode:implementation` → Load implementation mode
    - `mode:diagnosis` → Load diagnosis mode
-   
+
    If no explicit mode tag, infer from context:
    - `type:spike` + research keywords → Exploration
    - `type:feature` + "design" in title → Design
    - `type:feature` + implementation keywords → Implementation
    - `type:bug` → Diagnosis
-   
+
 3. **Load Appropriate Mode Guidance**
    Based on identified mode:
    - List available options: `ls .tasks/.modes/{mode}/` to see all variants
    - Select most relevant variant based on task context, or use base.md
    - Load `.tasks/.modes/{mode}/area/{area}.md` for specific patterns
    - List and load relevant files from `.tasks/.modes/guidance/` based on context
-   
-   Note: Use `ls` to discover available mode variants and guidance files. 
+
+   Note: Use `ls -la` USING BASH (not the LS tool) to discover available mode variants and guidance files.
    Let the task context guide your selection rather than following rigid rules.
 
 4. **Document Mode Selection**
@@ -107,7 +107,7 @@ After determining the mode, adopt the appropriate mindset:
 - Use both internal (codebase) and external (web) research
 - Structure deliverable as research findings
 
-### Design Mode  
+### Design Mode
 - Focus on technical decisions and architecture
 - Document options and trade-offs
 - Create design artifacts (diagrams, interfaces)
@@ -159,7 +159,7 @@ Based on the task's area and type, adopt the appropriate professional mindset:
 - **Maintainability** - Readable, testable, reusable code
 - **Performance** - Consider re-renders, memoization when needed
 
-### API/Backend Tasks  
+### API/Backend Tasks
 - **Think like a senior backend engineer** - Error handling, validation, security
 - **Clean architecture** - Layers, abstractions, single responsibility
 - **Data integrity** - Proper validation, transactions, consistency

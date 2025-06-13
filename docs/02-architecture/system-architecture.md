@@ -245,12 +245,54 @@ The system is implemented through distinct layers that can be composed:
                          ┌───────▼────────┐
                          │ STORAGE LAYER  │
                          │                 │
-                         │ • .tasks/      │
-                         │ • .scopecraft/ │
-                         │ • Git repos    │
-                         │ • File system  │
-                         └─────────────────┘
+                         │ Two Storage Modes:    │
+                         │                       │
+                         │ Legacy Mode:          │
+                         │ • .tasks/ in repo     │
+                         │ • Local to project    │
+                         │                       │
+                         │ Centralized Mode:     │
+                         │ • ~/.scopecraft/      │
+                         │   projects/           │
+                         │ • Shared workspace    │
+                         │ • Project isolation   │
+                         │                       │
+                         │ Common:               │
+                         │ • Git repos           │
+                         │ • File system         │
+                         │ • docs/work/          │
+                         └───────────────────────┘
 ```
+
+### Storage Architecture
+
+The storage layer supports two modes, controlled by feature flags:
+
+#### Legacy Mode (Default)
+- Tasks stored in `.tasks/` directory within the repository
+- Simple, self-contained approach
+- Good for single-project workflows
+- All task data travels with the repository
+
+#### Centralized Mode (New)
+- Tasks stored in `~/.scopecraft/projects/` directory structure
+- Projects identified by encoded path (base64url encoding)
+- Enables cross-project workflows and shared workspaces
+- Task data separate from repository (not in version control)
+- Work documents remain in `docs/work/` within repository
+
+#### Storage Path Encoding
+The centralized mode uses `TaskStoragePathEncoder` to create unique project identifiers:
+- Converts absolute project paths to base64url-encoded strings
+- Handles path normalization and special characters
+- Ensures consistent project identification across systems
+- Example: `/Users/name/projects/my-app` → `dXNlcnMtbmFtZS1wcm9qZWN0cy1teS1hcHA=`
+
+#### Migration Between Modes
+- Controlled by `storageMode` configuration flag
+- Migration script available for existing projects
+- Both modes can coexist during transition period
+- New projects use mode specified in global configuration
 
 ## Key Principles
 

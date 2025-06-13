@@ -28,4 +28,4 @@ fi
 
 # Execute using the new dispatch command with auto mode
 # The dispatch command will handle parentId if provided as part of task resolution
-exec bun run dev:cli dispatch "$1" --mode auto --exec detached
+exec bun run dev:cli dispatch "$1" --mode auto --exec tmux

@@ -6,6 +6,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ConfigurationManager } from '../../../core/config/configuration-manager.js';
+// MIGRATION: Using centralized path resolver
+import { PATH_TYPES, createPathContext, resolvePath } from '../../../core/paths/index.js';
 import type { ProjectConfig } from '../../../core/types.js';
 
 /**
@@ -30,7 +32,10 @@ export function getConfigManager(): ConfigurationManager {
  * Returns undefined if file doesn't exist or is invalid
  */
 export function loadProjectConfig(projectRoot: string): ProjectConfig | undefined {
-  const configPath = join(projectRoot, '.tasks', '.config', 'project.json');
+  // MIGRATION: Using centralized path resolver
+  const context = createPathContext(projectRoot);
+  const configDir = resolvePath(PATH_TYPES.CONFIG, context);
+  const configPath = join(configDir, 'project.json');
 
   if (!existsSync(configPath)) {
     return undefined;

@@ -17,7 +17,8 @@ import {
   streamParser,
 } from 'channelcoder';
 import { ConfigurationManager } from '../../core/config/configuration-manager.js';
-import { SESSION_STORAGE, getSessionStorageRoot } from './constants.js';
+import { PATH_TYPES, createPathContext, resolvePath } from '../../core/paths/index.js';
+import { SESSION_STORAGE, getCentralizedSessionPaths } from './constants.js';
 import { type ScopecraftSessionMetadata, ScopecraftSessionStorage } from './session-storage.js';
 
 export interface SessionStats {
@@ -50,9 +51,9 @@ export interface LogEntry {
  * List all autonomous sessions with basic stats
  */
 export async function listAutonomousSessions(projectRoot?: string): Promise<SessionWithStats[]> {
-  const resolvedProjectRoot =
-    projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-  const baseDir = SESSION_STORAGE.getBaseDir(resolvedProjectRoot);
+  // Get centralized session paths
+  const paths = getCentralizedSessionPaths(ConfigurationManager.getInstance());
+  const baseDir = paths.baseDir;
 
   try {
     // Read info files directly from the sessions directory
@@ -71,13 +72,13 @@ export async function listAutonomousSessions(projectRoot?: string): Promise<Sess
           // Determine current status
           let currentStatus = sessionData.status;
           if (sessionData.logFile && currentStatus === 'running') {
-            currentStatus = await determineSessionStatus(sessionData.logFile, resolvedProjectRoot);
+            currentStatus = await determineSessionStatus(sessionData.logFile);
           }
 
           // Get basic stats
           let stats: SessionStats | undefined;
           if (sessionData.logFile) {
-            stats = await parseSessionStats(sessionData.logFile, resolvedProjectRoot);
+            stats = await parseSessionStats(sessionData.logFile);
           }
 
           return {
@@ -108,9 +109,9 @@ export async function getSessionDetails(
   taskId: string,
   projectRoot?: string
 ): Promise<SessionDetails | null> {
-  const resolvedProjectRoot =
-    projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-  const baseDir = SESSION_STORAGE.getBaseDir(resolvedProjectRoot);
+  // Get centralized session paths
+  const paths = getCentralizedSessionPaths(ConfigurationManager.getInstance());
+  const baseDir = paths.baseDir;
 
   try {
     // Find the most recent info file for this task
@@ -140,8 +141,8 @@ export async function getSessionDetails(
     let lastLogLines: string[] = [];
 
     if (sessionData.logFile) {
-      stats = await parseSessionStats(sessionData.logFile, resolvedProjectRoot);
-      lastLogLines = await getRecentLogLines(sessionData.logFile, 3, resolvedProjectRoot);
+      stats = await parseSessionStats(sessionData.logFile);
+      lastLogLines = await getRecentLogLines(sessionData.logFile, 3);
     }
 
     return {
@@ -270,9 +271,9 @@ function formatSessionLogs(entries: LogEntry[], limit: number): LogEntry[] {
  * Get recent log entries from all sessions
  */
 export async function getSessionLogs(limit = 50, projectRoot?: string): Promise<LogEntry[]> {
-  const resolvedProjectRoot =
-    projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-  const logDir = SESSION_STORAGE.getLogsDir(resolvedProjectRoot);
+  // Get centralized session paths
+  const paths = getCentralizedSessionPaths(ConfigurationManager.getInstance());
+  const logDir = paths.logsDir;
 
   // Step 1: Find and sort log files
   const logFiles = await findSessionLogFiles(logDir);
@@ -304,9 +305,9 @@ export function createSessionMonitor(
   onEvent: (event: MonitorEvent) => void,
   projectRoot?: string
 ): () => void {
-  const resolvedProjectRoot =
-    projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-  const LOG_DIR = SESSION_STORAGE.getLogsDir(resolvedProjectRoot);
+  // Get centralized session paths
+  const paths = getCentralizedSessionPaths(ConfigurationManager.getInstance());
+  const LOG_DIR = paths.logsDir;
 
   let cleanup: (() => void) | null = null;
 
@@ -371,8 +372,12 @@ async function determineSessionStatus(
   projectRoot?: string
 ): Promise<'running' | 'completed' | 'failed'> {
   try {
-    const PROJECT_ROOT = projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-    const logPath = path.isAbsolute(logFile) ? logFile : path.join(PROJECT_ROOT, logFile);
+    // Use centralized path resolver for session logs
+    const context = createPathContext(projectRoot || process.cwd());
+    const sessionsPath = resolvePath(PATH_TYPES.SESSIONS, context);
+    const logPath = path.isAbsolute(logFile)
+      ? logFile
+      : path.join(sessionsPath, SESSION_STORAGE.LOGS_SUBDIR, logFile);
 
     if (!existsSync(logPath)) return 'failed';
 
@@ -396,8 +401,12 @@ async function parseSessionStats(logFile: string, projectRoot?: string): Promise
   };
 
   try {
-    const PROJECT_ROOT = projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-    const logPath = path.isAbsolute(logFile) ? logFile : path.join(PROJECT_ROOT, logFile);
+    // Use centralized path resolver for session logs
+    const context = createPathContext(projectRoot || process.cwd());
+    const sessionsPath = resolvePath(PATH_TYPES.SESSIONS, context);
+    const logPath = path.isAbsolute(logFile)
+      ? logFile
+      : path.join(sessionsPath, SESSION_STORAGE.LOGS_SUBDIR, logFile);
 
     if (!existsSync(logPath)) return stats;
 
@@ -455,8 +464,12 @@ async function getRecentLogLines(
   projectRoot?: string
 ): Promise<string[]> {
   try {
-    const PROJECT_ROOT = projectRoot || getSessionStorageRoot(ConfigurationManager.getInstance());
-    const logPath = path.isAbsolute(logFile) ? logFile : path.join(PROJECT_ROOT, logFile);
+    // Use centralized path resolver for session logs
+    const context = createPathContext(projectRoot || process.cwd());
+    const sessionsPath = resolvePath(PATH_TYPES.SESSIONS, context);
+    const logPath = path.isAbsolute(logFile)
+      ? logFile
+      : path.join(sessionsPath, SESSION_STORAGE.LOGS_SUBDIR, logFile);
 
     if (!existsSync(logPath)) return [];
 

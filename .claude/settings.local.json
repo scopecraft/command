@@ -65,7 +65,10 @@
       "Bash(./auto --help)",
       "Bash(./orchestrate-auto:*)",
       "Bash(git rev-parse:*)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(./auto:*)",
+      "Bash(tmux kill-window:*)",
+      "Bash(gh label create:*)"
     ],
     "deny": []
   }

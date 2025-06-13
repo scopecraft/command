@@ -257,22 +257,32 @@ export async function loadSession(sessionName: string) {
  */
 export async function executeTmux(
   promptPath: string,
-  options: { taskId: string; worktree: string; data: Record<string, unknown>; dryRun?: boolean }
+  options: {
+    taskId: string;
+    worktree: string;
+    data: Record<string, unknown>;
+    dryRun?: boolean;
+  }
 ): Promise<ExecutionResult> {
-  const windowName = `scopecraft-${options.taskId}`;
+  // Sanitize window name - tmux has issues with certain characters
+  const sanitizedTaskId = options.taskId.replace(/[_]/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+  const windowName = `sc-${sanitizedTaskId}`;
 
   if (options.dryRun) {
     console.log('[DRY RUN] Would create tmux window:');
     console.log(`  Window: ${windowName}`);
-    console.log(`  Worktree: ${options.worktree}`);
-    console.log(
-      `  Command: cd "${options.worktree}" && claude "${promptPath}" --data '${JSON.stringify(options.data)}'`
-    );
+    console.log(`  Working Directory: ${options.worktree}`);
+    const command = buildChannelCoderCommand(promptPath, options);
+    console.log(`  Command: ${command}`);
     return { success: true, data: { dryRun: true } };
   }
 
   try {
     await createTmuxWindow(windowName, options.worktree);
+
+    // Add a small delay to ensure window is fully created
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     const command = buildChannelCoderCommand(promptPath, options);
     await runInTmux(windowName, command);
 
@@ -281,6 +291,7 @@ export async function executeTmux(
       data: {
         windowName,
         attachCommand: `tmux attach -t ${windowName}`,
+        taskId: options.taskId,
       },
     };
   } catch (error) {
@@ -321,10 +332,33 @@ async function createTmuxWindow(windowName: string, workingDir: string): Promise
  */
 function buildChannelCoderCommand(
   promptPath: string,
-  options: { data: Record<string, unknown> }
+  options: { data: Record<string, unknown>; worktree?: string }
 ): string {
-  const dataArg = JSON.stringify(options.data).replace(/"/g, '\\"');
-  return `claude "${promptPath}" --data "${dataArg}"`;
+  // Build command with multiple --data flags for better shell compatibility
+  let command = `channelcoder "${promptPath}"`;
+
+  // Note: We don't pass --worktree since tmux already sets the working directory with -c flag
+
+  // Add each data field as a separate --data flag
+  for (const [key, value] of Object.entries(options.data)) {
+    // Convert value to string, handling different types
+    let valueStr = '';
+    if (value === null || value === undefined) {
+      valueStr = '';
+    } else if (typeof value === 'string') {
+      valueStr = value;
+    } else {
+      valueStr = JSON.stringify(value);
+    }
+
+    // Always quote the value for consistency and to handle empty strings
+    // Escape double quotes and wrap in double quotes
+    valueStr = `"${valueStr.replace(/"/g, '\\"')}"`;
+
+    command += ` --data ${key}=${valueStr}`;
+  }
+
+  return command;
 }
 
 /**

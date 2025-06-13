@@ -8,7 +8,7 @@ import * as path from 'node:path';
 import type { SessionInfo, SessionState, SessionStorage } from 'channelcoder';
 import { FileSessionStorage } from 'channelcoder';
 import type { IConfigurationManager } from '../../core/config/types.js';
-import { SESSION_STORAGE, getSessionStorageRoot } from './constants.js';
+import { SESSION_STORAGE, getCentralizedSessionPaths } from './constants.js';
 
 export interface SessionHistoryEntry {
   sessionId: string;
@@ -36,11 +36,21 @@ export class ScopecraftSessionStorage implements SessionStorage {
   private scopecraftMetadata?: ScopecraftSessionMetadata;
 
   constructor(config?: IConfigurationManager, baseDir?: string, projectRoot?: string) {
-    // Use ConfigurationManager if provided, otherwise fall back to legacy behavior
-    const resolvedProjectRoot = config ? getSessionStorageRoot(config) : projectRoot;
-    const finalBaseDir = baseDir || SESSION_STORAGE.getBaseDir(resolvedProjectRoot);
-    this.baseStorage = new FileSessionStorage(SESSION_STORAGE.getSessionsDir(resolvedProjectRoot));
-    this.infoDir = finalBaseDir;
+    // Get centralized session paths - all worktrees share the same storage
+    const paths = getCentralizedSessionPaths(config);
+    
+    // Use centralized paths, ignoring legacy parameters
+    this.baseStorage = new FileSessionStorage(paths.sessionsDir);
+    this.infoDir = paths.baseDir;
+    
+    // Ensure directories exist
+    this.ensureDirectories().catch(console.error);
+  }
+  
+  private async ensureDirectories(): Promise<void> {
+    const paths = getCentralizedSessionPaths();
+    await fs.mkdir(paths.sessionsDir, { recursive: true });
+    await fs.mkdir(paths.logsDir, { recursive: true });
   }
 
   // Method to set metadata before saving

@@ -111,6 +111,19 @@ init_root /projects/myapp/backend
 
 See [Project Root Configuration Guide](docs/project-root-configuration-guide.md) for detailed setup instructions.
 
+## Getting Started
+
+```bash
+# Initialize Scopecraft in your project
+sc init
+
+# Create your first task
+sc task create --title "My first feature" --type feature
+
+# List your tasks
+sc task list
+```
+
 ## Quick Start
 
 ### Basic Task Management

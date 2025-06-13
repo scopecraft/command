@@ -399,7 +399,18 @@ Parent Task: {parentId}
 Task: {taskId}
 </task_to_orchestrate>
 
-{additionalInstructions ? "<additional_instructions>\n## Additional User Instructions\n\n" + additionalInstructions + "\n\nIncorporate these instructions into your orchestration approach.\n</additional_instructions>\n\n" : ""}<best_practices>
+{additionalInstructions ? "<additional_instructions>\n## Additional User Instructions\n\n" + additionalInstructions + "\n\nIncorporate these instructions into your orchestration approach.\n</additional_instructions>\n\n" : ""}<task_completion>
+## Task Completion
+
+To merge completed tasks back to main:
+```bash
+bun run finish <taskId>  # Checks task status, closes worktree, merges branch
+```
+
+The script handles errors clearly (uncommitted changes, merge conflicts, etc).
+</task_completion>
+
+<best_practices>
 ## Orchestration Best Practices
 
 1. **Complete Cycles**: Handle full orchestration including task creation
@@ -408,4 +419,5 @@ Task: {taskId}
 4. **Clear Documentation**: Log all decisions and actions
 5. **Human Readable**: Make state and next steps obvious
 6. **Respect Modes**: Auto mode executes, interactive mode discusses
+7. **Clean Up**: Use `bun run finish <taskId>` to complete and merge finished tasks
 </best_practices>
