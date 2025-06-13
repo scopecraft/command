@@ -52,194 +52,25 @@ We will adopt **Orama** as our primary search solution, with **MiniSearch** docu
 | **Update Model** | Batch vs Incremental | Incremental | Real-time updates, better UX |
 | **Integration Approach** | Direct vs Adapter pattern | Adapter pattern | Library independence |
 
-## Implementation Architecture
+## Technical Architecture
 
-### Directory Structure
+### Storage Location
 
-**Code Structure:**
-```
-core/search/
-├── search-service.ts         # Main search interface
-├── adapters/
-│   ├── orama-adapter.ts     # Orama implementation
-│   └── search-adapter.ts    # Base adapter interface
-├── index-manager.ts         # Persistence & incremental updates
-├── ranking/
-│   └── version-aware.ts     # Custom ranking algorithms
-└── types.ts                 # Search schemas and types
-
-mcp/handlers/
-├── search-handlers.ts       # MCP search endpoints
-
-tasks-ui/components/search/
-├── SearchBar.tsx           # Main search interface
-├── SearchFilters.tsx       # Faceted search filters
-└── SearchResults.tsx       # Results display
-```
-
-**Data Storage (following ADR-001 pattern):**
+Search indexes will be stored in the centralized storage location following ADR-001:
 ```
 ~/.scopecraft/
 └── projects/
-    └── users-davidpaquet-projects-scopecraft-v2/
-        ├── tasks/           # Task storage
-        ├── sessions/        # Session storage
+    └── {encoded-project-path}/
         └── search/          # Search indexes
-            ├── index.json   # Orama search index
-            └── metadata.json # Index version, last update
 ```
 
-### Core Search Service Interface
-```typescript
-export interface SearchService {
-  // Core operations
-  search(query: string, options?: SearchOptions): Promise<SearchResults>;
-  index(item: SearchableItem): Promise<void>;
-  update(id: string, item: Partial<SearchableItem>): Promise<void>;
-  remove(id: string): Promise<void>;
-  
-  // Bulk operations
-  reindex(): Promise<void>;
-  clear(): Promise<void>;
-  
-  // Persistence
-  save(): Promise<void>;
-  load(): Promise<void>;
-}
+### Integration Approach
 
-export interface SearchOptions {
-  type?: ContentType[];        // Filter by content type
-  facets?: Record<string, any>; // Faceted search filters
-  limit?: number;              // Result limit
-  offset?: number;             // Pagination offset
-}
-```
+- **Adapter Pattern**: Search implementation will be abstracted behind an interface to allow future library changes
+- **Service Layer**: Search functionality will be implemented as a service in the core layer
+- **Path Resolution**: Will use the existing path resolution system by adding SEARCH to PATH_TYPES
 
-### Orama Configuration
-```typescript
-const searchSchema = {
-  id: 'string',
-  type: 'enum',              // task, document, session
-  title: 'string',
-  content: 'string',
-  metadata: {
-    status: 'string',
-    priority: 'string',
-    area: 'string',
-    tags: 'string[]',
-    assignee: 'string',
-    modified: 'number'      // For version-aware ranking
-  }
-};
 
-const oramaConfig = {
-  schema: searchSchema,
-  components: {
-    tokenizer: {
-      stemming: true,
-      stopWords: customStopWords
-    }
-  }
-};
-```
-
-### Search Storage Integration
-
-Following the established path resolution pattern, search will be added to the centralized storage system:
-
-**1. Add to PATH_TYPES (types.ts):**
-```typescript
-export const PATH_TYPES = {
-  TEMPLATES: 'templates',
-  MODES: 'modes',
-  TASKS: 'tasks',
-  SESSIONS: 'sessions',
-  CONFIG: 'config',
-  SEARCH: 'search',  // New path type
-} as const;
-```
-
-**2. Add strategy (strategies.ts):**
-```typescript
-/**
- * Centralized search strategy
- * Search indexes stored under ~/.scopecraft/projects/{encoded}/search/
- */
-export const centralizedSearchStrategy: PathStrategy = (context: PathContext): string => {
-  return join(centralizedStrategy(context), 'search');
-};
-
-// Add to pathStrategies mapping
-[PATH_TYPES.SEARCH]: [
-  centralizedSearchStrategy, // Only: ~/.scopecraft/projects/{encoded}/search/
-],
-```
-
-**3. Add convenience function (path-resolver.ts):**
-```typescript
-export function getSearchPath(context: PathContext): string {
-  return resolvePath(PATH_TYPES.SEARCH, context);
-}
-```
-
-**4. Use in SearchService:**
-```typescript
-export class SearchService {
-  constructor(private pathContext: PathContext) {}
-  
-  private getSearchStoragePath(): string {
-    return getSearchPath(this.pathContext);
-  }
-  
-  private getIndexPath(): string {
-    return join(this.getSearchStoragePath(), 'index.json');
-  }
-}
-```
-
-## Implementation Plan
-
-### Phase 2: Core Search Service (4-5 hours)
-
-**Task:** `design-core-search-service-{id}`
-- Define SearchService interface and types
-- Implement OramaAdapter with full functionality
-- Create IndexManager for persistence
-- Add version-aware ranking algorithm
-
-**Task:** `implement-search-indexing-{id}`
-- Index existing tasks on startup
-- Implement incremental updates
-- Add document indexing
-- Create reindexing command
-
-### Phase 3: Integration Layer (3-4 hours)
-
-**Task:** `implement-mcp-search-{id}`
-- Add search endpoints to MCP
-- Integrate with existing task/document handlers
-- Implement search result schemas
-- Add search method documentation
-
-**Task:** `implement-cli-search-{id}`
-- Add `sc search` command
-- Implement result formatting
-- Add search filters support
-- Create search help documentation
-
-### Phase 4: UI Components (4-5 hours)
-
-**Task:** `implement-search-ui-{id}`
-- Create SearchBar component
-- Implement real-time search
-- Add SearchFilters for faceted search
-- Create SearchResults display
-
-**Task:** `implement-search-ux-{id}`
-- Add keyboard shortcuts
-- Implement search history
-- Add result highlighting
-- Create empty state handling
 
 ## Risk Mitigation
 
@@ -261,24 +92,9 @@ export class SearchService {
    - Mitigation: Tunable ranking, user feedback
    - Solution: Iterative improvements based on usage
 
-## Migration Strategy
+## Future Migration Considerations
 
-### From No Search to Orama
-
-1. **Phase 1**: Install dependencies, create service structure
-2. **Phase 2**: Implement core service with basic indexing
-3. **Phase 3**: Add MCP/CLI integration
-4. **Phase 4**: Deploy UI components
-5. **Phase 5**: Monitor and optimize
-
-### Future Migration Path
-
-If Orama needs replacement:
-1. Implement new adapter following interface
-2. Run parallel indexing for comparison
-3. A/B test search quality
-4. Gradual rollout with feature flag
-5. Remove old adapter
+The adapter pattern ensures that if Orama needs replacement in the future, we can implement a new adapter following the same interface without disrupting the rest of the system. The centralized storage location also makes it easy to rebuild indexes with a different library if needed.
 
 ## Comparison with Alternatives
 
@@ -321,22 +137,9 @@ If Orama needs replacement:
 - **Query Performance**: 95% of queries <100ms
 - **Search Quality**: 90%+ relevant results in top-5
 - **Memory Usage**: Total footprint <50MB
-- **User Satisfaction**: Positive feedback on search accuracy
-- **Development Velocity**: Search features completed in 2 weeks
+- **Index Size**: <2x content size
+- **Startup Time**: <2 seconds with index loading
 
-## Future Enhancements
-
-### Near-term (3-6 months)
-- Session search integration
-- Search analytics and popular queries
-- Saved searches and alerts
-- Advanced query syntax
-
-### Long-term (6-12 months)
-- Vector embeddings for semantic search
-- Graph layer for relationship queries
-- Multi-language support
-- External knowledge base integration
 
 ## Dependencies
 
@@ -360,7 +163,7 @@ This ADR is approved based on:
 - ✅ Clean architecture with adapter pattern
 - ✅ Risk mitigation strategies identified
 
-**Status**: Ready for Phase 2 design and implementation
+**Status**: Approved for implementation
 
 ---
 
