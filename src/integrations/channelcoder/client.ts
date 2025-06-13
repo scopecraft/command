@@ -2,9 +2,14 @@
  * Simple ChannelCoder integration - function-based, no classes
  */
 
-import { type CCResult, type ClaudeOptions, claude, session } from 'channelcoder';
-import { ConfigurationManager } from '../../core/config/configuration-manager.js';
-import { ScopecraftSessionStorage } from './session-storage.js';
+import {
+  type CCResult,
+  type ClaudeOptions,
+  claude,
+  session,
+} from "channelcoder";
+import { ConfigurationManager } from "../../core/config/configuration-manager.js";
+import { ScopecraftSessionStorage } from "./session-storage.js";
 
 /**
  * Gets project root from configuration for cwd parameter
@@ -12,7 +17,7 @@ import { ScopecraftSessionStorage } from './session-storage.js';
 function getProjectRoot(config: ConfigurationManager): string {
   const rootConfig = config.getRootConfig();
   if (!rootConfig.validated || !rootConfig.path) {
-    throw new Error('No valid project root found for ChannelCoder operations');
+    throw new Error("No valid project root found for ChannelCoder operations");
   }
   return rootConfig.path;
 }
@@ -45,13 +50,13 @@ interface SessionSetup {
  */
 function handleDryRun(
   promptOrFile: string,
-  options: ScopecraftClaudeOptions
+  options: ScopecraftClaudeOptions,
 ): ExecutionResult | null {
   if (!options.dryRun) {
     return null;
   }
 
-  console.log('[DRY RUN] Would execute:');
+  console.log("[DRY RUN] Would execute:");
   console.log(`  Prompt/File: ${promptOrFile}`);
   console.log(`  Options: ${JSON.stringify(options, null, 2)}`);
   return { success: true, data: { dryRun: true } };
@@ -60,7 +65,9 @@ function handleDryRun(
 /**
  * Sets up session configuration for tracked execution
  */
-function setupTrackedSession(options: ScopecraftClaudeOptions): SessionSetup | null {
+function setupTrackedSession(
+  options: ScopecraftClaudeOptions,
+): SessionSetup | null {
   const taskId = options.data?.taskId as string | undefined;
   const parentId = options.data?.parentId as string | undefined;
   const sessionName = options.sessionName;
@@ -72,7 +79,8 @@ function setupTrackedSession(options: ScopecraftClaudeOptions): SessionSetup | n
   const config = ConfigurationManager.getInstance();
   const storage = new ScopecraftSessionStorage(config);
   const projectRoot = getProjectRoot(config);
-  const finalSessionName = sessionName || `task-${taskId || 'unknown'}-${Date.now()}`;
+  const finalSessionName =
+    sessionName || `task-${taskId || "unknown"}-${Date.now()}`;
 
   return {
     taskId,
@@ -88,13 +96,13 @@ function setupTrackedSession(options: ScopecraftClaudeOptions): SessionSetup | n
  * Determines session type based on execution options
  */
 function determineSessionType(options: ScopecraftClaudeOptions): string {
-  if (options.mode === 'interactive') {
-    return 'interactive';
+  if (options.mode === "interactive") {
+    return "interactive";
   }
   if (options.detached || options.docker) {
-    return 'autonomous-task';
+    return "autonomous-task";
   }
-  return 'planning';
+  return "planning";
 }
 
 /**
@@ -103,7 +111,7 @@ function determineSessionType(options: ScopecraftClaudeOptions): string {
 async function executeWithTracking(
   promptOrFile: string,
   options: ScopecraftClaudeOptions,
-  setup: SessionSetup
+  setup: SessionSetup,
 ): Promise<ExecutionResult> {
   const { taskId, parentId, sessionName, storage, projectRoot } = setup;
 
@@ -122,7 +130,7 @@ async function executeWithTracking(
       taskId,
       parentId,
       logFile: options.logFile,
-      status: 'running',
+      status: "running",
       type: sessionType,
     });
   }
@@ -133,7 +141,14 @@ async function executeWithTracking(
 
   // Handle detached mode if needed
   if (options.detached) {
-    await handleDetachedMode(storage, sessionName, result, taskId, parentId, options);
+    await handleDetachedMode(
+      storage,
+      sessionName,
+      result,
+      taskId,
+      parentId,
+      options,
+    );
   }
 
   return {
@@ -153,7 +168,7 @@ async function handleDetachedMode(
   result: CCResult,
   taskId?: string,
   parentId?: string,
-  options?: ScopecraftClaudeOptions
+  options?: ScopecraftClaudeOptions,
 ): Promise<void> {
   const pid = extractPidFromResult(result);
 
@@ -161,13 +176,13 @@ async function handleDetachedMode(
     taskId,
     parentId,
     logFile: options?.logFile,
-    status: 'running',
-    type: 'autonomous-task',
+    status: "running",
+    type: "autonomous-task",
     pid,
   });
 
   if (result.success && pid) {
-    console.log('Detached PID:', pid);
+    console.log("Detached PID:", pid);
   }
 }
 
@@ -175,7 +190,7 @@ async function handleDetachedMode(
  * Extracts PID from execution result
  */
 function extractPidFromResult(result: CCResult): number | undefined {
-  if (result.data && typeof result.data === 'object' && 'pid' in result.data) {
+  if (result.data && typeof result.data === "object" && "pid" in result.data) {
     return (result.data as Record<string, unknown>).pid as number;
   }
   return undefined;
@@ -186,7 +201,7 @@ function extractPidFromResult(result: CCResult): number | undefined {
  */
 async function executeDirectly(
   promptOrFile: string,
-  options: ScopecraftClaudeOptions
+  options: ScopecraftClaudeOptions,
 ): Promise<ExecutionResult> {
   const config = ConfigurationManager.getInstance();
   const projectRoot = getProjectRoot(config);
@@ -204,7 +219,7 @@ async function executeDirectly(
  */
 export async function execute(
   promptOrFile: string,
-  options: ScopecraftClaudeOptions = {}
+  options: ScopecraftClaudeOptions = {},
 ): Promise<ExecutionResult> {
   try {
     // Step 1: Handle dry-run mode
@@ -257,22 +272,32 @@ export async function loadSession(sessionName: string) {
  */
 export async function executeTmux(
   promptPath: string,
-  options: { taskId: string; worktree: string; data: Record<string, unknown>; dryRun?: boolean }
+  options: {
+    taskId: string;
+    worktree: string;
+    data: Record<string, unknown>;
+    dryRun?: boolean;
+  },
 ): Promise<ExecutionResult> {
-  const windowName = `scopecraft-${options.taskId}`;
+  // Sanitize window name - tmux has issues with certain characters
+  const sanitizedTaskId = options.taskId.replace(/[_]/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+  const windowName = `sc-${sanitizedTaskId}`;
 
   if (options.dryRun) {
-    console.log('[DRY RUN] Would create tmux window:');
+    console.log("[DRY RUN] Would create tmux window:");
     console.log(`  Window: ${windowName}`);
-    console.log(`  Worktree: ${options.worktree}`);
-    console.log(
-      `  Command: cd "${options.worktree}" && claude "${promptPath}" --data '${JSON.stringify(options.data)}'`
-    );
+    console.log(`  Working Directory: ${options.worktree}`);
+    const command = buildChannelCoderCommand(promptPath, options);
+    console.log(`  Command: ${command}`);
     return { success: true, data: { dryRun: true } };
   }
 
   try {
     await createTmuxWindow(windowName, options.worktree);
+    
+    // Add a small delay to ensure window is fully created
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     const command = buildChannelCoderCommand(promptPath, options);
     await runInTmux(windowName, command);
 
@@ -281,6 +306,7 @@ export async function executeTmux(
       data: {
         windowName,
         attachCommand: `tmux attach -t ${windowName}`,
+        taskId: options.taskId,
       },
     };
   } catch (error) {
@@ -294,15 +320,22 @@ export async function executeTmux(
 /**
  * Create a new tmux window
  */
-async function createTmuxWindow(windowName: string, workingDir: string): Promise<void> {
-  const { spawn } = await import('node:child_process');
+async function createTmuxWindow(
+  windowName: string,
+  workingDir: string,
+): Promise<void> {
+  const { spawn } = await import("node:child_process");
 
   return new Promise((resolve, reject) => {
-    const tmux = spawn('tmux', ['new-window', '-n', windowName, '-c', workingDir], {
-      stdio: 'inherit',
-    });
+    const tmux = spawn(
+      "tmux",
+      ["new-window", "-n", windowName, "-c", workingDir],
+      {
+        stdio: "inherit",
+      },
+    );
 
-    tmux.on('close', (code) => {
+    tmux.on("close", (code) => {
       if (code === 0) {
         resolve();
       } else {
@@ -310,7 +343,7 @@ async function createTmuxWindow(windowName: string, workingDir: string): Promise
       }
     });
 
-    tmux.on('error', (error) => {
+    tmux.on("error", (error) => {
       reject(new Error(`Failed to start tmux: ${error.message}`));
     });
   });
@@ -321,24 +354,54 @@ async function createTmuxWindow(windowName: string, workingDir: string): Promise
  */
 function buildChannelCoderCommand(
   promptPath: string,
-  options: { data: Record<string, unknown> }
+  options: { data: Record<string, unknown>; worktree?: string },
 ): string {
-  const dataArg = JSON.stringify(options.data).replace(/"/g, '\\"');
-  return `claude "${promptPath}" --data "${dataArg}"`;
+  // Build command with multiple --data flags for better shell compatibility
+  let command = `channelcoder "${promptPath}"`;
+  
+  // Add worktree flag if provided
+  if (options.worktree) {
+    command += ` --worktree "${options.worktree}"`;
+  }
+  
+  // Add each data field as a separate --data flag
+  for (const [key, value] of Object.entries(options.data)) {
+    // Convert value to string, handling different types
+    let valueStr = '';
+    if (value === null || value === undefined) {
+      valueStr = '';
+    } else if (typeof value === 'string') {
+      valueStr = value;
+    } else {
+      valueStr = JSON.stringify(value);
+    }
+    
+    // Always quote the value for consistency and to handle empty strings
+    // Escape double quotes and wrap in double quotes
+    valueStr = `"${valueStr.replace(/"/g, '\\"')}"`;
+    
+    command += ` --data ${key}=${valueStr}`;
+  }
+  
+  return command;
 }
 
 /**
  * Run command in tmux window
  */
 async function runInTmux(windowName: string, command: string): Promise<void> {
-  const { spawn } = await import('node:child_process');
+  const { spawn } = await import("node:child_process");
 
   return new Promise((resolve, reject) => {
-    const tmux = spawn('tmux', ['send-keys', '-t', windowName, command, 'Enter'], {
-      stdio: 'inherit',
-    });
+    const tmux = spawn(
+      "tmux",
+      ["send-keys", "-t", windowName, command, "Enter"],
+      {
+        stdio: "inherit",
+      },
+    );
 
-    tmux.on('close', (code) => {
+    tmux.on("close", (code) => {
       if (code === 0) {
         resolve();
       } else {
@@ -346,7 +409,7 @@ async function runInTmux(windowName: string, command: string): Promise<void> {
       }
     });
 
-    tmux.on('error', (error) => {
+    tmux.on("error", (error) => {
       reject(new Error(`Failed to send keys to tmux: ${error.message}`));
     });
   });

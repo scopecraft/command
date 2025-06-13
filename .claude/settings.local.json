@@ -66,7 +66,8 @@
       "Bash(./orchestrate-auto:*)",
       "Bash(git rev-parse:*)",
       "Bash(git init:*)",
-      "Bash(./auto:*)"
+      "Bash(./auto:*)",
+      "Bash(tmux kill-window:*)"
     ],
     "deny": []
   }
