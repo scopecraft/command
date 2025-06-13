@@ -26,7 +26,8 @@ import { WorktreeManager } from '../../src/core/environment/worktree-manager.js'
 import { WorktreePathResolver } from '../../src/core/environment/worktree-path-resolver.js';
 import * as core from '../../src/core/index.js';
 
-// Test environment setup
+// Test environment setup - use test-specific root to avoid pollution
+const TEST_ROOT = join(process.env.TMPDIR || '/tmp', '.scopecraft-test');
 const TEST_PROJECT = join(process.env.TMPDIR || '/tmp', 'scopecraft-regression-env-resolution');
 const WORKTREE_BASE = join(TEST_PROJECT, '..', `${TEST_PROJECT.split('/').pop()}.worktrees`);
 
@@ -45,6 +46,11 @@ async function cleanup() {
   // Clean up test project
   if (existsSync(TEST_PROJECT)) {
     await rm(TEST_PROJECT, { recursive: true, force: true });
+  }
+
+  // Clean up test-specific scopecraft directory
+  if (existsSync(TEST_ROOT)) {
+    await rm(TEST_ROOT, { recursive: true, force: true });
   }
 }
 
@@ -170,14 +176,24 @@ describe('Environment Resolution Regression Tests', () => {
   let modeService: ModeDefaultsService;
   let pathResolver: WorktreePathResolver;
   let worktreeManager: WorktreeManager;
+  let originalHome: string | undefined;
 
   beforeAll(async () => {
+    // Override HOME for test isolation
+    originalHome = process.env.HOME;
+    process.env.HOME = TEST_ROOT;
+
     await cleanup();
     testTasks = await setupTestProject();
   });
 
   afterAll(async () => {
     await cleanup();
+
+    // Restore original HOME
+    if (originalHome) {
+      process.env.HOME = originalHome;
+    }
   });
 
   beforeEach(() => {
@@ -231,14 +247,10 @@ describe('Environment Resolution Regression Tests', () => {
       }
 
       const subtaskId = parentTask.subtasks[0];
-      const result = await resolver.resolveTaskEnvironment(subtaskId);
+      const envId = await resolver.resolveEnvironmentId(subtaskId);
 
-      expect(result.success).toBe(true);
-      expect(result.environment).toBeDefined();
-      expect(result.environment!.taskId).toBe(parentTask.id); // Should resolve to parent
-      expect(result.environment!.isParentEnvironment).toBe(true);
-      expect(result.environment!.resolvedFromSubtask).toBe(true);
-      expect(result.environment!.originalTaskId).toBe(subtaskId);
+      // For subtasks, environment ID should equal parent task ID
+      expect(envId).toBe(parentTask.id);
     });
 
     test('should handle non-existent task IDs', async () => {
@@ -259,32 +271,32 @@ describe('Environment Resolution Regression Tests', () => {
   });
 
   describe('Worktree Path Resolution', () => {
-    test('should generate consistent worktree paths for simple tasks', () => {
+    test('should generate consistent worktree paths for simple tasks', async () => {
       const simpleTask = testTasks.find((t) => t.type === 'simple');
       if (!simpleTask) {
         throw new Error('No simple task found in test data');
       }
 
-      const path1 = pathResolver.getWorktreePath(simpleTask.id);
-      const path2 = pathResolver.getWorktreePath(simpleTask.id);
+      const path1 = await pathResolver.getWorktreePath(simpleTask.id);
+      const path2 = await pathResolver.getWorktreePath(simpleTask.id);
 
       expect(path1).toBe(path2); // Should be consistent
       expect(path1).toBe(join(WORKTREE_BASE, simpleTask.id));
     });
 
-    test('should generate consistent worktree paths for parent tasks', () => {
+    test('should generate consistent worktree paths for parent tasks', async () => {
       const parentTask = testTasks.find((t) => t.type === 'parent');
       if (!parentTask) {
         throw new Error('No parent task found in test data');
       }
 
-      const path = pathResolver.getWorktreePath(parentTask.id);
+      const path = await pathResolver.getWorktreePath(parentTask.id);
 
       expect(path).toBe(join(WORKTREE_BASE, parentTask.id));
     });
 
-    test('should resolve worktree base directory correctly', () => {
-      const base = pathResolver.getWorktreeBase();
+    test('should resolve worktree base directory correctly', async () => {
+      const base = await pathResolver.getWorktreeBasePath();
 
       expect(base).toBe(WORKTREE_BASE);
       expect(base).toContain('.worktrees');

@@ -16,6 +16,7 @@ import {
 } from 'node:fs';
 import { basename, dirname, join, relative, sep } from 'node:path';
 import { WorktreePathResolver } from './environment/worktree-path-resolver.js';
+import { directoryPathCache } from './paths/cache.js';
 // MIGRATION: Using new centralized path resolver
 import { PATH_TYPES, createPathContext, resolvePath } from './paths/index.js';
 import { TaskStoragePathEncoder } from './task-storage-path-encoder.js';
@@ -32,6 +33,14 @@ const DEFAULT_WORKFLOW_FOLDERS = {
  * Get the tasks directory path (centralized storage)
  */
 export function getTasksDirectory(projectRoot: string): string {
+  const cacheKey = `tasks:${projectRoot}`;
+
+  // Check cache first
+  const cached = directoryPathCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   // Get the main repository root to ensure all worktrees share the same storage
   const resolver = new WorktreePathResolver();
   const mainRepoRoot = resolver.getMainRepositoryRootSync();
@@ -51,6 +60,9 @@ export function getTasksDirectory(projectRoot: string): string {
     mkdirSync(centralizedPath, { recursive: true });
   }
 
+  // Cache the result
+  directoryPathCache.set(cacheKey, centralizedPath);
+
   return centralizedPath;
 }
 
@@ -62,9 +74,22 @@ export function getWorkflowDirectory(
   state: WorkflowState,
   config?: ProjectConfig
 ): string {
+  const cacheKey = `workflow:${projectRoot}:${state}`;
+
+  // Check cache first
+  const cached = directoryPathCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const tasksDir = getTasksDirectory(projectRoot);
   const folderName = config?.workflowFolders?.[state] || DEFAULT_WORKFLOW_FOLDERS[state];
-  return join(tasksDir, folderName);
+  const path = join(tasksDir, folderName);
+
+  // Cache the result
+  directoryPathCache.set(cacheKey, path);
+
+  return path;
 }
 
 /**

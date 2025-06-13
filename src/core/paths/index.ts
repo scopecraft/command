@@ -1,8 +1,8 @@
 /**
  * Path Resolution Module
- * 
+ *
  * ⚠️ IMPORTANT: This is the ONLY module that should handle path resolution ⚠️
- * 
+ *
  * All path resolution logic for Scopecraft is centralized here.
  * DO NOT create path logic elsewhere in the codebase.
  */
@@ -14,7 +14,6 @@ export {
   resolvePath,
   resolvePathWithPrecedence,
   resolveExistingPath,
-  
   // Convenience functions
   getTemplatesPath,
   getModesPath,
@@ -46,3 +45,10 @@ export {
   isUnmigratedPath,
   logMigrationInstructions,
 } from './migration.js';
+
+// Cache utilities (for performance)
+export {
+  PathCache,
+  pathContextCache,
+  directoryPathCache,
+} from './cache.js';

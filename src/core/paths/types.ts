@@ -1,6 +1,6 @@
 /**
  * Path type definitions for Scopecraft
- * 
+ *
  * ⚠️ Adding a new path type? Add it HERE FIRST! ⚠️
  */
 
@@ -13,13 +13,13 @@ export const PATH_TYPES = {
   MODES: 'modes',
   TASKS: 'tasks',
   SESSIONS: 'sessions',
-  CONFIG: 'config'
+  CONFIG: 'config',
 } as const;
 
 /**
  * Type derived from PATH_TYPES values
  */
-export type PathType = typeof PATH_TYPES[keyof typeof PATH_TYPES];
+export type PathType = (typeof PATH_TYPES)[keyof typeof PATH_TYPES];
 
 /**
  * Path context containing all necessary roots for resolution
@@ -30,19 +30,19 @@ export interface PathContext {
    * Could be main repo or a worktree
    */
   executionRoot: string;
-  
+
   /**
    * Main repository root (not worktree)
    * Used for shared resources and centralized storage encoding
    */
   mainRepoRoot: string;
-  
+
   /**
    * Current worktree root if in a worktree
    * undefined if in main repository
    */
   worktreeRoot?: string;
-  
+
   /**
    * User home directory
    * Used for global user preferences and centralized storage

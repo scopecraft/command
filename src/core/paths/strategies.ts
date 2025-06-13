@@ -1,13 +1,13 @@
 /**
  * Path resolution strategies for Scopecraft
- * 
+ *
  * Each strategy is a pure function that takes a PathContext and returns a path
  * Strategies are composable and can be combined in precedence order
  */
 
 import { join } from 'node:path';
 import { TaskStoragePathEncoder } from '../task-storage-path-encoder.js';
-import { type PathContext, type PathStrategy, type PathType, PATH_TYPES } from './types.js';
+import { PATH_TYPES, type PathContext, type PathStrategy, type PathType } from './types.js';
 
 /**
  * Repository-based strategy
@@ -95,30 +95,30 @@ export const localOverrideStrategy: PathStrategy = (context: PathContext): strin
 /**
  * Path strategy mappings
  * Defines which strategies to use for each path type, in precedence order
- * 
+ *
  * IMPORTANT: This is the configuration that determines where each feature
  * stores its data. Modify this to change storage locations.
  */
 export const pathStrategies: Record<PathType, PathStrategy[]> = {
   [PATH_TYPES.TEMPLATES]: [
-    repoTemplatesStrategy,        // Primary: .tasks/.templates/ in repo
-    globalTemplatesStrategy,      // Fallback: ~/.scopecraft/templates/
+    repoTemplatesStrategy, // Primary: .tasks/.templates/ in repo
+    globalTemplatesStrategy, // Fallback: ~/.scopecraft/templates/
   ],
-  
+
   [PATH_TYPES.MODES]: [
-    repoModesStrategy,           // Only: .tasks/.modes/ in repo
+    repoModesStrategy, // Only: .tasks/.modes/ in repo
   ],
-  
+
   [PATH_TYPES.TASKS]: [
-    centralizedTasksStrategy,    // Only: ~/.scopecraft/projects/{encoded}/tasks/
+    centralizedTasksStrategy, // Only: ~/.scopecraft/projects/{encoded}/tasks/
   ],
-  
+
   [PATH_TYPES.SESSIONS]: [
     centralizedSessionsStrategy, // Only: ~/.scopecraft/projects/{encoded}/sessions/
   ],
-  
+
   [PATH_TYPES.CONFIG]: [
-    centralizedConfigStrategy,   // Primary: ~/.scopecraft/projects/{encoded}/config/
-    repoStrategy,               // Fallback: .tasks/ in repo (for legacy)
+    centralizedConfigStrategy, // Primary: ~/.scopecraft/projects/{encoded}/config/
+    repoStrategy, // Fallback: .tasks/ in repo (for legacy)
   ],
 };

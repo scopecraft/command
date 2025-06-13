@@ -21,6 +21,7 @@ import {
 
 export class WorktreePathResolver implements IWorktreePathResolver {
   private config: ConfigurationManager;
+  private mainRepoRootCache: string | undefined;
 
   constructor(config?: ConfigurationManager) {
     this.config = config || ConfigurationManager.getInstance();
@@ -123,25 +124,34 @@ export class WorktreePathResolver implements IWorktreePathResolver {
   /**
    * Synchronous version of getMainRepositoryRoot
    * Used by directory-utils and other sync code
+   *
+   * PERFORMANCE: Result is cached per instance to avoid repeated git commands
    */
   getMainRepositoryRootSync(): string {
+    // Return cached value if available
+    if (this.mainRepoRootCache !== undefined) {
+      return this.mainRepoRootCache;
+    }
+
     try {
       const rootConfig = this.config.getRootConfig();
       const projectPath = rootConfig.path || process.cwd();
-      
+
       // Use simple-git to find the common directory (main repository)
       // Note: We need to use execSync here because simpleGit is async
       // and this method needs to be sync for directory-utils
       const { execSync } = require('node:child_process');
       const gitCommonDir = execSync('git rev-parse --git-common-dir', {
         encoding: 'utf8',
-        cwd: projectPath
+        cwd: projectPath,
       }).trim();
-      
+
       // The common dir is the .git directory, so we need its parent
       const mainRepoRoot = dirname(gitCommonDir);
-      
-      return resolve(mainRepoRoot);
+
+      // Cache the result
+      this.mainRepoRootCache = resolve(mainRepoRoot);
+      return this.mainRepoRootCache;
     } catch (error) {
       // If git command fails, fall back to current project root
       // This handles non-git projects or other edge cases
@@ -152,7 +162,10 @@ export class WorktreePathResolver implements IWorktreePathResolver {
           EnvironmentErrorCodes.CONFIGURATION_ERROR
         );
       }
-      return rootConfig.path;
+
+      // Cache the fallback result
+      this.mainRepoRootCache = rootConfig.path;
+      return this.mainRepoRootCache;
     }
   }
 }
