@@ -13,6 +13,18 @@ The system is designed to be versatile:
 - Provides direct CRUD operations without requiring LLM processing
 - Offers the same core functionality through both CLI and MCP interfaces
 
+## Storage Architecture
+
+**Important**: Scopecraft uses centralized storage for tasks:
+- Tasks are stored in `~/.scopecraft/projects/{encoded-path}/tasks/`
+- Templates and modes are stored in `.tasks/` within the repository
+- This prevents git conflicts and allows sharing tasks across worktrees
+
+When working with tasks:
+- Use the CLI commands - they handle the correct paths automatically
+- Don't manually create files in `.tasks/` directories
+- The centralized storage is transparent to users
+
 ## IMPORTANT: Dogfooding Our Own Tools
 
 **We MUST use our own CLI to manage tasks in this project!** Until the MCP implementation is complete (task 03-mcp-update), use the CLI directly:
@@ -148,6 +160,7 @@ This helps track progress and provides context for future work.
 - Log entries should include date and brief description: `- 2025-05-28: Implemented feature X`
 - Use bun commands, never npm commands
 - Remember the existence of this CLAUDE.md folder: this file exists to provide guidance and context for AI interactions with the project, serving as a comprehensive memory and instruction set for understanding the project's workflow, philosophy, and specific practices
+- If you create github issues, the only label available are cli, core, mcp, ui and bug or enhancement for the type
 
 ## Code Quality Checks
 

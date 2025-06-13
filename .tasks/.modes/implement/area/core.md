@@ -1,22 +1,26 @@
 # Core Area Guide
 
-⚠️ **CRITICAL**: Only work with code in `src/core/v2/`. There is NO v1 - it was never released. Ignore any legacy code outside v2. The v2 suffix is temporary and will be removed soon.
-
 ## Quick Architecture Overview
 The Core area contains all business logic for task management, independent of any interface. It handles file operations, task parsing, workflow management, and provides a clean API for CLI, MCP, and UI layers.
 
 ## Key Files and Utilities
 
-**IMPORTANT**: Only use files in `src/core/v2/`. Ignore any legacy code outside v2 - it's being removed. V2 is the ONLY implementation.
-
 ### Core Structure
-- `src/core/v2/index.ts` - Main exports and operations
-- `src/core/v2/task-crud.ts` - Task CRUD operations
-- `src/core/v2/task-parser.ts` - Markdown/frontmatter parsing
-- `src/core/v2/id-generator.ts` - ID generation from titles
-- `src/core/v2/parent-tasks.ts` - Parent task operations
-- `src/core/v2/directory-utils.ts` - File system helpers
-- `src/core/v2/types.ts` - Core type definitions
+- `src/core/index.ts` - Main exports and operations
+- `src/core/task-crud.ts` - Task CRUD operations
+- `src/core/task-parser.ts` - Markdown/frontmatter parsing
+- `src/core/id-generator.ts` - ID generation from titles
+- `src/core/parent-tasks.ts` - Parent task operations
+- `src/core/directory-utils.ts` - File system helpers
+- `src/core/types.ts` - Core type definitions
+
+### Path Resolution System
+- `src/core/paths/` - All path resolution logic
+  - `path-resolver.ts` - Main API for getting paths
+  - `strategies.ts` - Where files are stored
+  - `types.ts` - Path types and interfaces
+- `src/core/task-storage-path-encoder.ts` - Encodes project paths
+- `src/core/config/configuration-manager.ts` - Project configuration
 
 ### Key Utilities
 ```typescript
@@ -28,9 +32,29 @@ const id = generateTaskId(title, existingIds);
 import { parseTaskDocument } from './task-parser';
 const task = await parseTaskDocument(content, filePath);
 
-// Directory Operations
-import { ensureDirectoryExists, findTaskFiles } from './directory-utils';
+// Path Resolution - ALWAYS use this
+import { createPathContext, resolvePath, PATH_TYPES } from './paths';
+const context = createPathContext(projectRoot);
+const tasksPath = resolvePath(PATH_TYPES.TASKS, context);
+
+// Workflow directories
+import { getWorkflowDirectory } from './directory-utils';
+const backlogDir = getWorkflowDirectory(projectRoot, 'backlog');
 ```
+
+### Where Things Are Stored
+
+- **Templates**: `.tasks/.templates/` in your repository
+- **Modes**: `.tasks/.modes/` in your repository
+- **Tasks**: `~/.scopecraft/projects/{encoded}/tasks/` (outside repo)
+- **Sessions**: `~/.scopecraft/projects/{encoded}/sessions/`
+- **Config**: `~/.scopecraft/projects/{encoded}/config/`
+
+The path resolver handles all of this automatically.
+
+**IF** you need to understand the storage architecture in detail, see:
+- `docs/02-architecture/system-architecture.md#storage-architecture`
+- `docs/04-reference/storage-api.md`
 
 ## Common Patterns
 
@@ -52,8 +76,9 @@ export async function getTask(id: string): Promise<Result<Task>> {
 
 ### File Operations
 ```typescript
-// Always use path.join for cross-platform compatibility
-const taskPath = path.join(rootDir, workflow, `${taskId}.task.md`);
+// Get the correct storage path first
+const workflowDir = getWorkflowDirectory(projectRoot, 'current');
+const taskPath = path.join(workflowDir, `${taskId}.task.md`);
 
 // Check existence before operations
 if (!await fs.exists(taskPath)) {
@@ -96,9 +121,9 @@ Expected output
 - ✅ Use TypeScript types extensively
 - ✅ Validate data at boundaries
 - ✅ Handle file system errors gracefully
-- ✅ Focus on clean, forward-looking design
 - ✅ Write pure functions when possible
 - ✅ Use descriptive error messages
+- ✅ Use the path resolver for all storage paths
 
 ### Don'ts
 - ❌ Mix UI/CLI concerns into core
@@ -107,8 +132,6 @@ Expected output
 - ❌ Mutate input parameters
 - ❌ Skip validation
 - ❌ Throw generic errors
-- ❌ Look at or use ANY code outside src/core/v2/
-- ❌ Worry about backward compatibility
 
 ## Testing Approach
 
@@ -133,9 +156,10 @@ test('create and retrieve task', async () => {
 ```
 
 ## Related Documentation
-- Task System Design: `docs/specs/task-system-v2-specification.md`
-- ID Format Spec: `docs/specs/id-format.md`
-- Directory Structure: `docs/mdtm-directory-structure.md`
+- Storage Architecture: `docs/02-architecture/system-architecture.md#storage-architecture`
+- Storage API Reference: `docs/04-reference/storage-api.md`
+- Path Resolution README: `src/core/paths/README.md`
+- Migration Guide: `docs/03-guides/storage-migration.md`
 
 ## Common Tasks for Core Area
 - Adding new task fields

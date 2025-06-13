@@ -29,6 +29,13 @@ For detailed architecture, field transformations, and implementation details, se
 }
 ```
 
+## Storage Considerations
+
+MCP handlers don't need to know about storage paths:
+- Use core layer functions that handle path resolution
+- ConfigurationManager provides project root
+- All path resolution happens in core layer
+
 ## Common Patterns
 
 ### Handler Structure
@@ -51,58 +58,55 @@ catch (error) {
 }
 ```
 
-### Response Format
+### Parameter Normalization
+The `ParameterTransformer` service handles all enum conversions:
+- Frontend values (like "🔵 In Progress") → Internal values ("in_progress")
+- Happens automatically before handlers receive data
+- Handlers work with clean internal values only
+
+## Key Files
+
+### Handler Organization
+- `src/mcp/handlers/` - All MCP handler implementations
+  - `read-handlers.ts` - Query operations (list, get)
+  - `write-handlers.ts` - Mutation operations (create, update, delete)
+  - `shared/` - Common utilities
+
+### Core Files
+- `src/mcp/server.ts` - Server setup and registration
+- `src/mcp/schemas.ts` - Zod schemas and types
+- `src/mcp/parameter-transformer.ts` - Frontend↔Backend conversions
+- `src/mcp/handler-wrapper.ts` - Consistent error handling
+
+## Testing MCP Handlers
+
+### Quick Test with cURL
+```bash
+# Test task list
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"method":"task_list","params":{}}'
+```
+
+### Unit Testing Pattern
 ```typescript
-// All responses use this structure
-{
-  success: boolean,
-  data?: T,
-  error?: string,
-  message: string,
-  metadata?: { timestamp, version }
-}
+// Test normalized output
+const result = await handler(params);
+expect(result.success).toBe(true);
+expect(result.data).toMatchSchema(outputSchema);
 ```
 
 ## Do's and Don'ts
 
 ### Do's
-- ✅ Use the method registry for all operations
-- ✅ Validate inputs with Zod schemas
-- ✅ Return consistent response formats
-- ✅ Include helpful context in error messages
-- ✅ Handle edge cases gracefully
-- ✅ Document new operations thoroughly
+- ✅ Use core layer functions for all business logic
+- ✅ Transform responses to normalized format
+- ✅ Provide helpful error messages
+- ✅ Validate with Zod schemas
+- ✅ Keep handlers thin
 
 ### Don'ts
-- ❌ Return raw errors from core layer
-- ❌ Mix transport logic with business logic
-- ❌ Assume AI knows internal details
-- ❌ Return null/undefined without explanation
-- ❌ Break existing response contracts
-
-## Testing Approach
-
-### Manual Testing
-```bash
-# Start MCP server
-bun run mcp:stdio
-
-# Test operations through Claude or other MCP clients
-```
-
-### Unit Testing
-- Test handlers with mock data
-- Verify schema validation
-- Check error handling paths
-
-## Common Tasks
-
-- **Adding new operations**: Define schema, create handler, add to registry
-- **Enhancing existing operations**: Update schema, modify handler logic
-- **Improving error messages**: Make them more actionable for AI
-- **Optimizing performance**: Use appropriate filters and projections
-
-## Related Documentation
-- Architecture Details: `docs/mcp-architecture.md`
-- Tool Descriptions: `docs/mcp-tool-descriptions.md`
-- Core Task System: `docs/specs/task-system-design.md`
+- ❌ Implement business logic in handlers
+- ❌ Access file system directly
+- ❌ Return frontend-formatted values
+- ❌ Skip validation

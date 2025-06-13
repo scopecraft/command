@@ -31,63 +31,60 @@ Scopecraft's codebase follows Unix philosophy principles - small, composable pac
 ## Package Structure
 
 ```
-scopecraft/
-├── packages/
-│   ├── core/                    # Domain logic (no UI, no transport)
-│   │   ├── task-service/        # Task CRUD, workflow, relations
-│   │   ├── session-service/     # Session lifecycle (wraps ChannelCoder)
-│   │   ├── context-service/     # AI context gathering
-│   │   ├── environment-service/ # Execution environments (worktree, docker)
-│   │   ├── orchestration/       # Workflow coordination
-│   │   └── shared/              # Common types, interfaces
+scopecraft-v2/                    # Current implementation structure
+├── src/
+│   ├── core/                    # Domain logic and business rules
+│   │   ├── paths/               # Path resolution system (NEW)
+│   │   │   ├── path-resolver.ts # Main resolution logic
+│   │   │   ├── strategies.ts    # Storage strategies
+│   │   │   ├── types.ts         # Path types & interfaces
+│   │   │   ├── cache.ts         # Path caching
+│   │   │   └── migration.ts     # Storage migration
+│   │   ├── config/              # Configuration management (NEW)
+│   │   │   ├── configuration-manager.ts
+│   │   │   └── types.ts
+│   │   ├── environment/         # Execution environments
+│   │   ├── metadata/            # Task metadata handling
+│   │   ├── worktree/            # Git worktree management
+│   │   ├── task-storage-path-encoder.ts  # Path encoding (NEW)
+│   │   ├── task-crud.ts         # Task operations
+│   │   ├── parent-tasks.ts      # Parent task management
+│   │   ├── task-parser.ts       # Markdown parsing
+│   │   ├── template-manager.ts  # Template handling
+│   │   └── types.ts             # Core types
 │   │
-│   ├── interfaces/              # How users/systems interact
-│   │   ├── cli/                 # Command line interface
-│   │   ├── mcp-server/          # MCP protocol server
-│   │   └── api/                 # REST/GraphQL API (future)
+│   ├── cli/                     # Command line interface
+│   │   ├── commands/            # Command implementations
+│   │   ├── cli.ts              # CLI entry point
+│   │   ├── init.ts             # Project initialization
+│   │   └── formatters.ts       # Output formatting
 │   │
-│   ├── ui/                      # Web interfaces
-│   │   ├── tasks-ui/            # Task management UI
-│   │   └── monitoring-ui/       # Session monitoring (future)
+│   ├── mcp/                     # MCP protocol server
+│   │   ├── handlers/            # Request handlers
+│   │   ├── server.ts           # MCP server setup
+│   │   └── schemas.ts          # Protocol schemas
 │   │
-│   └── storage/                 # Storage adapters
-│       ├── local-storage/       # File system + git
-│       └── cloud-storage/       # CI/GitHub storage (future)
+│   ├── integrations/            # External integrations
+│   │   └── channelcoder/        # ChannelCoder integration
+│   │       ├── client.ts
+│   │       ├── session-storage.ts
+│   │       └── helpers.ts
+│   │
+│   ├── observability/           # Logging and monitoring
+│   │   └── logger.ts
+│   │
+│   └── templates/               # Task templates
+│       ├── 01_feature.md
+│       ├── 02_bug.md
+│       └── [other templates]
 │
-├── templates/                   # Ships with Scopecraft
-│   ├── modes/                   # Base mode templates
-│   │   ├── exploration/         # Default exploration mode
-│   │   ├── implementation/      # Default implementation mode
-│   │   ├── design/              # Default design mode
-│   │   └── orchestration/       # System modes (like router)
-│   │
-│   ├── tasks/                   # Task type templates
-│   │   ├── feature.md
-│   │   ├── bug.md
-│   │   └── spike.md
-│   │
-│   └── guidance/                # Reusable guidance library
-│       ├── react-patterns.md
-│       ├── api-design.md
-│       └── testing-strategies.md
-│
-├── apps/                        # Deployable applications
-│   ├── scopecraft-cli/          # CLI app entry point
-│   ├── scopecraft-mcp/          # MCP server entry point
-│   └── scopecraft-web/          # Web app entry point
-│
-├── tools/                       # Build tools, scripts
-│   ├── worktree-utils/          # tw-start, etc.
-│   ├── release/                 # Release automation
-│   └── dev-scripts/             # Development helpers
-│
-├── .tasks/                      # OUR project's tasks (dogfooding)
-│   ├── .modes/                  # OUR project-specific modes
+├── .tasks/                      # Project's own tasks
 │   ├── backlog/
 │   ├── current/
 │   └── archive/
 │
-└── docs/                        # System documentation
+└── docs/                        # Documentation
+    └── 02-architecture/         # Architecture docs
 ```
 
 ## Design Principles
@@ -200,6 +197,32 @@ templates/guidance/
     └── code-review.md
 ```
 
+## Storage Architecture Components
+
+### Path Resolution System (`core/paths/`)
+
+The path resolution system is the single source of truth for all path operations:
+
+- **path-resolver.ts**: Main API for resolving paths
+- **strategies.ts**: Defines storage strategies (repo vs centralized)
+- **types.ts**: Type definitions for path contexts and strategies
+- **cache.ts**: Performance optimization for path lookups
+- **migration.ts**: Handles migration between storage modes
+
+### Configuration Management (`core/config/`)
+
+Manages storage mode and project configuration:
+
+- **configuration-manager.ts**: Handles storage mode flags and project settings
+- **types.ts**: Configuration type definitions
+
+### Path Encoding (`core/task-storage-path-encoder.ts`)
+
+Encodes project paths for centralized storage:
+- Converts `/Users/alice/projects/myapp` → `users-alice-projects-myapp`
+- Provides methods for encoding/decoding paths
+- Generates storage roots for different data types
+
 ## Package Responsibilities
 
 ### Core Packages
@@ -224,8 +247,9 @@ templates/guidance/
 
 | Package | Responsibility | Dependencies |
 |---------|----------------|--------------|
-| local-storage | File system + git storage | None |
-| cloud-storage | CI/GitHub storage | GitHub API |
+| path-resolver | Centralized path resolution | None |
+| task-storage-path-encoder | Project path encoding | None |
+| configuration-manager | Storage mode configuration | None |
 
 ## Alternative Approaches
 

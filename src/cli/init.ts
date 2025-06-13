@@ -3,7 +3,9 @@
  */
 import path from 'node:path';
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
+import { WorktreePathResolver } from '../core/environment/worktree-path-resolver.js';
 import * as core from '../core/index.js';
+import { TaskStoragePathEncoder } from '../core/task-storage-path-encoder.js';
 
 export async function handleInitCommand(options: {
   mode?: string;
@@ -34,16 +36,23 @@ export async function handleInitCommand(options: {
     // Initialize project structure
     core.initializeProjectStructure(initRoot);
 
+    // Get the encoded project path for display
+    const resolver = new WorktreePathResolver();
+    const mainRepoRoot = resolver.getMainRepositoryRootSync();
+    const encoded = TaskStoragePathEncoder.encode(mainRepoRoot);
+
     console.log('\n🚀 Welcome to Scopecraft!\n');
     console.log(`Initialized project in: ${initRoot}`);
     console.log('✓ Created hybrid storage structure:');
     console.log('\n📁 Repository (.tasks/):');
     console.log('  .tasks/.templates/  📝 Task templates');
     console.log('  .tasks/.modes/      🎯 Execution modes');
-    console.log('\n☁️  Centralized (~/.scopecraft/):');
-    console.log('  tasks/backlog/      📋 Tasks waiting to be worked on');
-    console.log('  tasks/current/      🚀 Tasks actively being worked on');
-    console.log('  tasks/archive/      ✅ Completed tasks (organized by date)');
+    console.log('\n☁️  Centralized Storage:');
+    console.log(`  ~/.scopecraft/projects/${encoded}/`);
+    console.log('  └── tasks/');
+    console.log('      ├── backlog/    📋 Tasks waiting to be worked on');
+    console.log('      ├── current/    🚀 Tasks actively being worked on');
+    console.log('      └── archive/    ✅ Completed tasks (organized by date)');
     console.log('\n✓ Ready to start!\n');
 
     console.log('🎯 Next Steps:');

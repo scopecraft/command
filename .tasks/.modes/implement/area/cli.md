@@ -1,7 +1,5 @@
 # CLI Area Guide
 
-⚠️ **CRITICAL**: Only use CLI files with -v2 suffix. There is NO v1 - it was never released. Never mention "v2" in user-facing output. The v2 suffix is internal only and will be removed soon.
-
 ## Quick Architecture Overview
 The CLI provides a command-line interface for task management using Commander.js. It follows an entity-command pattern where commands are organized by the entity they operate on (task, parent, workflow, etc.).
 
@@ -9,13 +7,11 @@ The CLI provides a command-line interface for task management using Commander.js
 
 ### CLI Structure
 
-**IMPORTANT**: Only use files with -v2 suffix. Ignore any legacy CLI files. There is no v1 - v2 is the ONLY implementation.
-
-- `src/cli/cli-v2.ts` - Main entry point, command setup
-- `src/cli/entity-commands-v2.ts` - Entity command registration
-- `src/cli/commands-v2.ts` - Command implementations
-- `src/cli/commands-v2-adapter.ts` - Bridge to core functions
-- `src/core/formatters-v2.ts` - Output formatting utilities
+- `src/cli/cli.ts` - Main entry point, command setup
+- `src/cli/entity-commands.ts` - Entity command registration
+- `src/cli/commands.ts` - Command implementations
+- `src/cli/init.ts` - Project initialization command
+- `src/cli/formatters.ts` - Output formatting utilities
 
 ### Command Pattern
 ```typescript
@@ -38,8 +34,31 @@ import {
   printSuccess,
   printError,
   printWarning 
-} from '../core/formatters-v2';
+} from './formatters';
 ```
+
+### Display Patterns
+
+```typescript
+// Show relative paths when possible
+const displayPath = path.relative(process.cwd(), taskPath) || taskPath;
+
+// Use ~ for home directory
+const homePath = taskPath.replace(os.homedir(), '~');
+
+// Good error messages
+if (!tasksFound) {
+  console.error('No tasks found. Run "sc init" to initialize project.');
+}
+
+// Keep paths simple in output
+// Instead of: "Error reading /Users/alice/.scopecraft/projects/xyz/tasks/..."
+// Show: "Task not found: auth-05A"
+```
+
+**IF** you're working on storage-related CLI features, see:
+- `docs/03-guides/storage-migration.md` for user-facing storage info
+- `src/cli/init.ts` for how initialization handles storage
 
 ## Common Patterns
 
@@ -111,6 +130,7 @@ console.log(formatTaskTree(parentTask));
 - ✅ Provide clear error messages
 - ✅ Support --json format for scripting
 - ✅ Use colors for better readability
+- ✅ Use relative paths in output when possible
 
 ### Don't's
 - ❌ Mix business logic in CLI layer
@@ -119,8 +139,7 @@ console.log(formatTaskTree(parentTask));
 - ❌ Forget to handle edge cases
 - ❌ Use inconsistent option patterns
 - ❌ Ignore global options
-- ❌ Look at legacy CLI files (without -v2)
-- ❌ Mention "v2" in user-facing messages
+- ❌ Show complex internal paths to users
 
 ## Testing Approach
 
@@ -146,8 +165,9 @@ expect(tasks).toHaveLength(5);
 ```
 
 ## Related Documentation
-- CLI Usage: `docs/claude-commands-guide.md`
-- Development Guide: `docs/DEVELOPMENT.md`
+- CLI Reference: `docs/04-reference/cli.md`
+- Storage Migration: `docs/03-guides/storage-migration.md`
+- Storage Architecture: `docs/02-architecture/system-architecture.md#storage-architecture`
 
 ## Common Tasks for CLI Area
 - Adding new commands
