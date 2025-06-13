@@ -293,8 +293,10 @@ export async function handleEnvCloseCommand(
     }
     console.log(`  Removed path: ${envInfo.path}`);
 
-    if (!validated.keepBranch) {
-      console.log(`  Branch '${envInfo.branch}' preserved (use --keep-branch=false to delete)`);
+    if (validated.keepBranch) {
+      console.log(`  Branch '${envInfo.branch}' preserved`);
+    } else {
+      console.log(`  Branch '${envInfo.branch}' would be deleted (currently not implemented)`);
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
