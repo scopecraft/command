@@ -74,6 +74,23 @@ export async function handleInitCommand(options: {
     console.log('  4. Find next task:');
     console.log('     sc workflow next\n');
 
+    console.log('\n🎯 Next Steps - Initialize Your Modes:');
+    console.log('');
+    console.log('1. 🏗 Initialize modes for your project:');
+    console.log('   Run: claude "/project:mode-init YourProjectName"');
+    console.log('   (This will customize the templates for your project type)');
+    console.log('');
+    console.log('2. 🎯 Add specific guidance as needed:');
+    console.log('   claude "/project:mode-update exploration guidance Add-domain-patterns"');
+    console.log('   claude "/project:mode-update implementation area-specific Add-React-patterns"');
+    console.log('');
+    console.log('3. 🧪 Validate your setup:');
+    console.log('   claude "/project:mode-baseline initial-setup"');
+    console.log('   (Tests your modes against diverse scenarios)');
+    console.log('');
+    console.log('💡 The commands will analyze your project and customize the');
+    console.log('   modes automatically. No manual editing required!');
+    console.log('');
     console.log('📚 Learn more:');
     console.log('  - Workflow guide: .tasks/QUICKSTART.md');
     console.log('  - Templates: .tasks/.templates/');
