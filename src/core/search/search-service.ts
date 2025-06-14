@@ -8,18 +8,18 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { ConfigurationManager } from '../config/configuration-manager.js';
-import { createPathContext, resolvePath, PATH_TYPES } from '../paths/index.js';
-import { OramaAdapter } from './orama-adapter.js';
+import { PATH_TYPES, createPathContext, resolvePath } from '../paths/index.js';
 import { SearchIndexer } from './indexer.js';
+import { OramaAdapter } from './orama-adapter.js';
 import {
+  type ContentChange,
   DEFAULT_SEARCH_CONFIG,
+  type OperationResult,
   type SearchAdapter,
+  type SearchConfig,
+  type SearchIndex,
   type SearchQuery,
   type SearchResults,
-  type SearchIndex,
-  type ContentChange,
-  type SearchConfig,
-  type OperationResult
 } from './types.js';
 
 /**
@@ -33,12 +33,12 @@ export class SearchService {
   private index: SearchIndex | null = null;
   private projectRoot: string;
   private config: SearchConfig;
-  
+
   private constructor(projectRoot: string) {
     this.projectRoot = projectRoot;
     this.config = DEFAULT_SEARCH_CONFIG;
   }
-  
+
   /**
    * Get singleton instance for project root (following ConfigurationManager pattern)
    */
@@ -51,13 +51,13 @@ export class SearchService {
       }
       projectRoot = rootConfig.path;
     }
-    
+
     if (!SearchService.instances.has(projectRoot)) {
       SearchService.instances.set(projectRoot, new SearchService(projectRoot));
     }
     return SearchService.instances.get(projectRoot)!;
   }
-  
+
   /**
    * Initialize search service (following existing patterns)
    */
@@ -65,19 +65,19 @@ export class SearchService {
     if (this.isInitialized) {
       return { success: true };
     }
-    
+
     try {
       // 1. Initialize adapter
       this.adapter = new OramaAdapter();
       this.indexer = new SearchIndexer(this.adapter);
-      
+
       // 2. Ensure search directory exists
       const context = createPathContext(this.projectRoot);
       const searchPath = resolvePath(PATH_TYPES.SEARCH, context);
       if (!existsSync(searchPath)) {
         await mkdir(searchPath, { recursive: true });
       }
-      
+
       // 3. Load or create index
       const indexPath = this.getIndexPath();
       if (existsSync(indexPath)) {
@@ -87,10 +87,9 @@ export class SearchService {
         this.index = await this.adapter.createIndex();
         await this.indexProject();
       }
-      
+
       this.isInitialized = true;
       return { success: true };
-      
     } catch (error) {
       return {
         success: false,
@@ -98,7 +97,7 @@ export class SearchService {
       };
     }
   }
-  
+
   /**
    * Search implementation returning OperationResult
    */
@@ -112,15 +111,15 @@ export class SearchService {
         };
       }
     }
-    
+
     try {
       const startTime = performance.now();
       const results = await this.adapter!.search(this.index!, query);
       const queryTime = performance.now() - startTime;
-      
+
       // Apply limit if not already handled by adapter
       const limitedResults = results.slice(0, query.limit || this.config.maxResults);
-      
+
       return {
         success: true,
         data: {
@@ -129,7 +128,6 @@ export class SearchService {
           queryTime: Math.round(queryTime * 100) / 100, // Round to 2 decimals
         },
       };
-      
     } catch (error) {
       return {
         success: false,
@@ -137,7 +135,7 @@ export class SearchService {
       };
     }
   }
-  
+
   /**
    * Index project following OperationResult pattern
    */
@@ -147,22 +145,21 @@ export class SearchService {
         this.adapter = new OramaAdapter();
         this.indexer = new SearchIndexer(this.adapter);
       }
-      
+
       if (!this.index) {
         this.index = await this.adapter.createIndex();
       }
-      
+
       // Use indexer to process all tasks
       const indexResult = await this.indexer.indexProject(this.projectRoot, this.index);
       if (!indexResult.success) {
         return indexResult;
       }
-      
+
       // Save index to disk
       await this.saveIndex();
-      
+
       return { success: true };
-      
     } catch (error) {
       return {
         success: false,
@@ -170,7 +167,7 @@ export class SearchService {
       };
     }
   }
-  
+
   /**
    * Update index for specific changes
    */
@@ -182,37 +179,32 @@ export class SearchService {
           return initResult;
         }
       }
-      
+
       if (!this.index || !this.indexer) {
         return {
           success: false,
-          error: 'Search service not properly initialized'
+          error: 'Search service not properly initialized',
         };
       }
-      
-      const updateResult = await this.indexer.updateIndex(
-        this.index,
-        changes,
-        this.projectRoot
-      );
-      
+
+      const updateResult = await this.indexer.updateIndex(this.index, changes, this.projectRoot);
+
       if (!updateResult.success) {
         return updateResult;
       }
-      
+
       // Save updated index
       await this.saveIndex();
-      
+
       return { success: true };
-      
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update index'
+        error: error instanceof Error ? error.message : 'Failed to update index',
       };
     }
   }
-  
+
   /**
    * Shutdown service
    */
@@ -221,7 +213,7 @@ export class SearchService {
     if (this.index && this.adapter) {
       await this.saveIndex();
     }
-    
+
     // Clear instance
     SearchService.instances.delete(this.projectRoot);
     this.isInitialized = false;
@@ -229,7 +221,7 @@ export class SearchService {
     this.indexer = null;
     this.index = null;
   }
-  
+
   /**
    * Get the full path to the search index file
    * This is the ONLY place where we build search-related paths
@@ -239,7 +231,7 @@ export class SearchService {
     const searchDir = resolvePath(PATH_TYPES.SEARCH, context);
     return join(searchDir, this.config.indexFile);
   }
-  
+
   /**
    * Load index from disk
    */
@@ -247,7 +239,7 @@ export class SearchService {
     if (!this.adapter) {
       throw new Error('Adapter not initialized');
     }
-    
+
     try {
       const indexPath = this.getIndexPath();
       this.index = await this.adapter.loadIndex(indexPath);
@@ -258,7 +250,7 @@ export class SearchService {
       await this.indexProject();
     }
   }
-  
+
   /**
    * Save index to disk
    */
@@ -266,7 +258,7 @@ export class SearchService {
     if (!this.adapter || !this.index) {
       return;
     }
-    
+
     try {
       const indexPath = this.getIndexPath();
       await this.adapter.saveIndex(this.index, indexPath);

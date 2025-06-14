@@ -11,8 +11,8 @@ import * as core from '../core/index.js';
 
 // Import method registry which has all handlers wrapped with transformation
 import { methodRegistry } from './handlers.js';
-import { McpMethod } from './types.js';
 import { registerSearchTools } from './tools/search-tools.js';
+import { McpMethod } from './types.js';
 
 // Import input schemas for flexible validation
 import {

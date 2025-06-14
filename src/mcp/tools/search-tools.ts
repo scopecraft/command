@@ -3,10 +3,10 @@
  * Extracted from core-server.ts following Boy Scout Rule
  */
 
-import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { TaskStatusInputSchema, WorkflowStateInputSchema } from '../schemas.js';
+import { z } from 'zod';
 import { methodRegistry } from '../handlers.js';
+import { TaskStatusInputSchema, WorkflowStateInputSchema } from '../schemas.js';
 import { McpMethod } from '../types.js';
 
 /**
@@ -77,7 +77,10 @@ export function registerSearchTools(server: McpServer): void {
   // Search tool
   const searchRawShape = {
     query: z.string().describe('Search query text').optional(),
-    types: z.array(z.enum(['task', 'doc'])).describe('Filter by content type').optional(),
+    types: z
+      .array(z.enum(['task', 'doc']))
+      .describe('Filter by content type')
+      .optional(),
     filters: z
       .object({
         status: z.array(TaskStatusInputSchema).optional(),

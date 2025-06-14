@@ -2,16 +2,16 @@ import { useCommandCenter } from '../context/CommandCenterProvider';
 import { CommandCenter } from './CommandCenter';
 
 export function CommandCenterWrapper() {
-  const { 
-    isOpen, 
-    closeCommandCenter, 
+  const {
+    isOpen,
+    closeCommandCenter,
     searchTasks,
-    createTask, 
+    createTask,
     selectResult,
-    isSearching, 
-    isCreating, 
+    isSearching,
+    isCreating,
     searchError,
-    createError 
+    createError,
   } = useCommandCenter();
 
   return (

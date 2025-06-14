@@ -4,16 +4,16 @@ import { useCommandCenter } from '../context/CommandCenterProvider';
 import { CommandCenter } from './CommandCenter';
 
 export function CommandPaletteWrapper() {
-  const { 
-    isOpen, 
-    closeCommandCenter, 
+  const {
+    isOpen,
+    closeCommandCenter,
     searchTasks,
-    createTask, 
+    createTask,
     selectResult,
-    isSearching, 
-    isCreating, 
+    isSearching,
+    isCreating,
     searchError,
-    createError 
+    createError,
   } = useCommandCenter();
 
   return (

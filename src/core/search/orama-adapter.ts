@@ -3,15 +3,15 @@
  * Wraps Orama API to implement SearchAdapter interface
  */
 
-import { create, insert, remove, search, save, load, type AnyOrama } from '@orama/orama';
+import { type AnyOrama, create, insert, load, remove, save, search } from '@orama/orama';
 import { getSchema } from '../metadata/index.js';
-import type { 
-  SearchAdapter, 
-  SearchDocument, 
-  SearchIndex, 
-  SearchQuery, 
+import type {
+  IndexSchema,
+  SearchAdapter,
+  SearchDocument,
+  SearchIndex,
+  SearchQuery,
   SearchResult,
-  IndexSchema 
 } from './types.js';
 
 /**
@@ -19,7 +19,7 @@ import type {
  */
 function getOramaSchema() {
   const metadataSchema = getSchema();
-  
+
   // Core document fields (from SearchDocument)
   const schema: Record<string, string> = {
     // Base fields
@@ -27,10 +27,10 @@ function getOramaSchema() {
     title: 'string',
     content: 'string',
     path: 'string',
-    
+
     // Extended type to support future doc types (sessions, etc)
     type: 'enum',
-    
+
     // From TaskFrontmatter (via metadata service enums)
     status: 'enum',
     area: 'string',
@@ -38,14 +38,14 @@ function getOramaSchema() {
     workflowState: 'enum',
     priority: 'enum',
     assignee: 'string',
-    
+
     // From TaskMetadata
     isParentTask: 'boolean',
     parentTask: 'string',
     createdAt: 'string', // ISOTimestamp
-    updatedAt: 'string'  // ISOTimestamp
+    updatedAt: 'string', // ISOTimestamp
   };
-  
+
   return schema;
 }
 
@@ -73,7 +73,7 @@ export class OramaAdapter implements SearchAdapter {
       isParentTask: doc.isParentTask || false,
       parentTask: doc.parentTask || '',
       createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt
+      updatedAt: doc.updatedAt,
     };
   }
   /**
@@ -82,18 +82,18 @@ export class OramaAdapter implements SearchAdapter {
   async createIndex(schema?: IndexSchema): Promise<SearchIndex> {
     // Use provided schema or default Orama schema
     const indexSchema = schema || getOramaSchema();
-    
+
     const db = await create({
       schema: indexSchema as any,
       components: {
         tokenizer: {
           // Better tokenization for technical content
           stemming: true,
-          stopWords: ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for']
-        }
-      }
+          stopWords: ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for'],
+        },
+      },
     });
-    
+
     // Wrap Orama instance to match our interface
     return { oramaInstance: db } as SearchIndex;
   }
@@ -105,74 +105,74 @@ export class OramaAdapter implements SearchAdapter {
     const orama = (index as any).oramaInstance as AnyOrama;
     // Build Orama query
     const oramaQuery: any = {};
-    
+
     // Text search
     if (query.query && query.query.trim()) {
       oramaQuery.term = query.query;
       oramaQuery.properties = ['id', 'title', 'content'];
       oramaQuery.boost = {
-        id: 3,     // ID matches are most important (exact identifier)
-        title: 2,  // Title matches are more important
-        content: 1
+        id: 3, // ID matches are most important (exact identifier)
+        title: 2, // Title matches are more important
+        content: 1,
       };
     }
-    
+
     // Build filters
     const where: any = {};
-    
+
     if (query.types && query.types.length > 0) {
       // Orama doesn't support array contains for enum fields
       // We'll filter in post-processing instead
     }
-    
+
     if (query.filters) {
       if (query.filters.status && query.filters.status.length > 0) {
         where.status = query.filters.status;
       }
-      
+
       if (query.filters.area && query.filters.area.length > 0) {
         where.area = query.filters.area;
       }
-      
+
       if (query.filters.workflowState && query.filters.workflowState.length > 0) {
         // Handle in post-processing due to enum limitations
       }
-      
+
       // Tags require special handling in Orama
       if (query.filters.tags && query.filters.tags.length > 0) {
         // For now, we'll search in content for tags
         // TODO: Implement proper tag filtering when Orama supports array contains
       }
     }
-    
+
     // Add where clause if we have filters
     if (Object.keys(where).length > 0) {
       oramaQuery.where = where;
     }
-    
+
     // Set limit
     oramaQuery.limit = query.limit || 50;
-    
+
     // Execute search
     const results = await search(orama, oramaQuery);
-    
+
     // Post-process results for type and workflowState filtering
     let hits = results.hits;
     if (query.types && query.types.length > 0) {
       hits = hits.filter((hit: any) => query.types!.includes(hit.document.type));
     }
     if (query.filters?.workflowState && query.filters.workflowState.length > 0) {
-      hits = hits.filter((hit: any) => 
+      hits = hits.filter((hit: any) =>
         query.filters!.workflowState!.includes(hit.document.workflowState)
       );
     }
-    
+
     // Map Orama results to our format
     return hits.map((hit: any) => ({
       document: hit.document as SearchDocument,
       score: hit.score,
       // TODO: Extract excerpt with highlights when Orama supports it
-      excerpt: this.extractExcerpt(hit.document.content, query.query)
+      excerpt: this.extractExcerpt(hit.document.content, query.query),
     }));
   }
 
@@ -215,15 +215,15 @@ export class OramaAdapter implements SearchAdapter {
    */
   async saveIndex(index: SearchIndex, path: string): Promise<void> {
     const orama = (index as any).oramaInstance as AnyOrama;
-    
+
     // Get all documents for saving
     const allDocs = await search(orama, { limit: 10000 });
-    
+
     const data = {
-      documents: allDocs.hits.map(hit => hit.document),
-      schema: getOramaSchema()
+      documents: allDocs.hits.map((hit) => hit.document),
+      schema: getOramaSchema(),
     };
-    
+
     // Use Node.js fs to write the data
     const fs = await import('node:fs/promises');
     await fs.writeFile(path, JSON.stringify(data));
@@ -236,7 +236,7 @@ export class OramaAdapter implements SearchAdapter {
     const fs = await import('node:fs/promises');
     const data = await fs.readFile(path, 'utf-8');
     const parsedData = JSON.parse(data);
-    
+
     // Since Orama's load is having issues, let's rebuild the index
     // This is acceptable for MVP - we can optimize later
     const orama = await create({
@@ -244,18 +244,18 @@ export class OramaAdapter implements SearchAdapter {
       components: {
         tokenizer: {
           stemming: true,
-          stopWords: ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for']
-        }
-      }
+          stopWords: ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for'],
+        },
+      },
     });
-    
+
     // Re-index the documents from the saved data
     if (parsedData.documents && Array.isArray(parsedData.documents)) {
       for (const doc of parsedData.documents) {
         await insert(orama, doc);
       }
     }
-    
+
     return { oramaInstance: orama } as SearchIndex;
   }
 
@@ -268,36 +268,33 @@ export class OramaAdapter implements SearchAdapter {
       // Return first 150 chars if no query
       return content.substring(0, 150) + (content.length > 150 ? '...' : '');
     }
-    
+
     // Find query in content (case insensitive)
     const lowerContent = content.toLowerCase();
     const lowerQuery = query.toLowerCase();
     const index = lowerContent.indexOf(lowerQuery);
-    
+
     if (index === -1) {
       // Query not found, return beginning
       return content.substring(0, 150) + (content.length > 150 ? '...' : '');
     }
-    
+
     // Extract context around the match
     const contextBefore = 50;
     const contextAfter = 100;
     const start = Math.max(0, index - contextBefore);
     const end = Math.min(content.length, index + query.length + contextAfter);
-    
+
     let excerpt = content.substring(start, end);
-    
+
     // Add ellipsis if needed
     if (start > 0) excerpt = '...' + excerpt;
     if (end < content.length) excerpt = excerpt + '...';
-    
+
     // Simple highlight (can be enhanced with proper HTML escaping)
     const highlightedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    excerpt = excerpt.replace(
-      new RegExp(`(${highlightedQuery})`, 'gi'),
-      '**$1**'
-    );
-    
+    excerpt = excerpt.replace(new RegExp(`(${highlightedQuery})`, 'gi'), '**$1**');
+
     return excerpt;
   }
 }

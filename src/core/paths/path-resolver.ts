@@ -74,7 +74,7 @@ export function createPathContext(projectRoot: string, options?: PathContextOpti
 
   let mainRepoRoot: string;
   let worktreeRoot: string | undefined;
-  
+
   try {
     // Try to get git repository root
     mainRepoRoot = resolver.getMainRepositoryRootSync(projectRoot);

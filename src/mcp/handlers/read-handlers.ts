@@ -313,15 +313,13 @@ export async function handleParentGet(rawParams: unknown): Promise<McpResponse<P
  * Transform core SearchResult to MCP-optimized format
  * Strips full content and returns only essential metadata + excerpt
  */
-function transformSearchResultsForMcp(
-  coreResults: core.SearchResult[]
-): any[] {
-  return coreResults.map(result => ({
+function transformSearchResultsForMcp(coreResults: core.SearchResult[]): any[] {
+  return coreResults.map((result) => ({
     // Essential identifiers
     id: result.document.id,
     title: result.document.title,
     type: result.document.type,
-    
+
     // Task metadata
     status: result.document.status,
     priority: result.document.priority,
@@ -329,10 +327,10 @@ function transformSearchResultsForMcp(
     tags: result.document.tags,
     workflowState: result.document.workflowState,
     assignee: result.document.assignee,
-    
+
     // Parent context
     parentTask: result.document.parentTask,
-    
+
     // Search-specific
     score: result.score,
     excerpt: result.excerpt || generateDefaultExcerpt(result.document),
@@ -345,11 +343,11 @@ function transformSearchResultsForMcp(
 function generateDefaultExcerpt(doc: core.SearchDocument): string {
   const content = doc.content || '';
   const maxLength = 150;
-  
+
   if (content.length <= maxLength) {
     return content;
   }
-  
+
   return content.substring(0, maxLength) + '...';
 }
 
@@ -393,7 +391,7 @@ export async function handleSearch(rawParams: unknown): Promise<McpResponse<Sear
 
     // 5. Transform results to MCP-optimized format
     const transformedResults = transformSearchResultsForMcp(searchResult.data.results);
-    
+
     // 6. Return success response (following response-utils pattern)
     return createSuccessResponse(
       {
