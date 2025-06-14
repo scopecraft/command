@@ -96,6 +96,8 @@ First, determine the execution mode from task metadata, then execute with the ap
      - Selected Mode: {mode}
      - Reasoning: {why this mode}
      - Loading: {which guidance files}
+     - Task Area: {area}
+     - Scope Boundary: Only modify files in {area directories}
    ```
 </routing_protocol>
 
@@ -135,17 +137,91 @@ After determining the mode, adopt the appropriate mindset:
 - Structure deliverable as execution plan
 </mode_execution>
 
+<scope_boundary_enforcement>
+## CRITICAL: Area Scope Boundaries
+
+**⚠️ SCOPE ENFORCEMENT ⚠️**
+Your task has an assigned area: **{area}**
+
+You MUST respect these boundaries:
+
+### File Modification Rules by Area
+
+**Core Tasks (area: core)**
+- ✅ CAN modify: src/core/*, tests related to core, docs
+- ❌ CANNOT modify: src/cli/*, src/mcp/*, tasks-ui/*
+- ❌ CANNOT implement CLI commands or MCP handlers
+
+**CLI Tasks (area: cli)**  
+- ✅ CAN modify: src/cli/*, tests related to CLI, docs
+- ❌ CANNOT modify: src/core/* (except imports), src/mcp/*, tasks-ui/*
+- ✅ CAN import from core, but NOT modify core files
+
+**MCP Tasks (area: mcp)**
+- ✅ CAN modify: src/mcp/*, tests related to MCP, docs
+- ❌ CANNOT modify: src/core/* (except imports), src/cli/*, tasks-ui/*
+- ✅ CAN import from core, but NOT modify core files
+
+**UI Tasks (area: ui)**
+- ✅ CAN modify: tasks-ui/*, tests related to UI, docs
+- ❌ CANNOT modify: src/core/*, src/cli/*, src/mcp/*
+- ✅ CAN use MCP operations but NOT modify MCP code
+
+**General/Cross-cutting Tasks**
+- ✅ CAN modify files as specified in task instruction
+- ⚠️ MUST explicitly note when crossing area boundaries
+
+### Enforcement Protocol
+
+1. **Before ANY file modification**: Check if file is in your allowed area
+2. **If file is outside your area**: STOP and document in Tasks section
+3. **Reading files**: You can READ any file from any area
+4. **Shared interfaces**: If you need a shared type/interface, document it for core team
+
+### Example Violations to Avoid
+
+❌ **Core task implementing CLI commands**
+```typescript
+// In a core task, this is OUT OF SCOPE:
+// src/cli/entity-commands.ts
+setupSearchCommands(program); // STOP! This is CLI area
+```
+
+❌ **CLI task modifying core logic**
+```typescript
+// In a CLI task, this is OUT OF SCOPE:
+// src/core/search/search-service.ts
+export class SearchService { // STOP! This is core area
+```
+
+✅ **CLI task importing from core**
+```typescript
+// In a CLI task, this is ALLOWED:
+import { SearchService } from '../core/search/index.js';
+const service = SearchService.getInstance(); // Using, not modifying
+```
+
+### When Reading Cross-Area Documentation
+
+If you're reading a TRD or design document with multiple area sections:
+- Only implement the sections for YOUR assigned area
+- Note other sections exist but mark them as "out of scope for this task"
+- Focus on your area's deliverables only
+
+</scope_boundary_enforcement>
+
 <autonomous_principles>
 ## Core Autonomous Principles
 
 Regardless of mode selected:
 
-1. **Document Everything** - You are the only record
-2. **Update Frequently** - Log entries every 5-10 minutes
-3. **Make Progress** - Use assumptions rather than blocking
-4. **Flag Decisions** - Mark what needs human review
-5. **Complete the Deliverable** - This is your primary output
-6. **Handle Questions** - Add to Tasks section, continue with assumptions
+1. **Respect Area Boundaries** - Stay within your assigned area scope
+2. **Document Everything** - You are the only record
+3. **Update Frequently** - Log entries every 5-10 minutes
+4. **Make Progress** - Use assumptions rather than blocking
+5. **Flag Decisions** - Mark what needs human review
+6. **Complete the Deliverable** - This is your primary output
+7. **Handle Questions** - Add to Tasks section, continue with assumptions
 
 Remember: Since you're loading mode guidance dynamically, make sure to document which guidance influenced your approach.
 </autonomous_principles>
@@ -187,9 +263,15 @@ When in implementation mode, ALWAYS:
 
 ### Code Quality and Style
 - **Boy Scout Rule** - Always leave touched files cleaner than you found them
+- **Apply Boy Scout Rule actively** - When working in your area, fix issues you encounter:
+  - Fix linting errors in files you're modifying
+  - Improve unclear variable names
+  - Add missing type annotations
+  - Clean up inconsistent formatting
 - **Linting compliance** - Code style rules are enforceable and must be followed
 - **Run code-check** - Use `bun run code-check` before considering work complete
 - **Fix style issues** - Don't dismiss linting errors, they maintain codebase consistency
+- **Scope reminder**: Boy Scout Rule applies to files within your area that you're working on
 </expertise_adoption>
 
 <example_routing>

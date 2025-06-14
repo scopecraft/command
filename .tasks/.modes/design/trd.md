@@ -68,11 +68,31 @@ Your TRD should include:
 2. Architecture Overview (module structure, integration points)
 3. Core Interfaces (TypeScript interfaces, contracts)
 4. Dependencies (with rationale)
-5. Implementation Guidelines
+5. Implementation Guidelines (with area tags)
 6. Testing Strategy
 7. Migration Path
 8. Future Extensibility
 9. Architecture Alignment Review (what changed and why)
+
+### IMPORTANT: Area Tagging for Implementation Sections
+
+When creating sections that will be implemented by different teams/areas, you MUST add area tags:
+
+```markdown
+## 5. Core Service Implementation <!-- area:core -->
+Details for core service implementation...
+
+## 6. CLI Integration <!-- area:cli -->
+Details for CLI command implementation...
+
+## 7. MCP Integration <!-- area:mcp -->
+Details for MCP handler implementation...
+
+## 8. UI Integration <!-- area:ui -->
+Details for UI component implementation...
+```
+
+This ensures implementation tasks stay within their assigned boundaries.
 
 ## Key Principles
 - **Bridge PRD and Implementation**: Connect the what and how
