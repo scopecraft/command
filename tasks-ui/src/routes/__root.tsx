@@ -4,10 +4,10 @@ import { Outlet, createRootRoute, useNavigate } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { Menu, Moon, Sun } from 'lucide-react';
 import { useState } from 'react';
-import { CommandPaletteWrapper } from '../components/CommandPaletteWrapper';
+import { CommandCenterWrapper } from '../components/CommandCenterWrapper';
 import { Button } from '../components/ui/button';
 import { Sidebar } from '../components/v2/Sidebar';
-import { CommandPaletteProvider } from '../context/CommandPaletteProvider';
+import { CommandCenterProvider } from '../context/CommandCenterProvider';
 import { cn } from '../lib/utils';
 
 // Create a query client
@@ -40,7 +40,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CommandPaletteProvider>
+      <CommandCenterProvider>
         <div className="h-screen flex flex-col bg-background text-foreground">
           {/* Header */}
           <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4">
@@ -119,13 +119,13 @@ function RootComponent() {
           </div>
         </div>
 
-        {/* Command Palette */}
-        <CommandPaletteWrapper />
+        {/* Command Center */}
+        <CommandCenterWrapper />
 
         {/* Dev tools */}
         <TanStackRouterDevtools position="bottom-right" />
         <ReactQueryDevtools position="bottom-left" />
-      </CommandPaletteProvider>
+      </CommandCenterProvider>
     </QueryClientProvider>
   );
 }

@@ -1,9 +1,7 @@
-// Legacy wrapper - now uses the new unified CommandCenter
-// This provides backward compatibility for existing imports
 import { useCommandCenter } from '../context/CommandCenterProvider';
 import { CommandCenter } from './CommandCenter';
 
-export function CommandPaletteWrapper() {
+export function CommandCenterWrapper() {
   const { 
     isOpen, 
     closeCommandCenter, 
@@ -28,8 +26,6 @@ export function CommandPaletteWrapper() {
       isSearchLoading={isSearching}
       isCreateLoading={isCreating}
       error={searchError || createError}
-      // Start in create mode for backward compatibility
-      initialQuery="+"
     />
   );
 }

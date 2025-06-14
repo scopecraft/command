@@ -39,7 +39,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const openCommandPalette = useCallback((options?: CommandPaletteOptions) => {
+  const openCommandPalette = useCallback((_options?: CommandPaletteOptions) => {
     // TODO: When command palette is refactored to multi-purpose:
     // - Use options?.defaultCommand to pre-filter or pre-select commands
     // - Examples: 'create-task', 'create-parent-task', 'create-subtask', 'search-tasks'

@@ -69,7 +69,9 @@
       "Bash(./auto:*)",
       "Bash(tmux kill-window:*)",
       "Bash(gh label create:*)",
-      "mcp__scopecraft__search"
+      "mcp__scopecraft__search",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_tab_list"
     ],
     "deny": []
   }
