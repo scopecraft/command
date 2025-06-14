@@ -51,7 +51,7 @@ export function useTaskSearch({
     
     return {
       query: debouncedSearchQuery,
-      types: ['task' as const],
+      types: ['task' as const, 'parent' as const],
       limit: 1000, // High limit to get all matches
     };
   }, [debouncedSearchQuery]);
