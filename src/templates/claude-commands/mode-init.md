@@ -9,12 +9,41 @@ You are helping set up execution modes for a new Scopecraft project.
    mkdir -p .tasks/.modes/{exploration,design,implementation,orchestration,planning,meta,guidance}/area
    ```
 
-2. **Copy the base mode templates** from the templates directory:
-   - Start with the minimal templates provided
-   - Each mode should have at least a `base.md` file
+2. **Review the existing mode templates**:
+   - Templates have been pre-copied to `.tasks/.modes/` by `sc init`
+   - Each mode directory contains a `base.md` file with placeholders
    - The orchestration/autonomous.md is critical for automated execution
+   - Templates contain both flexible placeholders AND critical system requirements
 
-3. **Customize for the project**:
+3. **Create a todo list to track template customization**:
+   Use the TodoWrite tool to create items for each template that needs updating:
+   - [ ] Customize exploration/base.md
+   - [ ] Customize design/base.md
+   - [ ] Customize implementation/base.md
+   - [ ] Customize orchestration/base.md
+   - [ ] Customize orchestration/autonomous.md
+   - [ ] Customize planning/base.md
+   - [ ] Customize meta/base.md
+   - [ ] Create guidance files based on project needs
+   
+   **TIP**: You can use the Task tool to dispatch multiple template updates concurrently for faster customization!
+
+4. **Customize for the project**:
+   
+   **🔒 CRITICAL: DO NOT MODIFY THESE SECTIONS IN THE TEMPLATES:**
+   - `<scopecraft_requirements>` sections - System integration requirements
+   - `<external_tools>` sections - Tool usage requirements  
+   - Task metadata format specifications
+   - Dependency management rules (sequence numbers)
+   - Parent task orchestration requirements
+   - MCP tool usage instructions
+   - Status update protocols
+   - Area enforcement protocols
+   - Progress tracking requirements
+   - Completion protocols
+   
+   **These are SYSTEM REQUIREMENTS that enable Scopecraft to function!**
+   Only customize within PLACEHOLDER sections and project-specific content.
    
    **If project structure exists:**
    - Look at the project structure and infer the domain
@@ -63,11 +92,11 @@ You are helping set up execution modes for a new Scopecraft project.
    - Recommend relevant tools and patterns
    - Set up appropriate project rules and quality gates
 
-4. **Create essential guidance files**:
+5. **Create essential guidance files**:
    - `.tasks/.modes/guidance/README.md` - Explaining the mode system
    - Any technology-specific guidance based on project stack
 
-5. **If additional modes are specified as arguments**:
+6. **If additional modes are specified as arguments**:
    Create additional modes beyond the standard set (exploration, design, implementation, orchestration, planning, meta). For each custom mode:
    - Create `.tasks/.modes/{mode_name}/base.md`
    - Define role, mission, workflow, and deliverable format

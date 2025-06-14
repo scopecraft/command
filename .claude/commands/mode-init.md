@@ -34,6 +34,21 @@ NEVER save directly to `.tasks/.modes/` - that's the production directory!
    - Keep the `<!-- PLACEHOLDER -->` markers for future customization
    - Add area-specific guidance if the project has clear areas
 
+   **🔒 CRITICAL: DO NOT MODIFY THESE SECTIONS:**
+   - `<scopecraft_requirements>` sections - System integration requirements
+   - `<external_tools>` sections - Tool usage requirements  
+   - Task metadata format specifications
+   - Dependency management rules (sequence numbers)
+   - Parent task orchestration requirements
+   - MCP tool usage instructions
+   - Status update protocols
+   - Area enforcement protocols
+   - Progress tracking requirements
+   - Completion protocols
+   
+   **These are SYSTEM REQUIREMENTS that enable Scopecraft to function!**
+   Only customize within PLACEHOLDER sections and project-specific content.
+
 5. **Create essential guidance files**:
    - `.tasks/.modes-test/guidance/README.md` - Explaining the mode system
    - Any technology-specific guidance based on project stack

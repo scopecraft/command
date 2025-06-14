@@ -69,6 +69,21 @@ Based on `updateType`:
 4. **Test with real tasks** - Validate improvements work
 5. **Keep placeholders** - Maintain customization points
 
+**🔒 CRITICAL: NEVER MODIFY THESE PROTECTED SECTIONS:**
+- `<scopecraft_requirements>` sections - System integration requirements
+- `<external_tools>` sections - Tool usage requirements  
+- Task metadata format specifications
+- Dependency management rules (sequence numbers)
+- Parent task orchestration requirements
+- MCP tool usage instructions
+- Status update protocols
+- Area enforcement protocols
+- Progress tracking requirements
+- Completion protocols
+
+**These are SYSTEM REQUIREMENTS that enable Scopecraft to function!**
+Only update within PLACEHOLDER sections and project-specific content.
+
 ## Content Guidelines
 
 - **Be specific**: Provide concrete, actionable guidance
