@@ -1,52 +1,61 @@
 /**
  * Initialization command
  */
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
 import { WorktreePathResolver } from '../core/environment/worktree-path-resolver.js';
 import * as core from '../core/index.js';
+import { PATH_TYPES, createPathContext, resolvePath } from '../core/paths/path-resolver.js';
 import { TaskStoragePathEncoder } from '../core/task-storage-path-encoder.js';
 
 export async function handleInitCommand(options: {
   mode?: string;
   rootDir?: string;
+  override?: boolean; // For testing
+  force?: boolean; // Force re-initialization
 }): Promise<void> {
   try {
     const initRoot = options.rootDir || process.cwd();
 
-    console.log('DEBUG: handleInitCommand called with options:', options);
+    // Simple check: does the centralized tasks directory exist?
+    if (!options.force && !options.override) {
+      const context = createPathContext(initRoot, { override: options.override });
+      const tasksDir = resolvePath(PATH_TYPES.TASKS, context);
 
-    // Check current structure
-    const structureVersion = core.detectStructureVersion(initRoot);
-
-    if (structureVersion !== 'none') {
-      console.log(`✓ Project already initialized with ${structureVersion} structure`);
-
-      if (structureVersion === 'v1') {
-        console.log('\n⚠️  This project uses v1 structure (phases).');
-        console.log('Migration from v1 is not yet implemented.');
-        console.log('\nCurrent features:');
-        console.log('  - Workflow-based organization (backlog → current → archive)');
-        console.log('  - Parent tasks (folder-based tasks with subtasks)');
-        console.log('  - Automatic status updates on workflow transitions');
+      if (existsSync(tasksDir)) {
+        console.log('✓ Project already initialized');
+        console.log('Use --force to reinitialize');
+        return;
       }
-      return;
     }
 
-    // Initialize project structure
-    core.initializeProjectStructure(initRoot);
+    // Initialize project structure with override option
+    const config = options.override ? { override: true } : undefined;
+    core.initializeProjectStructure(initRoot, config);
 
     // Get the encoded project path for display
-    const resolver = new WorktreePathResolver();
-    const mainRepoRoot = resolver.getMainRepositoryRootSync();
-    const encoded = TaskStoragePathEncoder.encode(mainRepoRoot);
+    let mainRepoRoot: string;
+    let encoded: string;
+
+    if (options.override) {
+      // For override/testing, use the init root directly
+      mainRepoRoot = initRoot;
+      encoded = TaskStoragePathEncoder.encode(initRoot);
+    } else {
+      const resolver = new WorktreePathResolver();
+      mainRepoRoot = resolver.getMainRepositoryRootSync();
+      encoded = TaskStoragePathEncoder.encode(mainRepoRoot);
+    }
 
     console.log('\n🚀 Welcome to Scopecraft!\n');
     console.log(`Initialized project in: ${initRoot}`);
     console.log('✓ Created hybrid storage structure:');
     console.log('\n📁 Repository (.tasks/):');
     console.log('  .tasks/.templates/  📝 Task templates');
-    console.log('  .tasks/.modes/      🎯 Execution modes');
+    console.log('  .tasks/.modes/      🎯 AI execution modes');
+    console.log('\n🤖 Claude Integration:');
+    console.log('  .claude/commands/   📋 Mode management commands');
     console.log('\n☁️  Centralized Storage:');
     console.log(`  ~/.scopecraft/projects/${encoded}/`);
     console.log('  └── tasks/');

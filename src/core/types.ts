@@ -286,16 +286,8 @@ export interface ProjectConfig {
   autoStatusUpdate?: boolean; // update status on workflow transitions
   autoWorkflowTransitions?: boolean; // automatically move tasks between workflows on status changes
   complexTaskPrefix?: string; // prefix for subtask numbering
+  override?: boolean; // For testing - treat as standalone project
 }
-
-// ============================================
-// Migration Support
-// ============================================
-
-/**
- * Structure version detection
- */
-export type StructureVersion = 'v1' | 'v2' | 'mixed' | 'none';
 
 /**
  * Migration info for v1 tasks

@@ -4,10 +4,20 @@
  * Handles task templates with section structure
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { getTemplatesDirectory } from './directory-utils.js';
 import { getDefaultStatus } from './metadata/schema-service.js';
+import { PATH_TYPES, createPathContext, getModesPath, resolvePath } from './paths/path-resolver.js';
 import { ensureRequiredSections, parseTaskDocument, serializeTaskDocument } from './task-parser.js';
 import type {
   ProjectConfig,
@@ -165,8 +175,9 @@ function parseTemplateIntoSections(content: string): Partial<TaskSections> {
 /**
  * Initialize templates
  */
-export function initializeTemplates(projectRoot: string): void {
-  const templatesDir = getTemplatesDirectory(projectRoot);
+export function initializeTemplates(projectRoot: string, override?: boolean): void {
+  const context = createPathContext(projectRoot, { override });
+  const templatesDir = resolvePath(PATH_TYPES.TEMPLATES, context);
 
   // Ensure directory exists
   if (!existsSync(templatesDir)) {
@@ -178,6 +189,12 @@ export function initializeTemplates(projectRoot: string): void {
   if (existingTemplates.length === 0) {
     createDefaultTemplates(templatesDir);
   }
+
+  // Initialize mode templates with override
+  initializeModeTemplates(projectRoot, override);
+
+  // Initialize Claude commands
+  initializeClaudeCommands(projectRoot);
 }
 
 /**
@@ -400,4 +417,116 @@ interface TaskSections {
   deliverable: string;
   log: string;
   [key: string]: string;
+}
+
+/**
+ * Initialize mode templates
+ */
+function initializeModeTemplates(projectRoot: string, override?: boolean): void {
+  // Get the destination path using path-resolver with override
+  const context = createPathContext(projectRoot, { override });
+  const modesPath = getModesPath(context);
+
+  // Find source templates directory
+  let sourceModesDir: string;
+
+  // Check if we're in a test environment (vitest sets NODE_ENV or process.argv[0] contains vitest)
+  const isTest =
+    process.env.NODE_ENV === 'test' ||
+    process.argv[0].includes('vitest') ||
+    process.argv[1].includes('vitest');
+
+  if (isTest) {
+    // In test environment, look for src/templates relative to project root
+    // Use import.meta.url to find the project root
+    const fileUrl = import.meta.url.replace('file://', '');
+    const currentDir = dirname(fileUrl);
+    // From src/core/template-manager.ts up to project root, then to src/templates/modes
+    sourceModesDir = join(currentDir, '..', '..', 'src', 'templates', 'modes');
+  } else {
+    // For bundled code, templates are always relative to the CLI executable
+    // The CLI is in dist/cli/cli.js and templates are in dist/templates/
+    const execDir = dirname(process.argv[1]); // Get directory of the executing script
+    sourceModesDir = join(execDir, '..', 'templates', 'modes');
+  }
+
+  if (!existsSync(sourceModesDir)) {
+    // Mode templates not available in this installation
+    return;
+  }
+
+  // Ensure destination exists
+  if (!existsSync(modesPath)) {
+    mkdirSync(modesPath, { recursive: true });
+  }
+
+  // Recursively copy all mode templates
+  cpSync(sourceModesDir, modesPath, {
+    recursive: true,
+    filter: (src: string) => {
+      // Always allow directories
+      if (statSync(src).isDirectory()) {
+        return true;
+      }
+
+      // Skip files if destination already exists (don't overwrite user customizations)
+      const relativePath = src.replace(sourceModesDir, '');
+      const destPath = join(modesPath, relativePath);
+      return !existsSync(destPath);
+    },
+  });
+}
+
+/**
+ * Initialize Claude commands
+ */
+function initializeClaudeCommands(projectRoot: string): void {
+  // Claude commands go in .claude/commands/ relative to project root
+  const claudeCommandsDir = join(projectRoot, '.claude', 'commands');
+
+  // Find source templates directory
+  let sourceCommandsDir: string;
+
+  // Check if we're in a test environment
+  const isTest =
+    process.env.NODE_ENV === 'test' ||
+    process.argv[0].includes('vitest') ||
+    process.argv[1].includes('vitest');
+
+  if (isTest) {
+    // In test environment, look for src/templates relative to project root
+    const fileUrl = import.meta.url.replace('file://', '');
+    const currentDir = dirname(fileUrl);
+    sourceCommandsDir = join(currentDir, '..', '..', 'src', 'templates', 'claude-commands');
+  } else {
+    // For bundled code, templates are always relative to the CLI executable
+    const execDir = dirname(process.argv[1]);
+    sourceCommandsDir = join(execDir, '..', 'templates', 'claude-commands');
+  }
+
+  if (!existsSync(sourceCommandsDir)) {
+    // Claude command templates not available in this installation
+    return;
+  }
+
+  // Ensure destination directory exists
+  if (!existsSync(claudeCommandsDir)) {
+    mkdirSync(claudeCommandsDir, { recursive: true });
+  }
+
+  // Recursively copy all Claude commands
+  cpSync(sourceCommandsDir, claudeCommandsDir, {
+    recursive: true,
+    filter: (src: string) => {
+      // Always allow directories
+      if (statSync(src).isDirectory()) {
+        return true;
+      }
+
+      // Skip files if destination already exists (don't overwrite user customizations)
+      const relativePath = src.replace(sourceCommandsDir, '');
+      const destPath = join(claudeCommandsDir, relativePath);
+      return !existsSync(destPath);
+    },
+  });
 }

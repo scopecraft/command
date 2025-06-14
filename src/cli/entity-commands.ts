@@ -14,7 +14,6 @@ import {
   handleFeatureListCommand,
   handleFeatureUpdateCommand,
   handleGetCommand,
-  handleInitCommand,
   handleListCommand,
   handleListTemplatesCommand,
   handleMarkCompleteNextCommand,
@@ -33,6 +32,7 @@ import {
 } from './commands/env-commands.js';
 import { handlePlanCommand } from './commands/plan-commands.js';
 import { handleWorkCommand } from './commands/work-commands.js';
+import { handleInitCommand } from './init.js';
 
 /**
  * Set up task commands for V2
@@ -436,6 +436,7 @@ export function setupInitCommands(program: Command): void {
     .description('Initialize task directory structure with workflow folders')
     .option('--mode <mode>', 'Force project mode (roo or standalone)')
     .option('--root-dir <path>', 'Initialize in specific directory instead of current directory')
+    .option('--force', 'Force re-initialization even if project already exists')
     .action(handleInitCommand);
 }
 

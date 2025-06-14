@@ -7,6 +7,9 @@
 // Types
 export * from './types.js';
 
+// Path resolver exports
+export { createPathContext, resolvePath, PATH_TYPES } from './paths/path-resolver.js';
+
 // Legacy exports for compatibility
 export * from './project-config.js';
 export * from './field-normalizers.js';
@@ -27,7 +30,6 @@ export {
   getTemplatesDirectory,
   getConfigDirectory,
   ensureWorkflowDirectories,
-  detectStructureVersion,
   getTaskFilesInWorkflow,
   parseTaskLocation,
   getTaskIdFromFilename,
@@ -88,11 +90,7 @@ export {
 } from './task-crud.js';
 
 // Project initialization
-export {
-  initializeProjectStructure,
-  needsInit,
-  getInitStatus,
-} from './project-init.js';
+export { initializeProjectStructure } from './project-init.js';
 
 // Parent task operations - Clean Builder Pattern
 export {
@@ -139,5 +137,4 @@ export type {
   ProjectConfig,
   OperationResult,
   ValidationError,
-  StructureVersion,
 } from './types.js';

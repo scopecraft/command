@@ -18,9 +18,9 @@ import { basename, dirname, join, relative, sep } from 'node:path';
 import { WorktreePathResolver } from './environment/worktree-path-resolver.js';
 import { directoryPathCache } from './paths/cache.js';
 // MIGRATION: Using new centralized path resolver
-import { PATH_TYPES, createPathContext, resolvePath } from './paths/index.js';
+import { PATH_TYPES, createPathContext, resolvePath } from './paths/path-resolver.js';
 import { TaskStoragePathEncoder } from './task-storage-path-encoder.js';
-import type { ProjectConfig, StructureVersion, TaskLocation, WorkflowState } from './types.js';
+import type { ProjectConfig, TaskLocation, WorkflowState } from './types.js';
 
 // Default workflow folder names
 const DEFAULT_WORKFLOW_FOLDERS = {
@@ -31,9 +31,14 @@ const DEFAULT_WORKFLOW_FOLDERS = {
 
 /**
  * Get the tasks directory path (centralized storage)
+ * @param createIfMissing - Whether to create the directory if it doesn't exist (default: true)
  */
-export function getTasksDirectory(projectRoot: string): string {
-  const cacheKey = `tasks:${projectRoot}`;
+export function getTasksDirectory(
+  projectRoot: string,
+  override?: boolean,
+  createIfMissing = true
+): string {
+  const cacheKey = `tasks:${projectRoot}:${override || false}`;
 
   // Check cache first
   const cached = directoryPathCache.get(cacheKey);
@@ -42,11 +47,11 @@ export function getTasksDirectory(projectRoot: string): string {
   }
 
   // Use the path resolver as the single source of truth
-  const context = createPathContext(projectRoot);
+  const context = createPathContext(projectRoot, { override });
   const centralizedPath = resolvePath(PATH_TYPES.TASKS, context);
 
-  // Ensure centralized directory exists
-  if (!existsSync(centralizedPath)) {
+  // Ensure centralized directory exists only if requested
+  if (createIfMissing && !existsSync(centralizedPath)) {
     mkdirSync(centralizedPath, { recursive: true });
   }
 
@@ -64,7 +69,7 @@ export function getWorkflowDirectory(
   state: WorkflowState,
   config?: ProjectConfig
 ): string {
-  const cacheKey = `workflow:${projectRoot}:${state}`;
+  const cacheKey = `workflow:${projectRoot}:${state}:${config?.override || false}`;
 
   // Check cache first
   const cached = directoryPathCache.get(cacheKey);
@@ -72,7 +77,7 @@ export function getWorkflowDirectory(
     return cached;
   }
 
-  const tasksDir = getTasksDirectory(projectRoot);
+  const tasksDir = getTasksDirectory(projectRoot, config?.override, true);
   const folderName = config?.workflowFolders?.[state] || DEFAULT_WORKFLOW_FOLDERS[state];
   const path = join(tasksDir, folderName);
 
@@ -146,9 +151,16 @@ export function getModesDirectory(projectRoot: string): string {
  * Ensure all workflow directories exist
  */
 export function ensureWorkflowDirectories(projectRoot: string, config?: ProjectConfig): void {
-  const tasksDir = getTasksDirectory(projectRoot);
+  // Create path context with override if provided
+  const context = createPathContext(projectRoot, { override: config?.override });
 
-  // Create main .tasks directory
+  // Get paths using resolver
+  const tasksDir = resolvePath(PATH_TYPES.TASKS, context);
+  const templatesDir = resolvePath(PATH_TYPES.TEMPLATES, context);
+  const modesDir = resolvePath(PATH_TYPES.MODES, context);
+  const configDir = resolvePath(PATH_TYPES.CONFIG, context);
+
+  // Create main tasks directory
   if (!existsSync(tasksDir)) {
     mkdirSync(tasksDir, { recursive: true });
   }
@@ -162,71 +174,20 @@ export function ensureWorkflowDirectories(projectRoot: string, config?: ProjectC
     }
   }
 
-  // MIGRATION NOTE: Templates and modes now properly created in repository
-  // while tasks remain centralized
-
-  // Create repo-based directories for templates and modes
-  const repoTasksDir = join(projectRoot, '.tasks');
-  if (!existsSync(repoTasksDir)) {
-    mkdirSync(repoTasksDir, { recursive: true });
-  }
-
-  // Create .templates directory in repo
-  const templatesDir = join(repoTasksDir, '.templates');
+  // Create templates directory
   if (!existsSync(templatesDir)) {
     mkdirSync(templatesDir, { recursive: true });
   }
 
-  // Create .modes directory in repo
-  const modesDir = join(repoTasksDir, '.modes');
+  // Create modes directory
   if (!existsSync(modesDir)) {
     mkdirSync(modesDir, { recursive: true });
   }
 
-  // Create .config directory (centralized)
-  const configDir = getConfigDirectory(projectRoot);
+  // Create config directory
   if (!existsSync(configDir)) {
     mkdirSync(configDir, { recursive: true });
   }
-}
-
-/**
- * Detect structure version of a project
- */
-export function detectStructureVersion(projectRoot: string): StructureVersion {
-  const tasksDir = getTasksDirectory(projectRoot);
-
-  if (!existsSync(tasksDir)) {
-    return 'none';
-  }
-
-  const entries = readdirSync(tasksDir);
-
-  // Check for workflow structure (workflow folders)
-  const hasBacklog = entries.includes('backlog');
-  const hasCurrent = entries.includes('current');
-  const hasArchive = entries.includes('archive');
-  const hasWorkflow = hasBacklog || hasCurrent || hasArchive;
-
-  // Check for v1 structure (phase folders)
-  const hasPhases = entries.some((entry) => {
-    const fullPath = join(tasksDir, entry);
-    if (!statSync(fullPath).isDirectory()) return false;
-    // V1 phases typically have names like "release-v1", "sprint-23", etc.
-    return !['backlog', 'current', 'archive', '.templates', '.config'].includes(entry);
-  });
-
-  if (hasWorkflow && hasPhases) {
-    return 'mixed';
-  }
-  if (hasWorkflow) {
-    return 'v2';
-  }
-  if (hasPhases) {
-    return 'v1';
-  }
-
-  return 'none';
 }
 
 /**
