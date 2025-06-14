@@ -2,29 +2,32 @@
  * Tests for SearchService
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { SearchService } from '../search-service.js';
 import * as core from '../../index.js';
+import { SearchService } from '../search-service.js';
 
 describe('SearchService', () => {
   // Use a test project in /tmp to ensure complete isolation from the real project
-  const testProjectRoot = join('/tmp', `scopecraft-search-test-${Date.now()}-${Math.random().toString(36).substring(7)}`);
+  const testProjectRoot = join(
+    '/tmp',
+    `scopecraft-search-test-${Date.now()}-${Math.random().toString(36).substring(7)}`
+  );
   let searchService: SearchService;
 
   beforeEach(() => {
     // Create test project directory
     mkdirSync(testProjectRoot, { recursive: true });
-    
+
     // Create a scopecraft config file to ensure proper project isolation
     const configPath = join(testProjectRoot, '.scopecraft.json');
     const config = { path: testProjectRoot };
     require('fs').writeFileSync(configPath, JSON.stringify(config, null, 2));
-    
+
     // Initialize project structure
     core.initializeProjectStructure(testProjectRoot);
-    
+
     // Get search service instance
     searchService = SearchService.getInstance(testProjectRoot);
   });
@@ -32,10 +35,10 @@ describe('SearchService', () => {
   afterEach(async () => {
     // Shutdown service
     await searchService.shutdown();
-    
+
     // Clean up test directory
     rmSync(testProjectRoot, { recursive: true, force: true });
-    
+
     // Also clean up centralized storage for this test project
     const { TaskStoragePathEncoder } = await import('../../task-storage-path-encoder.js');
     const encoded = TaskStoragePathEncoder.encode(testProjectRoot);
@@ -52,7 +55,7 @@ describe('SearchService', () => {
     it('should create search directory on initialization', async () => {
       const result = await searchService.initialize();
       expect(result.success).toBe(true);
-      
+
       // Check that search directory exists
       const fs = await import('node:fs');
       const searchPath = join(process.env.HOME || '', '.scopecraft', 'projects');
@@ -77,8 +80,8 @@ describe('SearchService', () => {
         type: 'feature',
         area: 'core',
         customMetadata: {
-          assignee: 'test-user'
-        }
+          assignee: 'test-user',
+        },
       });
       expect(createResult.success).toBe(true);
 
@@ -92,7 +95,7 @@ describe('SearchService', () => {
 
       // Search for the task
       const searchResult = await searchService.search({
-        query: 'Test Search Task'
+        query: 'Test Search Task',
       });
       expect(searchResult.success).toBe(true);
       expect(searchResult.data?.totalCount).toBe(1);
@@ -107,20 +110,20 @@ describe('SearchService', () => {
         title: 'Authentication Feature',
         type: 'feature',
         area: 'security',
-        tags: ['security', 'backend']
+        tags: ['security', 'backend'],
       });
 
       await core.create(testProjectRoot, {
         title: 'Fix Login Bug',
         type: 'bug',
         area: 'security',
-        status: 'In Progress'
+        status: 'In Progress',
       });
 
       await core.create(testProjectRoot, {
         title: 'API Documentation',
         type: 'documentation',
-        area: 'core'
+        area: 'core',
       });
 
       // Initialize and index
@@ -130,7 +133,7 @@ describe('SearchService', () => {
 
     it('should find tasks by title', async () => {
       const result = await searchService.search({
-        query: 'Authentication'
+        query: 'Authentication',
       });
       expect(result.success).toBe(true);
       expect(result.data?.totalCount).toBe(1);
@@ -139,7 +142,7 @@ describe('SearchService', () => {
 
     it('should find tasks by partial match', async () => {
       const result = await searchService.search({
-        query: 'Login'
+        query: 'Login',
       });
       expect(result.success).toBe(true);
       expect(result.data?.totalCount).toBe(1);
@@ -148,7 +151,7 @@ describe('SearchService', () => {
 
     it('should filter by type', async () => {
       const result = await searchService.search({
-        types: ['bug']
+        types: ['bug'],
       });
       expect(result.success).toBe(true);
       expect(result.data?.totalCount).toBe(1);
@@ -158,8 +161,8 @@ describe('SearchService', () => {
     it('should filter by status', async () => {
       const result = await searchService.search({
         filters: {
-          status: ['In Progress']
-        }
+          status: ['In Progress'],
+        },
       });
       expect(result.success).toBe(true);
       expect(result.data?.totalCount).toBe(1);
@@ -169,8 +172,8 @@ describe('SearchService', () => {
     it('should filter by area', async () => {
       const result = await searchService.search({
         filters: {
-          area: ['core']
-        }
+          area: ['core'],
+        },
       });
       expect(result.success).toBe(true);
       expect(result.data?.totalCount).toBe(1);
@@ -180,7 +183,7 @@ describe('SearchService', () => {
     it('should respect limit parameter', async () => {
       const result = await searchService.search({
         query: '',
-        limit: 2
+        limit: 2,
       });
       expect(result.success).toBe(true);
       expect(result.data?.results.length).toBeLessThanOrEqual(2);
@@ -188,7 +191,7 @@ describe('SearchService', () => {
 
     it('should return query time', async () => {
       const result = await searchService.search({
-        query: 'test'
+        query: 'test',
       });
       expect(result.success).toBe(true);
       expect(result.data?.queryTime).toBeGreaterThan(0);
@@ -204,7 +207,7 @@ describe('SearchService', () => {
           title: `Task ${i}`,
           type: i % 2 === 0 ? 'feature' : 'bug',
           area: 'test',
-          tags: [`tag${i % 5}`]
+          tags: [`tag${i % 5}`],
         });
       }
 
@@ -213,7 +216,7 @@ describe('SearchService', () => {
 
       // Test multiple queries
       const queries = ['Task', 'feature', 'bug', 'tag1', 'Task 25'];
-      
+
       for (const query of queries) {
         const result = await searchService.search({ query });
         expect(result.success).toBe(true);
@@ -225,7 +228,7 @@ describe('SearchService', () => {
   describe('error handling', () => {
     it('should handle search before initialization gracefully', async () => {
       const result = await searchService.search({
-        query: 'test'
+        query: 'test',
       });
       expect(result.success).toBe(true); // Should auto-initialize
     });
@@ -240,12 +243,12 @@ describe('SearchService', () => {
     it('should recover from corrupted index', async () => {
       await searchService.initialize();
       await searchService.indexProject();
-      
+
       // Corrupt the index file
       const fs = await import('node:fs/promises');
       const path = await import('node:path');
       const encoder = await import('../../task-storage-path-encoder.js');
-      
+
       const encoded = encoder.TaskStoragePathEncoder.encode(testProjectRoot);
       const indexPath = path.join(
         process.env.HOME || '',
@@ -255,9 +258,9 @@ describe('SearchService', () => {
         'search',
         'project-index.orama'
       );
-      
+
       await fs.writeFile(indexPath, 'corrupted data');
-      
+
       // Should recover and rebuild
       const newService = SearchService.getInstance(testProjectRoot);
       const result = await newService.search({ query: 'test' });

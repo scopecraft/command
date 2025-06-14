@@ -39,16 +39,16 @@ interface UseTaskSearchReturn {
  * Custom hook for task search functionality
  * Handles debouncing, API calls, and result processing
  */
-export function useTaskSearch({ 
-  searchQuery, 
-  debounceMs = 300 
+export function useTaskSearch({
+  searchQuery,
+  debounceMs = 300,
 }: UseTaskSearchProps): UseTaskSearchReturn {
   const debouncedSearchQuery = useDebounce(searchQuery, debounceMs);
 
   // Search API parameters
   const searchApiParams = React.useMemo(() => {
     if (!debouncedSearchQuery.trim()) return null;
-    
+
     return {
       query: debouncedSearchQuery,
       types: ['task' as const, 'parent' as const],

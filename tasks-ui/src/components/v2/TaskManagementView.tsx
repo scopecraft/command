@@ -1,8 +1,8 @@
 import { Loader2 } from 'lucide-react';
 import React from 'react';
 import { useCommandPalette } from '../../context/CommandPaletteProvider';
+import { type TaskSearchParams, useTaskFilters } from '../../hooks/useTaskFilters';
 import { useTaskSearch } from '../../hooks/useTaskSearch';
-import { useTaskFilters, type TaskSearchParams } from '../../hooks/useTaskFilters';
 import type { ApiResponse } from '../../lib/api/client';
 import { useTaskList } from '../../lib/api/hooks';
 import {
@@ -14,7 +14,6 @@ import { Button } from '../ui/button';
 import { FilterCategory, FilterPanel } from '../ui/filter-panel';
 import { SearchInput } from '../ui/search-input';
 import { type TableTask, TaskTable } from './TaskTable';
-
 
 interface TaskManagementViewProps {
   className?: string;
@@ -36,7 +35,7 @@ export function TaskManagementView({
   const searchQuery = searchParams.search || '';
 
   // Filter management hook
-  const { filters, activeFilterCount, handleFilterChange, clearAllFilters, setSearchQuery } = 
+  const { filters, activeFilterCount, handleFilterChange, clearAllFilters, setSearchQuery } =
     useTaskFilters({ searchParams });
 
   // Load all tasks as normal
@@ -73,7 +72,6 @@ export function TaskManagementView({
       priority: task.priority || 'medium',
     }));
   }, [data, taskData]);
-
 
   // Filter options
   const filterOptions = React.useMemo(() => {

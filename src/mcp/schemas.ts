@@ -662,13 +662,19 @@ export function isSimpleTask(task: Task): task is SimpleTask {
 // Search input schema
 export const SearchInputSchema = SessionContextSchema.extend({
   query: z.string().optional().describe('Search query text'),
-  types: z.array(z.enum(['task', 'parent', 'doc'])).optional().describe('Filter by content type'),
-  filters: z.object({
-    status: z.array(TaskStatusInputSchema).optional(),
-    area: z.array(z.string()).optional(),
-    tags: z.array(z.string()).optional(),
-    workflowState: z.array(WorkflowStateInputSchema).optional(),
-  }).optional().describe('Filter search results'),
+  types: z
+    .array(z.enum(['task', 'parent', 'doc']))
+    .optional()
+    .describe('Filter by content type'),
+  filters: z
+    .object({
+      status: z.array(TaskStatusInputSchema).optional(),
+      area: z.array(z.string()).optional(),
+      tags: z.array(z.string()).optional(),
+      workflowState: z.array(WorkflowStateInputSchema).optional(),
+    })
+    .optional()
+    .describe('Filter search results'),
   limit: z.number().min(1).max(100).default(50).optional().describe('Maximum results to return'),
 });
 
@@ -679,7 +685,7 @@ export const SearchResultSchema = z.object({
   id: z.string(),
   title: z.string(),
   type: z.enum(['task', 'parent', 'doc']),
-  
+
   // Task metadata for filtering/display
   status: TaskStatusSchema.optional(),
   priority: TaskPrioritySchema.optional(),
@@ -687,10 +693,10 @@ export const SearchResultSchema = z.object({
   tags: z.array(z.string()).optional(),
   workflowState: WorkflowStateSchema.optional(),
   assignee: z.string().optional(),
-  
+
   // Parent task context
   parentTask: z.string().optional(),
-  
+
   // Search-specific fields
   score: z.number(),
   excerpt: z.string().describe('~100-150 char snippet around matched text with **highlighting**'),
