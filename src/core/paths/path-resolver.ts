@@ -34,6 +34,9 @@ import { pathContextCache } from './cache.js';
 import { pathStrategies } from './strategies.js';
 import { PATH_TYPES, type PathContext, type PathType } from './types.js';
 
+// Re-export types for convenience
+export { PATH_TYPES, type PathContext, type PathType } from './types.js';
+
 /**
  * Options for creating a path context
  */

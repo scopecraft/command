@@ -70,18 +70,15 @@ export async function handleInitRoot(params: ConfigInitRootParams) {
     // Initialize the project structure
     const projectRoot = params.path;
 
-    // Check if init is needed
-    const initNeeded = core.needsInit(projectRoot);
-    if (initNeeded) {
-      try {
-        core.initializeProjectStructure(projectRoot);
-      } catch (error) {
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Failed to initialize project structure',
-          message: 'Failed to initialize project structure',
-        };
-      }
+    // Always initialize if requested (MCP doesn't have force option)
+    try {
+      core.initializeProjectStructure(projectRoot);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to initialize project structure',
+        message: 'Failed to initialize project structure',
+      };
     }
 
     // Set the root in config manager

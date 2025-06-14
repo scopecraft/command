@@ -16,43 +16,6 @@ import {
 /**
  * Handle init command with project structure
  */
-export async function handleInitCommand(options: {
-  mode?: string;
-  rootDir?: string;
-}): Promise<void> {
-  try {
-    const configManager = ConfigurationManager.getInstance();
-    const projectRoot = options.rootDir || process.cwd();
-
-    // Check if already initialized
-    const statusMessage = core.getInitStatus(projectRoot);
-    if (statusMessage.includes('already initialized')) {
-      console.log(`✓ ${statusMessage}`);
-      return;
-    }
-
-    // Initialize v2 structure
-    core.initializeProjectStructure(projectRoot);
-
-    console.log('✓ Initialized Scopecraft v2 project structure:');
-    console.log('  .tasks/backlog/     - Tasks waiting to be worked on');
-    console.log('  .tasks/current/     - Tasks actively being worked on');
-    console.log('  .tasks/archive/     - Completed tasks organized by date');
-    console.log('  .tasks/.templates/  - Task templates');
-    console.log('\nNext steps:');
-    console.log('  sc task create --title "My first task" --type feature');
-    console.log('  sc task list');
-    console.log('  sc workflow next');
-
-    // Update config if needed
-    if (options.rootDir) {
-      configManager.setRootFromCLI(options.rootDir);
-    }
-  } catch (error) {
-    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    process.exit(1);
-  }
-}
 
 /**
  * Handle list command with v2
