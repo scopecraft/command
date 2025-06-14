@@ -654,3 +654,72 @@ export function isSubTask(task: Task): task is SubTask {
 export function isSimpleTask(task: Task): task is SimpleTask {
   return task.taskStructure === 'simple';
 }
+
+// =============================================================================
+// Search Schemas
+// =============================================================================
+
+// Search input schema
+export const SearchInputSchema = SessionContextSchema.extend({
+  query: z.string().optional().describe('Search query text'),
+  types: z.array(z.enum(['task', 'doc'])).optional().describe('Filter by content type'),
+  filters: z.object({
+    status: z.array(TaskStatusInputSchema).optional(),
+    area: z.array(z.string()).optional(),
+    tags: z.array(z.string()).optional(),
+    workflowState: z.array(WorkflowStateInputSchema).optional(),
+  }).optional().describe('Filter search results'),
+  limit: z.number().min(1).max(100).default(50).optional().describe('Maximum results to return'),
+});
+
+// Search result schema - optimized for token efficiency
+// Returns only essential metadata + excerpt, not full content
+export const SearchResultSchema = z.object({
+  // Essential task identifiers
+  id: z.string(),
+  title: z.string(),
+  type: z.enum(['task', 'doc']),
+  
+  // Task metadata for filtering/display
+  status: TaskStatusSchema.optional(),
+  priority: TaskPrioritySchema.optional(),
+  area: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  workflowState: WorkflowStateSchema.optional(),
+  assignee: z.string().optional(),
+  
+  // Parent task context
+  parentTask: z.string().optional(),
+  
+  // Search-specific fields
+  score: z.number(),
+  excerpt: z.string().describe('~100-150 char snippet around matched text with **highlighting**'),
+});
+
+// Search output schema
+export const SearchOutputSchema = createResponseSchema(
+  z.object({
+    results: z.array(SearchResultSchema),
+    totalCount: z.number(),
+    queryTime: z.number().describe('Query execution time in milliseconds'),
+  })
+);
+
+// Search reindex input schema
+export const SearchReindexInputSchema = SessionContextSchema;
+
+// Search reindex output schema
+export const SearchReindexOutputSchema = createResponseSchema(
+  z.object({
+    success: z.boolean(),
+    documentsIndexed: z.number().optional(),
+    timeTaken: z.number().optional().describe('Indexing time in milliseconds'),
+  })
+);
+
+// Type exports for search
+export type SearchInput = z.infer<typeof SearchInputSchema>;
+export type SearchOutput = z.infer<typeof SearchOutputSchema>;
+export type SearchResult = z.infer<typeof SearchResultSchema>;
+export type SearchReindexInput = z.infer<typeof SearchReindexInputSchema>;
+export type SearchReindexOutput = z.infer<typeof SearchReindexOutputSchema>;

@@ -544,3 +544,94 @@ export function formatProgress(completed: number, total: number): string {
 
   return `${bar} ${percentage}%`;
 }
+
+/**
+ * Format search results for display
+ */
+interface SearchResultsType {
+  results: Array<{
+    document: {
+      id: string;
+      title: string;
+      type: string;
+      path: string;
+      status?: string;
+      area?: string;
+      tags?: string[];
+    };
+    score: number;
+    excerpt?: string;
+  }>;
+  totalCount: number;
+  queryTime: number;
+}
+
+export function formatSearchResults(results: SearchResultsType, format: OutputFormat): string {
+  if (format === 'json') {
+    return JSON.stringify(results, null, 2);
+  }
+
+  if (format === 'table') {
+    // Following existing table formatter pattern from formatTasksList
+    const headers = ['Type', 'Title', 'Area', 'Status', 'Score'];
+    const rows = results.results.map((result) => {
+      const doc = result.document;
+      return [
+        doc.type.toUpperCase(),
+        truncateText(doc.title, 50),
+        doc.area || '-',
+        doc.status ? getStatusLabel(doc.status) : '-',
+        result.score.toFixed(2),
+      ];
+    });
+
+    return formatTable(headers, rows);
+  }
+
+  // Detail format (default)
+  return results.results
+    .map((result) => {
+      const doc = result.document;
+      let output = `\n${doc.type.toUpperCase()}: ${doc.title}`;
+      output += `\n  ID: ${doc.id}`;
+      output += `\n  Path: ${doc.path}`;
+      if (doc.status) output += `\n  Status: ${getStatusLabel(doc.status)}`;
+      if (doc.area) output += `\n  Area: ${doc.area}`;
+      if (doc.tags?.length) output += `\n  Tags: ${doc.tags.join(', ')}`;
+      output += `\n  Score: ${result.score.toFixed(2)}`;
+      if (result.excerpt) {
+        const cleanExcerpt = result.excerpt.replace(/<[^>]*>/g, ''); // Remove HTML
+        output += `\n  Excerpt: ${truncateText(cleanExcerpt, 100)}`;
+      }
+      return output;
+    })
+    .join('\n');
+}
+
+/**
+ * Helper to format a table
+ */
+function formatTable(headers: string[], rows: string[][]): string {
+  // Calculate column widths
+  const widths = headers.map((h, i) => {
+    const maxRowWidth = Math.max(...rows.map((r) => r[i].length));
+    return Math.max(h.length, maxRowWidth);
+  });
+
+  // Format header
+  const header = headers.map((h, i) => h.padEnd(widths[i])).join(' | ');
+  const separator = widths.map((w) => '-'.repeat(w)).join('-+-');
+
+  // Format rows
+  const formattedRows = rows.map((row) => row.map((cell, i) => cell.padEnd(widths[i])).join(' | '));
+
+  return [header, separator, ...formattedRows].join('\n');
+}
+
+/**
+ * Truncate text to specified length
+ */
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return `${text.substring(0, maxLength - 3)}...`;
+}

@@ -109,8 +109,9 @@ export class OramaAdapter implements SearchAdapter {
     // Text search
     if (query.query && query.query.trim()) {
       oramaQuery.term = query.query;
-      oramaQuery.properties = ['title', 'content'];
+      oramaQuery.properties = ['id', 'title', 'content'];
       oramaQuery.boost = {
+        id: 3,     // ID matches are most important (exact identifier)
         title: 2,  // Title matches are more important
         content: 1
       };

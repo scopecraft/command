@@ -4,6 +4,7 @@
  */
 
 import * as core from '../../core/index.js';
+import { getSearchService } from '../../core/search/index.js';
 import {
   type ParentGetInput,
   ParentGetInputSchema,
@@ -11,6 +12,12 @@ import {
   ParentListInputSchema,
   type ParentTask,
   type ParentTaskDetail,
+  type SearchInput,
+  SearchInputSchema,
+  type SearchOutput,
+  type SearchReindexInput,
+  SearchReindexInputSchema,
+  type SearchReindexOutput,
   type Task,
   type TaskGetInput,
   TaskGetInputSchema,
@@ -20,7 +27,11 @@ import {
 import { transformParentTaskDetail, transformTask } from '../transformers.js';
 import type { McpResponse } from '../types.js';
 import { getProjectRoot, loadProjectConfig } from './shared/config-utils.js';
-import { batchTransformTasks, createErrorResponse } from './shared/response-utils.js';
+import {
+  batchTransformTasks,
+  createErrorResponse,
+  createSuccessResponse,
+} from './shared/response-utils.js';
 
 // =============================================================================
 // Task List Handler (Refactored from complexity 17 to ~12)
@@ -290,6 +301,160 @@ export async function handleParentGet(rawParams: unknown): Promise<McpResponse<P
     return createErrorResponse(
       error instanceof Error ? error.message : 'Unknown error',
       'Failed to get parent task'
+    );
+  }
+}
+
+// =============================================================================
+// Search Handlers
+// =============================================================================
+
+/**
+ * Transform core SearchResult to MCP-optimized format
+ * Strips full content and returns only essential metadata + excerpt
+ */
+function transformSearchResultsForMcp(
+  coreResults: core.SearchResult[]
+): any[] {
+  return coreResults.map(result => ({
+    // Essential identifiers
+    id: result.document.id,
+    title: result.document.title,
+    type: result.document.type,
+    
+    // Task metadata
+    status: result.document.status,
+    priority: result.document.priority,
+    area: result.document.area,
+    tags: result.document.tags,
+    workflowState: result.document.workflowState,
+    assignee: result.document.assignee,
+    
+    // Parent context
+    parentTask: result.document.parentTask,
+    
+    // Search-specific
+    score: result.score,
+    excerpt: result.excerpt || generateDefaultExcerpt(result.document),
+  }));
+}
+
+/**
+ * Generate a default excerpt if none provided
+ */
+function generateDefaultExcerpt(doc: core.SearchDocument): string {
+  const content = doc.content || '';
+  const maxLength = 150;
+  
+  if (content.length <= maxLength) {
+    return content;
+  }
+  
+  return content.substring(0, maxLength) + '...';
+}
+
+/**
+ * Handler for search method
+ * Complexity: ~10 (following handler complexity guidelines)
+ */
+export async function handleSearch(rawParams: unknown): Promise<McpResponse<SearchOutput['data']>> {
+  try {
+    // 1. Validate input
+    const params = SearchInputSchema.parse(rawParams);
+
+    // 2. Get project root
+    const projectRoot = getProjectRoot(params);
+
+    // 3. Initialize search service (lazy initialization)
+    const searchService = getSearchService(projectRoot);
+    const initResult = await searchService.initialize();
+
+    if (!initResult.success) {
+      return createErrorResponse(
+        initResult.error || 'Failed to initialize search service',
+        'Search service temporarily unavailable'
+      );
+    }
+
+    // 4. Execute search
+    const searchResult = await searchService.search({
+      query: params.query,
+      types: params.types,
+      filters: params.filters,
+      limit: params.limit,
+    });
+
+    if (!searchResult.success || !searchResult.data) {
+      return createErrorResponse(
+        searchResult.error || 'Search operation failed',
+        'Failed to execute search'
+      );
+    }
+
+    // 5. Transform results to MCP-optimized format
+    const transformedResults = transformSearchResultsForMcp(searchResult.data.results);
+    
+    // 6. Return success response (following response-utils pattern)
+    return createSuccessResponse(
+      {
+        results: transformedResults,
+        totalCount: searchResult.data.totalCount,
+        queryTime: searchResult.data.queryTime,
+      },
+      `Found ${searchResult.data.totalCount} results`
+    );
+  } catch (error) {
+    console.error('Error in handleSearch:', error);
+    // 6. Error handling (following existing pattern)
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Search operation failed',
+      'Search service temporarily unavailable'
+    );
+  }
+}
+
+/**
+ * Handler for search_reindex method
+ * Complexity: ~8
+ */
+export async function handleSearchReindex(
+  rawParams: unknown
+): Promise<McpResponse<SearchReindexOutput['data']>> {
+  try {
+    // 1. Validate input
+    const params = SearchReindexInputSchema.parse(rawParams);
+
+    // 2. Get project root
+    const projectRoot = getProjectRoot(params);
+
+    // 3. Initialize search service
+    const searchService = getSearchService(projectRoot);
+
+    // 4. Execute reindex
+    const startTime = Date.now();
+    const reindexResult = await searchService.indexProject();
+    const timeTaken = Date.now() - startTime;
+
+    if (!reindexResult.success) {
+      return createErrorResponse(
+        reindexResult.error || 'Reindex operation failed',
+        'Failed to rebuild search index'
+      );
+    }
+
+    // 5. Return success response
+    return createSuccessResponse(
+      {
+        success: true,
+        timeTaken: Math.round(timeTaken),
+      },
+      'Search index rebuilt successfully'
+    );
+  } catch (error) {
+    console.error('Error in handleSearchReindex:', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Reindex operation failed',
+      'Failed to rebuild search index'
     );
   }
 }

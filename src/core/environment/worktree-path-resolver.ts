@@ -116,7 +116,7 @@ export class WorktreePathResolver implements IWorktreePathResolver {
    * Gets the main repository root, even when running from a worktree
    * This is needed for centralized storage to ensure all worktrees
    * share the same storage location
-   * 
+   *
    * @param fromPath - Optional path to run git commands from
    */
   async getMainRepositoryRoot(fromPath?: string): Promise<string> {
@@ -128,7 +128,7 @@ export class WorktreePathResolver implements IWorktreePathResolver {
    * Used by directory-utils and other sync code
    *
    * PERFORMANCE: Result is cached per instance to avoid repeated git commands
-   * 
+   *
    * @param fromPath - Optional path to run git commands from (for testing or specific project roots)
    */
   getMainRepositoryRootSync(fromPath?: string): string {
@@ -162,8 +162,8 @@ export class WorktreePathResolver implements IWorktreePathResolver {
     } catch (error) {
       // Git command failed - this path is not in a git repository
       throw new EnvironmentError(
-        `Not a git repository: ${fromPath || projectPath}`,
-        EnvironmentErrorCodes.NOT_GIT_REPOSITORY,
+        `Not a git repository: ${fromPath || 'current directory'}`,
+        EnvironmentErrorCodes.PATH_RESOLUTION_FAILED,
         { originalError: error }
       );
     }

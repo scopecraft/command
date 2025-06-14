@@ -194,6 +194,8 @@ export async function startHttpServer(
       console.log('- phase_delete');
       console.log('- workflow_current');
       console.log('- workflow_mark_complete_next');
+      console.log('- search');
+      console.log('- search_reindex');
     }
   });
 

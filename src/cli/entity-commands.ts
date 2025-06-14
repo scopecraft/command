@@ -23,6 +23,8 @@ import {
   handleListTemplatesCommand,
   handleMarkCompleteNextCommand,
   handleNextTaskCommand,
+  handleSearchCommand,
+  handleSearchReindexCommand,
   handleTaskMoveCommand,
   handleUpdateCommand,
 } from './commands.js';
@@ -791,6 +793,66 @@ Claude Modes:
 }
 
 /**
+ * Set up search commands following existing pattern
+ * @param program Root commander program
+ */
+export function setupSearchCommands(program: Command): void {
+  const searchCommand = new Command('search')
+    .description('Search tasks and documentation')
+    .addHelpText('before', '\nSEARCH COMMANDS\n===============\n')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  sc search "authentication logic"                    # Basic text search
+  sc search "bug fix" --type task --status todo      # Search with filters
+  sc search "API design" --area core --limit 10      # Search in specific area
+  sc search reindex                                   # Rebuild search index
+
+See 'sc search <command> --help' for more information on specific commands.`
+    );
+
+  // Search query command
+  searchCommand
+    .command('query')
+    .alias('q')
+    .argument('[query]', 'Search query text')
+    .option('--type <types...>', 'Filter by content type (task, doc)')
+    .option('--status <statuses...>', 'Filter by task status')
+    .option('--area <area>', 'Filter by task area')
+    .option('--tags <tags...>', 'Filter by tags')
+    .option('--limit <number>', 'Maximum results to return', '20')
+    .option('--format <format>', 'Output format (table, json, detail)', 'table')
+    .description('Search tasks and documentation')
+    .action(async (query, options) => {
+      await handleSearchCommand(query, options);
+    });
+
+  // Search reindex command
+  searchCommand
+    .command('reindex')
+    .description('Rebuild search index')
+    .action(async () => {
+      await handleSearchReindexCommand();
+    });
+
+  // Make 'query' the default subcommand
+  searchCommand
+    .argument('[query]', 'Search query text')
+    .option('--type <types...>', 'Filter by content type (task, doc)')
+    .option('--status <statuses...>', 'Filter by task status')
+    .option('--area <area>', 'Filter by task area')
+    .option('--tags <tags...>', 'Filter by tags')
+    .option('--limit <number>', 'Maximum results to return', '20')
+    .option('--format <format>', 'Output format (table, json, detail)', 'table')
+    .action(async (query, options) => {
+      await handleSearchCommand(query, options);
+    });
+
+  program.addCommand(searchCommand);
+}
+
+/**
  * Set up all entity commands for v2
  * @param program Root commander program
  */
@@ -805,4 +867,5 @@ export function setupEntityCommands(program: Command): void {
   setupWorkCommands(program);
   setupDispatchCommands(program);
   setupPlanCommands(program);
+  setupSearchCommands(program);
 }

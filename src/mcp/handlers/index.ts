@@ -22,6 +22,8 @@ import { createMcpHandler } from '../handler-wrapper.js';
 import {
   handleParentGet,
   handleParentList,
+  handleSearch,
+  handleSearchReindex,
   handleTaskGet,
   handleTaskList,
 } from './read-handlers.js';
@@ -198,6 +200,10 @@ export const methodRegistry: McpMethodRegistry = {
   [McpMethod.TASK_TRANSFORM]: createMcpHandler(handleTaskTransform),
   [McpMethod.PARENT_CREATE]: createMcpHandler(handleParentCreate),
   [McpMethod.PARENT_OPERATIONS]: createMcpHandler(handleParentOperations),
+
+  // Search operations
+  [McpMethod.SEARCH]: createMcpHandler(handleSearch),
+  [McpMethod.SEARCH_REINDEX]: createMcpHandler(handleSearchReindex),
 
   // ============================================================================
   // Legacy handlers - Not yet normalized

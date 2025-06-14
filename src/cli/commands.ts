@@ -616,34 +616,140 @@ export async function handleListTemplatesCommand(): Promise<void> {
 }
 
 // Feature/Area commands will be implemented when we add parent task support
-export async function handleFeatureListCommand(_options: any): Promise<void> {
+export async function handleFeatureListCommand(_options: unknown): Promise<void> {
   console.log('Parent task listing not yet implemented in v2');
 }
 
-export async function handleFeatureGetCommand(_id: string, _options: any): Promise<void> {
+export async function handleFeatureGetCommand(_id: string, _options: unknown): Promise<void> {
   console.log('Parent task get not yet implemented in v2');
 }
 
-export async function handleFeatureUpdateCommand(_id: string, _options: any): Promise<void> {
+export async function handleFeatureUpdateCommand(_id: string, _options: unknown): Promise<void> {
   console.log('Parent task update not yet implemented in v2');
 }
 
-export async function handleFeatureDeleteCommand(_id: string, _options: any): Promise<void> {
+export async function handleFeatureDeleteCommand(_id: string, _options: unknown): Promise<void> {
   console.log('Parent task delete not yet implemented in v2');
 }
 
-export async function handleAreaListCommand(_options: any): Promise<void> {
+export async function handleAreaListCommand(_options: unknown): Promise<void> {
   console.log('Area listing will use parent tasks in v2');
 }
 
-export async function handleAreaGetCommand(_id: string, _options: any): Promise<void> {
+export async function handleAreaGetCommand(_id: string, _options: unknown): Promise<void> {
   console.log('Area get will use parent tasks in v2');
 }
 
-export async function handleAreaUpdateCommand(_id: string, _options: any): Promise<void> {
+export async function handleAreaUpdateCommand(_id: string, _options: unknown): Promise<void> {
   console.log('Area update will use parent tasks in v2');
 }
 
-export async function handleAreaDeleteCommand(_id: string, _options: any): Promise<void> {
+export async function handleAreaDeleteCommand(_id: string, _options: unknown): Promise<void> {
   console.log('Area delete will use parent tasks in v2');
+}
+
+/**
+ * Handle search command
+ */
+export async function handleSearchCommand(
+  query: string,
+  options: {
+    type?: string[];
+    status?: string[];
+    area?: string;
+    tags?: string[];
+    limit?: string;
+    format?: string;
+  }
+): Promise<void> {
+  try {
+    // 1. Get project root (following existing pattern)
+    const configManager = ConfigurationManager.getInstance();
+    const rootConfig = configManager.getRootConfig();
+    if (!rootConfig.path) {
+      console.error('Error: No project root configured. Run "sc init" first.');
+      process.exit(1);
+    }
+    const projectRoot = rootConfig.path;
+
+    // 2. Initialize search service
+    const { getSearchService } = await import('../core/search/index.js');
+    const searchService = getSearchService(projectRoot);
+    const initResult = await searchService.initialize();
+
+    if (!initResult.success) {
+      console.error(`Error initializing search: ${initResult.error}`);
+      process.exit(1);
+    }
+
+    // 3. Build search query (following existing option parsing)
+    const searchQuery = {
+      query: query?.trim() || undefined,
+      types: options.type as ('task' | 'doc')[] | undefined,
+      filters: {
+        status: options.status,
+        area: options.area ? [options.area] : undefined,
+        tags: options.tags,
+      },
+      limit: Number.parseInt(options.limit || '20', 10),
+    };
+
+    // 4. Execute search
+    const result = await searchService.search(searchQuery);
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    const results = result.data!;
+
+    if (results.totalCount === 0) {
+      console.log('No results found.');
+      return;
+    }
+
+    // 5. Format and display (following existing formatter pattern)
+    const format = (options.format || 'table') as OutputFormat;
+    const { formatSearchResults } = await import('./formatters.js');
+    console.log(formatSearchResults(results, format));
+
+    // 6. Show summary (following existing pattern)
+    console.log(`\nFound ${results.totalCount} results in ${results.queryTime}ms`);
+  } catch (error) {
+    // 7. Error handling (following existing pattern)
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handle search reindex command
+ */
+export async function handleSearchReindexCommand(): Promise<void> {
+  try {
+    const configManager = ConfigurationManager.getInstance();
+    const rootConfig = configManager.getRootConfig();
+    if (!rootConfig.path) {
+      console.error('Error: No project root configured. Run "sc init" first.');
+      process.exit(1);
+    }
+    const projectRoot = rootConfig.path;
+
+    const { getSearchService } = await import('../core/search/index.js');
+    const searchService = getSearchService(projectRoot);
+    console.log('Rebuilding search index...');
+
+    const result = await searchService.indexProject();
+
+    if (!result.success) {
+      console.error(`Error: ${result.error}`);
+      process.exit(1);
+    }
+
+    console.log('✓ Search index rebuilt successfully');
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
 }
