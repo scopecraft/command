@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import React from 'react';
-import { useCommandPalette } from '../../context/CommandPaletteProvider';
+import { useCommandCenter } from '../../context/CommandCenterProvider';
 import type { ApiResponse } from '../../lib/api/client';
 import { createStatusFilterOptions, createWorkflowFilterOptions } from '../../lib/icons';
 import type { TaskStatus, WorkflowState } from '../../lib/types';
@@ -35,7 +35,7 @@ export function ParentTaskListView({
   searchParams = {},
 }: ParentTaskListViewProps) {
   const navigate = useNavigate();
-  const { openCommandPalette } = useCommandPalette();
+  const { openCommandCenter } = useCommandCenter();
 
   // API now returns normalized data - no complex mapping needed
   const allTasks = React.useMemo(() => {
@@ -197,7 +197,7 @@ export function ParentTaskListView({
             Complex tasks with multiple subtasks and progress tracking
           </p>
         </div>
-        <Button variant="atlas" onClick={() => openCommandPalette({ defaultCommand: 'create-parent-task' })}>
+        <Button variant="atlas" onClick={() => openCommandCenter()}>
           + Create Parent Task
         </Button>
       </div>
@@ -335,7 +335,7 @@ export function ParentTaskListView({
               <>
                 <p className="text-lg font-medium mb-2">No parent tasks yet</p>
                 <p>Create your first parent task to organize complex work</p>
-                <Button variant="atlas" className="mt-4" onClick={() => openCommandPalette({ defaultCommand: 'create-parent-task' })}>
+                <Button variant="atlas" className="mt-4" onClick={() => openCommandCenter()}>
                   + Create Parent Task
                 </Button>
               </>

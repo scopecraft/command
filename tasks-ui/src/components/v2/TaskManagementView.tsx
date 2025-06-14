@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import React from 'react';
-import { useCommandPalette } from '../../context/CommandPaletteProvider';
+import { useCommandCenter } from '../../context/CommandCenterProvider';
 import { type TaskSearchParams, useTaskFilters } from '../../hooks/useTaskFilters';
 import { useTaskSearch } from '../../hooks/useTaskSearch';
 import type { ApiResponse } from '../../lib/api/client';
@@ -26,7 +26,7 @@ export function TaskManagementView({
   data,
   searchParams = {},
 }: TaskManagementViewProps) {
-  const { openCommandPalette } = useCommandPalette();
+  const { openCommandCenter } = useCommandCenter();
 
   // State management
   const [selectedRows, setSelectedRows] = React.useState<Record<string, boolean>>({});
@@ -136,7 +136,7 @@ export function TaskManagementView({
         </div>
         <Button
           variant="atlas"
-          onClick={() => openCommandPalette({ defaultCommand: 'create-task' })}
+          onClick={() => openCommandCenter()}
         >
           + Create Task
         </Button>
