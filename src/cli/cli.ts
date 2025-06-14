@@ -65,7 +65,6 @@ USAGE: sc [entity] [command] [options]
 Available entity types:
   task       Task operations (create, list, update, delete, etc.)
   parent     Parent task management (folder-based tasks with subtasks)
-  area       Cross-cutting area management  
   workflow   Task workflow and sequence operations
   template   Template management operations
 

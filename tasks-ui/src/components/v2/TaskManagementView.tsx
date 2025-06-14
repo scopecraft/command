@@ -134,10 +134,7 @@ export function TaskManagementView({
           <h1 className="text-2xl font-bold text-foreground">Task Management</h1>
           <p className="text-muted-foreground">Search, filter, and manage your tasks efficiently</p>
         </div>
-        <Button
-          variant="atlas"
-          onClick={() => openCommandCenter()}
-        >
+        <Button variant="atlas" onClick={() => openCommandCenter()}>
           + Create Task
         </Button>
       </div>

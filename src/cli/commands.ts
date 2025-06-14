@@ -182,8 +182,8 @@ export async function handleCreateCommand(options: {
   status?: string;
   priority?: string;
   assignee?: string;
+  area?: string;
   location?: string;
-  subdirectory?: string;
   parent?: string;
   depends?: string[];
   previous?: string;
@@ -201,7 +201,7 @@ export async function handleCreateCommand(options: {
     const createOptions: core.TaskCreateOptions = {
       title: options.title,
       type: options.type as core.TaskType,
-      area: options.subdirectory || 'general',
+      area: options.area || 'general',
       workflowState: (options.location as core.WorkflowState) || 'backlog',
       status: (options.status as core.TaskStatus) || 'To Do',
       template: options.template,
@@ -212,13 +212,13 @@ export async function handleCreateCommand(options: {
     // Add optional metadata (but not parent, which is handled separately)
     if (options.priority) {
       // Pass raw priority - core will normalize it
-      createOptions.customMetadata!.priority = options.priority;
+      createOptions.customMetadata.priority = options.priority;
     }
-    if (options.assignee) createOptions.customMetadata!.assignee = options.assignee;
+    if (options.assignee) createOptions.customMetadata.assignee = options.assignee;
     if (options.tags) createOptions.tags = options.tags; // Pass directly to core
-    if (options.depends) createOptions.customMetadata!.depends = options.depends;
-    if (options.previous) createOptions.customMetadata!.previous = options.previous;
-    if (options.next) createOptions.customMetadata!.next = options.next;
+    if (options.depends) createOptions.customMetadata.depends = options.depends;
+    if (options.previous) createOptions.customMetadata.previous = options.previous;
+    if (options.next) createOptions.customMetadata.next = options.next;
 
     // Handle file input
     if (options.file) {
@@ -436,6 +436,7 @@ export async function handleTaskMoveCommand(
         'Error: Must specify target location (--to-backlog, --to-current, or --to-archive)'
       );
       process.exit(1);
+      return; // TypeScript needs this to know execution stops here
     }
 
     // Move task
@@ -702,7 +703,7 @@ export async function handleSearchCommand(
       process.exit(1);
     }
 
-    const results = result.data!;
+    const results = (result as any).data;
 
     if (results.totalCount === 0) {
       console.log('No results found.');

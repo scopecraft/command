@@ -235,7 +235,7 @@ export function CommandCenter({
         titleInputRef.current?.focus();
       }, 100);
     }
-    
+
     if (showSearchResults && searchInputRef.current) {
       setTimeout(() => {
         searchInputRef.current?.focus();
@@ -252,7 +252,7 @@ export function CommandCenter({
 
       // Handle command shortcuts when in command mode
       if (!showCreateForm && !showSearchResults) {
-        const command = systemCommands.find(cmd => cmd.shortcut === key);
+        const command = systemCommands.find((cmd) => cmd.shortcut === key);
         if (command) {
           e.preventDefault();
           handleResultSelect({
@@ -342,36 +342,38 @@ export function CommandCenter({
           {/* Command interface */}
           <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/50">
             <Terminal className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Select a command or press shortcut key</span>
+            <span className="text-sm text-muted-foreground">
+              Select a command or press shortcut key
+            </span>
           </div>
 
           <CommandList>
             <CommandGroup heading="Commands">
               {systemCommands.map((cmd) => {
-                  const Icon = cmd.icon;
-                  return (
-                    <CommandItem
-                      key={cmd.id}
-                      value={cmd.id}
-                      onSelect={() =>
-                        handleResultSelect({
-                          id: cmd.id,
-                          type: 'command',
-                          title: cmd.title,
-                          excerpt: cmd.description,
-                        })
-                      }
-                      className="flex items-center gap-3"
-                    >
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      <div className="flex-1">
-                        <div className="font-medium">{cmd.title}</div>
-                        <div className="text-xs text-muted-foreground">{cmd.description}</div>
-                      </div>
-                      <CommandShortcut>{cmd.shortcut}</CommandShortcut>
-                    </CommandItem>
-                  );
-                })}
+                const Icon = cmd.icon;
+                return (
+                  <CommandItem
+                    key={cmd.id}
+                    value={cmd.id}
+                    onSelect={() =>
+                      handleResultSelect({
+                        id: cmd.id,
+                        type: 'command',
+                        title: cmd.title,
+                        excerpt: cmd.description,
+                      })
+                    }
+                    className="flex items-center gap-3"
+                  >
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex-1">
+                      <div className="font-medium">{cmd.title}</div>
+                      <div className="text-xs text-muted-foreground">{cmd.description}</div>
+                    </div>
+                    <CommandShortcut>{cmd.shortcut}</CommandShortcut>
+                  </CommandItem>
+                );
+              })}
             </CommandGroup>
           </CommandList>
         </>
