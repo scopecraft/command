@@ -437,7 +437,7 @@ export function setupInitCommands(program: Command): void {
     .option('--mode <mode>', 'Force project mode (roo or standalone)')
     .option('--root-dir <path>', 'Initialize in specific directory instead of current directory')
     .option('--force', 'Force re-initialization even if project already exists')
-    .action(handleInitCommand);
+    .action((options: any) => handleInitCommand(options));
 }
 
 /**

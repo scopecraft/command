@@ -71,7 +71,15 @@
       "Bash(gh label create:*)",
       "mcp__scopecraft__search",
       "mcp__playwright__browser_console_messages",
-      "mcp__playwright__browser_tab_list"
+      "mcp__playwright__browser_tab_list",
+      "Bash(../dist/cli/cli.js init --force)",
+      "Bash(dist/cli/cli.js init --root-dir test-init-reproduce --force)",
+      "Bash(./dist/cli/cli.js init --root-dir test-init-reproduce --force)",
+      "Bash(/dev/null)",
+      "Bash(dist/cli/cli.js --version 2 >& 1)",
+      "Bash(dist/cli/cli.js init --root-dir test-debug --force)",
+      "Bash(cp:*)",
+      "Bash(./dist/cli/cli.js init:*)"
     ],
     "deny": []
   }
