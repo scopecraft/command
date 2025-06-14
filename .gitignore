@@ -21,3 +21,4 @@ npm-debug.log*
 
 **/.claude/settings.local.json
 e2e_test/
+tasks-ui/src/routeTree.gen.ts
