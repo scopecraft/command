@@ -12,6 +12,7 @@ import * as core from '../core/index.js';
 // Import method registry which has all handlers wrapped with transformation
 import { methodRegistry } from './handlers.js';
 import { McpMethod } from './types.js';
+import { registerSearchTools } from './tools/search-tools.js';
 
 // Import input schemas for flexible validation
 import {
@@ -847,6 +848,9 @@ function registerTools(server: McpServer, _verbose = false): McpServer {
       }
     }
   );
+
+  // Register search tools (extracted for better organization)
+  registerSearchTools(server);
 
   return server;
 }

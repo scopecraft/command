@@ -5,6 +5,15 @@
  */
 
 // ============================================
+// Core Types and Aliases
+// ============================================
+
+/**
+ * ISO 8601 timestamp string (e.g., "2024-01-15T10:30:00.000Z")
+ */
+export type ISOTimestamp = string;
+
+// ============================================
 // Core Enums and Constants
 // ============================================
 
@@ -40,6 +49,7 @@ export interface TaskFrontmatter {
   // Optional typed fields
   priority?: TaskPriority;
   tags?: string[];
+  assignee?: string;
 
   // Allow custom fields for extensibility
   [key: string]: unknown;
@@ -91,6 +101,8 @@ export interface TaskMetadata {
   isParentTask: boolean; // true if task is a folder with subtasks
   parentTask?: string; // for subtasks in complex tasks
   sequenceNumber?: string; // e.g., "01" for ordered subtasks
+  createdAt?: ISOTimestamp; // Timestamp from file system
+  updatedAt?: ISOTimestamp; // Timestamp from file system
 }
 
 /**

@@ -213,6 +213,69 @@ class ApiClient {
       body: JSON.stringify(operation),
     });
   }
+
+  // Search endpoints
+  async search(
+    params: {
+      query?: string;
+      types?: ('task' | 'doc')[];
+      filters?: {
+        status?: string[];
+        area?: string[];
+        tags?: string[];
+        workflow_state?: string[];
+      };
+      limit?: number;
+    } = {}
+  ) {
+    const searchParams = this.buildSearchParams(params);
+    return this.request(`/search?${searchParams}`);
+  }
+
+  private buildSearchParams(params: {
+    query?: string;
+    types?: ('task' | 'doc')[];
+    filters?: {
+      status?: string[];
+      area?: string[];
+      tags?: string[];
+      workflow_state?: string[];
+    };
+    limit?: number;
+  }): URLSearchParams {
+    const searchParams = new URLSearchParams();
+
+    if (params.query) searchParams.append('query', params.query);
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+
+    this.appendArrayParams(searchParams, 'types', params.types);
+    this.appendFilterParams(searchParams, params.filters);
+
+    return searchParams;
+  }
+
+  private appendArrayParams(searchParams: URLSearchParams, key: string, values?: string[]): void {
+    if (values && values.length > 0) {
+      for (const value of values) {
+        searchParams.append(key, value);
+      }
+    }
+  }
+
+  private appendFilterParams(
+    searchParams: URLSearchParams,
+    filters?: { [key: string]: string[] | undefined }
+  ): void {
+    if (!filters) return;
+
+    for (const [filterKey, filterValues] of Object.entries(filters)) {
+      if (filterValues && filterValues.length > 0) {
+        for (const value of filterValues) {
+          searchParams.append(`filters.${filterKey}`, value);
+        }
+      }
+    }
+  }
 }
 
 export const apiClient = new ApiClient();

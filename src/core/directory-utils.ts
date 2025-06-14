@@ -41,19 +41,9 @@ export function getTasksDirectory(projectRoot: string): string {
     return cached;
   }
 
-  // Get the main repository root to ensure all worktrees share the same storage
-  const resolver = new WorktreePathResolver();
-  const mainRepoRoot = resolver.getMainRepositoryRootSync();
-
-  // Encode the main repository path for consistent storage location
-  const encoded = TaskStoragePathEncoder.encode(mainRepoRoot);
-  const centralizedPath = join(
-    process.env.HOME || require('node:os').homedir(),
-    '.scopecraft',
-    'projects',
-    encoded,
-    'tasks'
-  );
+  // Use the path resolver as the single source of truth
+  const context = createPathContext(projectRoot);
+  const centralizedPath = resolvePath(PATH_TYPES.TASKS, context);
 
   // Ensure centralized directory exists
   if (!existsSync(centralizedPath)) {

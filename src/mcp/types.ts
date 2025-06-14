@@ -48,6 +48,10 @@ export enum McpMethod {
 
   // Debug method (temporary)
   DEBUG_CODE_PATH = 'debug_code_path',
+
+  // Search methods
+  SEARCH = 'search',
+  SEARCH_REINDEX = 'search_reindex',
 }
 
 // Base request interface

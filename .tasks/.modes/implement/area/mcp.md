@@ -73,10 +73,20 @@ The `ParameterTransformer` service handles all enum conversions:
   - `shared/` - Common utilities
 
 ### Core Files
-- `src/mcp/server.ts` - Server setup and registration
+- `src/mcp/core-server.ts` - Main server setup and tool registration
 - `src/mcp/schemas.ts` - Zod schemas and types
 - `src/mcp/parameter-transformer.ts` - Frontend↔Backend conversions
 - `src/mcp/handler-wrapper.ts` - Consistent error handling
+- `src/mcp/tools/` - Tool definitions (extracted for organization)
+
+## Tool Registration
+
+New tools go in `src/mcp/tools/` and are imported in `core-server.ts`.
+
+Key files:
+- `core-server.ts` - Where tools are registered
+- `handlers/index.ts` - Method registry mapping
+- `schemas.ts` - Input/output schemas
 
 ## Testing MCP Handlers
 

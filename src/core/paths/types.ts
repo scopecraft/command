@@ -14,6 +14,7 @@ export const PATH_TYPES = {
   TASKS: 'tasks',
   SESSIONS: 'sessions',
   CONFIG: 'config',
+  SEARCH: 'search',
 } as const;
 
 /**

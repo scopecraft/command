@@ -106,6 +106,14 @@ const path = `../${projectName}.worktrees/${taskId}`;
 - It enables future flexibility
 - It's simple and clear
 
+## Architecture Decision Records (ADRs)
+
+When making architectural decisions:
+- **Check existing ADRs**: `/docs/adr/` folder contains all architecture decisions
+- **Create new ADRs**: Use `/docs/adr/TEMPLATE.md` as your starting point
+- **Focus on decisions**: ADRs document WHAT and WHY, not HOW (implementation details go in TRDs)
+- **Number sequentially**: ADR-001, ADR-002, etc.
+
 ## Architecture Review Checklist
 
 When reviewing architecture:
@@ -116,6 +124,7 @@ When reviewing architecture:
 - [ ] Is configuration centralized?
 - [ ] Are patterns consistent?
 - [ ] Is there a migration path?
+- [ ] Is there an ADR documenting this decision?
 
 ## Remember
 

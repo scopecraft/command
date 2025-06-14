@@ -68,7 +68,8 @@
       "Bash(git init:*)",
       "Bash(./auto:*)",
       "Bash(tmux kill-window:*)",
-      "Bash(gh label create:*)"
+      "Bash(gh label create:*)",
+      "mcp__scopecraft__search"
     ],
     "deny": []
   }
