@@ -10,6 +10,7 @@ export const queryKeys = {
   tasks: (params?: Record<string, unknown>) => ['tasks', params] as const,
   task: (id: string, parentId?: string) => ['task', id, parentId] as const,
   parents: (params?: Record<string, unknown>) => ['parents', params] as const,
+  search: (params?: Record<string, unknown>) => ['search', params] as const,
 };
 
 // Task hooks
@@ -101,6 +102,28 @@ export function useMoveTask() {
       queryClient.invalidateQueries({ queryKey: ['parents'] });
       queryClient.invalidateQueries({ queryKey: ['workflow'] });
     },
+  });
+}
+
+// Search hook
+export function useSearch(
+  params: {
+    query?: string;
+    types?: ('task' | 'doc')[];
+    filters?: {
+      status?: string[];
+      area?: string[];
+      tags?: string[];
+      workflow_state?: string[];
+    };
+    limit?: number;
+  } = {}
+) {
+  return useQuery({
+    queryKey: queryKeys.search(params),
+    queryFn: () => apiClient.search(params),
+    staleTime: 1000 * 30, // 30 seconds
+    enabled: !!params.query || !!params.filters, // Only search if there's a query or filters
   });
 }
 

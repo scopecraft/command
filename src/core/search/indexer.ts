@@ -5,12 +5,12 @@
 
 import * as core from '../index.js';
 import type { Task, TaskDocument, WorkflowState } from '../types.js';
-import type { 
-  SearchAdapter, 
-  SearchDocument, 
-  SearchIndex,
+import type {
   ContentChange,
-  OperationResult 
+  OperationResult,
+  SearchAdapter,
+  SearchDocument,
+  SearchIndex,
 } from './types.js';
 
 /**
@@ -27,29 +27,30 @@ export class SearchIndexer {
       // Use existing core functions to scan tasks
       const listOptions = {
         includeArchived: true,
-        workflowStates: ['backlog', 'current', 'archive'] as WorkflowState[]
+        includeParentTasks: true,
+        workflowStates: ['backlog', 'current', 'archive'] as WorkflowState[],
       };
-      
+
       const taskResult = await core.list(projectRoot, listOptions);
       if (!taskResult.success) {
         return { success: false, error: taskResult.error || 'Failed to list tasks' };
       }
-      
+
       // Process each task into SearchDocument
       const documents: SearchDocument[] = [];
       for (const task of taskResult.data || []) {
         const doc = this.processTaskToDocument(task);
         if (doc) documents.push(doc);
       }
-      
+
       // Index documents using adapter
       await this.adapter.bulkIndex(index, documents);
-      
+
       return { success: true };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown indexing error'
+        error: error instanceof Error ? error.message : 'Unknown indexing error',
       };
     }
   }
@@ -58,8 +59,8 @@ export class SearchIndexer {
    * Update index with content changes
    */
   async updateIndex(
-    index: SearchIndex, 
-    changes: ContentChange[], 
+    index: SearchIndex,
+    changes: ContentChange[],
     projectRoot: string
   ): Promise<OperationResult<void>> {
     try {
@@ -80,7 +81,7 @@ export class SearchIndexer {
               }
             }
             break;
-            
+
           case 'delete':
             await this.adapter.removeDocument(index, change.id);
             break;
@@ -90,7 +91,7 @@ export class SearchIndexer {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Update failed'
+        error: error instanceof Error ? error.message : 'Update failed',
       };
     }
   }
@@ -101,12 +102,12 @@ export class SearchIndexer {
   private processTaskToDocument(task: Task): SearchDocument | null {
     try {
       const content = this.extractSearchableContent(task.document);
-      
+
       return {
         id: task.metadata.id,
         title: task.document.title,
         content,
-        type: 'task' as const,
+        type: task.metadata.isParentTask ? 'parent' : 'task',
         path: task.metadata.path,
         status: task.document.frontmatter.status,
         area: task.document.frontmatter.area,
@@ -117,7 +118,7 @@ export class SearchIndexer {
         isParentTask: task.metadata.isParentTask,
         parentTask: task.metadata.parentTask,
         createdAt: task.metadata.createdAt || new Date().toISOString(),
-        updatedAt: task.metadata.updatedAt || new Date().toISOString()
+        updatedAt: task.metadata.updatedAt || new Date().toISOString(),
       };
     } catch (error) {
       console.warn(`Failed to process task ${task.metadata.id}:`, error);
@@ -136,14 +137,14 @@ export class SearchIndexer {
       document.sections?.tasks || '',
       document.sections?.deliverable || '',
       // Include log section for historical context
-      document.sections?.log || ''
+      document.sections?.log || '',
     ];
-    
+
     // Add tags to searchable content (joined as space-separated string)
     if (document.tags && document.tags.length > 0) {
       sections.push(document.tags.join(' '));
     }
-    
+
     return sections
       .join(' ')
       .replace(/#{1,6}\s/g, '') // Remove markdown headers

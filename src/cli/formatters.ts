@@ -573,10 +573,11 @@ export function formatSearchResults(results: SearchResultsType, format: OutputFo
 
   if (format === 'table') {
     // Following existing table formatter pattern from formatTasksList
-    const headers = ['Type', 'Title', 'Area', 'Status', 'Score'];
+    const headers = ['ID', 'Type', 'Title', 'Area', 'Status', 'Score'];
     const rows = results.results.map((result) => {
       const doc = result.document;
       return [
+        truncateText(doc.id, 30),
         doc.type.toUpperCase(),
         truncateText(doc.title, 50),
         doc.area || '-',

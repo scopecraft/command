@@ -107,6 +107,54 @@ const server = serve({
   websocket: claudeWebSocketHandler
 });
 
+// Parse search parameters from URL query string
+function parseSearchParams(params: Record<string, any>) {
+  const parsed: Record<string, any> = { ...params };
+  
+  // Convert limit to number
+  if (parsed.limit && typeof parsed.limit === 'string') {
+    const limitNum = parseInt(parsed.limit, 10);
+    parsed.limit = isNaN(limitNum) ? 50 : Math.min(limitNum, 100);
+  }
+  
+  // Ensure types is an array
+  if (parsed.types) {
+    parsed.types = Array.isArray(parsed.types) ? parsed.types : [parsed.types];
+  }
+  
+  // Parse nested filter parameters (filters.status, filters.area, etc.)
+  if (parsed.filters || Object.keys(params).some(key => key.startsWith('filters.'))) {
+    const filters: Record<string, string[]> = {};
+    
+    // Handle direct filters object
+    if (parsed.filters && typeof parsed.filters === 'object') {
+      Object.assign(filters, parsed.filters);
+    }
+    
+    // Handle flattened filter parameters (filters.status, filters.area, etc.)
+    for (const [key, value] of Object.entries(params)) {
+      if (key.startsWith('filters.')) {
+        const filterKey = key.substring(8); // Remove 'filters.' prefix
+        filters[filterKey] = Array.isArray(value) ? value : [value];
+      }
+    }
+    
+    // Only set filters if we have any
+    if (Object.keys(filters).length > 0) {
+      parsed.filters = filters;
+    }
+    
+    // Clean up flattened filter params
+    for (const key of Object.keys(parsed)) {
+      if (key.startsWith('filters.')) {
+        delete parsed[key];
+      }
+    }
+  }
+  
+  return parsed;
+}
+
 // Handle API requests by mapping them to MCP handlers
 async function handleApiRequest(req: Request, path: string): Promise<Response> {
   // Setup CORS headers
@@ -277,6 +325,20 @@ async function handleApiRequest(req: Request, path: string): Promise<Response> {
     if (path === '/tasks/move') {
       if (req.method === 'POST') {
         const result = await methodRegistry[McpMethod.TASK_MOVE](params);
+        return new Response(JSON.stringify(result), { 
+          status: result.success ? 200 : 400,
+          headers: corsHeaders
+        });
+      }
+    }
+    
+    // Search endpoint
+    if (path === '/search') {
+      if (req.method === 'GET' || req.method === 'POST') {
+        // Parse and normalize search parameters
+        const searchParams = parseSearchParams(params);
+        
+        const result = await methodRegistry[McpMethod.SEARCH](searchParams);
         return new Response(JSON.stringify(result), { 
           status: result.success ? 200 : 400,
           headers: corsHeaders

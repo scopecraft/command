@@ -662,7 +662,7 @@ export function isSimpleTask(task: Task): task is SimpleTask {
 // Search input schema
 export const SearchInputSchema = SessionContextSchema.extend({
   query: z.string().optional().describe('Search query text'),
-  types: z.array(z.enum(['task', 'doc'])).optional().describe('Filter by content type'),
+  types: z.array(z.enum(['task', 'parent', 'doc'])).optional().describe('Filter by content type'),
   filters: z.object({
     status: z.array(TaskStatusInputSchema).optional(),
     area: z.array(z.string()).optional(),
@@ -678,7 +678,7 @@ export const SearchResultSchema = z.object({
   // Essential task identifiers
   id: z.string(),
   title: z.string(),
-  type: z.enum(['task', 'doc']),
+  type: z.enum(['task', 'parent', 'doc']),
   
   // Task metadata for filtering/display
   status: TaskStatusSchema.optional(),

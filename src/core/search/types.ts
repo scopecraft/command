@@ -17,7 +17,7 @@ export type OperationResult<T = void> =
  */
 export interface SearchQuery {
   query?: string;                      // Text query
-  types?: ('task' | 'doc')[];         // Filter by content type
+  types?: ('task' | 'parent' | 'doc')[];         // Filter by content type
   filters?: {                          // Basic filters - matches TaskListOptions pattern
     status?: string[];
     area?: string[];
@@ -52,7 +52,7 @@ export interface SearchDocument {
   id: string;
   title: string;
   content: string;                     // Processed for search
-  type: 'task' | 'doc';
+  type: 'task' | 'parent' | 'doc';
   path: string;
   
   // Task-specific fields (matching TaskMetadata structure)
