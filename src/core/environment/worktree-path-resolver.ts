@@ -116,9 +116,11 @@ export class WorktreePathResolver implements IWorktreePathResolver {
    * Gets the main repository root, even when running from a worktree
    * This is needed for centralized storage to ensure all worktrees
    * share the same storage location
+   * 
+   * @param fromPath - Optional path to run git commands from
    */
-  async getMainRepositoryRoot(): Promise<string> {
-    return this.getMainRepositoryRootSync();
+  async getMainRepositoryRoot(fromPath?: string): Promise<string> {
+    return this.getMainRepositoryRootSync(fromPath);
   }
 
   /**
@@ -126,16 +128,18 @@ export class WorktreePathResolver implements IWorktreePathResolver {
    * Used by directory-utils and other sync code
    *
    * PERFORMANCE: Result is cached per instance to avoid repeated git commands
+   * 
+   * @param fromPath - Optional path to run git commands from (for testing or specific project roots)
    */
-  getMainRepositoryRootSync(): string {
-    // Return cached value if available
-    if (this.mainRepoRootCache !== undefined) {
+  getMainRepositoryRootSync(fromPath?: string): string {
+    // If a specific path is provided, don't use cache (could be different project)
+    if (!fromPath && this.mainRepoRootCache !== undefined) {
       return this.mainRepoRootCache;
     }
 
     try {
       const rootConfig = this.config.getRootConfig();
-      const projectPath = rootConfig.path || process.cwd();
+      const projectPath = fromPath || rootConfig.path || process.cwd();
 
       // Use simple-git to find the common directory (main repository)
       // Note: We need to use execSync here because simpleGit is async
@@ -149,23 +153,19 @@ export class WorktreePathResolver implements IWorktreePathResolver {
       // The common dir is the .git directory, so we need its parent
       const mainRepoRoot = dirname(gitCommonDir);
 
-      // Cache the result
-      this.mainRepoRootCache = resolve(mainRepoRoot);
-      return this.mainRepoRootCache;
-    } catch (error) {
-      // If git command fails, fall back to current project root
-      // This handles non-git projects or other edge cases
-      const rootConfig = this.config.getRootConfig();
-      if (!rootConfig.validated || !rootConfig.path) {
-        throw new EnvironmentError(
-          'No valid project root found',
-          EnvironmentErrorCodes.CONFIGURATION_ERROR
-        );
+      // Cache the result only if no specific path was provided
+      const resolvedPath = resolve(mainRepoRoot);
+      if (!fromPath) {
+        this.mainRepoRootCache = resolvedPath;
       }
-
-      // Cache the fallback result
-      this.mainRepoRootCache = rootConfig.path;
-      return this.mainRepoRootCache;
+      return resolvedPath;
+    } catch (error) {
+      // Git command failed - this path is not in a git repository
+      throw new EnvironmentError(
+        `Not a git repository: ${fromPath || projectPath}`,
+        EnvironmentErrorCodes.NOT_GIT_REPOSITORY,
+        { originalError: error }
+      );
     }
   }
 }

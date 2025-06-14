@@ -35,12 +35,35 @@ import { pathStrategies } from './strategies.js';
 import { PATH_TYPES, type PathContext, type PathType } from './types.js';
 
 /**
+ * Options for creating a path context
+ */
+export interface PathContextOptions {
+  /**
+   * Override mode for testing - treats projectRoot as standalone project
+   * without git detection or worktree resolution
+   */
+  override?: boolean;
+}
+
+/**
  * Create a path context from a project root
  * This captures all the information needed for path resolution
  *
  * PERFORMANCE: Results are cached to avoid repeated git commands
  */
-export function createPathContext(projectRoot: string): PathContext {
+export function createPathContext(projectRoot: string, options?: PathContextOptions): PathContext {
+  // For override mode (testing), create a simple context
+  if (options?.override) {
+    const context: PathContext = {
+      executionRoot: projectRoot,
+      mainRepoRoot: projectRoot, // Use same root for testing
+      worktreeRoot: undefined,
+      userHome: homedir(),
+    };
+    // Don't cache override contexts
+    return context;
+  }
+
   // Check cache first
   const cached = pathContextCache.get(projectRoot);
   if (cached) {
@@ -49,12 +72,25 @@ export function createPathContext(projectRoot: string): PathContext {
 
   const resolver = new WorktreePathResolver();
 
-  // Use the existing implementation from WorktreePathResolver
-  const mainRepoRoot = resolver.getMainRepositoryRootSync();
-
-  // Determine if we're in a worktree by comparing paths
-  // If execution root differs from main repo root, we're in a worktree
-  const worktreeRoot = projectRoot !== mainRepoRoot ? projectRoot : undefined;
+  let mainRepoRoot: string;
+  let worktreeRoot: string | undefined;
+  
+  try {
+    // Try to get git repository root
+    mainRepoRoot = resolver.getMainRepositoryRootSync(projectRoot);
+    // Determine if we're in a worktree by comparing paths
+    worktreeRoot = projectRoot !== mainRepoRoot ? projectRoot : undefined;
+  } catch (error: any) {
+    // If not a git repository, treat the projectRoot as a standalone project
+    // This is valid for test scenarios or non-git projects
+    if (error?.code === 'NOT_GIT_REPOSITORY' || error?.message?.includes('Not a git repository')) {
+      mainRepoRoot = projectRoot;
+      worktreeRoot = undefined;
+    } else {
+      // Re-throw other errors
+      throw error;
+    }
+  }
 
   const context: PathContext = {
     executionRoot: projectRoot,

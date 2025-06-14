@@ -121,8 +121,10 @@ export interface WorktreePathResolver {
    * Gets the main repository root, even when running from a worktree
    * This is needed for centralized storage to ensure all worktrees
    * share the same storage location
+   * 
+   * @param fromPath - Optional path to run git commands from
    */
-  getMainRepositoryRoot(): Promise<string>;
+  getMainRepositoryRoot(fromPath?: string): Promise<string>;
 }
 
 // ============================================

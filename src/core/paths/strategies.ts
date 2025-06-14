@@ -69,6 +69,14 @@ export const centralizedConfigStrategy: PathStrategy = (context: PathContext): s
 };
 
 /**
+ * Centralized search strategy
+ * Search indices stored centrally under ~/.scopecraft/projects/{encoded}/search/
+ */
+export const centralizedSearchStrategy: PathStrategy = (context: PathContext): string => {
+  return join(centralizedStrategy(context), 'search');
+};
+
+/**
  * Global user strategy
  * Returns paths within ~/.scopecraft/ for user-wide settings
  */
@@ -120,5 +128,9 @@ export const pathStrategies: Record<PathType, PathStrategy[]> = {
   [PATH_TYPES.CONFIG]: [
     centralizedConfigStrategy, // Primary: ~/.scopecraft/projects/{encoded}/config/
     repoStrategy, // Fallback: .tasks/ in repo (for legacy)
+  ],
+
+  [PATH_TYPES.SEARCH]: [
+    centralizedSearchStrategy, // Only: ~/.scopecraft/projects/{encoded}/search/
   ],
 };
