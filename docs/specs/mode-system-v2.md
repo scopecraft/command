@@ -29,8 +29,9 @@ The AI agent reads task metadata and intelligently selects relevant guidance sni
 ### 4. **Progressive Enhancement**
 Start with minimal structure, let patterns emerge through usage, formalize what proves valuable.
 
-## Architecture
+## Architecture Evolution
 
+### Current Architecture (Transitional)
 ```
 .tasks/
   .modes/
@@ -48,7 +49,7 @@ Start with minimal structure, let patterns emerge through usage, formalize what 
         cli.md          # CLI patterns, tools
     design/
       base.md           # Design decision process
-    orchestration/      # NEW: Orchestration modes
+    orchestration/      # Orchestration modes
       base.md           # Interactive orchestration
       autonomous.md     # Autonomous task router
     guidance/           # General, reusable patterns
@@ -58,6 +59,32 @@ Start with minimal structure, let patterns emerge through usage, formalize what 
       codebase-research.md
       ...
 ```
+
+### Future Architecture (Simplified)
+```
+.tasks/
+  .templates/             # Task type = execution approach
+    feature.md            # Implementation mindset
+    bug.md                # Diagnosis mindset
+    spike.md              # Exploration mindset
+    chore.md              # Direct execution
+    test.md               # Testing approach
+    docs.md               # Documentation approach
+    parent.md             # Orchestration mindset
+    planning.md           # Planning sessions
+    area.md               # Template for areas
+    guidance.md           # Template for guidance
+  .modes/                 # Project-specific only
+    area/
+      ui.md               # This project's UI patterns
+      core.md             # This project's core patterns
+      mcp.md              # This project's MCP patterns
+    guidance/
+      react-patterns.md   # Reusable patterns
+      security-checks.md  # Domain guidance
+```
+
+The key simplification: **Task type directly determines execution approach**, eliminating the redundancy between task types (feature, bug, spike) and mode types (implementation, diagnosis, exploration).
 
 ## Guidance vs Area Split
 
@@ -230,11 +257,32 @@ tags: ["react", "research", "ui-patterns", "team:frontend"]
 
 ## Migration Path
 
+### To Current Architecture (Immediate)
 1. **Phase 1**: Create base modes with composition instructions
 2. **Phase 2**: Add initial guidance snippets
 3. **Phase 3**: Test with real tasks, observe AI composition
 4. **Phase 4**: Refine guidance based on usage
 5. **Phase 5**: Formalize successful patterns
+
+### To Future Architecture (Long-term)
+1. **Move execution approaches to templates**:
+   - `exploration/base.md` → `.templates/spike.md`
+   - `implementation/base.md` → `.templates/feature.md`
+   - `diagnosis/base.md` → `.templates/bug.md`
+   - `orchestration/base.md` → `.templates/parent.md`
+
+2. **Simplify router logic**:
+   - Router reads task type instead of analyzing for mode
+   - Direct mapping: task.type → template file
+
+3. **Keep project-specific in .modes/**:
+   - Areas stay as-is
+   - Guidance patterns stay as-is
+
+4. **Benefits realized**:
+   - No redundant type/mode mapping
+   - Clearer mental model
+   - Templates serve dual purpose
 
 ## Tool Guidance Patterns
 

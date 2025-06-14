@@ -32,6 +32,37 @@ FOR THIS PROJECT: "Run `bun run code-check`" (via placeholder)
 
 This guides new projects toward good practices while being specific for configured projects.
 
+## Critical Context Areas
+
+### 0. Stakeholder Context (Essential)
+
+**Problem**: AI without stake in project success tends toward mechanical execution.
+
+**Solution**: Define AI's role as invested stakeholder with ownership.
+
+**Template Pattern**:
+```markdown
+<role>
+<!-- PLACEHOLDER: Define stakeholder context -->
+<!-- Example: As an AI co-founder, you balance shipping with quality -->
+<!-- Example: As the AI lead architect, you own system scalability -->
+<!-- Example: As the AI product owner, you optimize user value -->
+You have a stake in this project's success. [Specific role]
+
+[Rest of role definition...]
+</role>
+```
+
+**Why**: This shifts AI from "task executor" to "invested partner" mindset.
+
+**Guidelines**:
+- Default to "AI co-founder" when project type unclear
+- Match stakeholder role to project domain:
+  - Startup → AI co-founder (balance speed and quality)
+  - Enterprise → AI architect (focus on scalability/reliability)  
+  - Research → AI principal investigator (depth over speed)
+  - Agency → AI tech lead (client value and maintainability)
+
 ## Prescriptive Areas (MUST be explicit)
 
 ### 1. External Tool Usage Requirements
@@ -119,6 +150,12 @@ description: One-line description
 ---
 
 <role>
+<!-- PLACEHOLDER: Define stakeholder context -->
+<!-- Example: As an AI co-founder, you balance shipping features with quality -->
+<!-- Example: As the AI lead architect, you ensure scalable system design -->
+<!-- Example: As the AI data scientist, you deliver actionable insights -->
+You have a stake in this project's success. [Define specific role].
+
 <!-- PLACEHOLDER: Define core mindset -->
 Core role statement (concise)
 </role>

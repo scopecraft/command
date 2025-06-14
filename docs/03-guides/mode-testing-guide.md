@@ -127,15 +127,63 @@ Every mode system change must be tested against three diverse project scenarios:
 - Confusing or contradictory guidance
 - Token inefficiency (overly verbose modes)
 
+## Testing Commands
+
+### Available Testing Commands
+
+#### `@mode-baseline [suffix]`
+Establishes baseline performance across all three scenarios:
+```bash
+@mode-baseline "current-state"
+```
+- Runs all 3 scenarios automatically
+- Creates separate test directories for each scenario
+- Generates comprehensive baseline report
+- Use this before making any mode improvements
+
+#### `@mode-test [scenario] [project_name] [test_suffix]`
+Targeted scenario testing:
+```bash
+# Single scenario testing
+@mode-test "react-ecommerce" "ShopEasy Platform" "round1-fix"
+
+# All scenarios for comparison  
+@mode-test "all" "TestProjects" "external-tools-improvement"
+```
+- Scenarios: `react-ecommerce`, `python-data-pipeline`, `nodejs-api-service`, `all`
+- Auto-loads scenario context from documentation
+- Generates detailed evaluation reports
+
+#### `@mode-init [project_name] [test_directory]`
+Enhanced mode initialization:
+```bash
+@mode-init "ProjectName" "react-ecommerce-test"
+```
+- Creates modes in `.tasks/.modes-test-{test_directory}/`
+- Supports parallel testing with separate directories
+
 ## Testing Automation
 
-### Checklist for Each Scenario
-1. **Setup**: Create test project structure
-2. **Mode Init**: Run mode-init command with project type
-3. **Customization**: Follow placeholder guidance to customize
-4. **Workflow Test**: Create → Plan → Orchestrate → Execute a sample task
-5. **Evaluation**: Rate against all criteria
-6. **Documentation**: Record findings and evidence
+### Baseline Establishment
+```bash
+# Step 1: Establish baseline before improvements
+@mode-baseline "pre-improvements"
+```
+
+### Round-by-Round Testing
+```bash
+# Step 2: Test specific improvements
+@mode-test "all" "TestProjects" "round1-external-tools"
+
+# Step 3: Test next iteration
+@mode-test "all" "TestProjects" "round2-metadata-fixes"
+```
+
+### Single Scenario Focus
+```bash
+# Test specific scenario during development
+@mode-test "react-ecommerce" "ShopEasy" "debugging-placeholders"
+```
 
 ### Evidence Collection
 - **Screenshots**: Mode customization results
@@ -159,5 +207,59 @@ Every mode system change must be tested against three diverse project scenarios:
 - **Best Practices**: Record what works well across scenarios
 - **Scenario Insights**: Project-specific learnings
 - **Tool Evolution**: How tool recommendations evolve
+
+## Complete Testing Workflow
+
+### Step-by-Step Process for AI Agents
+
+#### Phase 1: Baseline Establishment
+```bash
+# 1. Establish comprehensive baseline
+@mode-baseline "YYYY-MM-DD-initial"
+```
+**Expected Output**: Baseline report with ratings across all 3 scenarios
+
+#### Phase 2: Targeted Improvements
+```bash
+# 2a. Test single scenario during development
+@mode-test "react-ecommerce" "TestProject" "external-tools-fix"
+
+# 2b. Test all scenarios after major changes  
+@mode-test "all" "TestProjects" "round1-improvements"
+```
+**Expected Output**: Detailed evaluation reports with before/after comparison
+
+#### Phase 3: Validation and Iteration
+```bash
+# 3. Re-baseline after improvements
+@mode-baseline "post-round1-improvements"
+```
+**Expected Output**: New baseline showing improvement vs initial baseline
+
+### Command Reference for AI Execution
+
+All commands are designed for autonomous execution with full context auto-loading:
+
+| Command | Purpose | Example | Output Location |
+|---------|---------|---------|----------------|
+| `@mode-baseline` | Comprehensive testing | `@mode-baseline "current"` | `.modes-test-baseline-current/` |
+| `@mode-test` | Targeted testing | `@mode-test "all" "Test" "v1"` | `.modes-test-*-v1/` |
+| `@mode-init` | Mode initialization | `@mode-init "Proj" "test1"` | `.modes-test-test1/` |
+
+### Success Criteria for Each Command
+
+#### @mode-baseline Success
+- ✅ All 3 scenarios executed completely
+- ✅ Evaluation report generated with 5-criteria ratings
+- ✅ Cross-scenario analysis completed
+- ✅ Improvement priorities identified
+- ✅ Test artifacts preserved
+
+#### @mode-test Success  
+- ✅ Scenario context auto-loaded correctly
+- ✅ Mode customization completed
+- ✅ Sample task executed successfully
+- ✅ Evidence collected (screenshots, outputs)
+- ✅ Detailed evaluation report generated
 
 This testing framework ensures modes provide real value across diverse project types while maintaining quality and consistency.

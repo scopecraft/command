@@ -54,22 +54,74 @@ Testing results drive mode refinement:
 ## Usage Instructions
 
 ### For Mode Developers
-1. **Run All Three Scenarios** before any mode system changes
-2. **Compare Results** to identify patterns and regressions
-3. **Document Findings** using the standardized reporting template
-4. **Iterate Based on Data** - target lowest-rated areas first
+
+#### Establish Baseline First
+```bash
+# Before making any changes
+@mode-baseline "current-state"
+```
+
+#### Test Specific Improvements
+```bash
+# Test all scenarios after changes
+@mode-test "all" "TestProjects" "round1-improvements"
+
+# Test single scenario during development
+@mode-test "react-ecommerce" "ShopEasy" "debugging-issue"
+```
+
+#### Compare Results
+1. **Compare against baseline** from previous test runs
+2. **Identify patterns** across scenarios
+3. **Document findings** using generated reports
+4. **Iterate based on data** - target lowest-rated areas
 
 ### For Quality Assurance
-1. **Validate Mode Changes** using scenario checklist
-2. **Ensure Quality Gates** - minimum 4.0 average rating
-3. **Prevent Regressions** - compare against baseline results
-4. **Maintain Evidence** - screenshots and artifacts for review
+
+#### Validation Workflow
+```bash
+# 1. Establish baseline
+@mode-baseline "pre-release"
+
+# 2. Validate all scenarios
+@mode-test "all" "QA-Testing" "release-candidate"
+```
+
+#### Quality Gates
+1. **Minimum 4.0 average rating** across all scenarios
+2. **No regressions** vs baseline performance  
+3. **Evidence collection** - all artifacts preserved
+4. **Cross-scenario consistency** - patterns work universally
 
 ### For Future AI Execution
-1. **Follow Scenarios Exactly** - they are instruction documents
-2. **Collect Required Evidence** - documentation and artifacts
-3. **Rate Objectively** - use provided criteria and scales
-4. **Report Thoroughly** - use standardized reporting template
+
+#### Command Usage
+The testing commands are designed for autonomous execution:
+
+```bash
+# Comprehensive baseline testing
+@mode-baseline "YYYY-MM-DD-baseline"
+
+# Targeted scenario testing
+@mode-test "react-ecommerce" "TestProject" "experiment-name"
+
+# Full comparative testing
+@mode-test "all" "TestProjects" "version-comparison"
+```
+
+#### Execution Requirements
+1. **Follow scenario instructions exactly** - they contain full context
+2. **Use provided evaluation criteria** - 5-point scales with specific definitions
+3. **Collect all required evidence** - screenshots, outputs, workflow traces
+4. **Generate standardized reports** - use templates in testing commands
+
+#### Auto-Loading Context
+Commands automatically load scenario context from:
+- `/docs/03-guides/mode-testing-scenarios/react-ecommerce.md`
+- `/docs/03-guides/mode-testing-scenarios/python-data-pipeline.md`  
+- `/docs/03-guides/mode-testing-scenarios/nodejs-api-service.md`
+
+No manual scenario reading required - commands handle context loading.
 
 ## Expected Outcomes
 
