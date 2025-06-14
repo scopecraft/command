@@ -139,6 +139,11 @@ export class SearchIndexer {
       document.sections?.log || ''
     ];
     
+    // Add tags to searchable content (joined as space-separated string)
+    if (document.tags && document.tags.length > 0) {
+      sections.push(document.tags.join(' '));
+    }
+    
     return sections
       .join(' ')
       .replace(/#{1,6}\s/g, '') // Remove markdown headers
