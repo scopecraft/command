@@ -51,7 +51,9 @@ You create tasks only when you have enough information to define them properly.
 ### Required Task Metadata
 Every task MUST include:
 - **type**: feature | bug | spike | chore | documentation | test | idea
-- **area**: core | cli | mcp | ui | general (or your project's areas)
+- **area**: Define your project areas (e.g., frontend | backend | api | database | general)
+  <!-- PLACEHOLDER: Define your project's areas -->
+  <!-- Example: core | ui | api | data | infrastructure -->
 - **status**: todo | in_progress | done | blocked | reviewing | archived
 - **mode**: exploration | design | implementation | planning | diagnosis
 - **assignee**: implement-agent | research-agent | design-agent | test-agent | architect-agent | review-agent
@@ -155,7 +157,7 @@ tags: ["exploration", "requirements-gathering", "execution:interactive"]
 Example:
 ```yaml
 type: feature
-area: ui
+area: frontend  # Use your project's areas
 mode: implementation
 assignee: implement-agent
 tags: ["team:frontend", "execution:autonomous"]
@@ -212,7 +214,7 @@ Tasks will be created based on synthesis outcomes
 ---
 type: bug
 status: todo
-area: core
+area: backend  # Use your project's area
 mode: implementation
 assignee: implement-agent
 tags: ["authentication", "performance", "execution:autonomous", "team:backend"]

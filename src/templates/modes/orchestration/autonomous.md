@@ -51,7 +51,9 @@ Your job is to understand what type of work this is and execute with the right a
 
 ### Task Metadata You Must Read
 - **type**: feature | bug | spike | chore | documentation | test | idea
-- **area**: core | cli | mcp | ui | general (determines scope boundaries)
+- **area**: Your project's areas (determines scope boundaries)
+  <!-- PLACEHOLDER: Define your project areas and their boundaries -->
+  <!-- Example: frontend (src/client/*), backend (src/server/*), database (src/db/*) -->
 - **status**: todo | in_progress | done | blocked | reviewing | archived
 - **mode**: exploration | design | implementation | planning | diagnosis
 - **assignee**: Which agent type should execute
@@ -69,11 +71,13 @@ Your job is to understand what type of work this is and execute with the right a
 
 ### Area Scope Boundaries
 **CRITICAL**: Respect area boundaries when executing:
-- **core**: Can modify src/core/* only
-- **cli**: Can modify src/cli/* only  
-- **mcp**: Can modify src/mcp/* only
-- **ui**: Can modify ui components only
+<!-- PLACEHOLDER: Define your project's area boundaries -->
+<!-- Example:
+- **frontend**: Can modify src/client/* only
+- **backend**: Can modify src/server/* only
+- **database**: Can modify src/db/* only
 - **general**: Can work across areas
+-->
 
 Never modify files outside your assigned area!
 </scopecraft_requirements>
@@ -107,7 +111,7 @@ First, determine the execution mode from task metadata, then execute with the ap
    Analyze returned metadata:
    - Tags (especially mode:*, team:*, execution:*)
    - Type (feature, bug, spike, chore, etc.)
-   - Area (ui, core, mcp, cli - determines scope)
+   - Area (determines scope boundaries for your project)
    - Mode (exploration, design, implementation, etc.)
    - Status (should be todo or in_progress)
 
@@ -143,7 +147,7 @@ First, determine the execution mode from task metadata, then execute with the ap
    ## Log
    - YYYY-MM-DD HH:MM: === AUTONOMOUS EXECUTION STARTED ===
      - Task: {taskId}
-     - Area: {area} (scope: src/{area}/*)
+     - Area: {area} (scope: {your project's scope for this area})
      - Mode: {selected mode}
      - Reasoning: {why this mode}
      - Loading: {which guidance files}
@@ -155,24 +159,27 @@ First, determine the execution mode from task metadata, then execute with the ap
 
 **Before ANY file modification, check area assignment:**
 
-### If area = "core"
-- ✅ CAN modify: src/core/*
-- ❌ CANNOT modify: src/cli/*, src/mcp/*, ui/*
+<!-- PLACEHOLDER: Define your project's area boundaries -->
+<!-- Example:
+### If area = "frontend"
+- ✅ CAN modify: src/client/*, public/*, styles/*
+- ❌ CANNOT modify: src/server/*, database/*, infrastructure/*
 
-### If area = "cli"  
-- ✅ CAN modify: src/cli/*
-- ❌ CANNOT modify: src/core/*, src/mcp/*, ui/*
+### If area = "backend"  
+- ✅ CAN modify: src/server/*, src/api/*
+- ❌ CANNOT modify: src/client/*, public/*, styles/*
 
-### If area = "mcp"
-- ✅ CAN modify: src/mcp/*
-- ❌ CANNOT modify: src/core/*, src/cli/*, ui/*
+### If area = "database"
+- ✅ CAN modify: src/db/*, migrations/*, schemas/*
+- ❌ CANNOT modify: src/server/*, src/client/*
 
-### If area = "ui"
-- ✅ CAN modify: ui components
-- ❌ CANNOT modify: src/core/*, src/cli/*, src/mcp/*
+### If area = "infrastructure"
+- ✅ CAN modify: docker/*, k8s/*, terraform/*
+- ❌ CANNOT modify: application code
 
 ### If area = "general"
 - ✅ CAN work across areas as needed
+-->
 
 **Violation Protocol**: If task requires modifying files outside assigned area:
 1. Document in log what's needed
@@ -237,7 +244,7 @@ First, determine the execution mode from task metadata, then execute with the ap
 
 ### Track File Changes
 ```markdown
-- YYYY-MM-DD HH:MM: Modified src/{area}/file.ts
+- YYYY-MM-DD HH:MM: Modified {file path within area}
   - Changes: {what was changed}
   - Reason: {why changed}
   - Testing: {how verified}
@@ -253,7 +260,7 @@ First, determine the execution mode from task metadata, then execute with the ap
 - YYYY-MM-DD HH:MM: === EXECUTION COMPLETE ===
   - Mode Used: {mode}
   - Status: COMPLETED
-  - Area Scope: Respected (only modified src/{area}/*)
+  - Area Scope: Respected (only modified files in {area} scope)
   - Deliverable: READY
   - Files Modified: {list}
   - Tests: {PASS|FAIL|NOT-APPLICABLE}
