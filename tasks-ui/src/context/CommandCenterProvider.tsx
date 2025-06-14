@@ -31,93 +31,6 @@ interface CommandCenterContextValue {
 
 const CommandCenterContext = createContext<CommandCenterContextValue | undefined>(undefined);
 
-// Mock search API - in real implementation this would call the search service
-async function mockSearchAPI(query: string): Promise<SearchResult[]> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 200 + Math.random() * 300));
-
-  // Mock data based on query
-  const mockResults: SearchResult[] = [
-    {
-      id: 'task-auth-001',
-      type: 'task',
-      title: 'Implement user authentication system',
-      excerpt:
-        'Add comprehensive authentication with JWT tokens, password hashing, and session management. Include login, logout, and registration endpoints.',
-      metadata: {
-        taskType: 'feature',
-        status: 'in_progress',
-        area: 'core',
-        priority: 'high',
-      },
-    },
-    {
-      id: 'task-bug-002',
-      type: 'task',
-      title: 'Fix memory leak in task processing pipeline',
-      excerpt:
-        'Memory usage continuously grows when processing large batches of tasks. Suspected issue with event listeners not being cleaned up properly.',
-      metadata: {
-        taskType: 'bug',
-        status: 'todo',
-        area: 'core',
-        priority: 'high',
-      },
-    },
-    {
-      id: 'parent-ui-003',
-      type: 'parent',
-      title: 'Redesign command center user experience',
-      excerpt:
-        'Complete overhaul of the command center interface to support unified search and task creation with improved keyboard navigation.',
-      metadata: {
-        taskType: 'feature',
-        status: 'in_progress',
-        area: 'ui',
-        priority: 'high',
-        subtaskCount: 8,
-        completedCount: 3,
-      },
-    },
-    {
-      id: 'doc-api-001',
-      type: 'documentation',
-      title: 'API Design Guidelines and Best Practices',
-      excerpt:
-        'Comprehensive documentation covering REST API design principles, error handling patterns, and authentication strategies for the platform.',
-      metadata: {
-        section: 'Architecture',
-        lastUpdated: '2025-06-14',
-      },
-    },
-    {
-      id: 'task-test-004',
-      type: 'task',
-      title: 'Add end-to-end testing for user workflows',
-      excerpt:
-        'Implement comprehensive E2E tests covering the main user journeys: task creation, search, navigation, and task management workflows.',
-      metadata: {
-        taskType: 'test',
-        status: 'todo',
-        area: 'ui',
-        priority: 'medium',
-      },
-    },
-  ];
-
-  // Simple fuzzy search simulation
-  if (!query.trim()) {
-    return mockResults.slice(0, 3); // Show recent/popular when empty
-  }
-
-  return mockResults.filter((result) => {
-    const searchText = `${result.title} ${result.excerpt}`.toLowerCase();
-    const queryTerms = query.toLowerCase().split(' ');
-
-    return queryTerms.some((term) => searchText.includes(term));
-  });
-}
-
 export function CommandCenterProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -164,10 +77,38 @@ export function CommandCenterProvider({ children }: { children: React.ReactNode 
     setSearchError(undefined);
 
     try {
-      // TODO: Replace with actual search API call
-      // const response = await apiClient.searchTasks({ query });
-      const results = await mockSearchAPI(query);
-      return results;
+      if (!query.trim()) {
+        return [];
+      }
+
+      const response = await apiClient.search({
+        query,
+        types: ['task', 'doc'],
+        limit: 50,
+      });
+
+      if (response.success && response.data) {
+        // Transform the API response to match our SearchResult interface
+        const searchData = response.data as any;
+        return searchData.results.map((result: any) => ({
+          id: result.id,
+          type: result.type === 'parent' ? 'parent' : result.type,
+          title: result.title,
+          excerpt: result.excerpt || result.description || '',
+          metadata: {
+            taskType: result.taskType,
+            status: result.status,
+            area: result.area,
+            priority: result.priority,
+            subtaskCount: result.subtaskCount,
+            completedCount: result.completedCount,
+            section: result.section,
+            lastUpdated: result.lastUpdated,
+          },
+        }));
+      }
+
+      return [];
     } catch (error) {
       console.error('Search error:', error);
       setSearchError('Failed to search tasks. Please try again.');
@@ -236,7 +177,20 @@ export function CommandCenterProvider({ children }: { children: React.ReactNode 
           break;
         case 'command':
           // Execute system command
-          console.log('Execute command:', result.id);
+          switch (result.id) {
+            case 'navigate-tasks':
+              navigate({ to: '/tasks' });
+              break;
+            case 'navigate-parents':
+              navigate({ to: '/parents' });
+              break;
+            case 'toggle-sidebar':
+              // This would need to be handled by a sidebar context or state
+              console.log('Toggle sidebar command - implement with sidebar context');
+              break;
+            default:
+              console.log('Unknown command:', result.id);
+          }
           break;
         default:
           console.log('Unknown result type:', result.type);

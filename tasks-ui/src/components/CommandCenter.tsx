@@ -112,13 +112,6 @@ const systemCommands = [
     shortcut: 'P',
     icon: Folder,
   },
-  {
-    id: 'toggle-sidebar',
-    title: 'Toggle Sidebar',
-    description: 'Show or hide the navigation sidebar',
-    shortcut: 'B',
-    icon: Users,
-  },
 ];
 
 function getResultIcon(result: SearchResult) {
@@ -184,6 +177,7 @@ export function CommandCenter({
 
   // Refs for focus management
   const titleInputRef = React.useRef<HTMLInputElement>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Reset state when dialog closes
   React.useEffect(() => {
@@ -234,33 +228,57 @@ export function CommandCenter({
     };
   }, [query, onSearch, showSearchResults, showCreateForm]);
 
-  // Auto-focus title input when in create form
+  // Auto-focus inputs when switching modes
   React.useEffect(() => {
     if (showCreateForm && createStep === 'title' && titleInputRef.current) {
       setTimeout(() => {
         titleInputRef.current?.focus();
       }, 100);
     }
-  }, [showCreateForm, createStep]);
+    
+    if (showSearchResults && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [showCreateForm, createStep, showSearchResults]);
 
-  // Handle keyboard shortcuts for task types in create form
+  // Handle keyboard shortcuts
   React.useEffect(() => {
-    if (!open || !showCreateForm || createStep !== 'type') return;
+    if (!open) return;
 
     const handleKeyPress = (e: KeyboardEvent) => {
       const key = e.key.toUpperCase();
-      const taskType = taskTypes.find((t: any) => t.shortcut === key);
 
-      if (taskType) {
-        e.preventDefault();
-        setSelectedType(taskType.type);
-        setCreateStep('title');
+      // Handle command shortcuts when in command mode
+      if (!showCreateForm && !showSearchResults) {
+        const command = systemCommands.find(cmd => cmd.shortcut === key);
+        if (command) {
+          e.preventDefault();
+          handleResultSelect({
+            id: command.id,
+            type: 'command',
+            title: command.title,
+            excerpt: command.description,
+          });
+          return;
+        }
+      }
+
+      // Handle task type shortcuts when in create form
+      if (showCreateForm && createStep === 'type') {
+        const taskType = taskTypes.find((t: any) => t.shortcut === key);
+        if (taskType) {
+          e.preventDefault();
+          setSelectedType(taskType.type);
+          setCreateStep('title');
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [open, showCreateForm, createStep, taskTypes]);
+  }, [open, showCreateForm, showSearchResults, createStep, taskTypes]);
 
   // Handlers
   const handleQueryChange = (value: string) => {
@@ -303,31 +321,33 @@ export function CommandCenter({
 
   const selectedTaskType = taskTypes.find((t: any) => t.type === selectedType);
 
+  // Handle dialog close with escape key interception
+  const handleOpenChange = (newOpen: boolean) => {
+    // If trying to close and we're in a sub-mode, go back instead
+    if (!newOpen && (showSearchResults || showCreateForm)) {
+      setShowSearchResults(false);
+      setShowCreateForm(false);
+      setCreateStep('type');
+      setQuery('');
+      return;
+    }
+    // Otherwise, proceed with normal close
+    onOpenChange(newOpen);
+  };
+
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} shouldFilter={false}>
+    <CommandDialog open={open} onOpenChange={handleOpenChange} shouldFilter={false}>
       {!showCreateForm && !showSearchResults ? (
         <>
           {/* Command interface */}
           <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/50">
             <Terminal className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Select a command</span>
+            <span className="text-sm text-muted-foreground">Select a command or press shortcut key</span>
           </div>
 
-          <CommandInput
-            placeholder="Filter commands..."
-            value={query}
-            onValueChange={handleQueryChange}
-          />
           <CommandList>
             <CommandGroup heading="Commands">
-              {systemCommands
-                .filter(
-                  (cmd) =>
-                    !query.trim() ||
-                    cmd.title.toLowerCase().includes(query.toLowerCase()) ||
-                    cmd.description.toLowerCase().includes(query.toLowerCase())
-                )
-                .map((cmd) => {
+              {systemCommands.map((cmd) => {
                   const Icon = cmd.icon;
                   return (
                     <CommandItem
@@ -361,15 +381,10 @@ export function CommandCenter({
           <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/50">
             <Search className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Search tasks and documentation</span>
-            <button
-              onClick={() => setShowSearchResults(false)}
-              className="ml-auto text-xs text-muted-foreground hover:text-foreground"
-            >
-              Back to commands
-            </button>
           </div>
 
           <CommandInput
+            ref={searchInputRef}
             placeholder="Search tasks..."
             value={query}
             onValueChange={handleQueryChange}

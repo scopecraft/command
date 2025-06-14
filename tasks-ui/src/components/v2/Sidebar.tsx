@@ -1,6 +1,5 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import React from 'react';
-import { useCommandPalette } from '../../context/CommandPaletteProvider';
 import { useRecentTasks, useWorkflowCounts } from '../../lib/api/hooks';
 import { TaskTypeIcon as SharedTaskIcon } from '../../lib/icons';
 import type { Task, TaskType } from '../../lib/types';
@@ -75,7 +74,6 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
     workflow: false,
     recent: false,
   });
-  const { openCommandPalette } = useCommandPalette();
 
   // Fetch recent tasks
   const { data: recentTasks = [] } = useRecentTasks(5);
@@ -315,9 +313,6 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
 
       {/* Bottom Actions */}
       <div className="p-4 border-t border-border space-y-2">
-        <Button variant="atlas" className="w-full" onClick={() => openCommandPalette({ defaultCommand: 'create-task' })}>
-          + New Task
-        </Button>
         <Button
           variant="secondary"
           className="w-full"
