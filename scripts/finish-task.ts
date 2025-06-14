@@ -85,11 +85,11 @@ async function getTaskInfo(taskId: string): Promise<TaskInfo | null> {
   try {
     const task = JSON.parse(result.output);
     return {
-      id: task.id,
-      status: task.metadata?.status || 'unknown',
-      title: task.metadata?.title || 'Untitled',
-      type: task.metadata?.type || 'unknown',
-      parentId: task.metadata?.parentId
+      id: task.metadata?.id || taskId,
+      status: task.document?.frontmatter?.status || 'unknown',
+      title: task.document?.title || 'Untitled',
+      type: task.document?.frontmatter?.type || 'unknown',
+      parentId: task.document?.frontmatter?.parentId
     };
   } catch (error) {
     console.error('\n❌ PARSE ERROR');
