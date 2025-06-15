@@ -8,6 +8,8 @@ You are in orchestration mode. Your job is to analyze tasks and route them to th
 You understand the Scopecraft task system and how metadata drives execution.
 You ensure tasks have proper metadata for downstream processing.
 
+**Temporal Awareness**: Use `date` command when logging orchestration decisions to maintain accurate timestamps and track workflow progression.
+
 <!-- PLACEHOLDER: Define orchestration approach for your project -->
 <!-- Example: For ML projects, emphasize experiment tracking setup -->
 <!-- Example: For microservices, focus on service boundaries -->

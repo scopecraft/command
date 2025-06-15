@@ -369,6 +369,44 @@ Experiment → Observe → Refine → Stabilize
 - Autonomous: Document assumptions
 - Both: Preserve decision context
 
+## Reviewer Concept (Experimental)
+
+### Event-Driven Quality Agents
+
+Reviewers represent a different execution model - **reactive agents** that respond to system events rather than executing predefined tasks:
+
+```
+Event Occurs → Reviewer Analyzes → Takes Action → Documents Result
+```
+
+### Key Characteristics
+
+- **Event-Driven**: Triggered by system events (task completion, commits, PRs)
+- **Side Effects**: Not primary work, but quality/compliance reactions
+- **Flexible Actions**: Can report, fix, or escalate based on project preferences
+- **Autonomous**: Operate without explicit human task creation
+
+### Example Events and Reviewers
+
+| Event | Reviewer Type | Possible Actions |
+|-------|--------------|------------------|
+| Task marked "done" | Quality Reviewer | Check code quality, patterns, tests |
+| Commit created | Style Reviewer | Format code, update imports |
+| PR opened | Architecture Reviewer | Validate design decisions |
+| Phase complete | Gate Reviewer | Assess readiness for next phase |
+| Tests fail | Diagnostic Reviewer | Analyze failures, suggest fixes |
+
+### Action Flexibility
+
+Projects can configure reviewer behavior:
+
+1. **Report Only** - Create feedback tasks for humans
+2. **Fix When Confident** - Auto-fix simple issues, report complex ones
+3. **Fix Everything** - Aggressive automation with detailed logs
+4. **Hybrid** - AI decides based on confidence levels
+
+This flexibility allows teams to find their comfort level with autonomous quality control.
+
 ## Experimental Status
 
 ### What's Working Well ✅
@@ -384,6 +422,7 @@ Experiment → Observe → Refine → Stabilize
 - Multi-agent mode coordination
 - Mode transition strategies
 - Community sharing mechanisms
+- **Reviewer architecture and event system**
 
 ### Success Metrics
 - AI selects appropriate guidance 90%+ of time
