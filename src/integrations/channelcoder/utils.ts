@@ -5,7 +5,12 @@
 import { join } from 'node:path';
 import type { InterpolationData } from 'channelcoder';
 // MIGRATION: Using new centralized path resolver for modes
-import { PATH_TYPES, createPathContext, resolvePath, findModeFiles } from '../../core/paths/index.js';
+import {
+  PATH_TYPES,
+  createPathContext,
+  findModeFiles,
+  resolvePath,
+} from '../../core/paths/index.js';
 
 /**
  * Resolve mode prompt path based on project structure
@@ -41,22 +46,23 @@ export function resolveModePromptPath(projectRoot: string, mode: string): string
 
   // Smart resolution: search for mode file in all directories
   const candidates = findModeFiles(projectRoot, mode);
-  
+
   if (candidates.length === 0) {
     // If no specific mode file found, fall back to default behavior
     return join(modesDir, mode, 'base.md');
   }
-  
+
   if (candidates.length === 1) {
     // Single match - use it
     return join(modesDir, candidates[0]);
   }
-  
+
   // Multiple matches - throw error with helpful message
   throw new Error(
-    `Ambiguous mode '${mode}' matches multiple files:\n` +
-    candidates.map(path => `  - ${path}`).join('\n') +
-    '\n\nPlease use the full path (e.g., --mode implementation/code_review)'
+    `Ambiguous mode '${mode}' matches multiple files:
+${candidates.map((path) => `  - ${path}`).join('\n')}
+
+Please use the full path (e.g., --mode implementation/code_review)`
   );
 }
 

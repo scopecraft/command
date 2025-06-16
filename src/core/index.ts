@@ -138,3 +138,11 @@ export type {
   OperationResult,
   ValidationError,
 } from './types.js';
+
+// Search types
+export type {
+  SearchResult,
+  SearchDocument,
+  SearchResults,
+  SearchQuery,
+} from './search/types.js';

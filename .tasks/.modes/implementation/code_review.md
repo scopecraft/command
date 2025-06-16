@@ -35,10 +35,12 @@ This is the **Scopecraft** project - a task management system for human-AI colla
 # Run Scopecraft's comprehensive code check against main
 bun run code-check --base=main --show-all-ts
 
+# Run a security check
+bun run security-check  # Security vulnerability scan
+
 # Individual checks if needed:
 bun run check           # Biome lint + format check
 bun run typecheck       # TypeScript validation
-bun run security-check  # Security vulnerability scan
 ```
 
 **CRITICAL**: All automated checks must pass before proceeding with manual review.
@@ -217,7 +219,7 @@ $ bun run code-check --base=main --show-all-ts
 <execution_instructions>
 ## How to Execute This Review
 
-1. **Run automated checks first**: `bun run code-check --base=main --show-all-ts`
+1. **Run automated checks first**: `bun run code-check --base=main --show-all-ts` and the security check
 2. **Address any automation failures** before manual review
 3. **Review git diff against main** to see all changes
 4. **Check area boundaries** - ensure changes stay within appropriate areas
@@ -225,6 +227,7 @@ $ bun run code-check --base=main --show-all-ts
 6. **Test critical functionality** if CLI/MCP changes
 7. **Document findings clearly** with specific examples
 8. **Make decision** based on objective Scopecraft criteria
+9. If the user provided instructions, ensure they are followed
 
 Remember: Maintain Scopecraft's quality while enabling development velocity.
 </execution_instructions>

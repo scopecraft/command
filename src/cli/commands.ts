@@ -20,6 +20,65 @@ import {
 /**
  * Handle list command with v2
  */
+// Helper functions for handleListCommand
+function buildWorkflowStateFilter(options: {
+  backlog?: boolean;
+  current?: boolean;
+  archive?: boolean;
+  location?: string;
+}): core.WorkflowState[] | undefined {
+  if (options.backlog) return ['backlog'];
+  if (options.current) return ['current'];
+  if (options.archive) return ['archive'];
+  if (options.location) return [options.location as core.WorkflowState];
+  return undefined;
+}
+
+function buildListOptions(options: {
+  status?: string;
+  type?: core.TaskType;
+  assignee?: string;
+  tags?: string[];
+  subdirectory?: string;
+  location?: string;
+  backlog?: boolean;
+  current?: boolean;
+  archive?: boolean;
+  overview?: boolean;
+}): core.TaskListOptions {
+  const listOptions: core.TaskListOptions = {};
+
+  const workflowStates = buildWorkflowStateFilter(options);
+  if (workflowStates) listOptions.workflowStates = workflowStates;
+
+  if (options.status) listOptions.status = options.status as core.TaskStatus;
+  if (options.type) listOptions.type = options.type;
+  if (options.assignee) listOptions.assignee = options.assignee;
+  if (options.tags) listOptions.tags = options.tags;
+  if (options.subdirectory) listOptions.subdirectory = options.subdirectory;
+  if (options.overview) listOptions.onlyParentOverviews = true;
+
+  return listOptions;
+}
+
+function displayTaskSummary(tasks: core.Task[], format: OutputFormat): void {
+  if (format !== 'table' || tasks.length === 0) return;
+
+  const byStatus = tasks.reduce(
+    (acc, task) => {
+      const status = task.document.frontmatter.status;
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  console.log(`\nTotal: ${tasks.length} tasks`);
+  for (const [status, count] of Object.entries(byStatus)) {
+    console.log(`  ${status}: ${count}`);
+  }
+}
+
 export async function handleListCommand(options: {
   status?: string;
   type?: core.TaskType;
@@ -37,29 +96,7 @@ export async function handleListCommand(options: {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getRootConfig().path;
 
-    // Build filter options
-    const listOptions: core.TaskListOptions = {};
-
-    // Handle workflow location filters
-    if (options.backlog) {
-      listOptions.workflowStates = ['backlog'];
-    } else if (options.current) {
-      listOptions.workflowStates = ['current'];
-    } else if (options.archive) {
-      listOptions.workflowStates = ['archive'];
-    } else if (options.location) {
-      listOptions.workflowStates = [options.location as core.WorkflowState];
-    }
-
-    // Add other filters
-    if (options.status) listOptions.status = options.status as core.TaskStatus;
-    if (options.type) listOptions.type = options.type;
-    if (options.assignee) listOptions.assignee = options.assignee;
-    if (options.tags) listOptions.tags = options.tags;
-    if (options.subdirectory) listOptions.subdirectory = options.subdirectory;
-    if (options.overview) listOptions.onlyParentOverviews = true;
-
-    // List tasks
+    const listOptions = buildListOptions(options);
     const result = await core.list(projectRoot, listOptions);
 
     if (!result.success) {
@@ -67,26 +104,9 @@ export async function handleListCommand(options: {
       process.exit(1);
     }
 
-    // Format and display
     const format = (options.format || 'table') as OutputFormat;
     console.log(formatTasksList(result.data || [], format));
-
-    // Show summary
-    if (format === 'table' && result.data && result.data.length > 0) {
-      const byStatus = result.data.reduce(
-        (acc, task) => {
-          const status = task.document.frontmatter.status;
-          acc[status] = (acc[status] || 0) + 1;
-          return acc;
-        },
-        {} as Record<string, number>
-      );
-
-      console.log(`\nTotal: ${result.data.length} tasks`);
-      Object.entries(byStatus).forEach(([status, count]) => {
-        console.log(`  ${status}: ${count}`);
-      });
-    }
+    displayTaskSummary(result.data || [], format);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -138,6 +158,79 @@ export async function handleGetCommand(
 /**
  * Handle create command with v2
  */
+// Helper functions for handleCreateCommand
+function buildCreateOptions(options: {
+  title: string;
+  type: string;
+  status?: string;
+  area?: string;
+  location?: string;
+  content?: string;
+  template?: string;
+}): core.TaskCreateOptions {
+  return {
+    title: options.title,
+    type: options.type as core.TaskType,
+    area: options.area || 'general',
+    workflowState: (options.location as core.WorkflowState) || 'backlog',
+    status: (options.status as core.TaskStatus) || 'To Do',
+    template: options.template,
+    instruction: options.content,
+    customMetadata: {},
+  };
+}
+
+function addOptionalMetadata(
+  createOptions: core.TaskCreateOptions,
+  options: {
+    priority?: string;
+    assignee?: string;
+    tags?: string[];
+    depends?: string[];
+    previous?: string;
+    next?: string;
+  }
+): void {
+  if (!createOptions.customMetadata) return;
+
+  if (options.priority) createOptions.customMetadata.priority = options.priority;
+  if (options.assignee) createOptions.customMetadata.assignee = options.assignee;
+  if (options.tags) createOptions.tags = options.tags;
+  if (options.depends) createOptions.customMetadata.depends = options.depends;
+  if (options.previous) createOptions.customMetadata.previous = options.previous;
+  if (options.next) createOptions.customMetadata.next = options.next;
+}
+
+function validateFileInput(file?: string): void {
+  if (file) {
+    console.error('File input not yet implemented in v2');
+    process.exit(1);
+  }
+}
+
+function displayCreationResult(result: core.OperationResult<core.Task>): void {
+  if (!result.success) {
+    console.error(`Error: ${result.error}`);
+    if (result.validationErrors) {
+      for (const err of result.validationErrors) {
+        console.error(`  - ${err.field}: ${err.message}`);
+      }
+    }
+    process.exit(1);
+  }
+
+  console.log(`✓ Created task: ${result.data?.metadata.id}`);
+  console.log(
+    `  Location: ${result.data?.metadata.location.workflowState}/${result.data?.metadata.filename}`
+  );
+
+  if (result.data?.metadata.location.workflowState === 'backlog') {
+    console.log('\nNext steps:');
+    console.log(`  sc workflow promote ${result.data?.metadata.id}  # Move to current`);
+    console.log(`  sc task start ${result.data?.metadata.id}        # Mark as in progress`);
+  }
+}
+
 export async function handleCreateCommand(options: {
   id?: string;
   title: string;
@@ -160,67 +253,16 @@ export async function handleCreateCommand(options: {
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getRootConfig().path;
 
-    // Build create options
-    const createOptions: core.TaskCreateOptions = {
-      title: options.title,
-      type: options.type as core.TaskType,
-      area: options.area || 'general',
-      workflowState: (options.location as core.WorkflowState) || 'backlog',
-      status: (options.status as core.TaskStatus) || 'To Do',
-      template: options.template,
-      instruction: options.content,
-      customMetadata: {},
-    };
+    validateFileInput(options.file);
 
-    // Add optional metadata (but not parent, which is handled separately)
-    if (options.priority) {
-      // Pass raw priority - core will normalize it
-      createOptions.customMetadata.priority = options.priority;
-    }
-    if (options.assignee) createOptions.customMetadata.assignee = options.assignee;
-    if (options.tags) createOptions.tags = options.tags; // Pass directly to core
-    if (options.depends) createOptions.customMetadata.depends = options.depends;
-    if (options.previous) createOptions.customMetadata.previous = options.previous;
-    if (options.next) createOptions.customMetadata.next = options.next;
+    const createOptions = buildCreateOptions(options);
+    addOptionalMetadata(createOptions, options);
 
-    // Handle file input
-    if (options.file) {
-      // TODO: Implement file parsing
-      console.error('File input not yet implemented in v2');
-      process.exit(1);
-    }
+    const result = options.parent
+      ? await core.parent(projectRoot, options.parent).create(options.title, createOptions)
+      : await core.create(projectRoot, createOptions);
 
-    // Create task - use parent builder if parent is specified
-    let result;
-    if (options.parent) {
-      // Use parent builder for subtask creation
-      result = await core.parent(projectRoot, options.parent).create(options.title, createOptions);
-    } else {
-      // Regular task creation
-      result = await core.create(projectRoot, createOptions);
-    }
-
-    if (!result.success) {
-      console.error(`Error: ${result.error}`);
-      if (result.validationErrors) {
-        result.validationErrors.forEach((err) => {
-          console.error(`  - ${err.field}: ${err.message}`);
-        });
-      }
-      process.exit(1);
-    }
-
-    console.log(`✓ Created task: ${result.data?.metadata.id}`);
-    console.log(
-      `  Location: ${result.data?.metadata.location.workflowState}/${result.data?.metadata.filename}`
-    );
-
-    // Show next steps
-    if (result.data?.metadata.location.workflowState === 'backlog') {
-      console.log('\nNext steps:');
-      console.log(`  sc workflow promote ${result.data?.metadata.id}  # Move to current`);
-      console.log(`  sc task start ${result.data?.metadata.id}        # Mark as in progress`);
-    }
+    displayCreationResult(result);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
@@ -230,6 +272,95 @@ export async function handleCreateCommand(options: {
 /**
  * Handle update command with v2
  */
+// Helper functions for handleUpdateCommand
+function buildFrontmatterUpdates(options: {
+  type?: string;
+  status?: string;
+  priority?: string;
+  assignee?: string;
+  subdirectory?: string;
+  parent?: string;
+  depends?: string[];
+  previous?: string;
+  next?: string;
+  tags?: string[];
+}): Partial<core.TaskFrontmatter> | undefined {
+  const frontmatter: Partial<core.TaskFrontmatter> = {};
+
+  if (options.type) frontmatter.type = options.type as core.TaskType;
+  if (options.status) frontmatter.status = options.status as core.TaskStatus;
+  if (options.subdirectory) frontmatter.area = options.subdirectory;
+  if (options.priority) frontmatter.priority = options.priority as core.TaskPriority;
+  if (options.assignee) frontmatter.assignee = options.assignee;
+  if (options.tags) frontmatter.tags = options.tags;
+  if (options.parent) frontmatter.parent = options.parent;
+  if (options.depends) frontmatter.depends = options.depends;
+  if (options.previous) frontmatter.previous = options.previous;
+  if (options.next) frontmatter.next = options.next;
+
+  return Object.keys(frontmatter).length > 0 ? frontmatter : undefined;
+}
+
+function buildUpdateOptions(options: {
+  title?: string;
+  type?: string;
+  status?: string;
+  priority?: string;
+  assignee?: string;
+  subdirectory?: string;
+  parent?: string;
+  depends?: string[];
+  previous?: string;
+  next?: string;
+  tags?: string[];
+  content?: string;
+}): core.TaskUpdateOptions {
+  const updateOptions: core.TaskUpdateOptions = {};
+
+  if (options.title) updateOptions.title = options.title;
+
+  const frontmatter = buildFrontmatterUpdates(options);
+  if (frontmatter) updateOptions.frontmatter = frontmatter;
+
+  if (options.content) {
+    updateOptions.sections = {
+      instruction: options.content,
+    };
+  }
+
+  return updateOptions;
+}
+
+function displayUpdateResult(result: core.OperationResult<core.Task>): void {
+  if (!result.success) {
+    console.error(`Error: ${result.error}`);
+    if (result.validationErrors) {
+      for (const err of result.validationErrors) {
+        console.error(`  - ${err.field}: ${err.message}`);
+      }
+    }
+    process.exit(1);
+  }
+  console.log(`✓ Updated task: ${result.data?.metadata.id}`);
+}
+
+async function handleLocationMove(
+  projectRoot: string,
+  id: string,
+  location: string
+): Promise<void> {
+  const moveResult = await core.move(projectRoot, id, {
+    targetState: location as core.WorkflowState,
+    updateStatus: true,
+  });
+
+  if (moveResult.success) {
+    console.log(`✓ Moved to ${location}`);
+  } else {
+    console.error(`Warning: Failed to move task: ${moveResult.error}`);
+  }
+}
+
 export async function handleUpdateCommand(
   id: string,
   options: {
@@ -253,69 +384,15 @@ export async function handleUpdateCommand(
     const configManager = ConfigurationManager.getInstance();
     const projectRoot = configManager.getRootConfig().path;
 
-    // Build update options
-    const updateOptions: core.TaskUpdateOptions = {};
+    validateFileInput(options.file);
 
-    if (options.title) updateOptions.title = options.title;
-
-    // Build frontmatter updates
-    const frontmatter: any = {};
-    if (options.type) frontmatter.type = options.type;
-    if (options.status) frontmatter.status = options.status;
-    if (options.subdirectory) frontmatter.area = options.subdirectory;
-    if (options.priority) frontmatter.priority = options.priority;
-    if (options.assignee) frontmatter.assignee = options.assignee;
-    if (options.tags) frontmatter.tags = options.tags;
-    if (options.parent) frontmatter.parent = options.parent;
-    if (options.depends) frontmatter.depends = options.depends;
-    if (options.previous) frontmatter.previous = options.previous;
-    if (options.next) frontmatter.next = options.next;
-
-    if (Object.keys(frontmatter).length > 0) {
-      updateOptions.frontmatter = frontmatter;
-    }
-
-    // Handle content update
-    if (options.content) {
-      updateOptions.sections = {
-        instruction: options.content,
-      };
-    }
-
-    // Handle file input
-    if (options.file) {
-      // TODO: Implement file parsing
-      console.error('File input not yet implemented in v2');
-      process.exit(1);
-    }
-
-    // Update task
+    const updateOptions = buildUpdateOptions(options);
     const result = await core.update(projectRoot, id, updateOptions);
 
-    if (!result.success) {
-      console.error(`Error: ${result.error}`);
-      if (result.validationErrors) {
-        result.validationErrors.forEach((err) => {
-          console.error(`  - ${err.field}: ${err.message}`);
-        });
-      }
-      process.exit(1);
-    }
+    displayUpdateResult(result);
 
-    console.log(`✓ Updated task: ${result.data?.metadata.id}`);
-
-    // Handle location moves
     if (options.location) {
-      const moveResult = await core.move(projectRoot, id, {
-        targetState: options.location as core.WorkflowState,
-        updateStatus: true,
-      });
-
-      if (moveResult.success) {
-        console.log(`✓ Moved to ${options.location}`);
-      } else {
-        console.error(`Warning: Failed to move task: ${moveResult.error}`);
-      }
+      await handleLocationMove(projectRoot, id, options.location);
     }
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -666,7 +743,12 @@ export async function handleSearchCommand(
       process.exit(1);
     }
 
-    const results = (result as any).data;
+    if (!result.data) {
+      console.error('Error: No data returned');
+      process.exit(1);
+    }
+
+    const results = result.data;
 
     if (results.totalCount === 0) {
       console.log('No results found.');

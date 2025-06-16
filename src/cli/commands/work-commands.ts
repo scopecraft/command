@@ -252,4 +252,3 @@ export async function handleWorkCommand(
     process.exit(1);
   }
 }
-
