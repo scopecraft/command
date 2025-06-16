@@ -5,7 +5,7 @@
 import { join } from 'node:path';
 import type { InterpolationData } from 'channelcoder';
 // MIGRATION: Using new centralized path resolver for modes
-import { PATH_TYPES, createPathContext, resolvePath } from '../../core/paths/index.js';
+import { PATH_TYPES, createPathContext, resolvePath, findModeFiles } from '../../core/paths/index.js';
 
 /**
  * Resolve mode prompt path based on project structure
@@ -13,6 +13,7 @@ import { PATH_TYPES, createPathContext, resolvePath } from '../../core/paths/ind
  * Supports:
  * - Simple modes: "design" -> "design/base.md"
  * - Mode variants: "design/trd" -> "design/trd.md"
+ * - Smart resolution: "code_review" -> finds "implementation/code_review.md"
  * - Special auto mode: "auto" -> "orchestration/autonomous.md"
  *
  * @migration Updated to use centralized path resolver
@@ -25,21 +26,38 @@ export function resolveModePromptPath(projectRoot: string, mode: string): string
   if (mode === 'auto') {
     return join(modesDir, 'orchestration', 'autonomous.md');
   }
-  
-  // Check if mode contains a slash, indicating a variant
+
+  // Check if mode contains a slash, indicating an explicit path
   if (mode.includes('/')) {
     // Split into mode and variant: "design/trd" -> ["design", "trd"]
     const parts = mode.split('/');
     const modeName = parts[0];
     const variantName = parts.slice(1).join('/'); // Support nested paths if needed
-    
+
     // Add .md extension if not present
     const fileName = variantName.endsWith('.md') ? variantName : `${variantName}.md`;
     return join(modesDir, modeName, fileName);
   }
+
+  // Smart resolution: search for mode file in all directories
+  const candidates = findModeFiles(projectRoot, mode);
   
-  // Default behavior for simple mode names
-  return join(modesDir, mode, 'base.md');
+  if (candidates.length === 0) {
+    // If no specific mode file found, fall back to default behavior
+    return join(modesDir, mode, 'base.md');
+  }
+  
+  if (candidates.length === 1) {
+    // Single match - use it
+    return join(modesDir, candidates[0]);
+  }
+  
+  // Multiple matches - throw error with helpful message
+  throw new Error(
+    `Ambiguous mode '${mode}' matches multiple files:\n` +
+    candidates.map(path => `  - ${path}`).join('\n') +
+    '\n\nPlease use the full path (e.g., --mode implementation/code_review)'
+  );
 }
 
 /**

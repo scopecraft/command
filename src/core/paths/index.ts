@@ -20,6 +20,8 @@ export {
   getTasksPath,
   getSessionsPath,
   getConfigPath,
+  // Mode utilities
+  findModeFiles,
 } from './path-resolver.js';
 
 // Type exports
