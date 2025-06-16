@@ -10,6 +10,11 @@ import { PATH_TYPES, createPathContext, resolvePath } from '../../core/paths/ind
 /**
  * Resolve mode prompt path based on project structure
  *
+ * Supports:
+ * - Simple modes: "design" -> "design/base.md"
+ * - Mode variants: "design/trd" -> "design/trd.md"
+ * - Special auto mode: "auto" -> "orchestration/autonomous.md"
+ *
  * @migration Updated to use centralized path resolver
  */
 export function resolveModePromptPath(projectRoot: string, mode: string): string {
@@ -20,6 +25,20 @@ export function resolveModePromptPath(projectRoot: string, mode: string): string
   if (mode === 'auto') {
     return join(modesDir, 'orchestration', 'autonomous.md');
   }
+  
+  // Check if mode contains a slash, indicating a variant
+  if (mode.includes('/')) {
+    // Split into mode and variant: "design/trd" -> ["design", "trd"]
+    const parts = mode.split('/');
+    const modeName = parts[0];
+    const variantName = parts.slice(1).join('/'); // Support nested paths if needed
+    
+    // Add .md extension if not present
+    const fileName = variantName.endsWith('.md') ? variantName : `${variantName}.md`;
+    return join(modesDir, modeName, fileName);
+  }
+  
+  // Default behavior for simple mode names
   return join(modesDir, mode, 'base.md');
 }
 

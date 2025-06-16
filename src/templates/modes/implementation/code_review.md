@@ -1,6 +1,9 @@
 ---
-name: code_review
-description: Comprehensive code review before merging to main branch
+input:
+  taskId?: string
+  parentId?: string
+  taskInstruction?: string
+  additionalInstructions?: string
 ---
 
 <role>

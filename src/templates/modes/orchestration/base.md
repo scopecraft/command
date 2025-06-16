@@ -1,6 +1,9 @@
 ---
-name: orchestration
-description: Route tasks to appropriate execution modes based on metadata
+input:
+  taskId: string
+  parentId?: string
+  taskInstruction: string
+  additionalInstructions?: string
 ---
 
 <role>

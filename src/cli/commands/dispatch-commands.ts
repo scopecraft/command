@@ -63,11 +63,8 @@ function validateDispatchOptions(
   taskId: string | undefined,
   options: DispatchCommandOptions
 ): ValidatedDispatchOptions {
-  // Validate input - need either taskId or session
-  if (!taskId && !options.session) {
-    printError('Task ID is required for dispatch command (unless using --session)');
-    process.exit(1);
-  }
+  // Task ID is now optional - let ChannelCoder validate if needed by the prompt
+  // When no taskId is provided, execution happens in the current directory
 
   // Get project root from configuration
   const configManager = ConfigurationManager.getInstance();

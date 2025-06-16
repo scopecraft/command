@@ -1,6 +1,9 @@
 ---
-name: implementation
-description: Build features with quality and pragmatism
+input:
+  taskId: string
+  parentId?: string
+  taskInstruction: string
+  additionalInstructions?: string
 ---
 
 <role>

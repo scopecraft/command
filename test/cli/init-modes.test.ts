@@ -2,12 +2,12 @@
  * Tests for sc init mode templates functionality
  */
 
-import { existsSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { beforeEach, describe, expect, it, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { handleInitCommand } from '../../src/cli/init.js';
+import { directoryPathCache, pathContextCache } from '../../src/core/paths/cache.js';
 import { createPathContext, getModesPath } from '../../src/core/paths/path-resolver.js';
-import { pathContextCache, directoryPathCache } from '../../src/core/paths/cache.js';
 
 describe('sc init - mode templates', () => {
   // Use a test project in /tmp to ensure complete isolation from the real project
@@ -23,14 +23,14 @@ describe('sc init - mode templates', () => {
     originalHome = process.env.HOME;
     testHome = join('/tmp', `.scopecraft-test-home-${Date.now()}`);
     process.env.HOME = testHome;
-    
+
     // Clear caches to ensure clean state
     pathContextCache.clear();
     directoryPathCache.clear();
-    
+
     // Create fresh test directory
     mkdirSync(testProjectRoot, { recursive: true });
-    
+
     // Create a scopecraft config file to ensure proper project isolation
     const configPath = join(testProjectRoot, '.scopecraft.json');
     const config = { path: testProjectRoot };
@@ -42,12 +42,12 @@ describe('sc init - mode templates', () => {
     if (originalHome) {
       process.env.HOME = originalHome;
     }
-    
+
     // Clean up test directory
     if (existsSync(testProjectRoot)) {
       rmSync(testProjectRoot, { recursive: true, force: true });
     }
-    
+
     // Clean up test home
     if (testHome && existsSync(testHome)) {
       rmSync(testHome, { recursive: true, force: true });
@@ -84,7 +84,7 @@ describe('sc init - mode templates', () => {
     // Check for mode directories
     const expectedModeDirs = [
       'exploration',
-      'design', 
+      'design',
       'implementation',
       'orchestration',
       'planning',
@@ -143,12 +143,12 @@ describe('sc init - mode templates', () => {
     // Check that .tasks directory exists
     const tasksDir = join(testProjectRoot, '.tasks');
     expect(existsSync(tasksDir)).toBe(true);
-    
+
     // Check that .modes directory exists within .tasks
     const modesDir = join(tasksDir, '.modes');
     expect(existsSync(modesDir)).toBe(true);
-    
-    // Check that .templates directory exists within .tasks  
+
+    // Check that .templates directory exists within .tasks
     const templatesDir = join(tasksDir, '.templates');
     expect(existsSync(templatesDir)).toBe(true);
   });
@@ -156,9 +156,11 @@ describe('sc init - mode templates', () => {
   it('should handle missing source templates gracefully', async () => {
     // This test ensures the init doesn't fail if templates are missing
     // (e.g., in a production build where templates might not be bundled)
-    
+
     // Run init command - should complete without throwing
-    await expect(handleInitCommand({ rootDir: testProjectRoot, override: true })).resolves.not.toThrow();
+    await expect(
+      handleInitCommand({ rootDir: testProjectRoot, override: true })
+    ).resolves.not.toThrow();
 
     // Basic structure should still be created
     expect(existsSync(join(testProjectRoot, '.tasks'))).toBe(true);

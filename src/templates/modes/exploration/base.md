@@ -1,6 +1,9 @@
 ---
-name: exploration
-description: Research and understand problem spaces deeply
+input:
+  taskId: string
+  parentId?: string
+  taskInstruction: string
+  additionalInstructions?: string
 ---
 
 <role>

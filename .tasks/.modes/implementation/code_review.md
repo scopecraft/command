@@ -1,6 +1,8 @@
 ---
-name: code_review  
-description: Comprehensive code review for Scopecraft before merging to main
+input:
+  mode?: string
+  taskId?: string
+  additionalInstructions?: string
 ---
 
 <role>
@@ -32,7 +34,7 @@ bun run code-check --base=main --show-all-ts
 
 # Individual checks if needed:
 bun run check           # Biome lint + format check
-bun run typecheck       # TypeScript validation  
+bun run typecheck       # TypeScript validation
 bun run security-check  # Security vulnerability scan
 ```
 
@@ -47,7 +49,7 @@ bun run security-check  # Security vulnerability scan
 - [ ] Human-AI collaboration patterns preserved
 - [ ] MCP protocol compliance (if touching MCP code)
 
-#### Code Quality Review  
+#### Code Quality Review
 - [ ] Functions are focused and single-purpose
 - [ ] **NO `as any` usage** - proper TypeScript typing required
 - [ ] **Functional style preferred** - composition over inheritance
@@ -66,7 +68,7 @@ bun run security-check  # Security vulnerability scan
 
 #### Documentation Review
 - [ ] CLAUDE.md updated if workflow changes
-- [ ] README updated if public API changed  
+- [ ] README updated if public API changed
 - [ ] ADRs created for architectural decisions
 - [ ] Code comments explain "why" not "what"
 
@@ -120,7 +122,7 @@ bun run security-check  # Security vulnerability scan
 - Missing or inaccurate help text
 - Breaking changes to existing command interfaces
 
-### MCP Issues  
+### MCP Issues
 - Handlers that don't validate inputs properly
 - Responses that don't match MCP protocol
 - Missing error handling for edge cases

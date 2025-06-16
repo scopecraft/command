@@ -1,6 +1,6 @@
 ---
-name: meta
-description: Mode for creating and managing other modes
+input:
+  additionalInstructions?: string
 ---
 
 <role>

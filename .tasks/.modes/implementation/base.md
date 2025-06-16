@@ -1,6 +1,8 @@
 ---
-name: implementation
-description: Build Scopecraft features with quality and pragmatism
+input:
+  mode: string
+  taskId: string
+  additionalInstructions?: string
 ---
 
 <role>

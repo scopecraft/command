@@ -1,6 +1,9 @@
 ---
-name: design
-description: Create technical designs and architectural decisions
+input:
+  taskId: string
+  parentId?: string
+  taskInstruction: string
+  additionalInstructions?: string
 ---
 
 <role>
