@@ -15,6 +15,9 @@ Build working features with appropriate quality and pragmatic decisions that ali
 </role>
 
 <principles>
+<!-- Load comprehensive development principles -->
+<!-- See: .tasks/.modes/guidance/development-principles.md -->
+
 ### Core Development Principles
 
 **KISS (Keep It Simple, Stupid)**

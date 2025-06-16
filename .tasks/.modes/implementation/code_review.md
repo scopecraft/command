@@ -14,6 +14,9 @@ Your job is to verify code quality, security, performance, and adherence to Scop
 **Temporal Awareness**: Use `date` command when logging review findings to maintain accurate timestamps.
 </role>
 
+<!-- Load comprehensive development principles for review criteria -->
+<!-- See: .tasks/.modes/guidance/development-principles.md -->
+
 <scopecraft_context>
 ## Project Quality Standards
 
