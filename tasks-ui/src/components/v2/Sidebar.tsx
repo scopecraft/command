@@ -67,6 +67,206 @@ function SectionHeader({
   );
 }
 
+// Navigation sections components
+function TasksSection({
+  activeItem,
+  handleItemClick,
+}: { activeItem: string; handleItemClick: (id: string, path: string) => void }) {
+  return (
+    <div>
+      <h3 className="text-xs font-medium text-muted-foreground uppercase mb-1">Tasks</h3>
+      <ul className="space-y-1">
+        <li>
+          <Button
+            variant={activeItem === 'tasks-todo' ? 'secondary' : 'ghost'}
+            className={cn(
+              'w-full justify-start text-left normal-case',
+              activeItem === 'tasks-todo' && 'bg-accent'
+            )}
+            onClick={() => handleItemClick('tasks-todo', '/tasks?status=todo')}
+          >
+            <span className="truncate">To Do</span>
+          </Button>
+        </li>
+        <li>
+          <Button
+            variant={activeItem === 'tasks-progress' ? 'secondary' : 'ghost'}
+            className={cn(
+              'w-full justify-start text-left normal-case',
+              activeItem === 'tasks-progress' && 'bg-accent'
+            )}
+            onClick={() => handleItemClick('tasks-progress', '/tasks?status=in_progress')}
+          >
+            <span className="truncate">In Progress</span>
+          </Button>
+        </li>
+        <li>
+          <Button
+            variant={activeItem === 'tasks-all' ? 'secondary' : 'ghost'}
+            className={cn(
+              'w-full justify-start text-left normal-case',
+              activeItem === 'tasks-all' && 'bg-accent'
+            )}
+            onClick={() => handleItemClick('tasks-all', '/tasks')}
+          >
+            <span className="truncate">All</span>
+          </Button>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function ParentTasksSection({
+  activeItem,
+  handleItemClick,
+}: { activeItem: string; handleItemClick: (id: string, path: string) => void }) {
+  return (
+    <div>
+      <h3 className="text-xs font-medium text-muted-foreground uppercase mb-1">Parent Tasks</h3>
+      <ul className="space-y-1">
+        <li>
+          <Button
+            variant={activeItem === 'parents-todo' ? 'secondary' : 'ghost'}
+            className={cn(
+              'w-full justify-start text-left normal-case',
+              activeItem === 'parents-todo' && 'bg-accent'
+            )}
+            onClick={() => handleItemClick('parents-todo', '/parents?status=todo')}
+          >
+            <span className="truncate">To Do</span>
+          </Button>
+        </li>
+        <li>
+          <Button
+            variant={activeItem === 'parents-progress' ? 'secondary' : 'ghost'}
+            className={cn(
+              'w-full justify-start text-left normal-case',
+              activeItem === 'parents-progress' && 'bg-accent'
+            )}
+            onClick={() => handleItemClick('parents-progress', '/parents?status=in_progress')}
+          >
+            <span className="truncate">In Progress</span>
+          </Button>
+        </li>
+        <li>
+          <Button
+            variant={activeItem === 'parents-all' ? 'secondary' : 'ghost'}
+            className={cn(
+              'w-full justify-start text-left normal-case',
+              activeItem === 'parents-all' && 'bg-accent'
+            )}
+            onClick={() => handleItemClick('parents-all', '/parents')}
+          >
+            <span className="truncate">All</span>
+          </Button>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function PhaseSection({
+  activeItem,
+  handleItemClick,
+  phaseCounts,
+}: {
+  activeItem: string;
+  handleItemClick: (id: string, path: string) => void;
+  phaseCounts?: { backlog: number; active: number; released: number; archive: number };
+}) {
+  return (
+    <ul className="space-y-1">
+      <li>
+        <Button
+          variant={activeItem === 'phase-backlog' ? 'secondary' : 'ghost'}
+          className={cn(
+            'w-full justify-start text-left normal-case',
+            activeItem === 'phase-backlog' && 'bg-accent'
+          )}
+          onClick={() => handleItemClick('phase-backlog', '/tasks?phase=backlog')}
+        >
+          <span className="truncate flex-1">Backlog</span>
+          {phaseCounts && (
+            <span className="text-xs text-muted-foreground">{phaseCounts.backlog}</span>
+          )}
+        </Button>
+      </li>
+      <li>
+        <Button
+          variant={activeItem === 'phase-active' ? 'secondary' : 'ghost'}
+          className={cn(
+            'w-full justify-start text-left normal-case',
+            activeItem === 'phase-active' && 'bg-accent'
+          )}
+          onClick={() => handleItemClick('phase-active', '/tasks?phase=active')}
+        >
+          <span className="truncate flex-1">Active</span>
+          {phaseCounts && (
+            <span className="text-xs text-muted-foreground">{phaseCounts.active}</span>
+          )}
+        </Button>
+      </li>
+      <li>
+        <Button
+          variant={activeItem === 'phase-released' ? 'secondary' : 'ghost'}
+          className={cn(
+            'w-full justify-start text-left normal-case',
+            activeItem === 'phase-released' && 'bg-accent'
+          )}
+          onClick={() => handleItemClick('phase-released', '/tasks?phase=released')}
+        >
+          <span className="truncate flex-1">Released</span>
+          {phaseCounts && (
+            <span className="text-xs text-muted-foreground">{phaseCounts.released}</span>
+          )}
+        </Button>
+      </li>
+    </ul>
+  );
+}
+
+function RecentTasksSection({
+  activeItem,
+  handleItemClick,
+  recentTasks,
+}: {
+  activeItem: string;
+  handleItemClick: (id: string, path: string) => void;
+  recentTasks: Task[];
+}) {
+  return (
+    <ul className="space-y-1">
+      {recentTasks.length === 0 ? (
+        <li className="text-sm text-muted-foreground p-2">No recent tasks</li>
+      ) : (
+        recentTasks.map((task) => {
+          // Data is normalized from MCP API
+          const taskType = getDisplayType(task);
+          const path =
+            task.taskStructure === 'parent' ? `/parents/${task.id}` : `/tasks/${task.id}`;
+
+          return (
+            <li key={`recent-task-${task.id}`}>
+              <Button
+                variant={activeItem === task.id ? 'secondary' : 'ghost'}
+                className={cn(
+                  'w-full justify-start text-left normal-case',
+                  activeItem === task.id && 'bg-accent'
+                )}
+                onClick={() => handleItemClick(task.id, path)}
+              >
+                <SharedTaskIcon type={taskType} size="md" className="mr-2 text-muted-foreground" />
+                <span className="truncate">{task.title}</span>
+              </Button>
+            </li>
+          );
+        })
+      )}
+    </ul>
+  );
+}
+
 export function Sidebar({ className, onNavigate }: SidebarProps) {
   const [activeItem, setActiveItem] = React.useState('tasks-all');
   const [collapsedSections, setCollapsedSections] = React.useState<CollapsedSections>({
@@ -110,93 +310,8 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         )}
       >
         <div className="space-y-3">
-          {/* Tasks Section */}
-          <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase mb-1">Tasks</h3>
-            <ul className="space-y-1">
-              <li>
-                <Button
-                  variant={activeItem === 'tasks-todo' ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start text-left normal-case',
-                    activeItem === 'tasks-todo' && 'bg-accent'
-                  )}
-                  onClick={() => handleItemClick('tasks-todo', '/tasks?status=todo')}
-                >
-                  <span className="truncate">To Do</span>
-                </Button>
-              </li>
-              <li>
-                <Button
-                  variant={activeItem === 'tasks-progress' ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start text-left normal-case',
-                    activeItem === 'tasks-progress' && 'bg-accent'
-                  )}
-                  onClick={() => handleItemClick('tasks-progress', '/tasks?status=in_progress')}
-                >
-                  <span className="truncate">In Progress</span>
-                </Button>
-              </li>
-              <li>
-                <Button
-                  variant={activeItem === 'tasks-all' ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start text-left normal-case',
-                    activeItem === 'tasks-all' && 'bg-accent'
-                  )}
-                  onClick={() => handleItemClick('tasks-all', '/tasks')}
-                >
-                  <span className="truncate">All</span>
-                </Button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Parent Tasks Section */}
-          <div>
-            <h3 className="text-xs font-medium text-muted-foreground uppercase mb-1">
-              Parent Tasks
-            </h3>
-            <ul className="space-y-1">
-              <li>
-                <Button
-                  variant={activeItem === 'parents-todo' ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start text-left normal-case',
-                    activeItem === 'parents-todo' && 'bg-accent'
-                  )}
-                  onClick={() => handleItemClick('parents-todo', '/parents?status=todo')}
-                >
-                  <span className="truncate">To Do</span>
-                </Button>
-              </li>
-              <li>
-                <Button
-                  variant={activeItem === 'parents-progress' ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start text-left normal-case',
-                    activeItem === 'parents-progress' && 'bg-accent'
-                  )}
-                  onClick={() => handleItemClick('parents-progress', '/parents?status=in_progress')}
-                >
-                  <span className="truncate">In Progress</span>
-                </Button>
-              </li>
-              <li>
-                <Button
-                  variant={activeItem === 'parents-all' ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start text-left normal-case',
-                    activeItem === 'parents-all' && 'bg-accent'
-                  )}
-                  onClick={() => handleItemClick('parents-all', '/parents')}
-                >
-                  <span className="truncate">All</span>
-                </Button>
-              </li>
-            </ul>
-          </div>
+          <TasksSection activeItem={activeItem} handleItemClick={handleItemClick} />
+          <ParentTasksSection activeItem={activeItem} handleItemClick={handleItemClick} />
         </div>
       </div>
 
@@ -214,53 +329,11 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
           collapsedSections.workflow && 'h-0 p-0 border-b-0'
         )}
       >
-        <ul className="space-y-1">
-          <li>
-            <Button
-              variant={activeItem === 'phase-backlog' ? 'secondary' : 'ghost'}
-              className={cn(
-                'w-full justify-start text-left normal-case',
-                activeItem === 'phase-backlog' && 'bg-accent'
-              )}
-              onClick={() => handleItemClick('phase-backlog', '/tasks?phase=backlog')}
-            >
-              <span className="truncate flex-1">Backlog</span>
-              {phaseCounts && (
-                <span className="text-xs text-muted-foreground">{phaseCounts.backlog}</span>
-              )}
-            </Button>
-          </li>
-          <li>
-            <Button
-              variant={activeItem === 'phase-active' ? 'secondary' : 'ghost'}
-              className={cn(
-                'w-full justify-start text-left normal-case',
-                activeItem === 'phase-active' && 'bg-accent'
-              )}
-              onClick={() => handleItemClick('phase-active', '/tasks?phase=active')}
-            >
-              <span className="truncate flex-1">Active</span>
-              {phaseCounts && (
-                <span className="text-xs text-muted-foreground">{phaseCounts.active}</span>
-              )}
-            </Button>
-          </li>
-          <li>
-            <Button
-              variant={activeItem === 'phase-released' ? 'secondary' : 'ghost'}
-              className={cn(
-                'w-full justify-start text-left normal-case',
-                activeItem === 'phase-released' && 'bg-accent'
-              )}
-              onClick={() => handleItemClick('phase-released', '/tasks?phase=released')}
-            >
-              <span className="truncate flex-1">Released</span>
-              {phaseCounts && (
-                <span className="text-xs text-muted-foreground">{phaseCounts.released}</span>
-              )}
-            </Button>
-          </li>
-        </ul>
+        <PhaseSection
+          activeItem={activeItem}
+          handleItemClick={handleItemClick}
+          phaseCounts={phaseCounts}
+        />
       </div>
 
       {/* Recent Section */}
@@ -277,38 +350,11 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
           collapsedSections.recent && 'h-0 p-0 overflow-hidden flex-none'
         )}
       >
-        <ul className="space-y-1">
-          {recentTasks.length === 0 ? (
-            <li className="text-sm text-muted-foreground p-2">No recent tasks</li>
-          ) : (
-            recentTasks.map((task) => {
-              // Data is normalized from MCP API
-              const taskType = getDisplayType(task);
-              const path =
-                task.taskStructure === 'parent' ? `/parents/${task.id}` : `/tasks/${task.id}`;
-
-              return (
-                <li key={`recent-task-${task.id}`}>
-                  <Button
-                    variant={activeItem === task.id ? 'secondary' : 'ghost'}
-                    className={cn(
-                      'w-full justify-start text-left normal-case',
-                      activeItem === task.id && 'bg-accent'
-                    )}
-                    onClick={() => handleItemClick(task.id, path)}
-                  >
-                    <SharedTaskIcon
-                      type={taskType}
-                      size="md"
-                      className="mr-2 text-muted-foreground"
-                    />
-                    <span className="truncate">{task.title}</span>
-                  </Button>
-                </li>
-              );
-            })
-          )}
-        </ul>
+        <RecentTasksSection
+          activeItem={activeItem}
+          handleItemClick={handleItemClick}
+          recentTasks={recentTasks}
+        />
       </div>
 
       {/* Bottom Actions */}
