@@ -90,7 +90,7 @@ export async function validateTaskExists(
  */
 export function validateWorkflowState(state?: string): state is core.WorkflowState {
   if (!state) return true; // Optional, so undefined is valid
-  return ['backlog', 'current', 'archive'].includes(state);
+  return ['current', 'archive'].includes(state);
 }
 
 /**

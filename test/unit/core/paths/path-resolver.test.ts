@@ -12,6 +12,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import {
   PATH_TYPES,
+  type PathContext,
   createPathContext,
   getConfigPath,
   getModesPath,
@@ -20,14 +21,17 @@ import {
   getTemplatesPath,
   resolvePath,
   resolvePathWithPrecedence,
-  type PathContext,
 } from '../../../../src/core/paths/index.js';
 import { TaskStoragePathEncoder } from '../../../../src/core/task-storage-path-encoder.js';
 
 // Test setup
 const TEST_HOME = join(process.env.TMPDIR || '/tmp', '.scopecraft-test-paths');
 const TEST_PROJECT = join(process.env.TMPDIR || '/tmp', 'test-project');
-const TEST_WORKTREE = join(process.env.TMPDIR || '/tmp', 'test-project.worktrees', 'feature-branch');
+const TEST_WORKTREE = join(
+  process.env.TMPDIR || '/tmp',
+  'test-project.worktrees',
+  'feature-branch'
+);
 
 describe('Path Resolver', () => {
   let originalHome: string | undefined;
@@ -58,7 +62,10 @@ describe('Path Resolver', () => {
       rmSync(TEST_PROJECT, { recursive: true, force: true });
     }
     if (existsSync(TEST_WORKTREE)) {
-      rmSync(join(process.env.TMPDIR || '/tmp', 'test-project.worktrees'), { recursive: true, force: true });
+      rmSync(join(process.env.TMPDIR || '/tmp', 'test-project.worktrees'), {
+        recursive: true,
+        force: true,
+      });
     }
     if (existsSync(TEST_HOME)) {
       rmSync(TEST_HOME, { recursive: true, force: true });
@@ -179,7 +186,7 @@ describe('Path Resolver', () => {
 
     test('should return all paths in precedence order for templates', () => {
       const paths = resolvePathWithPrecedence(PATH_TYPES.TEMPLATES, context);
-      
+
       expect(paths).toHaveLength(2);
       expect(paths[0]).toBe(join(TEST_PROJECT, '.tasks', '.templates')); // Primary
       expect(paths[1]).toBe(join(TEST_HOME, '.scopecraft', 'templates')); // Fallback
@@ -187,14 +194,14 @@ describe('Path Resolver', () => {
 
     test('should return single path for modes', () => {
       const paths = resolvePathWithPrecedence(PATH_TYPES.MODES, context);
-      
+
       expect(paths).toHaveLength(1);
       expect(paths[0]).toBe(join(TEST_PROJECT, '.tasks', '.modes'));
     });
 
     test('should return single path for tasks', () => {
       const paths = resolvePathWithPrecedence(PATH_TYPES.TASKS, context);
-      
+
       expect(paths).toHaveLength(1);
       const encoded = TaskStoragePathEncoder.encode(TEST_PROJECT);
       expect(paths[0]).toBe(join(TEST_HOME, '.scopecraft', 'projects', encoded, 'tasks'));
@@ -251,11 +258,11 @@ describe('Path Resolver', () => {
         worktreeRoot: undefined,
         userHome: TEST_HOME,
       };
-      
+
       // Templates and modes stay in repository
       const templatesPath = resolvePath(PATH_TYPES.TEMPLATES, context);
       const modesPath = resolvePath(PATH_TYPES.MODES, context);
-      
+
       expect(templatesPath).toContain(TEST_PROJECT);
       expect(templatesPath).toContain('.tasks/.templates');
       expect(modesPath).toContain(TEST_PROJECT);
@@ -270,11 +277,11 @@ describe('Path Resolver', () => {
         worktreeRoot: undefined,
         userHome: TEST_HOME,
       };
-      
+
       // Tasks and sessions go to centralized storage
       const tasksPath = resolvePath(PATH_TYPES.TASKS, context);
       const sessionsPath = resolvePath(PATH_TYPES.SESSIONS, context);
-      
+
       expect(tasksPath).toContain(TEST_HOME);
       expect(tasksPath).toContain('.scopecraft/projects');
       expect(sessionsPath).toContain(TEST_HOME);

@@ -24,7 +24,6 @@ import type { ProjectConfig, TaskLocation, WorkflowState } from './types.js';
 
 // Default workflow folder names
 const DEFAULT_WORKFLOW_FOLDERS = {
-  backlog: 'backlog',
   current: 'current',
   archive: 'archive',
 } as const;
@@ -166,7 +165,7 @@ export function ensureWorkflowDirectories(projectRoot: string, config?: ProjectC
   }
 
   // Create workflow directories
-  const states: WorkflowState[] = ['backlog', 'current', 'archive'];
+  const states: WorkflowState[] = ['current', 'archive'];
   for (const state of states) {
     const dir = getWorkflowDirectory(projectRoot, state, config);
     if (!existsSync(dir)) {
@@ -256,9 +255,6 @@ export function parseTaskLocation(taskPath: string, projectRoot: string): TaskLo
   const firstDir = parts[0];
 
   // Check if it's a workflow directory
-  if (firstDir === 'backlog') {
-    return { workflowState: 'backlog' };
-  }
   if (firstDir === 'current') {
     return { workflowState: 'current' };
   }
@@ -316,7 +312,7 @@ export function isParentTaskFolder(dirPath: string, projectRoot?: string): boole
     const pathParts = relativePath.split(sep);
 
     // Block second-level directories (workflow level) from being parent folders
-    // Examples: .tasks/backlog/ or .tasks/current/ should never be parent folders
+    // Examples: .tasks/current/ or .tasks/archive/ should never be parent folders
     if (pathParts.length <= 2) {
       return false;
     }
@@ -426,7 +422,7 @@ export function getExistingWorkflowStates(
 ): WorkflowState[] {
   const states: WorkflowState[] = [];
 
-  for (const state of ['backlog', 'current', 'archive'] as const) {
+  for (const state of ['current', 'archive'] as const) {
     const dir = getWorkflowDirectory(projectRoot, state, config);
     if (existsSync(dir)) {
       states.push(state);
@@ -438,7 +434,7 @@ export function getExistingWorkflowStates(
 
 /**
  * Resolve a task ID to its full path
- * Search order: current → backlog → archive
+ * Search order: current → archive
  * With optional parent context for efficient subtask resolution
  */
 export function resolveTaskId(
@@ -481,7 +477,7 @@ export function resolveTaskId(
   }
 
   // Standard search order
-  const searchOrder: WorkflowState[] = ['current', 'backlog', 'archive'];
+  const searchOrder: WorkflowState[] = ['current', 'archive'];
 
   for (const state of searchOrder) {
     const found = findTaskInWorkflow(taskId, projectRoot, state, config);

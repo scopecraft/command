@@ -22,12 +22,10 @@ import {
  */
 // Helper functions for handleListCommand
 function buildWorkflowStateFilter(options: {
-  backlog?: boolean;
   current?: boolean;
   archive?: boolean;
   location?: string;
 }): core.WorkflowState[] | undefined {
-  if (options.backlog) return ['backlog'];
   if (options.current) return ['current'];
   if (options.archive) return ['archive'];
   if (options.location) return [options.location as core.WorkflowState];
@@ -41,7 +39,7 @@ function buildListOptions(options: {
   tags?: string[];
   subdirectory?: string;
   location?: string;
-  backlog?: boolean;
+  phase?: string;
   current?: boolean;
   archive?: boolean;
   overview?: boolean;
@@ -53,6 +51,7 @@ function buildListOptions(options: {
 
   if (options.status) listOptions.status = options.status as core.TaskStatus;
   if (options.type) listOptions.type = options.type;
+  if (options.phase) listOptions.phase = options.phase as core.TaskPhase;
   if (options.assignee) listOptions.assignee = options.assignee;
   if (options.tags) listOptions.tags = options.tags;
   if (options.subdirectory) listOptions.subdirectory = options.subdirectory;
@@ -86,7 +85,7 @@ export async function handleListCommand(options: {
   tags?: string[];
   subdirectory?: string;
   location?: string;
-  backlog?: boolean;
+  phase?: string;
   current?: boolean;
   archive?: boolean;
   overview?: boolean;
@@ -165,6 +164,7 @@ function buildCreateOptions(options: {
   status?: string;
   area?: string;
   location?: string;
+  phase?: string;
   content?: string;
   template?: string;
 }): core.TaskCreateOptions {
@@ -172,7 +172,8 @@ function buildCreateOptions(options: {
     title: options.title,
     type: options.type as core.TaskType,
     area: options.area || 'general',
-    workflowState: (options.location as core.WorkflowState) || 'backlog',
+    workflowState: (options.location as core.WorkflowState) || 'current',
+    phase: options.phase as core.TaskPhase,
     status: (options.status as core.TaskStatus) || 'To Do',
     template: options.template,
     instruction: options.content,
@@ -224,9 +225,8 @@ function displayCreationResult(result: core.OperationResult<core.Task>): void {
     `  Location: ${result.data?.metadata.location.workflowState}/${result.data?.metadata.filename}`
   );
 
-  if (result.data?.metadata.location.workflowState === 'backlog') {
+  if (result.data?.metadata.location.workflowState === 'current') {
     console.log('\nNext steps:');
-    console.log(`  sc workflow promote ${result.data?.metadata.id}  # Move to current`);
     console.log(`  sc task start ${result.data?.metadata.id}        # Mark as in progress`);
   }
 }
@@ -240,6 +240,7 @@ export async function handleCreateCommand(options: {
   assignee?: string;
   area?: string;
   location?: string;
+  phase?: string;
   parent?: string;
   depends?: string[];
   previous?: string;
@@ -449,7 +450,6 @@ export async function handleDeleteCommand(
 export async function handleTaskMoveCommand(
   id: string,
   options: {
-    toBacklog?: boolean;
     toCurrent?: boolean;
     toArchive?: boolean;
     archiveDate?: string;
@@ -465,16 +465,12 @@ export async function handleTaskMoveCommand(
 
     // Determine target state
     let targetState: core.WorkflowState;
-    if (options.toBacklog) {
-      targetState = 'backlog';
-    } else if (options.toCurrent) {
+    if (options.toCurrent) {
       targetState = 'current';
     } else if (options.toArchive) {
       targetState = 'archive';
     } else {
-      console.error(
-        'Error: Must specify target location (--to-backlog, --to-current, or --to-archive)'
-      );
+      console.error('Error: Must specify target location (--to-current or --to-archive)');
       process.exit(1);
       return; // TypeScript needs this to know execution stops here
     }
@@ -529,20 +525,7 @@ export async function handleNextTaskCommand(
     const tasks = result.data || [];
 
     if (tasks.length === 0) {
-      // Check backlog
-      const backlogResult = await core.list(projectRoot, {
-        workflowStates: ['backlog'],
-        status: 'todo',
-      });
-
-      if (backlogResult.success && backlogResult.data && backlogResult.data.length > 0) {
-        console.log('No tasks in current. Consider promoting from backlog:');
-        const format = (options.format || 'default') as OutputFormat;
-        console.log(formatTaskDetail(backlogResult.data[0], format));
-        console.log(`\nPromote with: sc workflow promote ${backlogResult.data[0].metadata.id}`);
-      } else {
-        console.log('No tasks available to work on.');
-      }
+      console.log('No tasks available to work on.');
       return;
     }
 

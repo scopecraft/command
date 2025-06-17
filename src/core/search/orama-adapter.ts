@@ -18,7 +18,7 @@ import type {
  * Get Orama schema by combining metadata service enums with Task types
  */
 function getOramaSchema() {
-  const metadataSchema = getSchema();
+  const _metadataSchema = getSchema();
 
   // Core document fields (from SearchDocument)
   const schema: Record<string, string> = {
@@ -33,6 +33,7 @@ function getOramaSchema() {
 
     // From TaskFrontmatter (via metadata service enums)
     status: 'enum',
+    phase: 'enum',
     area: 'string',
     tags: 'string[]',
     workflowState: 'enum',
@@ -65,9 +66,10 @@ export class OramaAdapter implements SearchAdapter {
       type: doc.type,
       path: doc.path,
       status: doc.status || '',
+      phase: doc.phase || '',
       area: doc.area || '',
       tags: doc.tags || [],
-      workflowState: doc.workflowState || 'backlog',
+      workflowState: doc.workflowState || 'current',
       priority: doc.priority || '',
       assignee: doc.assignee || '',
       isParentTask: doc.isParentTask || false,
@@ -107,7 +109,7 @@ export class OramaAdapter implements SearchAdapter {
     const oramaQuery: any = {};
 
     // Text search
-    if (query.query && query.query.trim()) {
+    if (query.query?.trim()) {
       oramaQuery.term = query.query;
       oramaQuery.properties = ['id', 'title', 'content'];
       oramaQuery.boost = {
@@ -128,6 +130,10 @@ export class OramaAdapter implements SearchAdapter {
     if (query.filters) {
       if (query.filters.status && query.filters.status.length > 0) {
         where.status = query.filters.status;
+      }
+
+      if (query.filters.phase && query.filters.phase.length > 0) {
+        where.phase = query.filters.phase;
       }
 
       if (query.filters.area && query.filters.area.length > 0) {
@@ -159,11 +165,11 @@ export class OramaAdapter implements SearchAdapter {
     // Post-process results for type and workflowState filtering
     let hits = results.hits;
     if (query.types && query.types.length > 0) {
-      hits = hits.filter((hit: any) => query.types!.includes(hit.document.type));
+      hits = hits.filter((hit: any) => query.types?.includes(hit.document.type));
     }
     if (query.filters?.workflowState && query.filters.workflowState.length > 0) {
       hits = hits.filter((hit: any) =>
-        query.filters!.workflowState!.includes(hit.document.workflowState)
+        query.filters?.workflowState?.includes(hit.document.workflowState)
       );
     }
 
@@ -288,8 +294,8 @@ export class OramaAdapter implements SearchAdapter {
     let excerpt = content.substring(start, end);
 
     // Add ellipsis if needed
-    if (start > 0) excerpt = '...' + excerpt;
-    if (end < content.length) excerpt = excerpt + '...';
+    if (start > 0) excerpt = `...${excerpt}`;
+    if (end < content.length) excerpt = `${excerpt}...`;
 
     // Simple highlight (can be enhanced with proper HTML escaping)
     const highlightedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

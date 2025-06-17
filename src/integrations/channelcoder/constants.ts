@@ -22,7 +22,7 @@ export const SESSION_STORAGE = {
  * Get centralized session storage directories
  * All worktrees share the same session storage in ~/.scopecraft/projects/{encoded}/sessions/
  */
-export function getCentralizedSessionPaths(config?: IConfigurationManager) {
+export function getCentralizedSessionPaths(_config?: IConfigurationManager) {
   // Get main repository root to ensure all worktrees share the same storage
   // If interface provided, let WorktreePathResolver use its default getInstance()
   const resolver = new WorktreePathResolver();

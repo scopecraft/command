@@ -52,41 +52,34 @@ async function migrateWorkflow() {
   // Process each task
   for (const task of backlogTasks.data) {
     try {
-      // Determine target state based on phase
+      // Move ALL tasks to current (two-state architecture)
       const phase = task.document.frontmatter.phase as TaskPhase | undefined;
       
-      // Only move if phase is 'active' or 'completed'
-      if (phase === 'active' || phase === 'completed') {
-        console.log(`Moving task ${task.metadata.id} (phase: ${phase}) to current...`);
+      console.log(`Moving task ${task.metadata.id} to current...`);
+      
+      if (!isDryRun) {
+        const moveResult = await move(projectRoot, task.metadata.id, {
+          targetState: 'current',
+          updateStatus: false // Don't auto-update status
+        });
         
-        if (!isDryRun) {
-          const moveResult = await move(projectRoot, task.metadata.id, {
-            targetState: 'current',
-            updateStatus: false // Don't auto-update status
-          });
-          
-          if (!moveResult.success) {
-            throw new Error(moveResult.error);
-          }
+        if (!moveResult.success) {
+          throw new Error(moveResult.error);
         }
         
-        movedCount++;
-      } else {
-        // If no phase or phase is 'planning', ensure phase is set
+        // Ensure phase is set (default to 'planning' if not set)
         if (!phase) {
-          console.log(`Setting phase to 'planning' for task ${task.metadata.id}...`);
+          const updateResult = await update(projectRoot, task.metadata.id, {
+            phase: 'planning'
+          });
           
-          if (!isDryRun) {
-            const updateResult = await update(projectRoot, task.metadata.id, {
-              phase: 'planning'
-            });
-            
-            if (!updateResult.success) {
-              throw new Error(updateResult.error);
-            }
+          if (!updateResult.success) {
+            throw new Error(updateResult.error);
           }
         }
       }
+      
+      movedCount++;
     } catch (error) {
       errorCount++;
       const errorMsg = `Failed to process task ${task.metadata.id}: ${error}`;

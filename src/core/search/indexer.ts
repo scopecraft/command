@@ -28,7 +28,7 @@ export class SearchIndexer {
       const listOptions = {
         includeArchived: true,
         includeParentTasks: true,
-        workflowStates: ['backlog', 'current', 'archive'] as WorkflowState[],
+        workflowStates: ['current', 'archive'] as WorkflowState[],
       };
 
       const taskResult = await core.list(projectRoot, listOptions);
@@ -67,7 +67,7 @@ export class SearchIndexer {
       for (const change of changes) {
         switch (change.type) {
           case 'add':
-          case 'update':
+          case 'update': {
             // Load the task to get full content
             const taskResult = await core.get(projectRoot, change.id);
             if (taskResult.success && taskResult.data) {
@@ -81,6 +81,7 @@ export class SearchIndexer {
               }
             }
             break;
+          }
 
           case 'delete':
             await this.adapter.removeDocument(index, change.id);
@@ -110,6 +111,7 @@ export class SearchIndexer {
         type: task.metadata.isParentTask ? 'parent' : 'task',
         path: task.metadata.path,
         status: task.document.frontmatter.status,
+        phase: task.document.frontmatter.phase,
         area: task.document.frontmatter.area,
         tags: task.document.frontmatter.tags || [],
         workflowState: task.metadata.location.workflowState,

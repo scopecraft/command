@@ -3,7 +3,7 @@
  * Following Scopecraft's existing type patterns
  */
 
-import type { ISOTimestamp, TaskPriority, TaskStatus, WorkflowState } from '../types.js';
+import type { ISOTimestamp, TaskPhase, TaskPriority, TaskStatus, WorkflowState } from '../types.js';
 
 /**
  * Operation result pattern used throughout Scopecraft
@@ -21,6 +21,7 @@ export interface SearchQuery {
   filters?: {
     // Basic filters - matches TaskListOptions pattern
     status?: string[];
+    phase?: string[];
     area?: string[];
     tags?: string[];
     workflowState?: WorkflowState[];
@@ -58,6 +59,7 @@ export interface SearchDocument {
 
   // Task-specific fields (matching TaskMetadata structure)
   status?: TaskStatus; // Using existing enum
+  phase?: TaskPhase; // Using existing enum
   area?: string;
   tags?: string[];
   workflowState?: WorkflowState; // Using existing enum

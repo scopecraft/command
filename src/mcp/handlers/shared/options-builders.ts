@@ -38,6 +38,7 @@ export function buildTaskCreateOptionsBase(params: {
   area?: string;
   status?: string;
   workflowState?: string;
+  phase?: string;
   instruction?: string;
 }): Partial<core.TaskCreateOptions> {
   return {
@@ -46,6 +47,7 @@ export function buildTaskCreateOptionsBase(params: {
     area: params.area || 'general',
     status: (params.status || 'todo') as core.TaskStatus, // Core will normalize
     workflowState: params.workflowState as core.WorkflowState,
+    phase: params.phase as core.TaskPhase,
     instruction: params.instruction
       ? sanitizeSectionContent(params.instruction)
       : params.instruction,

@@ -1,6 +1,6 @@
 /**
  * Simple cache implementation for path resolution
- * 
+ *
  * Paths don't change during execution, so we can cache them
  * to avoid repeated git commands and file system checks
  */
@@ -17,7 +17,7 @@ export class PathCache<T> {
   private cache = new Map<string, CacheEntry<T>>();
   private ttl: number;
 
-  constructor(ttlMs: number = Infinity) {
+  constructor(ttlMs: number = Number.POSITIVE_INFINITY) {
     this.ttl = ttlMs;
   }
 
@@ -26,7 +26,7 @@ export class PathCache<T> {
     if (!entry) return undefined;
 
     // Check if entry has expired
-    if (this.ttl !== Infinity && Date.now() - entry.timestamp > this.ttl) {
+    if (this.ttl !== Number.POSITIVE_INFINITY && Date.now() - entry.timestamp > this.ttl) {
       this.cache.delete(key);
       return undefined;
     }

@@ -79,7 +79,11 @@
       "Bash(dist/cli/cli.js --version 2 >& 1)",
       "Bash(dist/cli/cli.js init --root-dir test-debug --force)",
       "Bash(cp:*)",
-      "Bash(./dist/cli/cli.js init:*)"
+      "Bash(./dist/cli/cli.js init:*)",
+      "Bash(./dist/cli/cli.js task create --title \"Test phase task\" --type test --phase planning)",
+      "Bash(touch:*)",
+      "Bash(pkill:*)",
+      "mcp__scopecraft__debug_code_path"
     ],
     "deny": []
   }

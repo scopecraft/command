@@ -295,4 +295,3 @@ export async function ensureTaskEnvironment(
   const envId = await resolveEnvironmentId(taskId, config);
   return ensureEnvironment(envId, config, dryRun);
 }
-

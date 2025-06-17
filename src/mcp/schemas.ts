@@ -32,14 +32,16 @@ export const TaskStatusSchema = z.enum([
 ]);
 
 export const TaskPrioritySchema = z.enum(['highest', 'high', 'medium', 'low']);
+export const TaskPhaseSchema = z.enum(['backlog', 'active', 'released']);
 
-export const WorkflowStateSchema = z.enum(['backlog', 'current', 'archive']);
+export const WorkflowStateSchema = z.enum(['current', 'archive']);
 
 // For input: accept any string and let core normalize
 // This follows Postel's Law: be liberal in what you accept, conservative in what you send
 // Descriptions are dynamically generated from schema registry for AI guidance
 
 import {
+  getPhaseValues,
   getPriorityValues,
   getStatusValues,
   getTypeValues,
@@ -67,6 +69,12 @@ export const TaskPriorityInputSchema = z.string().describe(
 export const WorkflowStateInputSchema = z.string().describe(
   `Workflow state. Use: ${getWorkflowStateValues()
     .map((w) => `"${w.name}"`)
+    .join(', ')}`
+);
+
+export const TaskPhaseInputSchema = z.string().describe(
+  `Task phase. Use: ${getPhaseValues()
+    .map((p) => `"${p.name}"`)
     .join(', ')}`
 );
 
@@ -106,6 +114,7 @@ export const TaskBaseSchema = z.object({
   type: TaskTypeSchema,
   status: TaskStatusSchema,
   priority: TaskPrioritySchema.optional(),
+  phase: TaskPhaseSchema.optional(),
 
   // Organization - Renamed for clarity
   workflowState: WorkflowStateSchema,
@@ -190,6 +199,7 @@ export const SessionContextSchema = z.object({
 export const ListFilterSchema = z.object({
   // Top-level filters (commonly used, AI-friendly)
   workflowState: z.union([WorkflowStateInputSchema, z.array(WorkflowStateInputSchema)]).optional(),
+  phase: z.string().optional(),
   area: z.string().optional(),
   assignee: z.string().optional(),
   tags: z.array(z.string()).optional(),
@@ -302,6 +312,7 @@ export const ParentGetOutputSchema = createResponseSchema(ParentTaskDetailSchema
 export type TaskType = z.infer<typeof TaskTypeSchema>;
 export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 export type TaskPriority = z.infer<typeof TaskPrioritySchema>;
+export type TaskPhase = z.infer<typeof TaskPhaseSchema>;
 export type WorkflowState = z.infer<typeof WorkflowStateSchema>;
 export type TaskStructure = z.infer<typeof TaskStructureSchema>;
 
@@ -340,7 +351,8 @@ export const TaskCreateInputSchema = WriteOperationContextSchema.extend({
   area: z.string().default('general'),
   status: TaskStatusInputSchema.default('todo'),
   priority: TaskPriorityInputSchema.default('medium'),
-  workflowState: WorkflowStateInputSchema.default('backlog'),
+  phase: TaskPhaseInputSchema.optional(),
+  workflowState: WorkflowStateInputSchema.default('current'),
 
   // Relationships
   parentId: z.string().optional().describe('Parent task ID for creating subtasks'),
@@ -362,6 +374,7 @@ export const TaskCreateOutputSchema = createResponseSchema(
     type: TaskTypeSchema,
     status: TaskStatusSchema,
     priority: TaskPrioritySchema.optional(),
+    phase: TaskPhaseSchema.optional(),
     workflowState: WorkflowStateSchema,
     area: z.string(),
     path: z.string(),
@@ -499,7 +512,8 @@ export const ParentCreateInputSchema = WriteOperationContextSchema.extend({
   area: z.string().default('general'),
   status: TaskStatusSchema.default('todo'),
   priority: TaskPrioritySchema.default('medium'),
-  workflowState: WorkflowStateSchema.default('backlog'),
+  phase: z.string().optional(),
+  workflowState: WorkflowStateSchema.default('current'),
 
   // Parent-specific
   overviewContent: z
@@ -689,6 +703,7 @@ export const SearchResultSchema = z.object({
   // Task metadata for filtering/display
   status: TaskStatusSchema.optional(),
   priority: TaskPrioritySchema.optional(),
+  phase: TaskPhaseSchema.optional(),
   area: z.string().optional(),
   tags: z.array(z.string()).optional(),
   workflowState: WorkflowStateSchema.optional(),

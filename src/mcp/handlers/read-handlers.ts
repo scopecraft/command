@@ -48,6 +48,7 @@ function buildListFilters(params: TaskListInput): core.TaskListOptions {
   if (params.area) listOptions.area = params.area;
   if (params.type) listOptions.type = params.type as core.TaskType;
   if (params.status) listOptions.status = params.status as core.TaskStatus;
+  if (params.phase) listOptions.phase = params.phase as core.TaskPhase;
   if (params.assignee) listOptions.assignee = params.assignee;
   if (params.tags) listOptions.tags = params.tags;
   // Note: priority is only available in advancedFilter
@@ -348,7 +349,7 @@ function generateDefaultExcerpt(doc: core.SearchDocument): string {
     return content;
   }
 
-  return content.substring(0, maxLength) + '...';
+  return `${content.substring(0, maxLength)}...`;
 }
 
 /**

@@ -109,14 +109,14 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
   // task list command
   taskCommand
     .command('list')
-    .description('List all tasks (Example: sc task list --status "To Do" --current)')
+    .description('List all tasks (Example: sc task list --status "To Do" --phase planning)')
     .option('-s, --status <status>', 'Filter by status (e.g., "To Do", "Done")')
     .option('-t, --type <type>', 'Filter by type (e.g., "feature", "bug")')
+    .option('-p, --phase <phase>', 'Filter by phase (backlog, active, released)')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-g, --tags <tags...>', 'Filter by tags')
     .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory/area')
-    .option('-l, --location <location>', 'Filter by workflow location: backlog, current, archive')
-    .option('--backlog', 'Show only backlog tasks')
+    .option('-l, --location <location>', 'Filter by workflow location: current, archive')
     .option('--current', 'Show only current tasks (default)')
     .option('--archive', 'Show only archived tasks')
     .option('--all', 'Show all workflow locations')
@@ -139,16 +139,19 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
   // task create command
   taskCommand
     .command('create')
-    .description('Create a new task (Example: sc task create --title "New feature" --type feature)')
+    .description(
+      'Create a new task (Example: sc task create --title "New feature" --type feature --phase planning)'
+    )
     .option(
       '--id <id>',
       'Task ID (generated if not provided, use "_overview" for parent task overview files)'
     )
     .option('--status <status>', 'Task status (default: "To Do")')
     .option('--priority <priority>', 'Task priority (default: "Medium")')
+    .option('--phase <phase>', 'Task phase (backlog, active, released)')
     .option('--assignee <assignee>', 'Assigned to')
     .option('--area <area>', 'Task area (default: "general")')
-    .option('--location <location>', 'Workflow location: backlog (default), current, archive')
+    .option('--location <location>', 'Workflow location: current (default), archive')
     .option('--parent <parent>', 'Parent task ID')
     .option('--depends <depends...>', 'Dependencies (task IDs)')
     .option('--previous <previous>', 'Previous task in workflow')
@@ -170,7 +173,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .option('--status <status>', 'New task status')
     .option('--priority <priority>', 'New task priority')
     .option('--assignee <assignee>', 'New assignee')
-    .option('--location <location>', 'Move to workflow location: backlog, current, archive')
+    .option('--location <location>', 'Move to workflow location: current, archive')
     .option('--subdirectory <subdirectory>', 'Move to subdirectory')
     .option('--parent <parent>', 'New parent task ID')
     .option('--depends <depends...>', 'New dependencies (task IDs)')
@@ -193,7 +196,6 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
   taskCommand
     .command('move <id>')
     .description('Move a task between workflow states')
-    .option('--to-backlog', 'Move task to backlog')
     .option('--to-current', 'Move task to current')
     .option('--to-archive', 'Move task to archive')
     .option('--archive-date <date>', 'Archive date (YYYY-MM format)')
@@ -248,7 +250,6 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .option('-g, --tags <tags...>', 'Filter by tags')
     .option('-d, --subdirectory <subdirectory>', 'Filter by subdirectory/area')
     .option('-l, --location <location>', 'Filter by workflow location')
-    .option('--backlog', 'Show only backlog tasks')
     .option('--current', 'Show only current tasks (default)')
     .option('--archive', 'Show only archived tasks')
     .option('--all', 'Show all workflow locations')
@@ -293,7 +294,7 @@ You can use the global --root-dir option to specify an alternative tasks directo
     .option('--status <status>', 'Task status (default: "To Do")')
     .option('--priority <priority>', 'Task priority (default: "Medium")')
     .option('--assignee <assignee>', 'Assigned to')
-    .option('--location <location>', 'Workflow location: backlog (default), current')
+    .option('--location <location>', 'Workflow location: current (default), archive')
     .option('--tags <tags...>', 'Tags for the parent task')
     .action(async (options: ParentCreateOptions) => {
       // Will be implemented with v2 createParentTask
@@ -424,7 +425,7 @@ export function setupWorkflowCommands(program: Command): void {
   // NEW: workflow promote command
   workflowCommand
     .command('promote <id>')
-    .description('Promote a task from backlog to current')
+    .description('Move a task to current workflow state')
     .option('--update-status', 'Also mark task as "In Progress"')
     .action(async (id: string, options: WorkflowPromoteOptions) => {
       await handleTaskMoveCommand(id, {
@@ -499,16 +500,6 @@ export function setupInitCommands(program: Command): void {
  * @param program Root commander program
  */
 export function setupWorkflowShortcuts(program: Command): void {
-  // backlog command
-  program
-    .command('backlog')
-    .description('List all backlog tasks (shortcut for "task list --backlog")')
-    .option('-s, --status <status>', 'Filter by status')
-    .option('-t, --type <type>', 'Filter by type')
-    .option('-a, --assignee <assignee>', 'Filter by assignee')
-    .option('-f, --format <format>', 'Output format', 'table')
-    .action((options: WorkflowStatusOptions) => handleListCommand({ ...options, backlog: true }));
-
   // current command
   program
     .command('current')

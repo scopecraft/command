@@ -140,12 +140,16 @@ export async function handleListProjects(_params: ConfigListProjectsParams) {
 }
 
 export async function handleDebugCodePath(_params: DebugCodePathParams) {
-  const version = '20250603-mcp-refactored';
+  const version = '20250617-phase-fix-test';
+  const deploymentMarker = 'PHASE_FIX_DEPLOYED_2025-06-17T17:30:00Z';
   return {
     success: true,
     data: {
       version,
+      deployment_marker: deploymentMarker,
       timestamp: new Date().toISOString(),
+      phase_fix_status: 'CODE_UPDATED_WITH_PHASE_SUPPORT',
+      test_unique_value: Math.random().toString(36).substring(7),
       implemented_features: {
         task_system: true,
         task_system_v2: true, // Keeping for backwards compatibility
@@ -160,10 +164,11 @@ export async function handleDebugCodePath(_params: DebugCodePathParams) {
         consistent_field_names: true,
         refactored_handlers: true,
         complexity_reduced: true,
+        phase_parameter_support: true, // NEW!
       },
-      message: 'MCP server running with refactored handlers and reduced complexity',
+      message: 'MCP server WITH PHASE FIX - if you see this, the new code is running!',
     },
-    message: `Debug code path handler is responding with version ${version}`,
+    message: `Debug handler TEST MARKER: ${deploymentMarker} - version ${version}`,
   };
 }
 

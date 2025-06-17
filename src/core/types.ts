@@ -21,7 +21,7 @@ export type ISOTimestamp = string;
 // For now, they are hardcoded to match the canonical names (not labels) in default-schema.json
 // This follows Postel's Law: we store canonical names internally and display human-readable labels
 
-export type WorkflowState = 'backlog' | 'current' | 'archive';
+export type WorkflowState = 'current' | 'archive';
 
 export type TaskType = 'feature' | 'bug' | 'chore' | 'documentation' | 'test' | 'spike' | 'idea';
 
@@ -29,7 +29,7 @@ export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'blocked' | 'archived
 
 export type TaskPriority = 'highest' | 'high' | 'medium' | 'low';
 
-export type TaskPhase = 'planning' | 'active' | 'completed';
+export type TaskPhase = 'backlog' | 'active' | 'released';
 
 // Required sections in task documents
 export const REQUIRED_SECTIONS = ['instruction', 'tasks', 'deliverable', 'log'] as const;
@@ -173,8 +173,9 @@ export interface TaskCreateOptions {
   title: string;
   type: TaskType;
   area: string;
-  workflowState?: WorkflowState; // defaults to 'backlog'
+  workflowState?: WorkflowState; // defaults to 'current'
   status?: TaskStatus; // defaults to 'To Do'
+  phase?: TaskPhase; // defaults to 'planning'
   tags?: string[]; // task tags
   template?: string; // template ID to use
   instruction?: string; // initial instruction content
@@ -209,6 +210,7 @@ export interface TaskListOptions {
   workflowStates?: WorkflowState[];
   type?: TaskType;
   status?: TaskStatus;
+  phase?: TaskPhase;
   excludeStatuses?: TaskStatus[]; // Filter OUT multiple statuses for token efficiency
   area?: string;
   tags?: string[];
@@ -280,7 +282,6 @@ export interface TaskSearchResult {
  */
 export interface ProjectConfig {
   workflowFolders?: {
-    backlog: string;
     current: string;
     archive: string;
   };

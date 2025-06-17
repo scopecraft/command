@@ -6,7 +6,11 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { methodRegistry } from '../handlers.js';
-import { TaskStatusInputSchema, WorkflowStateInputSchema } from '../schemas.js';
+import {
+  TaskPhaseInputSchema,
+  TaskStatusInputSchema,
+  WorkflowStateInputSchema,
+} from '../schemas.js';
 import { McpMethod } from '../types.js';
 
 /**
@@ -84,6 +88,7 @@ export function registerSearchTools(server: McpServer): void {
     filters: z
       .object({
         status: z.array(TaskStatusInputSchema).optional(),
+        phase: z.array(TaskPhaseInputSchema).optional(),
         area: z.array(z.string()).optional(),
         tags: z.array(z.string()).optional(),
         workflow_state: z.array(WorkflowStateInputSchema).optional(),

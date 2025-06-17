@@ -74,7 +74,6 @@ Available entity types:
   template   Template management operations
 
 Workflow shortcuts:
-  backlog    List backlog tasks
   current    List current tasks
   archive    List archived tasks
 
@@ -84,9 +83,9 @@ Global options:
 
 Examples:
   sc init                          Initialize new project with workflow folders
-  sc task create --title "New task" --type feature   Create a new task in backlog
+  sc task create --title "New task" --type feature   Create a new task in current
   sc task list --current           List tasks in current workflow
-  sc workflow promote <id>         Move task from backlog to current
+  sc workflow promote <id>         Move task to current workflow state
   sc parent create --name "Epic"   Create a parent task with subtasks
 `
 );

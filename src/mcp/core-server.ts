@@ -16,6 +16,7 @@ import { McpMethod } from './types.js';
 
 // Import input schemas for flexible validation
 import {
+  TaskPhaseInputSchema,
   TaskPriorityInputSchema,
   TaskStatusInputSchema,
   TaskTypeInputSchema,
@@ -152,6 +153,7 @@ function registerTools(server: McpServer, _verbose = false): McpServer {
       .default('top-level')
       .optional(),
     status: TaskStatusInputSchema.optional(),
+    phase: TaskPhaseInputSchema.describe('Filter by phase (backlog, active, released)').optional(),
     area: z
       .string()
       .describe('Filter by functional area/component (e.g., "cli", "mcp", "ui", "core", "docs")')
@@ -277,7 +279,7 @@ function registerTools(server: McpServer, _verbose = false): McpServer {
     area: z.string().describe('Functional area/component').optional(),
     status: TaskStatusInputSchema.default('todo').optional(),
     priority: TaskPriorityInputSchema.default('medium').optional(),
-    location: WorkflowStateInputSchema.default('backlog').optional(),
+    phase: TaskPhaseInputSchema.describe('Task phase (backlog, active, released)').optional(),
     parent_id: z.string().describe('Parent task ID to create this as a subtask').optional(),
     assignee: z.string().describe('Username or name of person assigned to this task').optional(),
     tags: z.array(z.string()).describe('Tags for categorization and filtering').optional(),
@@ -288,7 +290,7 @@ function registerTools(server: McpServer, _verbose = false): McpServer {
     'task_create',
     {
       description:
-        'Creates a new task with auto-generated ID based on title. Tasks are created with type-specific templates that provide initial content structure. To modify content after creation, use task_get to view the template, then task_update to customize sections. Can create standalone tasks or subtasks within a parent. Tasks default to backlog unless specified.',
+        'Creates a new task with auto-generated ID based on title. Tasks are created with type-specific templates that provide initial content structure. To modify content after creation, use task_get to view the template, then task_update to customize sections. Can create standalone tasks or subtasks within a parent.',
       inputSchema: taskCreateRawShape,
       annotations: {
         title: 'Create Task',
@@ -669,7 +671,7 @@ function registerTools(server: McpServer, _verbose = false): McpServer {
     area: z.string().describe('Task area').default('general').optional(),
     status: TaskStatusInputSchema.default('todo').optional(),
     priority: TaskPriorityInputSchema.default('medium').optional(),
-    location: WorkflowStateInputSchema.default('backlog').optional(),
+    location: WorkflowStateInputSchema.default('current').optional(),
     overview_content: z
       .string()
       .describe('Initial content for _overview.md instruction section')

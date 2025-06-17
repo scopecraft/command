@@ -106,7 +106,6 @@ function formatWorkflowView(tasks: Task[]): string {
 
   // Group by workflow state
   const byState: Record<WorkflowState, Task[]> = {
-    backlog: [],
     current: [],
     archive: [],
   };
@@ -116,7 +115,7 @@ function formatWorkflowView(tasks: Task[]): string {
   }
 
   // Show each workflow state
-  for (const state of ['current', 'backlog', 'archive'] as WorkflowState[]) {
+  for (const state of ['current', 'archive'] as WorkflowState[]) {
     if (byState[state].length > 0) {
       output += `\n${getWorkflowStateLabel(state).toUpperCase()}:\n`;
 
@@ -155,7 +154,6 @@ function formatTreeView(tasks: Task[]): string {
 
   // Group tasks by workflow state
   const byState: Record<WorkflowState, Task[]> = {
-    backlog: [],
     current: [],
     archive: [],
   };
@@ -168,7 +166,7 @@ function formatTreeView(tasks: Task[]): string {
   let hasContent = false;
 
   // Show each workflow state
-  for (const state of ['current', 'backlog', 'archive'] as WorkflowState[]) {
+  for (const state of ['current', 'archive'] as WorkflowState[]) {
     const stateTasks = byState[state];
     if (stateTasks.length === 0) {
       continue;

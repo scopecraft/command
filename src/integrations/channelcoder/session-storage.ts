@@ -35,18 +35,18 @@ export class ScopecraftSessionStorage implements SessionStorage {
   private infoDir: string;
   private scopecraftMetadata?: ScopecraftSessionMetadata;
 
-  constructor(config?: IConfigurationManager, baseDir?: string, projectRoot?: string) {
+  constructor(config?: IConfigurationManager, _baseDir?: string, _projectRoot?: string) {
     // Get centralized session paths - all worktrees share the same storage
     const paths = getCentralizedSessionPaths(config);
-    
+
     // Use centralized paths, ignoring legacy parameters
     this.baseStorage = new FileSessionStorage(paths.sessionsDir);
     this.infoDir = paths.baseDir;
-    
+
     // Ensure directories exist
     this.ensureDirectories().catch(console.error);
   }
-  
+
   private async ensureDirectories(): Promise<void> {
     const paths = getCentralizedSessionPaths();
     await fs.mkdir(paths.sessionsDir, { recursive: true });

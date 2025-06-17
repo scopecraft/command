@@ -23,7 +23,7 @@ describe('SearchService', () => {
     // Create a scopecraft config file to ensure proper project isolation
     const configPath = join(testProjectRoot, '.scopecraft.json');
     const config = { path: testProjectRoot };
-    require('fs').writeFileSync(configPath, JSON.stringify(config, null, 2));
+    require('node:fs').writeFileSync(configPath, JSON.stringify(config, null, 2));
 
     // Initialize project structure
     core.initializeProjectStructure(testProjectRoot);

@@ -151,7 +151,7 @@ export function normalizeWorkflowState(input: string | undefined | null): string
   const normalizer = createNormalizer(
     workflowStateNormalizer,
     validOptions,
-    'backlog',
+    'current',
     'workflow state'
   );
 
@@ -162,10 +162,10 @@ export function normalizeWorkflowState(input: string | undefined | null): string
  * Normalizes phase values to standard format
  *
  * Accepts various input formats based on schema aliases:
- * - Canonical names: "planning", "active", "completed"
- * - Labels: "Planning", "Active", "Completed"
+ * - Canonical names: "backlog", "active", "released"
+ * - Labels: "Backlog", "Active", "Released"
  * - Emojis: "📋", "🚀", "✅"
- * - Aliases: "plan", "working", "done", etc.
+ * - Aliases: "planning", "plan", "working", "done", "completed", etc.
  *
  * @param input Phase value to normalize
  * @returns Standardized phase value (canonical name)
@@ -180,7 +180,7 @@ export function normalizePhase(input: string | undefined | null): string {
   // Use the schema-driven normalizer
   const phaseValues = getPhaseValues();
   const validOptions = phaseValues.map((p) => p.name);
-  const normalizer = createNormalizer(phaseNormalizer, validOptions, 'planning', 'phase');
+  const normalizer = createNormalizer(phaseNormalizer, validOptions, 'backlog', 'phase');
 
   return normalizer(input);
 }

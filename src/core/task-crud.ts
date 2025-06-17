@@ -33,7 +33,12 @@ import {
   parseTaskLocation,
   resolveTaskId,
 } from './directory-utils.js';
-import { normalizePriority, normalizeTaskStatus, normalizeTaskType } from './field-normalizers.js';
+import {
+  normalizePhase,
+  normalizePriority,
+  normalizeTaskStatus,
+  normalizeTaskType,
+} from './field-normalizers.js';
 import { generateSubtaskId, generateUniqueTaskId, parseTaskId } from './id-generator.js';
 import { getDefaultStatus } from './metadata/schema-service.js';
 import { getNextSequenceNumber } from './subtask-sequencing.js';
@@ -57,6 +62,7 @@ import type {
   TaskLocation,
   TaskMetadata,
   TaskMoveOptions,
+  TaskPhase,
   TaskPriority,
   TaskStatus,
   TaskType,
@@ -86,6 +92,11 @@ function normalizeFrontmatter(frontmatter: Record<string, unknown>): TaskFrontma
     normalized.priority = normalizePriority(normalized.priority) as TaskPriority;
   }
 
+  // Normalize phase - will throw if invalid
+  if (normalized.phase) {
+    normalized.phase = normalizePhase(normalized.phase) as TaskPhase;
+  }
+
   return normalized;
 }
 
@@ -99,6 +110,7 @@ function prepareTaskDocument(options: TaskCreateOptions): TaskDocument {
       type: options.type,
       status: options.status || 'To Do',
       area: options.area,
+      ...(options.phase && { phase: options.phase }),
       ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
       ...options.customMetadata,
     }),
@@ -178,8 +190,8 @@ async function createSimpleTask(
   // Generate unique ID
   const taskId = generateUniqueTaskId(options.title, projectRoot, config);
 
-  // Determine workflow state (default to backlog)
-  const workflowState = options.workflowState || config?.defaultWorkflowState || 'backlog';
+  // Determine workflow state (default to current)
+  const workflowState = options.workflowState || config?.defaultWorkflowState || 'current';
 
   // Create task document
   const document = prepareTaskDocument(options);
@@ -370,10 +382,8 @@ function shouldAutoTransition(
     return null;
   }
 
-  // Main rule: backlog tasks that become "in_progress" should move to current
-  if (currentWorkflow === 'backlog' && newStatus === 'in_progress') {
-    return 'current';
-  }
+  // No automatic workflow transitions in two-state architecture
+  // Tasks start in current and move to archive when done
 
   // Re-opening archived tasks: move to current when status changes from non-active to active
   if (currentWorkflow === 'archive' && (newStatus === 'in_progress' || newStatus === 'todo')) {
@@ -689,9 +699,9 @@ export async function list(
     if (options.workflowStates && options.workflowStates.length > 0) {
       statesToSearch = options.workflowStates;
     } else if (options.includeArchived) {
-      statesToSearch = ['current', 'backlog', 'archive'];
+      statesToSearch = ['current', 'archive'];
     } else {
-      statesToSearch = ['current', 'backlog'];
+      statesToSearch = ['current'];
     }
 
     // Get existing states only
@@ -721,6 +731,10 @@ export async function list(
           }
 
           if (options.area && document.frontmatter.area !== options.area) {
+            continue;
+          }
+
+          if (options.phase && document.frontmatter.phase !== options.phase) {
             continue;
           }
 
@@ -781,9 +795,9 @@ export async function list(
       }
     }
 
-    // Sort by workflow state order: current, backlog, archive
+    // Sort by workflow state order: current, archive
     tasks.sort((a, b) => {
-      const stateOrder = { current: 0, backlog: 1, archive: 2 };
+      const stateOrder = { current: 0, archive: 1 };
       const aOrder = stateOrder[a.metadata.location.workflowState];
       const bOrder = stateOrder[b.metadata.location.workflowState];
       return aOrder - bOrder;

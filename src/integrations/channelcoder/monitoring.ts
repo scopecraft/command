@@ -50,7 +50,7 @@ export interface LogEntry {
 /**
  * List all autonomous sessions with basic stats
  */
-export async function listAutonomousSessions(projectRoot?: string): Promise<SessionWithStats[]> {
+export async function listAutonomousSessions(_projectRoot?: string): Promise<SessionWithStats[]> {
   // Get centralized session paths
   const paths = getCentralizedSessionPaths(ConfigurationManager.getInstance());
   const baseDir = paths.baseDir;
@@ -107,7 +107,7 @@ export async function listAutonomousSessions(projectRoot?: string): Promise<Sess
  */
 export async function getSessionDetails(
   taskId: string,
-  projectRoot?: string
+  _projectRoot?: string
 ): Promise<SessionDetails | null> {
   // Get centralized session paths
   const paths = getCentralizedSessionPaths(ConfigurationManager.getInstance());
@@ -270,7 +270,7 @@ function formatSessionLogs(entries: LogEntry[], limit: number): LogEntry[] {
 /**
  * Get recent log entries from all sessions
  */
-export async function getSessionLogs(limit = 50, projectRoot?: string): Promise<LogEntry[]> {
+export async function getSessionLogs(limit = 50, _projectRoot?: string): Promise<LogEntry[]> {
   // Get centralized session paths
   const paths = getCentralizedSessionPaths(ConfigurationManager.getInstance());
   const logDir = paths.logsDir;
@@ -303,7 +303,7 @@ export interface MonitorEvent {
 export function createSessionMonitor(
   taskId: string,
   onEvent: (event: MonitorEvent) => void,
-  projectRoot?: string
+  _projectRoot?: string
 ): () => void {
   // Get centralized session paths
   const paths = getCentralizedSessionPaths(ConfigurationManager.getInstance());

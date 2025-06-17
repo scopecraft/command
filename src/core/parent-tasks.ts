@@ -506,7 +506,7 @@ export async function createParent(
     const taskId = generateUniqueTaskId(options.title, projectRoot, config);
 
     // Determine workflow state
-    const workflowState = options.workflowState || config?.defaultWorkflowState || 'backlog';
+    const workflowState = options.workflowState || config?.defaultWorkflowState || 'current';
     const workflowDir = getWorkflowDirectory(projectRoot, workflowState, config);
 
     // Create task folder

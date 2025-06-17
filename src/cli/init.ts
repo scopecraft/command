@@ -59,7 +59,6 @@ export async function handleInitCommand(options: {
     console.log('\n☁️  Centralized Storage:');
     console.log(`  ~/.scopecraft/projects/${encoded}/`);
     console.log('  └── tasks/');
-    console.log('      ├── backlog/    📋 Tasks waiting to be worked on');
     console.log('      ├── current/    🚀 Tasks actively being worked on');
     console.log('      └── archive/    ✅ Completed tasks (organized by date)');
     console.log('\n✓ Ready to start!\n');

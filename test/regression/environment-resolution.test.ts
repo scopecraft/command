@@ -95,7 +95,7 @@ async function setupTestProject() {
     title: 'Another Simple Task',
     type: 'bug',
     area: 'env-test',
-    workflowState: 'backlog',
+    workflowState: 'current',
   });
   if (simpleTask2.success && simpleTask2.data) {
     tasks.push({
@@ -144,7 +144,7 @@ async function setupTestProject() {
     title: 'Parent Feature Two',
     type: 'feature',
     area: 'env-test',
-    workflowState: 'backlog',
+    workflowState: 'current',
   });
 
   if (parent2Result.success && parent2Result.data) {
@@ -220,9 +220,9 @@ describe('Environment Resolution Regression Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.environment).toBeDefined();
-      expect(result.environment!.taskId).toBe(simpleTask.id);
-      expect(result.environment!.isParentEnvironment).toBe(false);
-      expect(result.environment!.resolvedFromSubtask).toBe(false);
+      expect(result.environment?.taskId).toBe(simpleTask.id);
+      expect(result.environment?.isParentEnvironment).toBe(false);
+      expect(result.environment?.resolvedFromSubtask).toBe(false);
     });
 
     test('should resolve parent task IDs directly', async () => {
@@ -235,9 +235,9 @@ describe('Environment Resolution Regression Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.environment).toBeDefined();
-      expect(result.environment!.taskId).toBe(parentTask.id);
-      expect(result.environment!.isParentEnvironment).toBe(true);
-      expect(result.environment!.resolvedFromSubtask).toBe(false);
+      expect(result.environment?.taskId).toBe(parentTask.id);
+      expect(result.environment?.isParentEnvironment).toBe(true);
+      expect(result.environment?.resolvedFromSubtask).toBe(false);
     });
 
     test('should resolve subtask IDs to parent environment', async () => {
@@ -375,13 +375,13 @@ describe('Environment Resolution Regression Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
-      expect(result.data!.path).toBe(pathResolver.getWorktreePath(simpleTask.id));
-      expect(result.data!.branch).toBe(branchService.getBranchName(simpleTask.id));
-      expect(result.data!.taskId).toBe(simpleTask.id);
-      expect(result.data!.created || result.data!.switched).toBe(true);
+      expect(result.data?.path).toBe(pathResolver.getWorktreePath(simpleTask.id));
+      expect(result.data?.branch).toBe(branchService.getBranchName(simpleTask.id));
+      expect(result.data?.taskId).toBe(simpleTask.id);
+      expect(result.data?.created || result.data?.switched).toBe(true);
 
       // Verify worktree exists
-      expect(existsSync(result.data!.path)).toBe(true);
+      expect(existsSync(result.data?.path)).toBe(true);
     });
 
     test('should reuse existing environment on second call', async () => {
@@ -392,13 +392,13 @@ describe('Environment Resolution Regression Tests', () => {
 
       // First call creates
       const result1 = await worktreeManager.createOrSwitchEnvironment(simpleTask.id);
-      expect(result1.data!.created).toBe(true);
+      expect(result1.data?.created).toBe(true);
 
       // Second call switches
       const result2 = await worktreeManager.createOrSwitchEnvironment(simpleTask.id);
-      expect(result2.data!.switched).toBe(true);
-      expect(result2.data!.created).toBeUndefined();
-      expect(result2.data!.path).toBe(result1.data!.path);
+      expect(result2.data?.switched).toBe(true);
+      expect(result2.data?.created).toBeUndefined();
+      expect(result2.data?.path).toBe(result1.data?.path);
     });
 
     test('should share environment between parent and subtasks', async () => {
@@ -414,15 +414,15 @@ describe('Environment Resolution Regression Tests', () => {
       // Resolve subtask environment
       const subtaskResolution = await resolver.resolveTaskEnvironment(parentTask.subtasks[0]);
       expect(subtaskResolution.success).toBe(true);
-      expect(subtaskResolution.environment!.taskId).toBe(parentTask.id);
+      expect(subtaskResolution.environment?.taskId).toBe(parentTask.id);
 
       // Try to create environment for subtask - should use parent's
       const subtaskResult = await worktreeManager.createOrSwitchEnvironment(
-        subtaskResolution.environment!.taskId
+        subtaskResolution.environment?.taskId
       );
 
-      expect(subtaskResult.data!.path).toBe(parentResult.data!.path);
-      expect(subtaskResult.data!.switched).toBe(true); // Should switch, not create
+      expect(subtaskResult.data?.path).toBe(parentResult.data?.path);
+      expect(subtaskResult.data?.switched).toBe(true); // Should switch, not create
     });
   });
 
@@ -442,8 +442,8 @@ describe('Environment Resolution Regression Tests', () => {
       for (const task of tasksToCreate) {
         const env = environments.find((e) => e.taskId === task.id);
         expect(env).toBeDefined();
-        expect(env!.branch).toBe(branchService.getBranchName(task.id));
-        expect(env!.path).toBe(pathResolver.getWorktreePath(task.id));
+        expect(env?.branch).toBe(branchService.getBranchName(task.id));
+        expect(env?.path).toBe(pathResolver.getWorktreePath(task.id));
       }
     });
 
@@ -458,9 +458,9 @@ describe('Environment Resolution Regression Tests', () => {
 
       const env = environments.find((e) => e.taskId === simpleTask.id);
       expect(env).toBeDefined();
-      expect(env!.branch).toMatch(/^task\//);
-      expect(env!.path).toContain('.worktrees');
-      expect(env!.path).toContain(simpleTask.id);
+      expect(env?.branch).toMatch(/^task\//);
+      expect(env?.path).toContain('.worktrees');
+      expect(env?.path).toContain(simpleTask.id);
     });
   });
 
@@ -474,7 +474,7 @@ describe('Environment Resolution Regression Tests', () => {
       // Create environment
       const createResult = await worktreeManager.createOrSwitchEnvironment(simpleTask.id);
       expect(createResult.success).toBe(true);
-      const envPath = createResult.data!.path;
+      const envPath = createResult.data?.path;
       expect(existsSync(envPath)).toBe(true);
 
       // Close environment
@@ -619,7 +619,7 @@ describe('Environment Resolution Regression Tests', () => {
         const result = await resolver.resolveTaskEnvironment(taskId);
 
         expect(result.success).toBe(true);
-        expect(result.environment!.taskId).toBe(taskId);
+        expect(result.environment?.taskId).toBe(taskId);
 
         // Test branch naming
         const branchName = branchService.getBranchName(taskId);
@@ -671,9 +671,9 @@ describe('Environment Resolution Regression Tests', () => {
       );
 
       expect(resolutions.every((r) => r.success)).toBe(true);
-      expect(resolutions.every((r) => r.environment!.taskId === parentTask.id)).toBe(true);
-      expect(resolutions.every((r) => r.environment!.isParentEnvironment)).toBe(true);
-      expect(resolutions.every((r) => r.environment!.resolvedFromSubtask)).toBe(true);
+      expect(resolutions.every((r) => r.environment?.taskId === parentTask.id)).toBe(true);
+      expect(resolutions.every((r) => r.environment?.isParentEnvironment)).toBe(true);
+      expect(resolutions.every((r) => r.environment?.resolvedFromSubtask)).toBe(true);
     });
   });
 });

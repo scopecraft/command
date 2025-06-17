@@ -11,7 +11,12 @@ import {
   monitorLog,
 } from 'channelcoder';
 import { type ExecutionResult, execute, executeTmux } from './client.js';
-import { EXECUTION_MODES, getCentralizedSessionPaths, SESSION_STORAGE, SESSION_TYPES } from './constants.js';
+import {
+  EXECUTION_MODES,
+  SESSION_STORAGE,
+  SESSION_TYPES,
+  getCentralizedSessionPaths,
+} from './constants.js';
 import { ScopecraftSessionStorage } from './session-storage.js';
 
 /**

@@ -45,7 +45,7 @@ export function assertNoDirectPaths(): void {
   }
 
   // Store original join function
-  const originalJoin = join.toString();
+  const _originalJoin = join.toString();
 
   // Check if join is being used with scopecraft paths
   // This is called at module load time to set up monitoring

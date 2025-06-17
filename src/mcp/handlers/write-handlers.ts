@@ -75,6 +75,7 @@ function buildParentCreateOptions(params: ParentCreateInput): core.TaskCreateOpt
     area: params.area,
     status: params.status,
     workflowState: params.workflowState,
+    phase: params.phase,
     instruction: params.overviewContent,
   });
 
@@ -248,6 +249,7 @@ function buildTaskCreateResponse(task: core.Task): TaskCreateOutput['data'] {
     type: task.document.frontmatter.type,
     status: task.document.frontmatter.status,
     priority: task.document.frontmatter.priority,
+    phase: task.document.frontmatter.phase,
     workflowState: task.metadata.location.workflowState,
     area: task.document.frontmatter.area || 'general',
     path: task.metadata.path,
@@ -265,6 +267,18 @@ export async function handleTaskCreate(
   try {
     // Validate input
     const params = TaskCreateInputSchema.parse(rawParams);
+
+    // Debug logging for phase parameter
+    if (params.title?.includes('test') || params.title?.includes('Test')) {
+      console.log('🔍 MCP DEBUG after schema parse:', {
+        title: params.title,
+        phase: params.phase,
+        hasPhase: 'phase' in params,
+        phaseType: typeof params.phase,
+        allParams: Object.keys(params),
+      });
+    }
+
     const projectRoot = getProjectRoot(params);
 
     // Handle subtask creation separately
@@ -279,11 +293,13 @@ export async function handleTaskCreate(
         area: params.area,
         status: params.status || 'todo',
         workflowState: params.workflowState,
+        phase: params.phase,
         instruction: params.instruction,
       }),
       title: params.title, // Ensure title is always present
       type: params.type as core.TaskType, // Ensure type is always present
       area: params.area || 'general', // Ensure area is always present
+      phase: params.phase as core.TaskPhase, // Ensure phase is preserved
       tasks: parseTasksList(params.tasks),
       customMetadata: buildCommonMetadata({
         priority: params.priority,
@@ -640,7 +656,7 @@ async function handleExtractOperation(
 ): Promise<{ result: core.OperationResult<core.Task>; affectedTasks: string[] }> {
   const extractResult = await core.parent(projectRoot, parentId).extractSubtask(
     taskId,
-    'backlog' // Default to backlog
+    'current' // Default to current
   );
 
   const affectedTasks = extractResult.success ? [parentId] : [];

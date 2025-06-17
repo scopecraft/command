@@ -3,7 +3,6 @@
     "enums": {
       "workflowState": {
         "values": [
-          { "name": "backlog", "label": "Backlog", "emoji": "📋", "icon": "inbox" },
           { "name": "current", "label": "Current", "emoji": "🎯", "icon": "play" },
           { "name": "archive", "label": "Archive", "emoji": "📦", "icon": "folder-archive" }
         ]
@@ -39,9 +38,9 @@
       },
       "phase": {
         "values": [
-          { "name": "planning", "label": "Planning", "emoji": "📋", "icon": "clipboard", "aliases": ["plan", "planned", "preparing", "preparation"] },
+          { "name": "backlog", "label": "Backlog", "emoji": "📋", "icon": "clipboard", "aliases": ["plan", "planned", "preparing", "preparation", "planning"] },
           { "name": "active", "label": "Active", "emoji": "🚀", "icon": "rocket", "aliases": ["working", "in-progress", "ongoing", "wip"] },
-          { "name": "completed", "label": "Completed", "emoji": "✅", "icon": "check", "aliases": ["complete", "finished", "done", "closed"] }
+          { "name": "released", "label": "Released", "emoji": "✅", "icon": "check", "aliases": ["complete", "finished", "done", "closed", "completed"] }
         ]
       }
     }

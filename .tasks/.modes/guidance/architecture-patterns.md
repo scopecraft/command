@@ -29,17 +29,6 @@ General architectural patterns and principles for Scopecraft development.
 
 ## Common Patterns
 
-### Integration Wrapper Pattern
-```typescript
-// Good: Wrapped external dependency
-export interface SessionManager {
-  startSession(prompt: string): Promise<Session>;
-}
-
-export class ChannelCoderSessionManager implements SessionManager {
-  // ChannelCoder-specific implementation
-}
-```
 
 ### Path Resolution Pattern
 ```typescript

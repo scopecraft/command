@@ -98,10 +98,10 @@ describe('Path Strategies', () => {
     test('templates should have repo primary and global fallback', () => {
       const strategies = pathStrategies[PATH_TYPES.TEMPLATES];
       expect(strategies).toHaveLength(2);
-      
+
       const primary = strategies[0](mockContext);
       const fallback = strategies[1](mockContext);
-      
+
       expect(primary).toBe('/test/project/.tasks/.templates');
       expect(fallback).toBe('/test/home/.scopecraft/templates');
     });
@@ -109,7 +109,7 @@ describe('Path Strategies', () => {
     test('modes should only have repo strategy', () => {
       const strategies = pathStrategies[PATH_TYPES.MODES];
       expect(strategies).toHaveLength(1);
-      
+
       const result = strategies[0](mockContext);
       expect(result).toBe('/test/project/.tasks/.modes');
     });
@@ -117,7 +117,7 @@ describe('Path Strategies', () => {
     test('tasks should only have centralized strategy', () => {
       const strategies = pathStrategies[PATH_TYPES.TASKS];
       expect(strategies).toHaveLength(1);
-      
+
       const result = strategies[0](mockContext);
       const encoded = TaskStoragePathEncoder.encode('/test/main-repo');
       expect(result).toBe(`/test/home/.scopecraft/projects/${encoded}/tasks`);
@@ -126,7 +126,7 @@ describe('Path Strategies', () => {
     test('sessions should only have centralized strategy', () => {
       const strategies = pathStrategies[PATH_TYPES.SESSIONS];
       expect(strategies).toHaveLength(1);
-      
+
       const result = strategies[0](mockContext);
       const encoded = TaskStoragePathEncoder.encode('/test/main-repo');
       expect(result).toBe(`/test/home/.scopecraft/projects/${encoded}/sessions`);
@@ -135,10 +135,10 @@ describe('Path Strategies', () => {
     test('config should have centralized primary and repo fallback', () => {
       const strategies = pathStrategies[PATH_TYPES.CONFIG];
       expect(strategies).toHaveLength(2);
-      
+
       const primary = strategies[0](mockContext);
       const fallback = strategies[1](mockContext);
-      
+
       const encoded = TaskStoragePathEncoder.encode('/test/main-repo');
       expect(primary).toBe(`/test/home/.scopecraft/projects/${encoded}/config`);
       expect(fallback).toBe('/test/project/.tasks');
@@ -168,8 +168,12 @@ describe('Path Strategies', () => {
       };
 
       const encoded = TaskStoragePathEncoder.encode('/test/main-repo'); // Not worktree
-      expect(centralizedTasksStrategy(worktreeContext)).toBe(`/test/home/.scopecraft/projects/${encoded}/tasks`);
-      expect(centralizedSessionsStrategy(worktreeContext)).toBe(`/test/home/.scopecraft/projects/${encoded}/sessions`);
+      expect(centralizedTasksStrategy(worktreeContext)).toBe(
+        `/test/home/.scopecraft/projects/${encoded}/tasks`
+      );
+      expect(centralizedSessionsStrategy(worktreeContext)).toBe(
+        `/test/home/.scopecraft/projects/${encoded}/sessions`
+      );
     });
   });
 
@@ -192,7 +196,7 @@ describe('Path Strategies', () => {
       // Both contexts have same main repo, should produce same centralized paths
       const tasks1 = centralizedTasksStrategy(context1);
       const tasks2 = centralizedTasksStrategy(context2);
-      
+
       expect(tasks1).toBe(tasks2);
     });
 
@@ -213,7 +217,7 @@ describe('Path Strategies', () => {
 
       const tasks1 = centralizedTasksStrategy(context1);
       const tasks2 = centralizedTasksStrategy(context2);
-      
+
       expect(tasks1).not.toBe(tasks2);
       expect(tasks1).toContain('/test/home/.scopecraft/projects/');
       expect(tasks2).toContain('/test/home/.scopecraft/projects/');

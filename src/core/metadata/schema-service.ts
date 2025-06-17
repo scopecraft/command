@@ -43,7 +43,7 @@ export function getWorkflowStateLabel(name: string): string {
 export function getWorkflowStateName(label: string): string {
   const schema = getSchema();
   const state = schema.metadata.enums.workflowState.values.find((s) => s.label === label);
-  return state?.name || 'backlog';
+  return state?.name || 'current';
 }
 
 export function getWorkflowStateValues(): MetadataValue[] {
@@ -133,7 +133,7 @@ export function getPhaseLabel(name: string): string {
 export function getPhaseName(label: string): string {
   const schema = getSchema();
   const phase = schema.metadata.enums.phase.values.find((p) => p.label === label);
-  return phase?.name || 'planning';
+  return phase?.name || 'backlog';
 }
 
 export function getPhaseValues(): MetadataValue[] {
@@ -248,7 +248,7 @@ export function getDefaultType(): string {
 }
 
 export function getDefaultWorkflowState(): string {
-  return 'backlog';
+  return 'current';
 }
 
 // ============================================
