@@ -20,6 +20,7 @@ export function useTaskList(
     location?: string | string[];
     status?: string;
     priority?: string;
+    phase?: string;
     area?: string;
     assignee?: string;
     tags?: string[];
@@ -195,7 +196,21 @@ export function useCurrentTasks() {
 
 export function useBacklogTasks() {
   return useTaskList({
-    location: 'backlog',
+    phase: 'backlog',
+    include_content: false,
+  });
+}
+
+export function useActivePhaseTasks() {
+  return useTaskList({
+    phase: 'active',
+    include_content: false,
+  });
+}
+
+export function useReleasedPhaseTasks() {
+  return useTaskList({
+    phase: 'released',
     include_content: false,
   });
 }
@@ -258,21 +273,24 @@ export function useRecentTasks(limit = 5) {
   });
 }
 
-// Workflow counts hook - fetches task counts for each workflow state
-export function useWorkflowCounts() {
+// Phase counts hook - fetches task counts for each phase
+export function usePhaseCounts() {
   return useQuery({
-    queryKey: ['workflow', 'counts'],
+    queryKey: ['phase', 'counts'],
     queryFn: async () => {
-      // Fetch counts for each workflow state in parallel
-      const [backlogResponse, currentResponse, archiveResponse] = await Promise.all([
-        apiClient.getTasks({ location: 'backlog', include_content: false }),
-        apiClient.getTasks({ location: 'current', include_content: false }),
-        apiClient.getTasks({ location: 'archive', include_content: false }),
-      ]);
+      // Fetch counts for each phase in parallel
+      const [backlogResponse, activeResponse, releasedResponse, archiveResponse] =
+        await Promise.all([
+          apiClient.getTasks({ phase: 'backlog', include_content: false }),
+          apiClient.getTasks({ phase: 'active', include_content: false }),
+          apiClient.getTasks({ phase: 'released', include_content: false }),
+          apiClient.getTasks({ location: 'archive', include_content: false }),
+        ]);
 
       return {
         backlog: backlogResponse.success ? backlogResponse.data?.length || 0 : 0,
-        current: currentResponse.success ? currentResponse.data?.length || 0 : 0,
+        active: activeResponse.success ? activeResponse.data?.length || 0 : 0,
+        released: releasedResponse.success ? releasedResponse.data?.length || 0 : 0,
         archive: archiveResponse.success ? archiveResponse.data?.length || 0 : 0,
       };
     },
@@ -280,4 +298,9 @@ export function useWorkflowCounts() {
     refetchInterval: 1000 * 60 * 2, // Refresh every 2 minutes
     refetchIntervalInBackground: false,
   });
+}
+
+// Keep workflow counts for backward compatibility
+export function useWorkflowCounts() {
+  return usePhaseCounts();
 }

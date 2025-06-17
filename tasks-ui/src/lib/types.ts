@@ -5,6 +5,7 @@ import type {
   ParentTaskDetail,
   SimpleTask,
   SubTask,
+  TaskPhase,
   TaskPriority,
   TaskStatus,
   TaskStructure,
@@ -13,7 +14,7 @@ import type {
 } from '../../../src/mcp/schemas.js';
 
 // Re-export for UI consumption
-export type { TaskStatus, TaskPriority, WorkflowState, TaskType, TaskStructure };
+export type { TaskStatus, TaskPriority, WorkflowState, TaskType, TaskStructure, TaskPhase };
 
 // Use MCP Task as the primary interface
 export type Task = MCPTask;
@@ -32,6 +33,7 @@ export interface TableTask extends Task {
   tags: string[];
   area: string;
   priority: TaskPriority;
+  phase?: TaskPhase;
 }
 
 // UI-specific supporting document type

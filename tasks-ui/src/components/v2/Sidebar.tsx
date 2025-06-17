@@ -78,8 +78,8 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
   // Fetch recent tasks
   const { data: recentTasks = [] } = useRecentTasks(5);
 
-  // Fetch workflow counts
-  const { data: workflowCounts } = useWorkflowCounts();
+  // Fetch phase counts
+  const { data: phaseCounts } = useWorkflowCounts();
 
   const toggleSection = (section: keyof CollapsedSections) => {
     setCollapsedSections((prev) => ({
@@ -200,9 +200,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         </div>
       </div>
 
-      {/* Workflow Section */}
+      {/* Phase Section */}
       <SectionHeader
-        title="Workflow"
+        title="Phase"
         section="workflow"
         isCollapsed={collapsedSections.workflow}
         onToggle={() => toggleSection('workflow')}
@@ -217,46 +217,46 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         <ul className="space-y-1">
           <li>
             <Button
-              variant={activeItem === 'workflow-backlog' ? 'secondary' : 'ghost'}
+              variant={activeItem === 'phase-backlog' ? 'secondary' : 'ghost'}
               className={cn(
                 'w-full justify-start text-left normal-case',
-                activeItem === 'workflow-backlog' && 'bg-accent'
+                activeItem === 'phase-backlog' && 'bg-accent'
               )}
-              onClick={() => handleItemClick('workflow-backlog', '/workflow/backlog')}
+              onClick={() => handleItemClick('phase-backlog', '/tasks?phase=backlog')}
             >
               <span className="truncate flex-1">Backlog</span>
-              {workflowCounts && (
-                <span className="text-xs text-muted-foreground">{workflowCounts.backlog}</span>
+              {phaseCounts && (
+                <span className="text-xs text-muted-foreground">{phaseCounts.backlog}</span>
               )}
             </Button>
           </li>
           <li>
             <Button
-              variant={activeItem === 'workflow-current' ? 'secondary' : 'ghost'}
+              variant={activeItem === 'phase-active' ? 'secondary' : 'ghost'}
               className={cn(
                 'w-full justify-start text-left normal-case',
-                activeItem === 'workflow-current' && 'bg-accent'
+                activeItem === 'phase-active' && 'bg-accent'
               )}
-              onClick={() => handleItemClick('workflow-current', '/workflow/current')}
+              onClick={() => handleItemClick('phase-active', '/tasks?phase=active')}
             >
-              <span className="truncate flex-1">Current</span>
-              {workflowCounts && (
-                <span className="text-xs text-muted-foreground">{workflowCounts.current}</span>
+              <span className="truncate flex-1">Active</span>
+              {phaseCounts && (
+                <span className="text-xs text-muted-foreground">{phaseCounts.active}</span>
               )}
             </Button>
           </li>
           <li>
             <Button
-              variant={activeItem === 'workflow-archive' ? 'secondary' : 'ghost'}
+              variant={activeItem === 'phase-released' ? 'secondary' : 'ghost'}
               className={cn(
                 'w-full justify-start text-left normal-case',
-                activeItem === 'workflow-archive' && 'bg-accent'
+                activeItem === 'phase-released' && 'bg-accent'
               )}
-              onClick={() => handleItemClick('workflow-archive', '/workflow/archive')}
+              onClick={() => handleItemClick('phase-released', '/tasks?phase=released')}
             >
-              <span className="truncate flex-1">Archive</span>
-              {workflowCounts && (
-                <span className="text-xs text-muted-foreground">{workflowCounts.archive}</span>
+              <span className="truncate flex-1">Released</span>
+              {phaseCounts && (
+                <span className="text-xs text-muted-foreground">{phaseCounts.released}</span>
               )}
             </Button>
           </li>
@@ -314,19 +314,28 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
       {/* Bottom Actions */}
       <div className="p-4 border-t border-border space-y-2">
         <Button
-          variant="secondary"
+          variant="outline"
           className="w-full"
-          onClick={() => handleItemClick('assistant', '/assistant')}
+          onClick={() => handleItemClick('archive', '/workflow/archive')}
         >
-          🤖 Claude Assistant
+          📦 Archive
         </Button>
-        <Button
-          variant="secondary"
-          className="w-full"
-          onClick={() => handleItemClick('autonomous', '/autonomous')}
-        >
-          🚀 Autonomous Monitor
-        </Button>
+        <div className="border-t border-border pt-2 mt-2">
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => handleItemClick('assistant', '/assistant')}
+          >
+            🤖 Claude Assistant
+          </Button>
+          <Button
+            variant="secondary"
+            className="w-full mt-2"
+            onClick={() => handleItemClick('autonomous', '/autonomous')}
+          >
+            🚀 Autonomous Monitor
+          </Button>
+        </div>
       </div>
     </aside>
   );

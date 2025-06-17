@@ -42,6 +42,7 @@ class ApiClient {
       location?: string | string[];
       status?: string;
       priority?: string;
+      phase?: string;
       area?: string;
       assignee?: string;
       tags?: string[];
@@ -83,6 +84,7 @@ class ApiClient {
     parent_id?: string;
     priority?: string;
     status?: string;
+    phase?: string;
     area?: string;
     assignee?: string;
     tags?: string[];

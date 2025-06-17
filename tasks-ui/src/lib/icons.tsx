@@ -9,14 +9,16 @@ import {
 } from 'lucide-react';
 import React from 'react';
 
-import type { TaskStatus, TaskType, WorkflowState } from './types';
+import type { TaskPhase, TaskStatus, TaskType, WorkflowState } from './types';
 
 // Import schema-driven mappings and helpers
 import {
+  createSchemaPhaseFilterOptions,
   createSchemaPriorityFilterOptions,
   createSchemaStatusFilterOptions,
   createSchemaTypeFilterOptions,
   createSchemaWorkflowFilterOptions,
+  generatePhaseIconMapping,
   generatePriorityIconMapping,
   generateStatusIconMapping,
   generateTypeIconMapping,
@@ -44,6 +46,7 @@ export const taskTypeIcons = {
 };
 export const priorityIcons = generatePriorityIconMapping();
 export const workflowStateIcons = generateWorkflowStateIconMapping();
+export const phaseIcons = generatePhaseIconMapping();
 
 // Shared icon component props
 interface IconProps {
@@ -100,6 +103,18 @@ export function WorkflowStateIcon({
   return <IconComponent className={`${iconSizes[size]} ${className}`} />;
 }
 
+// Phase icon component
+export function PhaseIcon({
+  phase,
+  size = 'sm',
+  className = '',
+}: IconProps & { phase: TaskPhase }) {
+  const IconComponent = phaseIcons[phase];
+  if (!IconComponent) return null;
+
+  return <IconComponent className={`${iconSizes[size]} ${className}`} />;
+}
+
 // Filter option builders (schema-driven, for easy integration with FilterPanel)
 export function createStatusFilterOptions() {
   const schemaOptions = createSchemaStatusFilterOptions();
@@ -142,6 +157,14 @@ export function createWorkflowFilterOptions() {
   return schemaOptions.map((option) => ({
     ...option,
     icon: <WorkflowStateIcon workflow={option.value as WorkflowState} />,
+  }));
+}
+
+export function createPhaseFilterOptions() {
+  const schemaOptions = createSchemaPhaseFilterOptions();
+  return schemaOptions.map((option) => ({
+    ...option,
+    icon: <PhaseIcon phase={option.value as TaskPhase} />,
   }));
 }
 

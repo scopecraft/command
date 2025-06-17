@@ -1,12 +1,13 @@
 import { useNavigate } from '@tanstack/react-router';
 import React from 'react';
-import type { TaskStatus, TaskType, WorkflowState } from '../lib/types';
+import type { TaskPhase, TaskStatus, TaskType, WorkflowState } from '../lib/types';
 
 // Filter state interface
 export interface TaskFilters {
   status: TaskStatus[];
   type: TaskType[];
   workflow: WorkflowState[];
+  phase: TaskPhase[];
   area: string[];
 }
 
@@ -15,6 +16,7 @@ export interface TaskSearchParams {
   status?: string[];
   type?: string[];
   workflow?: string[];
+  phase?: string[];
   area?: string[];
   assignee?: string;
 }
@@ -38,6 +40,7 @@ function parseFiltersFromSearchParams(searchParams: TaskSearchParams): TaskFilte
     status: parseStringArray(searchParams.status) as TaskStatus[],
     type: parseStringArray(searchParams.type) as TaskType[],
     workflow: parseStringArray(searchParams.workflow) as WorkflowState[],
+    phase: parseStringArray(searchParams.phase) as TaskPhase[],
     area: parseStringArray(searchParams.area),
   };
 }
@@ -82,6 +85,7 @@ export function useTaskFilters({ searchParams }: UseTaskFiltersProps): UseTaskFi
         status: newFilters.status.length ? newFilters.status : undefined,
         type: newFilters.type.length ? newFilters.type : undefined,
         workflow: newFilters.workflow.length ? newFilters.workflow : undefined,
+        phase: newFilters.phase.length ? newFilters.phase : undefined,
         area: newFilters.area.length ? newFilters.area : undefined,
       });
     },
@@ -110,6 +114,7 @@ export function useTaskFilters({ searchParams }: UseTaskFiltersProps): UseTaskFi
       status: undefined,
       type: undefined,
       workflow: undefined,
+      phase: undefined,
       area: undefined,
     });
   }, [updateSearchParams]);

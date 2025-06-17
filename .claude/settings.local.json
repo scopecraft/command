@@ -83,7 +83,8 @@
       "Bash(./dist/cli/cli.js task create --title \"Test phase task\" --type test --phase planning)",
       "Bash(touch:*)",
       "Bash(pkill:*)",
-      "mcp__scopecraft__debug_code_path"
+      "mcp__scopecraft__debug_code_path",
+      "Bash(npm run typecheck:*)"
     ],
     "deny": []
   }

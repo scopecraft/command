@@ -8,6 +8,7 @@ const taskSearchSchema = z.object({
   status: z.union([z.string(), z.array(z.string())]).optional(),
   type: z.union([z.string(), z.array(z.string())]).optional(),
   workflow: z.union([z.string(), z.array(z.string())]).optional(),
+  phase: z.union([z.string(), z.array(z.string())]).optional(),
   area: z.union([z.string(), z.array(z.string())]).optional(),
   assignee: z.string().optional(),
 });

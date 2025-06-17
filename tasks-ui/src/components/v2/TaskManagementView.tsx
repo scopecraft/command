@@ -6,6 +6,7 @@ import { useTaskSearch } from '../../hooks/useTaskSearch';
 import type { ApiResponse } from '../../lib/api/client';
 import { useTaskList } from '../../lib/api/hooks';
 import {
+  createPhaseFilterOptions,
   createStatusFilterOptions,
   createTaskTypeFilterOptions,
   createWorkflowFilterOptions,
@@ -70,6 +71,7 @@ export function TaskManagementView({
       tags: task.tags || [],
       area: task.area || 'general',
       priority: task.priority || 'medium',
+      phase: task.phase,
     }));
   }, [data, taskData]);
 
@@ -84,6 +86,7 @@ export function TaskManagementView({
       status: createStatusFilterOptions(),
       type: createTaskTypeFilterOptions(),
       workflow: createWorkflowFilterOptions(),
+      phase: createPhaseFilterOptions(),
       area: uniqueAreas.map((area) => ({ value: area, label: area })),
     };
   }, [allTasks]);
@@ -110,6 +113,11 @@ export function TaskManagementView({
     // Apply workflow filter
     if (filters.workflow.length > 0) {
       result = result.filter((task) => filters.workflow.includes(task.workflow));
+    }
+
+    // Apply phase filter
+    if (filters.phase.length > 0) {
+      result = result.filter((task) => task.phase && filters.phase.includes(task.phase));
     }
 
     // Apply area filter
@@ -178,11 +186,21 @@ export function TaskManagementView({
             />
 
             <FilterCategory
-              name="Workflow"
-              options={filterOptions.workflow}
-              selectedValues={filters.workflow}
-              onChange={(value) => handleFilterChange('workflow', value)}
+              name="Phase"
+              options={filterOptions.phase}
+              selectedValues={filters.phase}
+              onChange={(value) => handleFilterChange('phase', value)}
             />
+
+            {/* Only show workflow filter when viewing archive */}
+            {filters.workflow.includes('archive') && (
+              <FilterCategory
+                name="Workflow"
+                options={filterOptions.workflow}
+                selectedValues={filters.workflow}
+                onChange={(value) => handleFilterChange('workflow', value)}
+              />
+            )}
 
             {filterOptions.area.length > 0 && (
               <FilterCategory

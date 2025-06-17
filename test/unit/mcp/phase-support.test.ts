@@ -3,10 +3,10 @@
  * Verifies that phase parameter is handled correctly in MCP handlers
  */
 
-import { describe, expect, test, beforeEach, afterEach } from 'bun:test';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { mkdirSync, rmSync, readFileSync } from 'fs';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { buildTaskCreateOptionsBase } from '../../../src/mcp/handlers/shared/options-builders.js';
 
 describe('MCP Phase Support', () => {
@@ -17,7 +17,7 @@ describe('MCP Phase Support', () => {
         type: 'feature',
         area: 'test',
         phase: 'active',
-        instruction: 'Test instruction'
+        instruction: 'Test instruction',
       };
 
       const result = buildTaskCreateOptionsBase(params);
@@ -33,7 +33,7 @@ describe('MCP Phase Support', () => {
       const params = {
         title: 'Test Task',
         type: 'bug',
-        area: 'test'
+        area: 'test',
       };
 
       const result = buildTaskCreateOptionsBase(params);
@@ -46,20 +46,20 @@ describe('MCP Phase Support', () => {
 
     test('passes through all phase values correctly', () => {
       const phases = ['planning', 'active', 'completed'];
-      
-      phases.forEach(phase => {
+
+      for (const phase of phases) {
         const params = {
           title: 'Test Task',
           type: 'test',
-          phase
+          phase,
         };
 
         const result = buildTaskCreateOptionsBase(params);
         expect(result.phase).toBe(phase);
-      });
+      }
     });
   });
 
-  // Note: buildListFilters is not exported from read-handlers, 
+  // Note: buildListFilters is not exported from read-handlers,
   // so we test the integration through the actual MCP handlers in higher-level tests
 });

@@ -12,6 +12,10 @@ type LucideIcon = typeof Icons.Circle;
 
 // Import core schema service functions
 import {
+  getPhaseEmoji,
+  getPhaseIcon,
+  getPhaseLabel,
+  getPhaseValues,
   getPriorityEmoji,
   getPriorityIcon,
   getPriorityLabel,
@@ -85,6 +89,14 @@ export function getWorkflowStateLucideIcon(workflowName: string): LucideIcon | n
   return getLucideIcon(iconName);
 }
 
+/**
+ * Get Lucide icon component for phase
+ */
+export function getPhaseLucideIcon(phaseName: string): LucideIcon | null {
+  const iconName = getPhaseIcon(phaseName);
+  return getLucideIcon(iconName);
+}
+
 // ============================================
 // Icon mapping generators (for backwards compatibility)
 // ============================================
@@ -146,6 +158,20 @@ export function generateWorkflowStateIconMapping(): Record<string, LucideIcon | 
   return mapping;
 }
 
+/**
+ * Generate icon mapping object for phase values
+ */
+export function generatePhaseIconMapping(): Record<string, LucideIcon | null> {
+  const phaseValues = getPhaseValues();
+  const mapping: Record<string, LucideIcon | null> = {};
+
+  for (const phase of phaseValues) {
+    mapping[phase.name] = getLucideIcon(phase.icon);
+  }
+
+  return mapping;
+}
+
 // ============================================
 // Filter option generators
 // ============================================
@@ -199,6 +225,17 @@ export function createSchemaWorkflowFilterOptions(): FilterOption[] {
   return workflowValues.map((workflow) => ({
     value: workflow.name,
     label: workflow.label,
+  }));
+}
+
+/**
+ * Generate filter options for phases from schema
+ */
+export function createSchemaPhaseFilterOptions(): FilterOption[] {
+  const phaseValues = getPhaseValues();
+  return phaseValues.map((phase) => ({
+    value: phase.name,
+    label: phase.label,
   }));
 }
 
@@ -257,7 +294,10 @@ export {
   getPriorityEmoji,
   getWorkflowStateLabel,
   getWorkflowStateEmoji,
+  getPhaseLabel,
+  getPhaseEmoji,
   getStatusValues,
   getTypeValues,
   getPriorityValues,
+  getPhaseValues,
 } from '@core/metadata/schema-service';
