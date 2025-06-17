@@ -313,10 +313,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
 
       {/* Bottom Actions */}
       <div className="p-4 border-t border-border space-y-2">
-        <div className="mb-3">
+        <div className="flex justify-center mb-3">
           <button
             type="button"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors cursor-pointer"
             onClick={() => handleItemClick('archive', '/workflow/archive')}
           >
             Archive
