@@ -14,6 +14,7 @@ temp.md
 test/mcp/results/
 .tmp/
 .tasks/.autonomous-sessions/
+# Note: .tasks is now tracked in git as it contains configuration
 
 # NPM package files
 *.tgz

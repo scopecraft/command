@@ -83,23 +83,32 @@ Use your judgment about what's most relevant.
 </compose_guidance>
 ```
 
-### 2. Simple File Structure
+### 2. Simple File Structure (Future Vision)
 
 ```
-.tasks/.modes/
-├── exploration/
-│   ├── base.md          # Core mindset
-│   └── area/            # Project-specific
-│       └── ui.md
-├── implementation/
-│   ├── base.md
-│   └── autonomous.md    # Variant
-├── guidance/            # Reusable patterns
-│   ├── react-patterns.md
-│   └── ui-research.md
-└── orchestration/
-    └── autonomous.md    # Router mode
+.tasks/
+├── .templates/          # Task type defines execution approach
+│   ├── feature.md       # Implementation mindset
+│   ├── bug.md           # Diagnosis mindset  
+│   ├── spike.md         # Exploration mindset
+│   ├── chore.md         # Straightforward execution
+│   ├── test.md          # Testing approach
+│   ├── docs.md          # Documentation approach
+│   ├── parent.md        # Orchestration for parent tasks
+│   ├── planning.md      # Planning/brainstorming sessions
+│   ├── area.md          # Template for creating areas
+│   └── guidance.md      # Template for creating guidance
+└── .modes/              # Project-specific configurations
+    ├── area/            # This project's specific patterns
+    │   ├── ui.md        # Frontend specifics
+    │   ├── core.md      # Core domain specifics
+    │   └── mcp.md       # MCP specifics
+    └── guidance/        # Reusable patterns
+        ├── react-patterns.md
+        └── architecture-patterns.md
 ```
+
+**Key Insight**: Task type (feature, bug, spike) directly determines execution approach, eliminating the need for separate mode selection.
 
 ### 3. Progressive Enhancement
 
@@ -185,22 +194,22 @@ When implementing UI features:
 
 ### How AI Selects Guidance
 
-The AI analyzes multiple signals:
+The AI uses task type as primary signal:
 
 ```
 Task Analysis:
-├── Metadata
-│   ├── Tags: ["react", "security", "performance"]
+├── Task Type → Execution Template
+│   ├── feature → feature.md (implementation)
+│   ├── bug → bug.md (diagnosis)
+│   ├── spike → spike.md (exploration)
+│   └── parent → parent.md (orchestration)
+├── Task Context
 │   ├── Area: "ui" | "core" | "mcp" | "cli"
-│   ├── Type: "feature" | "bug" | "spike"
-│   └── Mode hint: "mode:exploration"
-├── Content
-│   ├── Keywords in instruction
-│   ├── Problem domain
-│   └── Technical context
-└── Decision
-    ├── Select base mode
-    ├── Load area-specific guidance
+│   ├── Tags: ["react", "security", "performance"]
+│   └── Keywords in instruction
+└── Composition
+    ├── Load task type template
+    ├── Add area-specific guidance
     └── Include relevant patterns
 ```
 
@@ -214,12 +223,12 @@ Task:
   tags: ["react", "research", "ui-patterns"]
 
 AI Process:
-  1. Recognizes: type:spike + "research" → Exploration mode
+  1. Task type: spike → spike.md template (exploration mindset)
   2. Loads:
-     - exploration/base.md (mindset)
-     - exploration/area/ui.md (project UI stack)
-     - guidance/react-patterns.md (React patterns)
-     - guidance/ui-research.md (UI research approach)
+     - .templates/spike.md (exploration approach)
+     - .modes/area/ui.md (project UI stack)
+     - .modes/guidance/react-patterns.md (React patterns)
+     - .modes/guidance/ui-research.md (UI research approach)
   3. Adapts for "data table" specifics
   4. Suggests Context7 for React Table docs
 ```
@@ -228,14 +237,16 @@ AI Process:
 
 ### Core Modes
 
-| Mode | Purpose | When to Use |
-|------|---------|-------------|
-| **Exploration** | Research and understand | Spikes, investigations, learning |
-| **Design** | Make technical decisions | Architecture, approach, trade-offs |
-| **Implementation** | Build solutions | Features, fixes, enhancements |
-| **Diagnosis** | Find root causes | Bugs, performance, issues |
-| **Planning** | Break down work | Complex features, initiatives |
-| **Orchestration** | Coordinate work | Multi-phase projects |
+| Task Type | Execution Approach | When to Use |
+|-----------|-------------------|-------------|
+| **spike** | Exploration mindset | Research, investigations, learning |
+| **feature** | Implementation mindset | Building new functionality |
+| **bug** | Diagnosis mindset | Finding and fixing issues |
+| **chore** | Direct execution | Maintenance, refactoring |
+| **test** | Testing mindset | Writing tests, validation |
+| **docs** | Documentation mindset | Writing guides, references |
+| **parent** | Orchestration mindset | Coordinating subtasks |
+| **planning** | Brainstorming mindset | Planning sessions (no task yet) |
 
 ### Special Modes
 
@@ -358,6 +369,44 @@ Experiment → Observe → Refine → Stabilize
 - Autonomous: Document assumptions
 - Both: Preserve decision context
 
+## Reviewer Concept (Experimental)
+
+### Event-Driven Quality Agents
+
+Reviewers represent a different execution model - **reactive agents** that respond to system events rather than executing predefined tasks:
+
+```
+Event Occurs → Reviewer Analyzes → Takes Action → Documents Result
+```
+
+### Key Characteristics
+
+- **Event-Driven**: Triggered by system events (task completion, commits, PRs)
+- **Side Effects**: Not primary work, but quality/compliance reactions
+- **Flexible Actions**: Can report, fix, or escalate based on project preferences
+- **Autonomous**: Operate without explicit human task creation
+
+### Example Events and Reviewers
+
+| Event | Reviewer Type | Possible Actions |
+|-------|--------------|------------------|
+| Task marked "done" | Quality Reviewer | Check code quality, patterns, tests |
+| Commit created | Style Reviewer | Format code, update imports |
+| PR opened | Architecture Reviewer | Validate design decisions |
+| Phase complete | Gate Reviewer | Assess readiness for next phase |
+| Tests fail | Diagnostic Reviewer | Analyze failures, suggest fixes |
+
+### Action Flexibility
+
+Projects can configure reviewer behavior:
+
+1. **Report Only** - Create feedback tasks for humans
+2. **Fix When Confident** - Auto-fix simple issues, report complex ones
+3. **Fix Everything** - Aggressive automation with detailed logs
+4. **Hybrid** - AI decides based on confidence levels
+
+This flexibility allows teams to find their comfort level with autonomous quality control.
+
 ## Experimental Status
 
 ### What's Working Well ✅
@@ -373,6 +422,7 @@ Experiment → Observe → Refine → Stabilize
 - Multi-agent mode coordination
 - Mode transition strategies
 - Community sharing mechanisms
+- **Reviewer architecture and event system**
 
 ### Success Metrics
 - AI selects appropriate guidance 90%+ of time

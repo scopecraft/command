@@ -126,8 +126,12 @@ export class ProjectConfig {
       }
     }
 
-    // Create QUICKSTART.md if it doesn't exist
-    const quickstartPath = path.join(this.paths.tasksRoot, 'QUICKSTART.md');
+    // Create QUICKSTART.md if it doesn't exist in repository .tasks/
+    const repoTasksDir = path.join(this.getRoot(), '.tasks');
+    if (!fs.existsSync(repoTasksDir)) {
+      fs.mkdirSync(repoTasksDir, { recursive: true });
+    }
+    const quickstartPath = path.join(repoTasksDir, 'QUICKSTART.md');
     if (!fs.existsSync(quickstartPath)) {
       const quickstartContent = `# 🚀 Scopecraft Quick Start Guide
 
@@ -210,6 +214,19 @@ Templates are stored in \`.tasks/.templates/\`. You can customize them to match 
 - Edit the YAML frontmatter to add custom fields
 - Modify the markdown structure to fit your needs
 - Templates support all standard MDTM fields
+
+### AI Execution Modes
+Execution modes are stored in \`.tasks/.modes/\`. These guide AI assistants when working on different types of tasks:
+- **exploration/** - Research and investigation prompts
+- **design/** - Architecture and design prompts
+- **implementation/** - Building and coding prompts
+- **orchestration/** - Multi-task coordination prompts
+- **planning/** - Project planning prompts
+
+Customize these modes by:
+1. Editing the base prompts in each mode directory
+2. Adding area-specific guidance in \`area/\` subdirectories
+3. Using Claude commands: \`@mode-init\` and \`@mode-update\`
 
 ## 📚 Learn More
 

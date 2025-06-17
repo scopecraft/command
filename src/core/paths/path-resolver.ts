@@ -25,7 +25,7 @@
  * @see docs/architecture/path-resolution.md for full documentation
  */
 
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { WorktreePathResolver } from '../environment/worktree-path-resolver.js';
@@ -33,6 +33,9 @@ import { TaskStoragePathEncoder } from '../task-storage-path-encoder.js';
 import { pathContextCache } from './cache.js';
 import { pathStrategies } from './strategies.js';
 import { PATH_TYPES, type PathContext, type PathType } from './types.js';
+
+// Re-export types for convenience
+export { PATH_TYPES, type PathContext, type PathType } from './types.js';
 
 /**
  * Options for creating a path context
@@ -80,10 +83,14 @@ export function createPathContext(projectRoot: string, options?: PathContextOpti
     mainRepoRoot = resolver.getMainRepositoryRootSync(projectRoot);
     // Determine if we're in a worktree by comparing paths
     worktreeRoot = projectRoot !== mainRepoRoot ? projectRoot : undefined;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If not a git repository, treat the projectRoot as a standalone project
     // This is valid for test scenarios or non-git projects
-    if (error?.code === 'NOT_GIT_REPOSITORY' || error?.message?.includes('Not a git repository')) {
+    const errorWithCode = error as { code?: string; message?: string };
+    if (
+      errorWithCode?.code === 'NOT_GIT_REPOSITORY' ||
+      errorWithCode?.message?.includes('Not a git repository')
+    ) {
       mainRepoRoot = projectRoot;
       worktreeRoot = undefined;
     } else {
@@ -186,4 +193,49 @@ export function getSessionsPath(context: PathContext): string {
 
 export function getConfigPath(context: PathContext): string {
   return resolvePath(PATH_TYPES.CONFIG, context);
+}
+
+/**
+ * Find mode files matching a given name within the modes directory
+ *
+ * @param projectRoot - The project root directory
+ * @param modeName - The mode name to search for (e.g., "code_review")
+ * @returns Array of matching file paths relative to modes directory
+ *
+ * @example
+ * findModeFiles("/project", "code_review")
+ * // Returns: ["implementation/code_review.md"]
+ *
+ * findModeFiles("/project", "base")
+ * // Returns: ["exploration/base.md", "design/base.md", ...]
+ */
+export function findModeFiles(projectRoot: string, modeName: string): string[] {
+  const context = createPathContext(projectRoot);
+  const modesDir = resolvePath(PATH_TYPES.MODES, context);
+
+  try {
+    const entries = readdirSync(modesDir, {
+      recursive: true,
+      withFileTypes: true,
+    });
+
+    return entries
+      .filter((entry) => entry.isFile() && entry.name === `${modeName}.md`)
+      .map((entry) => {
+        // Return relative path from modes directory
+        const fullPath = join(entry.parentPath, entry.name);
+        return fullPath.substring(modesDir.length + 1); // +1 for path separator
+      })
+      .sort((a, b) => {
+        // Sort non-base files before base.md files
+        const aIsBase = a.endsWith('/base.md');
+        const bIsBase = b.endsWith('/base.md');
+        if (aIsBase && !bIsBase) return 1;
+        if (!aIsBase && bIsBase) return -1;
+        return a.localeCompare(b);
+      });
+  } catch {
+    // If modes directory doesn't exist, return empty array
+    return [];
+  }
 }

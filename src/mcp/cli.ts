@@ -11,7 +11,7 @@ import { ensureDirectoryExists, projectConfig } from '../core/index.js';
 import { startServer } from './server.js';
 
 // Read package version from package.json
-let version = '0.10.6'; // Default
+let version = '2.1.1'; // Default
 try {
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')

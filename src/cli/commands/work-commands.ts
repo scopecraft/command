@@ -5,11 +5,9 @@
  * with automatic environment management and mode inference.
  */
 
-import inquirer from 'inquirer';
 import { ConfigurationManager } from '../../core/config/index.js';
 import { ensureEnvironment, resolveEnvironmentId } from '../../core/environment/index.js';
-import { getStatusEmoji, getTypeEmoji } from '../../core/metadata/schema-service.js';
-import { get as getTask, list as listTasks } from '../../core/task-crud.js';
+import { get as getTask } from '../../core/task-crud.js';
 import type { Task } from '../../core/types.js';
 import {
   buildTaskData,
@@ -84,21 +82,18 @@ async function prepareWorkEnvironment(
 ): Promise<WorkEnvironment> {
   const { projectRoot, configManager, options } = validated;
 
-  // Resolve task ID
-  let resolvedTaskId = taskId;
-  if (!resolvedTaskId) {
-    resolvedTaskId = await selectTaskInteractive(projectRoot);
-    if (!resolvedTaskId) {
-      printWarning('No task selected');
-      process.exit(0);
-    }
+  // Task ID is now optional - if not provided, work in current directory
+  if (!taskId) {
+    return {
+      taskInstruction: '',
+    };
   }
 
   // Load task and validate
   let task: Task | undefined;
   let taskInstruction = '';
   try {
-    const result = await getTask(projectRoot, resolvedTaskId);
+    const result = await getTask(projectRoot, taskId);
     if (!result.success) {
       throw new Error(result.error || 'Task not found');
     }
@@ -107,12 +102,12 @@ async function prepareWorkEnvironment(
       taskInstruction = task.document.sections.instruction || '';
     }
   } catch (_error) {
-    printError(`Task '${resolvedTaskId}' not found`);
+    printError(`Task '${taskId}' not found`);
     process.exit(1);
   }
 
   // Resolve and ensure environment (respecting dry-run mode)
-  const envId = await resolveEnvironmentId(resolvedTaskId, configManager);
+  const envId = await resolveEnvironmentId(taskId, configManager);
   const envInfo = await ensureEnvironment(envId, configManager, options.dryRun);
 
   if (options.dryRun) {
@@ -122,7 +117,7 @@ async function prepareWorkEnvironment(
   }
 
   return {
-    taskId: resolvedTaskId,
+    taskId,
     task,
     envInfo,
     taskInstruction,
@@ -256,72 +251,4 @@ export async function handleWorkCommand(
     printError(`Work command failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
-}
-
-/**
- * Interactive task selector for when no task ID is provided
- *
- * @param taskCrud Task CRUD service
- * @returns Selected task ID or undefined if cancelled
- */
-async function selectTaskInteractive(projectRoot: string): Promise<string | undefined> {
-  try {
-    // List current tasks only (most relevant for work)
-    const result = await listTasks(projectRoot, { location: 'current' });
-    if (!result.success) {
-      printError(`Failed to list tasks: ${result.error}`);
-      return undefined;
-    }
-    const tasks = result.data;
-
-    if (!tasks || tasks.length === 0) {
-      printWarning('No current tasks found. Use "sc task list --all" to see all tasks.');
-      return undefined;
-    }
-
-    // Build choices for the selector
-    const choices = tasks.map((task) => ({
-      name: formatTaskChoice(task),
-      value: task.metadata.id,
-      description: task.document.sections.instruction
-        ? `${task.document.sections.instruction.split('\n')[0].substring(0, 80)}...`
-        : undefined,
-    }));
-
-    // Add cancel option
-    choices.push({
-      name: '── Cancel ──',
-      value: '__cancel__',
-      description: undefined,
-    });
-
-    // Show selector
-    const { selected } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'selected',
-        message: 'Select a task to work on:',
-        choices,
-        pageSize: 15,
-      },
-    ]);
-
-    return selected === '__cancel__' ? undefined : selected;
-  } catch (_error) {
-    // User cancelled with Ctrl+C
-    return undefined;
-  }
-}
-
-/**
- * Format task for display in selector
- */
-function formatTaskChoice(task: Task): string {
-  const typeEmoji = getTypeEmoji(task.document.frontmatter.type) || '';
-  const statusEmoji = getStatusEmoji(task.document.frontmatter.status) || '';
-  const priority = task.document.frontmatter.priority
-    ? ` [${task.document.frontmatter.priority.toUpperCase()}]`
-    : '';
-
-  return `${typeEmoji} ${task.metadata.id} - ${task.document.title} ${statusEmoji}${priority}`;
 }

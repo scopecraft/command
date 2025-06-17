@@ -7,7 +7,12 @@ import path from 'node:path';
  */
 import { Command } from 'commander';
 import { ConfigurationManager } from '../core/config/configuration-manager.js';
-import * as v2 from '../core/index.js';
+import {
+  PATH_TYPES,
+  createPathContext,
+  ensureWorkflowDirectories,
+  resolvePath,
+} from '../core/index.js';
 import { setupEntityCommands } from './entity-commands.js';
 
 // Create the main command
@@ -105,23 +110,18 @@ function validateEnvironment() {
     process.exit(1);
   }
 
-  // Check structure version
-  const structureVersion = v2.detectStructureVersion(projectRoot);
+  // Check if project is initialized by looking for tasks directory
+  const context = createPathContext(projectRoot);
+  const tasksDir = resolvePath(PATH_TYPES.TASKS, context);
 
-  if (structureVersion === 'none') {
+  if (!fs.existsSync(tasksDir)) {
     console.error('\n⚠️  No Scopecraft project structure found.\n');
     console.error('Run: sc init');
     process.exit(1);
   }
 
-  if (structureVersion === 'v1') {
-    console.warn('\n⚠️  This project uses v1 structure (phases). Consider migrating to v2.\n');
-  }
-
-  // Ensure workflow directories exist for v2
-  if (structureVersion === 'v2' || structureVersion === 'mixed') {
-    v2.ensureWorkflowDirectories(projectRoot);
-  }
+  // Ensure workflow directories exist
+  ensureWorkflowDirectories(projectRoot);
 }
 
 // Validate environment before running commands (except for 'init')

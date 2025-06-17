@@ -378,15 +378,26 @@ export async function handleSearch(rawParams: unknown): Promise<McpResponse<Sear
     const searchResult = await searchService.search({
       query: params.query,
       types: params.types,
-      filters: params.filters,
+      filters: params.filters
+        ? {
+            status: params.filters.status,
+            area: params.filters.area,
+            tags: params.filters.tags,
+            workflowState: params.filters.workflowState as core.WorkflowState[] | undefined,
+          }
+        : undefined,
       limit: params.limit,
     });
 
-    if (!searchResult.success || !searchResult.data) {
+    if (!searchResult.success) {
       return createErrorResponse(
         searchResult.error || 'Search operation failed',
         'Failed to execute search'
       );
+    }
+
+    if (!searchResult.data) {
+      return createErrorResponse('Search returned no data', 'Search operation failed');
     }
 
     // 5. Transform results to MCP-optimized format

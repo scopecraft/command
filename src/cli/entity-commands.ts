@@ -5,6 +5,7 @@
 import { Command } from 'commander';
 import { ConfigurationManager } from '../core/config/index.js';
 import * as v2 from '../core/index.js';
+import type { TaskType } from '../core/types.js';
 import {
   handleCreateCommand,
   handleCurrentTaskCommand,
@@ -14,7 +15,6 @@ import {
   handleFeatureListCommand,
   handleFeatureUpdateCommand,
   handleGetCommand,
-  handleInitCommand,
   handleListCommand,
   handleListTemplatesCommand,
   handleMarkCompleteNextCommand,
@@ -33,6 +33,60 @@ import {
 } from './commands/env-commands.js';
 import { handlePlanCommand } from './commands/plan-commands.js';
 import { handleWorkCommand } from './commands/work-commands.js';
+import { handleInitCommand } from './init.js';
+
+// Command option interfaces
+interface TaskStatusOptions {
+  subdirectory?: string;
+}
+
+interface ParentCreateOptions {
+  name: string;
+  title: string;
+  description?: string;
+  type?: string;
+  status?: string;
+  priority?: string;
+  assignee?: string;
+  location?: string;
+  tags?: string[];
+}
+
+interface ParentAddSubtaskOptions {
+  title: string;
+  type?: TaskType;
+  assignee?: string;
+}
+
+interface WorkflowStatusOptions {
+  subdirectory?: string;
+}
+
+interface InitOptions {
+  template?: string;
+  force?: boolean;
+}
+
+interface SearchCommandOptions {
+  type?: string[];
+  status?: string[];
+  area?: string;
+  tags?: string[];
+  limit?: string;
+  format?: string;
+}
+
+interface WorkflowPromoteOptions {
+  updateStatus?: boolean;
+}
+
+interface WorkflowArchiveOptions {
+  date?: string;
+}
+
+interface WorkflowStatusCommandOptions {
+  format?: string;
+}
 
 /**
  * Set up task commands for V2
@@ -153,7 +207,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .command('start <id>')
     .description('Mark a task as "In Progress"')
     .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
-    .action(async (id: string, options: any) => {
+    .action(async (id: string, options: TaskStatusOptions) => {
       await handleUpdateCommand(id, { ...options, status: 'In Progress' });
     });
 
@@ -161,7 +215,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .command('complete <id>')
     .description('Mark a task as "Done"')
     .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
-    .action(async (id: string, options: any) => {
+    .action(async (id: string, options: TaskStatusOptions) => {
       await handleUpdateCommand(id, { ...options, status: 'Done' });
     });
 
@@ -169,7 +223,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .command('block <id>')
     .description('Mark a task as "Blocked"')
     .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
-    .action(async (id: string, options: any) => {
+    .action(async (id: string, options: TaskStatusOptions) => {
       await handleUpdateCommand(id, { ...options, status: 'Blocked' });
     });
 
@@ -177,7 +231,7 @@ Note: You can use the global --root-dir option to specify an alternative tasks d
     .command('review <id>')
     .description('Mark a task as "In Review"')
     .option('-d, --subdirectory <subdirectory>', 'Subdirectory to look in')
-    .action(async (id: string, options: any) => {
+    .action(async (id: string, options: TaskStatusOptions) => {
       await handleUpdateCommand(id, { ...options, status: 'In Review' });
     });
 
@@ -241,7 +295,7 @@ You can use the global --root-dir option to specify an alternative tasks directo
     .option('--assignee <assignee>', 'Assigned to')
     .option('--location <location>', 'Workflow location: backlog (default), current')
     .option('--tags <tags...>', 'Tags for the parent task')
-    .action(async (options: any) => {
+    .action(async (options: ParentCreateOptions) => {
       // Will be implemented with v2 createParentTask
       console.log('Creating parent task:', options);
     });
@@ -292,7 +346,7 @@ You can use the global --root-dir option to specify an alternative tasks directo
     .requiredOption('--title <title>', 'Subtask title')
     .option('--type <type>', 'Subtask type')
     .option('--assignee <assignee>', 'Assigned to')
-    .action(async (parentId: string, options: any) => {
+    .action(async (parentId: string, options: ParentAddSubtaskOptions) => {
       try {
         const configManager = ConfigurationManager.getInstance();
         const projectRoot = configManager.getRootConfig().path;
@@ -372,7 +426,7 @@ export function setupWorkflowCommands(program: Command): void {
     .command('promote <id>')
     .description('Promote a task from backlog to current')
     .option('--update-status', 'Also mark task as "In Progress"')
-    .action(async (id: string, options: any) => {
+    .action(async (id: string, options: WorkflowPromoteOptions) => {
       await handleTaskMoveCommand(id, {
         toCurrent: true,
         updateStatus: options.updateStatus,
@@ -384,7 +438,7 @@ export function setupWorkflowCommands(program: Command): void {
     .command('archive <id>')
     .description('Archive a completed task')
     .option('--date <date>', 'Archive date (YYYY-MM format, defaults to current month)')
-    .action(async (id: string, options: any) => {
+    .action(async (id: string, options: WorkflowArchiveOptions) => {
       await handleTaskMoveCommand(id, {
         toArchive: true,
         archiveDate: options.date,
@@ -396,7 +450,7 @@ export function setupWorkflowCommands(program: Command): void {
     .command('status')
     .description('Show workflow overview with task counts')
     .option('-f, --format <format>', 'Output format: table, json', 'table')
-    .action(async (options: any) => {
+    .action(async (options: WorkflowStatusCommandOptions) => {
       // Will be implemented to show counts per workflow state
       console.log('Workflow status:', options);
     });
@@ -436,7 +490,8 @@ export function setupInitCommands(program: Command): void {
     .description('Initialize task directory structure with workflow folders')
     .option('--mode <mode>', 'Force project mode (roo or standalone)')
     .option('--root-dir <path>', 'Initialize in specific directory instead of current directory')
-    .action(handleInitCommand);
+    .option('--force', 'Force re-initialization even if project already exists')
+    .action((options: InitOptions) => handleInitCommand(options));
 }
 
 /**
@@ -452,7 +507,7 @@ export function setupWorkflowShortcuts(program: Command): void {
     .option('-t, --type <type>', 'Filter by type')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-f, --format <format>', 'Output format', 'table')
-    .action((options: any) => handleListCommand({ ...options, backlog: true }));
+    .action((options: WorkflowStatusOptions) => handleListCommand({ ...options, backlog: true }));
 
   // current command
   program
@@ -462,7 +517,7 @@ export function setupWorkflowShortcuts(program: Command): void {
     .option('-t, --type <type>', 'Filter by type')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-f, --format <format>', 'Output format', 'table')
-    .action((options: any) => handleListCommand({ ...options, current: true }));
+    .action((options: WorkflowStatusOptions) => handleListCommand({ ...options, current: true }));
 
   // archive command
   program
@@ -472,7 +527,7 @@ export function setupWorkflowShortcuts(program: Command): void {
     .option('-t, --type <type>', 'Filter by type')
     .option('-a, --assignee <assignee>', 'Filter by assignee')
     .option('-f, --format <format>', 'Output format', 'table')
-    .action((options: any) => handleListCommand({ ...options, archive: true }));
+    .action((options: WorkflowStatusOptions) => handleListCommand({ ...options, archive: true }));
 }
 
 /**
@@ -739,7 +794,7 @@ See 'sc search <command> --help' for more information on specific commands.`
     .option('--limit <number>', 'Maximum results to return', '20')
     .option('--format <format>', 'Output format (table, json, detail)', 'table')
     .description('Search tasks and documentation')
-    .action(async (query: string, options: any) => {
+    .action(async (query: string, options: SearchCommandOptions) => {
       await handleSearchCommand(query, options);
     });
 
@@ -760,7 +815,7 @@ See 'sc search <command> --help' for more information on specific commands.`
     .option('--tags <tags...>', 'Filter by tags')
     .option('--limit <number>', 'Maximum results to return', '20')
     .option('--format <format>', 'Output format (table, json, detail)', 'table')
-    .action(async (query: string, options: any) => {
+    .action(async (query: string, options: SearchCommandOptions) => {
       await handleSearchCommand(query, options);
     });
 

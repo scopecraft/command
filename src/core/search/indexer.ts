@@ -141,8 +141,8 @@ export class SearchIndexer {
     ];
 
     // Add tags to searchable content (joined as space-separated string)
-    if (document.tags && document.tags.length > 0) {
-      sections.push(document.tags.join(' '));
+    if (document.frontmatter.tags && document.frontmatter.tags.length > 0) {
+      sections.push(document.frontmatter.tags.join(' '));
     }
 
     return sections
