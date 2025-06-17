@@ -313,29 +313,29 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
 
       {/* Bottom Actions */}
       <div className="p-4 border-t border-border space-y-2">
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => handleItemClick('archive', '/workflow/archive')}
-        >
-          📦 Archive
-        </Button>
-        <div className="border-t border-border pt-2 mt-2">
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={() => handleItemClick('assistant', '/assistant')}
+        <div className="mb-3">
+          <button
+            type="button"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => handleItemClick('archive', '/workflow/archive')}
           >
-            🤖 Claude Assistant
-          </Button>
-          <Button
-            variant="secondary"
-            className="w-full mt-2"
-            onClick={() => handleItemClick('autonomous', '/autonomous')}
-          >
-            🚀 Autonomous Monitor
-          </Button>
+            Archive
+          </button>
         </div>
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => handleItemClick('assistant', '/assistant')}
+        >
+          🤖 Claude Assistant
+        </Button>
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => handleItemClick('autonomous', '/autonomous')}
+        >
+          🚀 Autonomous Monitor
+        </Button>
       </div>
     </aside>
   );
