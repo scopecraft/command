@@ -24,6 +24,7 @@ export interface MetadataSchema {
       status: MetadataEnum;
       type: MetadataEnum;
       priority: MetadataEnum;
+      phase: MetadataEnum;
     };
   };
 }

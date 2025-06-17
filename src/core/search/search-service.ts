@@ -43,19 +43,24 @@ export class SearchService {
    * Get singleton instance for project root (following ConfigurationManager pattern)
    */
   public static getInstance(projectRoot?: string): SearchService {
-    if (!projectRoot) {
+    let resolvedProjectRoot = projectRoot;
+    if (!resolvedProjectRoot) {
       const configManager = ConfigurationManager.getInstance();
       const rootConfig = configManager.getRootConfig();
       if (!rootConfig.path) {
         throw new Error('No project root configured');
       }
-      projectRoot = rootConfig.path;
+      resolvedProjectRoot = rootConfig.path;
     }
 
-    if (!SearchService.instances.has(projectRoot)) {
-      SearchService.instances.set(projectRoot, new SearchService(projectRoot));
+    if (!SearchService.instances.has(resolvedProjectRoot)) {
+      SearchService.instances.set(resolvedProjectRoot, new SearchService(resolvedProjectRoot));
     }
-    return SearchService.instances.get(projectRoot)!;
+    const instance = SearchService.instances.get(resolvedProjectRoot);
+    if (!instance) {
+      throw new Error('Failed to create SearchService instance');
+    }
+    return instance;
   }
 
   /**
@@ -114,8 +119,21 @@ export class SearchService {
 
     try {
       const startTime = performance.now();
-      const results = await this.adapter!.search(this.index!, query);
+      if (!this.index) {
+        return {
+          success: false,
+          error: 'Search index not initialized',
+        };
+      }
+      const results = await this.adapter?.search(this.index, query);
       const queryTime = performance.now() - startTime;
+
+      if (!results) {
+        return {
+          success: false,
+          error: 'Search adapter not initialized',
+        };
+      }
 
       // Apply limit if not already handled by adapter
       const limitedResults = results.slice(0, query.limit || this.config.maxResults);

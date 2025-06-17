@@ -29,6 +29,8 @@ export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'blocked' | 'archived
 
 export type TaskPriority = 'highest' | 'high' | 'medium' | 'low';
 
+export type TaskPhase = 'planning' | 'active' | 'completed';
+
 // Required sections in task documents
 export const REQUIRED_SECTIONS = ['instruction', 'tasks', 'deliverable', 'log'] as const;
 export type RequiredSection = (typeof REQUIRED_SECTIONS)[number];
@@ -48,6 +50,7 @@ export interface TaskFrontmatter {
 
   // Optional typed fields
   priority?: TaskPriority;
+  phase?: TaskPhase;
   tags?: string[];
   assignee?: string;
 

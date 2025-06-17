@@ -121,6 +121,27 @@ export function getPriorityValues(): MetadataValue[] {
 }
 
 // ============================================
+// Phase transformations
+// ============================================
+
+export function getPhaseLabel(name: string): string {
+  const schema = getSchema();
+  const phase = schema.metadata.enums.phase.values.find((p) => p.name === name);
+  return phase?.label || name;
+}
+
+export function getPhaseName(label: string): string {
+  const schema = getSchema();
+  const phase = schema.metadata.enums.phase.values.find((p) => p.label === label);
+  return phase?.name || 'planning';
+}
+
+export function getPhaseValues(): MetadataValue[] {
+  const schema = getSchema();
+  return schema.metadata.enums.phase.values;
+}
+
+// ============================================
 // Icon and emoji helpers
 // ============================================
 
@@ -158,6 +179,18 @@ export function getPriorityIcon(name: string): string | null | undefined {
   const schema = getSchema();
   const priority = schema.metadata.enums.priority.values.find((p) => p.name === name);
   return priority?.icon;
+}
+
+export function getPhaseEmoji(name: string): string | undefined {
+  const schema = getSchema();
+  const phase = schema.metadata.enums.phase.values.find((p) => p.name === name);
+  return phase?.emoji;
+}
+
+export function getPhaseIcon(name: string): string | null | undefined {
+  const schema = getSchema();
+  const phase = schema.metadata.enums.phase.values.find((p) => p.name === name);
+  return phase?.icon;
 }
 
 export function getWorkflowStateEmoji(name: string): string | undefined {

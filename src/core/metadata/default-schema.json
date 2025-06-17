@@ -36,6 +36,13 @@
           { "name": "medium", "label": "Medium", "emoji": "▶️", "icon": null, "aliases": ["normal", "moderate", "standard", "default", "p3"] },
           { "name": "low", "label": "Low", "emoji": "🔽", "icon": "chevron-down", "aliases": ["minor", "trivial", "nice-to-have", "p4"] }
         ]
+      },
+      "phase": {
+        "values": [
+          { "name": "planning", "label": "Planning", "emoji": "📋", "icon": "clipboard", "aliases": ["plan", "planned", "preparing", "preparation"] },
+          { "name": "active", "label": "Active", "emoji": "🚀", "icon": "rocket", "aliases": ["working", "in-progress", "ongoing", "wip"] },
+          { "name": "completed", "label": "Completed", "emoji": "✅", "icon": "check", "aliases": ["complete", "finished", "done", "closed"] }
+        ]
       }
     }
   }

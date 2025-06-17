@@ -542,7 +542,7 @@ async function moveSimpleTask(
   task: Task,
   targetDir: string,
   options: TaskMoveOptions,
-  config?: ProjectConfig
+  _config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
   let newPath: string;
 
@@ -562,14 +562,6 @@ async function moveSimpleTask(
       success: false,
       error: `Target file already exists: ${newPath}`,
     };
-  }
-
-  // Update status if requested
-  if (options.updateStatus || config?.autoStatusUpdate) {
-    const newStatus = getStatusForWorkflow(options.targetState);
-    if (newStatus && newStatus !== task.document.frontmatter.status) {
-      task.document.frontmatter.status = newStatus;
-    }
   }
 
   // Write updated content and move file
@@ -599,7 +591,7 @@ async function moveSimpleTask(
 async function moveParentTask(
   task: Task,
   targetDir: string,
-  options: TaskMoveOptions,
+  _options: TaskMoveOptions,
   projectRoot: string,
   config?: ProjectConfig
 ): Promise<OperationResult<Task>> {
@@ -613,18 +605,6 @@ async function moveParentTask(
       success: false,
       error: `Target folder already exists: ${newFolder}`,
     };
-  }
-
-  // Update status if requested
-  if (options.updateStatus || config?.autoStatusUpdate) {
-    const newStatus = getStatusForWorkflow(options.targetState);
-    if (newStatus && newStatus !== task.document.frontmatter.status) {
-      task.document.frontmatter.status = newStatus;
-
-      // Write updated overview with new status
-      const updatedContent = serializeTaskDocument(task.document);
-      writeFileSync(task.metadata.path, updatedContent, 'utf-8');
-    }
   }
 
   // Move the entire folder
@@ -927,7 +907,13 @@ export async function promoteToParent(
         area: task.document.frontmatter.area,
         ...Object.entries(task.document.frontmatter)
           .filter(([key]) => !['type', 'status', 'area'].includes(key))
-          .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {}),
+          .reduce(
+            (acc, [key, value]) => {
+              acc[key] = value;
+              return acc;
+            },
+            {} as Record<string, unknown>
+          ),
       },
       sections: {
         instruction: task.document.sections.instruction || '',
@@ -1025,20 +1011,4 @@ export async function promoteToParent(
  */
 function formatTasksList(tasks: string[]): string {
   return tasks.map((task) => `- [ ] ${task}`).join('\n');
-}
-
-/**
- * Get default status for workflow state
- */
-function getStatusForWorkflow(state: WorkflowState): TaskStatus | null {
-  switch (state) {
-    case 'backlog':
-      return 'todo';
-    case 'current':
-      return 'in_progress';
-    case 'archive':
-      return 'done';
-    default:
-      return null;
-  }
 }

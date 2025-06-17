@@ -9,6 +9,7 @@
 
 import { buildNormalizerMap, createNormalizer } from './metadata/normalizer-builder.js';
 import {
+  getPhaseValues,
   getPriorityEmoji,
   getPriorityLabel,
   getPriorityName,
@@ -31,6 +32,7 @@ let priorityNormalizer: Map<string, string> | null = null;
 let typeNormalizer: Map<string, string> | null = null;
 let statusNormalizer: Map<string, string> | null = null;
 let workflowStateNormalizer: Map<string, string> | null = null;
+let phaseNormalizer: Map<string, string> | null = null;
 
 /**
  * Priority order for sorting (highest to lowest)
@@ -152,6 +154,33 @@ export function normalizeWorkflowState(input: string | undefined | null): string
     'backlog',
     'workflow state'
   );
+
+  return normalizer(input);
+}
+
+/**
+ * Normalizes phase values to standard format
+ *
+ * Accepts various input formats based on schema aliases:
+ * - Canonical names: "planning", "active", "completed"
+ * - Labels: "Planning", "Active", "Completed"
+ * - Emojis: "📋", "🚀", "✅"
+ * - Aliases: "plan", "working", "done", etc.
+ *
+ * @param input Phase value to normalize
+ * @returns Standardized phase value (canonical name)
+ */
+export function normalizePhase(input: string | undefined | null): string {
+  // Build normalizer map on first use
+  if (!phaseNormalizer) {
+    const phaseValues = getPhaseValues();
+    phaseNormalizer = buildNormalizerMap(phaseValues);
+  }
+
+  // Use the schema-driven normalizer
+  const phaseValues = getPhaseValues();
+  const validOptions = phaseValues.map((p) => p.name);
+  const normalizer = createNormalizer(phaseNormalizer, validOptions, 'planning', 'phase');
 
   return normalizer(input);
 }
