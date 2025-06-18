@@ -1,8 +1,8 @@
-# Scopecraft Task System Specification v2.0
+# Scopecraft Task System Specification v2.1
 
 ## 1. Overview
 
-This specification defines the technical requirements for Scopecraft's workflow-based task system. It provides precise implementation details for the concepts outlined in the vision documents.
+This specification defines the technical requirements for Scopecraft's two-state workflow with phase-based task organization. It provides precise implementation details for the concepts outlined in the vision documents.
 
 ### 1.1 Scope
 This specification covers:
@@ -14,7 +14,8 @@ This specification covers:
 
 ### 1.2 Terminology
 - **Task**: A unit of work represented by a `.task.md` file
-- **Workflow State**: One of backlog, current, or archive
+- **Workflow State**: One of current or archive (two-state model)
+- **Phase**: Development phase metadata field (backlog, active, released)
 - **Section**: A named part of a task document (e.g., Instruction, Tasks)
 - **Parent Task**: A task represented by a folder containing child tasks (subtasks)
 

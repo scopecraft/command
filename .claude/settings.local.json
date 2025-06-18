@@ -84,7 +84,12 @@
       "Bash(touch:*)",
       "Bash(pkill:*)",
       "mcp__scopecraft__debug_code_path",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "Bash(do if [ -d \"$dir\" ])",
+      "Bash([ -z \"$(ls -A \"$dir\" 2>/dev/null)\" ])",
+      "Bash(then echo \"Removing empty directory: $(basename \"$dir\")\")",
+      "Bash(fi)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }

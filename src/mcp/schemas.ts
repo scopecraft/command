@@ -395,6 +395,7 @@ export const TaskUpdateInputSchema = WriteOperationContextSchema.extend({
     area: z.string().optional(),
     assignee: z.string().optional(),
     tags: z.array(z.string()).optional(),
+    phase: TaskPhaseSchema.optional(),
 
     // Content section updates
     instruction: z.string().optional(),

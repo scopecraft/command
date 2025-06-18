@@ -155,6 +155,7 @@ export function SimpleTaskView({
                 | 'backlog'
                 | 'current'
                 | 'archive',
+              phase: (metadata.phase || 'backlog') as 'backlog' | 'active' | 'released',
               assignee: metadata.assigned_to,
               tags: metadata.tags || [],
             }}

@@ -104,6 +104,7 @@ class ApiClient {
       area?: string;
       assignee?: string;
       tags?: string[];
+      phase?: string;
       instruction?: string;
       tasks?: string;
       deliverable?: string;

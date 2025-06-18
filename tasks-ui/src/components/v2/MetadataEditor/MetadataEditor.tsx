@@ -1,6 +1,7 @@
 import { User } from 'lucide-react';
 import type React from 'react';
 import { cn } from '../../../lib/utils';
+import { PhaseDropdown } from './PhaseDropdown';
 import { PriorityDropdown } from './PriorityDropdown';
 import { StatusDropdown } from './StatusDropdown';
 import { TagInput } from './TagInput';
@@ -14,6 +15,7 @@ export interface TaskMetadata {
   type: 'feature' | 'bug' | 'chore' | 'documentation' | 'test' | 'spike' | 'idea';
   area: string;
   workflowState: 'backlog' | 'current' | 'archive';
+  phase: 'backlog' | 'active' | 'released';
   assignee?: string;
   tags: string[];
 }
@@ -90,10 +92,15 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({
             placeholder="Unassigned"
             icon={<User className="w-3 h-3" />}
           />
-        </div>
 
-        {/* Tags row - separate grid */}
-        <div className="grid grid-cols-[auto_1fr] gap-x-4 mt-2 items-center">
+          {/* Row 3 */}
+          <label className="text-xs text-muted-foreground">Phase</label>
+          <PhaseDropdown
+            value={metadata.phase}
+            onChange={handleFieldUpdate('phase')}
+            disabled={disabled}
+          />
+
           <label className="text-xs text-muted-foreground">Tags</label>
           <TagInput
             value={metadata.tags}
@@ -141,6 +148,15 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({
         <WorkflowStateDropdown
           value={metadata.workflowState}
           onChange={handleFieldUpdate('workflowState')}
+          disabled={disabled}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Phase</label>
+        <PhaseDropdown
+          value={metadata.phase}
+          onChange={handleFieldUpdate('phase')}
           disabled={disabled}
         />
       </div>

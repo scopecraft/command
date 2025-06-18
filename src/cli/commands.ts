@@ -830,7 +830,8 @@ export async function handleParentCreateCommand(options: {
       status: (validatedStatus || 'todo') as core.TaskStatus,
       workflowState: (validatedWorkflowState || 'current') as core.WorkflowState,
       phase: (validatedPhase || 'backlog') as core.TaskPhase,
-      instruction: options.description || 'This is a parent task that will be broken down into subtasks.',
+      instruction:
+        options.description || 'This is a parent task that will be broken down into subtasks.',
       customMetadata: {
         ...(validatedPriority && { priority: validatedPriority }),
         ...(options.assignee && { assignee: options.assignee }),
@@ -866,7 +867,7 @@ export async function handleParentCreateCommand(options: {
     }
     console.log(`  Workflow: ${result.data?.metadata.location.workflowState}`);
     console.log(`  Path: ${result.data?.metadata.path}`);
-    
+
     console.log('\nNext steps:');
     console.log(`  sc parent add-subtask ${result.data?.metadata.id} --title "First subtask"`);
     console.log(`  sc parent get ${result.data?.metadata.id}`);
