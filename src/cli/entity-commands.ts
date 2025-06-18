@@ -19,6 +19,7 @@ import {
   handleListTemplatesCommand,
   handleMarkCompleteNextCommand,
   handleNextTaskCommand,
+  handleParentCreateCommand,
   handleSearchCommand,
   handleSearchReindexCommand,
   handleTaskMoveCommand,
@@ -49,6 +50,7 @@ interface ParentCreateOptions {
   priority?: string;
   assignee?: string;
   location?: string;
+  phase?: string;
   tags?: string[];
 }
 
@@ -290,16 +292,14 @@ You can use the global --root-dir option to specify an alternative tasks directo
     .requiredOption('--name <name>', 'Parent task name (will be used as folder name)')
     .requiredOption('--title <title>', 'Parent task title')
     .option('--description <description>', 'Parent task description')
-    .option('--type <type>', 'Task type (default: "feature")')
+    .option('--type <type>', 'Task type (default: "Feature")')
     .option('--status <status>', 'Task status (default: "To Do")')
     .option('--priority <priority>', 'Task priority (default: "Medium")')
+    .option('--phase <phase>', 'Task phase (Backlog, Active, Released)')
     .option('--assignee <assignee>', 'Assigned to')
     .option('--location <location>', 'Workflow location: current (default), archive')
     .option('--tags <tags...>', 'Tags for the parent task')
-    .action(async (options: ParentCreateOptions) => {
-      // Will be implemented with v2 createParentTask
-      console.log('Creating parent task:', options);
-    });
+    .action(handleParentCreateCommand);
 
   // parent list command
   parentCommand

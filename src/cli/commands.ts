@@ -12,6 +12,13 @@ import {
   formatTasksList,
   formatTemplatesList,
 } from './formatters.js';
+import {
+  validatePhase,
+  validatePriority,
+  validateStatus,
+  validateType,
+  validateWorkflowState,
+} from './validation-helpers.js';
 
 /**
  * Handle init command with project structure
@@ -777,6 +784,92 @@ export async function handleSearchReindexCommand(): Promise<void> {
     }
 
     console.log('✓ Search index rebuilt successfully');
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Handle parent create command
+ */
+export async function handleParentCreateCommand(options: {
+  name: string;
+  title: string;
+  description?: string;
+  type?: string;
+  status?: string;
+  priority?: string;
+  assignee?: string;
+  location?: string;
+  phase?: string;
+  tags?: string[];
+}): Promise<void> {
+  try {
+    // Get project root
+    const configManager = ConfigurationManager.getInstance();
+    const rootConfig = configManager.getRootConfig();
+    if (!rootConfig.path) {
+      console.error('Error: No project root configured. Run "sc init" first.');
+      process.exit(1);
+    }
+    const projectRoot = rootConfig.path;
+
+    // Validate all metadata using schema service (following MCP pattern)
+    const validatedType = validateType(options.type || 'feature');
+    const validatedStatus = validateStatus(options.status);
+    const validatedPriority = validatePriority(options.priority);
+    const validatedWorkflowState = validateWorkflowState(options.location);
+    const validatedPhase = validatePhase(options.phase);
+
+    // Build create options (following MCP buildParentCreateOptions pattern)
+    const createOptions: core.TaskCreateOptions = {
+      title: options.title,
+      type: validatedType as core.TaskType,
+      area: 'general', // Default area for parent tasks
+      status: (validatedStatus || 'todo') as core.TaskStatus,
+      workflowState: (validatedWorkflowState || 'current') as core.WorkflowState,
+      phase: (validatedPhase || 'backlog') as core.TaskPhase,
+      instruction: options.description || 'This is a parent task that will be broken down into subtasks.',
+      customMetadata: {
+        ...(validatedPriority && { priority: validatedPriority }),
+        ...(options.assignee && { assignee: options.assignee }),
+      },
+      tags: options.tags,
+    };
+
+    // Load project config (following MCP pattern)
+    const projectConfig = undefined; // Use default config for now
+
+    // Create parent task using core function (following MCP pattern)
+    const result = await core.createParent(projectRoot, createOptions, projectConfig);
+
+    if (!result.success || !result.data) {
+      console.error(`Error: ${result.error || 'Failed to create parent task'}`);
+      process.exit(1);
+    }
+
+    // Display success message (following CLI pattern)
+    console.log(`✓ Parent task created successfully`);
+    console.log(`  ID: ${result.data?.metadata.id}`);
+    console.log(`  Title: ${result.data?.overview.title}`);
+    console.log(`  Type: ${result.data?.overview.frontmatter.type}`);
+    console.log(`  Status: ${result.data?.overview.frontmatter.status}`);
+    if (result.data?.overview.frontmatter.phase) {
+      console.log(`  Phase: ${result.data?.overview.frontmatter.phase}`);
+    }
+    if (result.data?.overview.frontmatter.priority) {
+      console.log(`  Priority: ${result.data?.overview.frontmatter.priority}`);
+    }
+    if (result.data?.overview.frontmatter.assignee) {
+      console.log(`  Assignee: ${result.data?.overview.frontmatter.assignee}`);
+    }
+    console.log(`  Workflow: ${result.data?.metadata.location.workflowState}`);
+    console.log(`  Path: ${result.data?.metadata.path}`);
+    
+    console.log('\nNext steps:');
+    console.log(`  sc parent add-subtask ${result.data?.metadata.id} --title "First subtask"`);
+    console.log(`  sc parent get ${result.data?.metadata.id}`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
