@@ -131,6 +131,13 @@ Key patterns:
    - Right-sized for team (2-person team = larger tasks, enterprise team = smaller tasks)
    - Clear dependencies (task B needs task A's output → sequential)
    - Direct implementation when possible (avoid meta-work)
+   - Assign appropriate agent mode in assignee field:
+     * `research-agent` - for research/exploration tasks
+     * `design-agent` - for design and architecture tasks
+     * `implement-agent` - for implementation tasks
+     * `test-agent` - for testing tasks
+     * `architect-agent` - for high-level architecture
+     * `review-agent` - for review gates and synthesis
    - Update parent task's Tasks section with new tasks
 
 5. **Dependency-Aware Dispatch**
@@ -335,10 +342,10 @@ Enterprise team: Smaller chunks (2-day tasks)
 Deliverable: TRD following established service patterns (SearchService, OperationResult, MCP handlers)
 Assessment: Ready to implement using existing architecture
 Tasks Created:
-- Implement SearchService using established service patterns
-- Add CLI commands following entity-commands.ts structure  
-- Integrate MCP handlers using existing handler patterns
-- Add tests following current test structure
+- Implement SearchService using established service patterns (assignee: implement-agent)
+- Add CLI commands following entity-commands.ts structure (assignee: implement-agent)
+- Integrate MCP handlers using existing handler patterns (assignee: implement-agent)
+- Add tests following current test structure (assignee: test-agent)
 Rationale: Reuses proven patterns, ships working search, avoids both debt types
 ```
 
