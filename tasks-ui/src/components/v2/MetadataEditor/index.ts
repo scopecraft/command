@@ -1,6 +1,7 @@
 export { MetadataEditor, type MetadataEditorProps, type TaskMetadata } from './MetadataEditor';
 export { StatusDropdown, type StatusDropdownProps } from './StatusDropdown';
 export { PriorityDropdown, type PriorityDropdownProps } from './PriorityDropdown';
+export { PhaseDropdown, type PhaseDropdownProps } from './PhaseDropdown';
 export { TypeDropdown, type TypeDropdownProps } from './TypeDropdown';
 export { AreaInput, type AreaInputProps } from './AreaInput';
 export { WorkflowStateDropdown, type WorkflowStateDropdownProps } from './WorkflowStateDropdown';

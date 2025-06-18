@@ -78,6 +78,10 @@ export const Default: Story = {
       metadata={{
         status: 'in_progress',
         priority: 'high',
+        type: 'feature',
+        area: 'ui',
+        workflowState: 'current',
+        phase: 'active',
         assignee: 'davidp',
         tags: ['frontend', 'bug', 'urgent'],
       }}
@@ -97,6 +101,10 @@ export const StatusStates: Story = {
             metadata={{
               status,
               priority: 'medium',
+              type: 'feature',
+              area: 'ui',
+              workflowState: 'current',
+              phase: 'active',
               assignee: '',
               tags: [],
             }}
@@ -120,6 +128,10 @@ export const PriorityLevels: Story = {
             metadata={{
               status: 'todo',
               priority,
+              type: 'feature',
+              area: 'ui',
+              workflowState: 'current',
+              phase: 'active',
               assignee: '',
               tags: [],
             }}
@@ -131,7 +143,34 @@ export const PriorityLevels: Story = {
   ),
 };
 
-// Story 4: Tag Input - Adding/removing tags
+// Story 4: Phase Dropdown - Show all phases
+export const PhaseStates: Story = {
+  render: () => (
+    <div className="space-y-4">
+      <h3 className="text-cream font-jetbrains-mono text-lg uppercase">All Phase States</h3>
+      {(['backlog', 'active', 'released'] as const).map((phase) => (
+        <div key={phase} className="p-4 bg-terminal-dark rounded-lg border border-gray-800">
+          <MetadataEditor
+            taskId={`task-${phase}`}
+            metadata={{
+              status: 'todo',
+              priority: 'medium',
+              type: 'feature',
+              area: 'ui',
+              workflowState: 'current',
+              phase,
+              assignee: '',
+              tags: [],
+            }}
+            onUpdate={async () => {}}
+          />
+        </div>
+      ))}
+    </div>
+  ),
+};
+
+// Story 5: Tag Input - Adding/removing tags
 export const TagManagement: Story = {
   render: () => (
     <div className="space-y-8">
@@ -142,6 +181,10 @@ export const TagManagement: Story = {
           metadata={{
             status: 'todo',
             priority: 'medium',
+            type: 'feature',
+            area: 'ui',
+            workflowState: 'current',
+            phase: 'active',
             assignee: '',
             tags: [],
           }}
@@ -155,6 +198,10 @@ export const TagManagement: Story = {
           metadata={{
             status: 'in_progress',
             priority: 'high',
+            type: 'feature',
+            area: 'core',
+            workflowState: 'current',
+            phase: 'active',
             assignee: 'alice',
             tags: ['backend', 'api', 'performance', 'security', 'database'],
           }}
@@ -179,6 +226,10 @@ export const LoadingStates: Story = {
         metadata={{
           status: 'in_progress',
           priority: 'high',
+          type: 'feature',
+          area: 'ui',
+          workflowState: 'current',
+          phase: 'active',
           assignee: 'bob',
           tags: ['ui', 'feature'],
         }}
@@ -203,6 +254,10 @@ export const ErrorStates: Story = {
         metadata={{
           status: 'blocked',
           priority: 'highest',
+          type: 'bug',
+          area: 'core',
+          workflowState: 'current',
+          phase: 'active',
           assignee: 'charlie',
           tags: ['bug', 'critical'],
         }}
@@ -226,6 +281,10 @@ export const VerticalLayout: Story = {
         metadata={{
           status: 'in_progress',
           priority: 'medium',
+          type: 'feature',
+          area: 'ui',
+          workflowState: 'current',
+          phase: 'active',
           assignee: 'david',
           tags: ['design', 'ux'],
         }}
@@ -245,6 +304,10 @@ export const DisabledState: Story = {
         metadata={{
           status: 'done',
           priority: 'low',
+          type: 'chore',
+          area: 'general',
+          workflowState: 'archive',
+          phase: 'released',
           assignee: 'system',
           tags: ['archived', 'completed'],
         }}
@@ -264,6 +327,10 @@ export const MinimalState: Story = {
         metadata={{
           status: 'todo',
           priority: 'medium',
+          type: 'feature',
+          area: 'ui',
+          workflowState: 'current',
+          phase: 'backlog',
           assignee: '',
           tags: [],
         }}

@@ -3,8 +3,12 @@
  * Migration script for two-state workflow architecture
  * 
  * Migrates tasks from three-state (backlog/current/archive) to two-state (current/archive)
- * based on task phase metadata. This is a one-time migration to support the new
- * architecture where workflow phase is tracked via metadata rather than location.
+ * and ensures all tasks have a phase field set. Specifically:
+ * 1. Moves all backlog tasks to current workflow state
+ * 2. Sets default phase to 'backlog' for any task without a phase
+ * 
+ * This is a one-time migration to support the new architecture where workflow 
+ * phase is tracked via metadata rather than location.
  * 
  * Usage: bun run scripts/migrate-workflow.ts [--dry-run]
  */
@@ -44,42 +48,77 @@ async function migrateWorkflow() {
 
   console.log(`Found ${backlogTasks.data.length} tasks in backlog`);
 
+  // Also get current tasks that might need phase defaults
+  const currentTasks = await list(projectRoot, { location: { workflowState: 'current' } });
+  
+  if (!currentTasks.success) {
+    console.error('Failed to list current tasks:', currentTasks.error);
+    process.exit(1);
+  }
+
+  // Filter current tasks that don't have a phase set
+  const currentTasksWithoutPhase = currentTasks.data.filter(task => !task.document.frontmatter.phase);
+  console.log(`Found ${currentTasksWithoutPhase.length} current tasks without phase field`);
+
+  // Combine all tasks that need processing
+  const allTasks = [...backlogTasks.data, ...currentTasksWithoutPhase];
+
   // Track migration stats
   let movedCount = 0;
+  let updatedCount = 0;
   let errorCount = 0;
   const errors: string[] = [];
 
+  console.log(`Total tasks to process: ${allTasks.length}`);
+
   // Process each task
-  for (const task of backlogTasks.data) {
+  for (const task of allTasks) {
     try {
-      // Move ALL tasks to current (two-state architecture)
       const phase = task.document.frontmatter.phase as TaskPhase | undefined;
+      const isBacklogTask = task.metadata.workflowState === 'backlog';
       
-      console.log(`Moving task ${task.metadata.id} to current...`);
-      
-      if (!isDryRun) {
-        const moveResult = await move(projectRoot, task.metadata.id, {
-          targetState: 'current',
-          updateStatus: false // Don't auto-update status
-        });
-        
-        if (!moveResult.success) {
-          throw new Error(moveResult.error);
+      // Extract parent ID from path for subtasks
+      let parentId: string | undefined = undefined;
+      const currentIndex = task.metadata.path.indexOf('/current/');
+      if (currentIndex !== -1) {
+        const afterCurrent = task.metadata.path.substring(currentIndex + 9);
+        const isSubtask = afterCurrent.includes('/');
+        if (isSubtask) {
+          parentId = afterCurrent.split('/')[0];
         }
+      }
+      
+      if (isBacklogTask) {
+        console.log(`Moving task ${task.metadata.id} from backlog to current...`);
         
-        // Ensure phase is set (default to 'planning' if not set)
-        if (!phase) {
-          const updateResult = await update(projectRoot, task.metadata.id, {
-            phase: 'planning'
+        if (!isDryRun) {
+          const moveResult = await move(projectRoot, task.metadata.id, {
+            targetState: 'current',
+            updateStatus: false // Don't auto-update status
           });
+          
+          if (!moveResult.success) {
+            throw new Error(moveResult.error);
+          }
+        }
+        movedCount++;
+      }
+      
+      // Ensure phase is set (default to 'backlog' if not set)
+      if (!phase) {
+        console.log(`Setting phase to 'backlog' for task ${task.metadata.id}${parentId ? ` (parent: ${parentId})` : ''}...`);
+        
+        if (!isDryRun) {
+          const updateResult = await update(projectRoot, task.metadata.id, {
+            frontmatter: { phase: 'backlog' }
+          }, undefined, parentId);
           
           if (!updateResult.success) {
             throw new Error(updateResult.error);
           }
         }
+        updatedCount++;
       }
-      
-      movedCount++;
     } catch (error) {
       errorCount++;
       const errorMsg = `Failed to process task ${task.metadata.id}: ${error}`;
@@ -90,9 +129,10 @@ async function migrateWorkflow() {
 
   // Summary
   console.log('\n=== Migration Summary ===');
-  console.log(`Total tasks processed: ${backlogTasks.data.length}`);
-  console.log(`Tasks moved to current: ${movedCount}`);
-  console.log(`Tasks remaining in backlog: ${backlogTasks.data.length - movedCount}`);
+  console.log(`Total tasks processed: ${allTasks.length}`);
+  console.log(`Tasks moved from backlog to current: ${movedCount}`);
+  console.log(`Tasks updated with 'backlog' phase: ${updatedCount}`);
+  console.log(`Current tasks without phase: ${currentTasksWithoutPhase.length}`);
   console.log(`Errors: ${errorCount}`);
   
   if (errors.length > 0) {

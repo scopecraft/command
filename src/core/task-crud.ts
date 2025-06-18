@@ -71,6 +71,91 @@ import type {
 } from './types.js';
 
 /**
+ * Validate that parent-child relationships remain intact across workflow states
+ * Returns validation results with any detected splits
+ */
+export async function validateParentChildIntegrity(
+  projectRoot: string,
+  config?: ProjectConfig
+): Promise<{
+  isValid: boolean;
+  splits: Array<{
+    parentId: string;
+    parentLocation: WorkflowState;
+    subtaskLocations: Array<{ subtaskId: string; location: WorkflowState }>;
+  }>;
+}> {
+  const splits: Array<{
+    parentId: string;
+    parentLocation: WorkflowState;
+    subtaskLocations: Array<{ subtaskId: string; location: WorkflowState }>;
+  }> = [];
+
+  try {
+    // Get all parent tasks
+    const parentResult = await list(
+      projectRoot,
+      {
+        includeParentTasks: true,
+        workflowStates: ['current', 'archive'],
+      },
+      config
+    );
+
+    if (!parentResult.success || !parentResult.data) {
+      return { isValid: false, splits: [] };
+    }
+
+    const parentTasks = parentResult.data.filter((task) => task.metadata.isParentTask);
+
+    for (const parent of parentTasks) {
+      const parentLocation = parent.metadata.location.workflowState;
+
+      // Get all subtasks for this parent
+      const subtaskResult = await list(
+        projectRoot,
+        {
+          workflowStates: ['current', 'archive'],
+          includeParentTasks: false,
+        },
+        config
+      );
+
+      if (!subtaskResult.success || !subtaskResult.data) continue;
+
+      const subtasks = subtaskResult.data.filter(
+        (task) => task.metadata.parentTask === parent.metadata.id
+      );
+
+      // Check if any subtasks are in different workflow states than parent
+      const subtaskLocations = subtasks.map((subtask) => ({
+        subtaskId: subtask.metadata.id,
+        location: subtask.metadata.location.workflowState,
+      }));
+
+      const hasLocationMismatch = subtasks.some(
+        (subtask) => subtask.metadata.location.workflowState !== parentLocation
+      );
+
+      if (hasLocationMismatch) {
+        splits.push({
+          parentId: parent.metadata.id,
+          parentLocation,
+          subtaskLocations,
+        });
+      }
+    }
+
+    return {
+      isValid: splits.length === 0,
+      splits,
+    };
+  } catch (error) {
+    return { isValid: false, splits: [] };
+  }
+}
+
+/**
  * Normalize frontmatter values using schema service
  * The normalizers will throw errors for invalid values
  */
@@ -547,6 +632,11 @@ export async function del(
 
 /**
  * Move a simple task file or subtask
+ * TODO: This function handles both simple tasks AND subtasks, which is architecturally confusing.
+ * Consider refactoring to either:
+ * 1. Rename to moveNonParentTask() for clarity
+ * 2. Split into separate functions for simple tasks vs subtasks
+ * 3. Add guard to prevent individual subtask moves (force atomic parent moves)
  */
 async function moveSimpleTask(
   task: Task,
@@ -561,6 +651,10 @@ async function moveSimpleTask(
     // For subtasks, ensure parent folder exists in target directory
     const parentFolderInTarget = ensureParentTaskDirectory(task.metadata.parentTask, targetDir);
     newPath = join(parentFolderInTarget, task.metadata.filename);
+
+    // TODO: Moving individual subtasks can create parent-child splits
+    // Consider requiring atomic parent task moves instead of individual subtask moves
+    // For now, only create the parent folder structure for the subtask
   } else {
     // For simple tasks, use the workflow root
     newPath = join(targetDir, task.metadata.filename);

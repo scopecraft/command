@@ -2,11 +2,11 @@
 
 A powerful command-line tool and MCP server for managing Markdown-Driven Task Management (MDTM) files. Scopecraft helps you organize tasks, features, and development workflows with a structured approach.
 
-> **Version 2.0**: Now with workflow-based task organization (backlog → current → archive), parent tasks for complex features, and advanced subtask sequencing capabilities!
+> **Version 2.0**: Now with two-state workflow (current/archive) and phase-based organization, parent tasks for complex features, and advanced subtask sequencing capabilities!
 
 **Key Features:**
 * Works with any AI IDE (Cursor, Claude Desktop, etc.) via flexible project root configuration
-* Workflow-based task management with automatic state transitions
+* Two-state workflow with phase-based task organization (current/archive + phase metadata)
 * Parent tasks with subtask sequencing and parallel execution
 * Supports MDTM format with TOML/YAML frontmatter
 * Provides both CLI and MCP server interfaces
@@ -131,10 +131,10 @@ sc task list
 ```bash
 # List all tasks
 sc task list
-sc task list --current    # Show only active tasks
-sc task list --backlog    # Show backlog items
+sc task list --current    # Show only active tasks  
+sc task list --phase backlog  # Show backlog items by phase
 
-# Create a new task (goes to backlog by default)
+# Create a new task (goes to current with phase=backlog by default)
 sc task create --title "Implement user authentication" --type feature
 
 # Update task status
@@ -180,13 +180,14 @@ sc task promote simple-auth-05M --subtasks "Design,Build,Test"
 ### Workflow Management
 
 ```bash
-# Tasks move through workflows: backlog → current → archive
-sc task create --title "New feature"          # Creates in backlog
-sc task update new-feature-05A --status "In Progress"  # Moves to current
-sc task complete new-feature-05A              # Marks as done
+# Two-state workflow: current (with phases) → archive
+sc task create --title "New feature"          # Creates in current/ with phase=backlog
+sc task update new-feature-05A --status "In Progress"  # Status changes, stays in current/
+sc task update new-feature-05A --phase active          # Change phase to active
+sc task complete new-feature-05A              # Moves to archive/ when done
 
-# Move parent tasks between workflows
-sc parent move auth-05K current
+# Move parent tasks to archive when complete
+sc parent move auth-05K archive
 ```
 
 ### Environment and Session Management
@@ -245,7 +246,7 @@ sc dispatch --session session-xyz789
 
 ```bash
 # Complete development workflow
-sc task create --title "New feature" --type feature
+sc task create --title "New feature" --type feature --phase backlog
 sc env new-feature-05A
 sc work new-feature-05A
 
@@ -368,9 +369,10 @@ Configure in your Roo Commander settings to enable LLM agents to manage tasks di
 
 ```json
 {
-  "method": "task.list",
+  "method": "task.list", 
   "params": {
-    "status": "🔵 In Progress",
+    "status": "in_progress",
+    "phase": "active",
     "format": "json"
   }
 }

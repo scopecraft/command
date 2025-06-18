@@ -231,6 +231,11 @@ export function isValidWorkflowState(value: string): boolean {
   );
 }
 
+export function isValidPhase(value: string): boolean {
+  const schema = getSchema();
+  return schema.metadata.enums.phase.values.some((p) => p.name === value || p.label === value);
+}
+
 // ============================================
 // Default value helpers
 // ============================================
@@ -251,12 +256,16 @@ export function getDefaultWorkflowState(): string {
   return 'current';
 }
 
+export function getDefaultPhase(): string {
+  return 'backlog';
+}
+
 // ============================================
 // Export all available values for CLI help
 // ============================================
 
 export function getAllowedValues(
-  enumType: 'status' | 'type' | 'priority' | 'workflowState'
+  enumType: 'status' | 'type' | 'priority' | 'workflowState' | 'phase'
 ): string[] {
   const schema = getSchema();
   const values = schema.metadata.enums[enumType].values;

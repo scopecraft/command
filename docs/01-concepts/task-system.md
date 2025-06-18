@@ -79,20 +79,26 @@ Work outputs (required, initially empty)
 
 ## Workflow States
 
-Tasks progress through workflow states represented by folders:
+Tasks use a **two-state workflow** with **phase-based organization**:
 
 ```
 .tasks/
-├── backlog/     # Planned work, not yet started
-├── current/     # Active development
-└── archive/     # Completed or abandoned
+├── current/     # All active work (phases: backlog, active)
+└── archive/     # Completed or abandoned work
     └── 2024-01/ # Organized by completion date
 ```
 
+### Phase-Based Organization
+Within the `current/` folder, tasks use a `phase` metadata field:
+- `phase: backlog` - Planned work, not yet started
+- `phase: active` - Currently being worked on  
+- `phase: released` - Completed features ready for deployment
+
 ### State Transitions
-- `backlog → current`: Task is started
-- `current → archive`: Task is completed/abandoned
-- References remain valid across moves
+- **Creation**: Tasks start in `current/` with `phase: backlog`
+- **Activation**: `phase: backlog → active` when work begins
+- **Completion**: `current/ → archive/` when task is done
+- **Phase changes**: Tasks stay in `current/` as phases change
 
 ## Task Metadata
 
@@ -103,6 +109,7 @@ Tasks progress through workflow states represented by folders:
 | `type` | Kind of work | `feature`, `bug`, `chore`, `spike`, `idea` |
 | `status` | Current state | `todo`, `in_progress`, `done`, `blocked` |
 | `area` | Part of codebase | Project-specific (e.g., `ui`, `core`, `api`) |
+| `phase` | Development phase | `backlog`, `active`, `released` |
 
 ### Optional Fields
 
@@ -257,17 +264,20 @@ Document why, not just what:
 ## Task Lifecycle Example
 
 ```bash
-# 1. Create task
+# 1. Create task (goes to current/ with phase=backlog)
 sc task create --title "Add password reset" --type feature --area auth
 
-# 2. Start work (moves to current/)
+# 2. Start work (changes phase to active, stays in current/)
 sc task start add-password-reset-0108-AB
 
 # 3. Work progresses
 sc task check add-password-reset-0108-AB "Send reset email"
 sc task log add-password-reset-0108-AB "Email service integrated"
 
-# 4. Complete (moves to archive/)
+# 4. Ready for release (change phase)
+sc task update add-password-reset-0108-AB --phase released
+
+# 5. Complete (moves to archive/)
 sc task complete add-password-reset-0108-AB
 ```
 

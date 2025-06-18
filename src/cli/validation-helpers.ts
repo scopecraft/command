@@ -5,6 +5,7 @@
 
 import {
   getAllowedValues,
+  isValidPhase,
   isValidPriority,
   isValidStatus,
   isValidType,
@@ -63,4 +64,18 @@ export function validateWorkflowState(state?: string): string | undefined {
   }
 
   return state;
+}
+
+/**
+ * Validate and normalize task phase
+ */
+export function validatePhase(phase?: string): string | undefined {
+  if (!phase) return undefined;
+
+  if (!isValidPhase(phase)) {
+    const allowed = getAllowedValues('phase');
+    throw new Error(`Invalid phase "${phase}". Allowed values: ${allowed.join(', ')}`);
+  }
+
+  return phase;
 }
