@@ -30,11 +30,19 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Helper component to manage state and demonstrate updates
-const MetadataEditorDemo = (props: any) => {
+interface MetadataEditorDemoProps {
+  taskId: string;
+  metadata: TaskMetadata;
+  layout?: 'horizontal' | 'vertical';
+  delay?: number;
+  simulateError?: boolean;
+}
+
+const MetadataEditorDemo = (props: MetadataEditorDemoProps) => {
   const [metadata, setMetadata] = useState<TaskMetadata>(props.metadata);
   const [updateLog, setUpdateLog] = useState<string[]>([]);
 
-  const handleUpdate = async (field: keyof TaskMetadata, value: any) => {
+  const handleUpdate = async (field: keyof TaskMetadata, value: string | string[] | undefined) => {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, props.delay || 1000));
 

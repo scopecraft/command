@@ -20,24 +20,25 @@ export interface TaskMetadata {
   tags: string[];
 }
 
+type MetadataValue = string | string[] | undefined;
+
 export interface MetadataEditorProps {
   taskId: string;
   metadata: TaskMetadata;
-  onUpdate: (field: keyof TaskMetadata, value: any) => Promise<void>;
+  onUpdate: (field: keyof TaskMetadata, value: MetadataValue) => Promise<void>;
   className?: string;
   disabled?: boolean;
   layout?: 'horizontal' | 'vertical';
 }
 
 export const MetadataEditor: React.FC<MetadataEditorProps> = ({
-  taskId,
   metadata,
   onUpdate,
   className,
   disabled = false,
   layout = 'horizontal',
 }) => {
-  const handleFieldUpdate = (field: keyof TaskMetadata) => async (value: any) => {
+  const handleFieldUpdate = (field: keyof TaskMetadata) => async (value: MetadataValue) => {
     await onUpdate(field, value);
   };
 
