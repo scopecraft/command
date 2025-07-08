@@ -128,7 +128,7 @@ Based on responses and existing examples:
 
 🎯 **Critical Decision: Where should this command live?**
 
-**Project Command** (`/.claude/commands/`)
+**Project Command** (`.claude/commands/`)
 - Specific to this project's workflow
 - Uses project conventions
 - References project documentation
