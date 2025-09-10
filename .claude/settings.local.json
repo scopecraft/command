@@ -89,7 +89,9 @@
       "Bash([ -z \"$(ls -A \"$dir\" 2>/dev/null)\" ])",
       "Bash(then echo \"Removing empty directory: $(basename \"$dir\")\")",
       "Bash(fi)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(git --git-dir=/Users/davidpaquet/Projects/claude-code-flow/.git log --oneline --since=\"2024-12-14\" --pretty=format:\"%h %ad %s\" --date=short)",
+      "Bash(git --git-dir=/Users/davidpaquet/Projects/claude-code-flow/.git diff --name-only 3028097..566bd55)"
     ],
     "deny": []
   }

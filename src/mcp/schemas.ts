@@ -390,12 +390,12 @@ export const TaskUpdateInputSchema = WriteOperationContextSchema.extend({
   updates: z.object({
     // Metadata updates
     title: z.string().min(1).max(200).optional(),
-    status: TaskStatusSchema.optional(),
-    priority: TaskPrioritySchema.optional(),
+    status: TaskStatusInputSchema.optional(),
+    priority: TaskPriorityInputSchema.optional(),
     area: z.string().optional(),
     assignee: z.string().optional(),
     tags: z.array(z.string()).optional(),
-    phase: TaskPhaseSchema.optional(),
+    phase: TaskPhaseInputSchema.optional(),
 
     // Content section updates
     instruction: z.string().optional(),
