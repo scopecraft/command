@@ -17,18 +17,15 @@ const SECTION_PATTERN = /^## (.+)$/gm;
  * Parse a task document from markdown content
  */
 export function parseTaskDocument(content: string): TaskDocument {
-  // Extract title (first line should be # Title)
-  const lines = content.split('\n');
-  const titleMatch = lines[0]?.match(/^# (.+)$/);
-  if (!titleMatch) {
-    throw new Error('Task document must start with # Title');
+  const parsed = matter(content);
+  
+  const firstLine = parsed.content.trim().split('\n')[0] || '';
+  const titleMatch = firstLine.match(/^# (?<title>.+)$/);
+  
+  if (!titleMatch?.groups.title) {
+    throw new Error("Task document content must start with # Title");
   }
-  const title = titleMatch[1].trim();
-
-  // Remove title line and parse the rest with gray-matter
-  const contentWithoutTitle = lines.slice(1).join('\n').trimStart();
-  const parsed = matter(contentWithoutTitle);
-
+  
   // Validate and cast frontmatter
   const frontmatter = parsed.data as TaskFrontmatter;
   if (!frontmatter.type || !frontmatter.status || !frontmatter.area) {
@@ -36,6 +33,7 @@ export function parseTaskDocument(content: string): TaskDocument {
   }
 
   // Parse sections from content after frontmatter
+  const title = titleMatch[1].trim();
   const sections = parseSections(parsed.content);
 
   return {
