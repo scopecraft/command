@@ -13,11 +13,25 @@ const REQUIRED_SECTIONS = ['instruction', 'tasks', 'deliverable', 'log'] as cons
 // Section delimiter pattern
 const SECTION_PATTERN = /^## (.+)$/gm;
 
+const LEGACY_FRONTMATTER_PATTERN = /(---\s*[\s\S]*?\s*---)/m;
+
+/**
+ * Find the frontmatter and the content, extract and reconstruct.
+ */
+function reconstructDocument(input: string) {
+  const dataMatch = input.match(LEGACY_FRONTMATTER_PATTERN)
+  const data = dataMatch ? dataMatch[1].trim() : null;
+  const content = input.replace(LEGACY_FRONTMATTER_PATTERN, '').trim()
+  return [data, content].filter(Boolean).join('\n\n');
+}
+
 /**
  * Parse a task document from markdown content
+ * 
+ * supports legacy format where frontmatter is not at the top of the file
  */
 export function parseTaskDocument(content: string): TaskDocument {
-  const parsed = matter(content);
+  const parsed = matter(reconstructDocument(content));
   
   const firstLine = parsed.content.trim().split('\n')[0] || '';
   const titleMatch = firstLine.match(/^# (?<title>.+)$/);
