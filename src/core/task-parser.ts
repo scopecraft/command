@@ -47,7 +47,7 @@ export function parseTaskDocument(content: string): TaskDocument {
   }
 
   // Parse sections from content after frontmatter
-  const title = titleMatch[1].trim();
+  const title = titleMatch.groups.title.trim();
   const sections = parseSections(parsed.content);
 
   return {
